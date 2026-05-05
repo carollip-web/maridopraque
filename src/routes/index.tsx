@@ -16,9 +16,13 @@ import {
   HeartHandshake,
   UserRound,
   Users,
+  CreditCard,
+  QrCode,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-tools.jpg";
+import { PaymentSimulator } from "@/components/PaymentSimulator";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -76,6 +80,12 @@ const reasons = [
   { icon: Star, title: "Garantia de 30 dias", desc: "Se algo não ficou bom, voltamos sem custo." },
 ];
 
+const paymentMethods = [
+  { icon: QrCode, title: "Pix", desc: "Aprovação instantânea e 5% de desconto no valor total." },
+  { icon: CreditCard, title: "Cartão de Crédito", desc: "Aceitamos todas as bandeiras em até 10x sem juros." },
+  { icon: Wallet, title: "Cartão de Débito", desc: "Pagamento presencial rápido através de maquininha." },
+];
+
 const testimonials = [
   { name: "Camila R.", text: "Pedi atendimento com acompanhante feminina e me senti super segura.", role: "Vila Mariana" },
   { name: "Rafael M.", text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.", role: "Pinheiros" },
@@ -99,6 +109,7 @@ function Index() {
           <nav className="hidden items-center gap-8 text-sm md:flex">
             <a href="#servicos" className="text-muted-foreground transition hover:text-foreground">Serviços</a>
             <a href="#profissionais" className="text-muted-foreground transition hover:text-foreground">Profissionais</a>
+            <a href="#pagamento" className="text-muted-foreground transition hover:text-foreground">Pagamento</a>
             <a href="#porque" className="text-muted-foreground transition hover:text-foreground">Por que nós</a>
             <a href="#contato" className="text-muted-foreground transition hover:text-foreground">Contato</a>
           </nav>
@@ -128,12 +139,10 @@ function Index() {
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
                 <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Pedir orçamento grátis
+                  <MessageCircle className="mr-2 h-4 w-4" /> Orçamento WhatsApp
                 </a>
               </Button>
-              <Button asChild size="lg" variant="ghost" className="rounded-full text-foreground hover:bg-muted">
-                <a href="#servicos">Ver serviços <ArrowRight className="ml-1.5 h-4 w-4" /></a>
-              </Button>
+              <PaymentSimulator />
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Sem taxa de visita</div>
@@ -277,6 +286,34 @@ function Index() {
               </figcaption>
             </figure>
           ))}
+        </div>
+      </section>
+
+      {/* Métodos de Pagamento */}
+      <section id="pagamento" className="mx-auto max-w-6xl px-4 py-24">
+        <div className="text-center">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Pagamento</span>
+          <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">Formas de pagamento seguras.</h2>
+          <p className="mt-4 text-muted-foreground md:text-lg">Facilitamos o acerto para que você foque no que importa: sua casa pronta.</p>
+        </div>
+
+        <div className="mt-14 grid gap-6 md:grid-cols-3">
+          {paymentMethods.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="flex flex-col items-center text-center p-8 rounded-2xl border border-border bg-card transition hover:shadow-soft">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand mb-6">
+                <Icon className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-12 flex justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-sm text-muted-foreground">Quer agilizar? Você pode pagar agora e agendar depois.</p>
+            <PaymentSimulator />
+          </div>
         </div>
       </section>
 
