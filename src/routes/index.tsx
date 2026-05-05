@@ -12,9 +12,13 @@ import {
   ShieldCheck,
   Star,
   CheckCircle2,
+  ArrowRight,
+  HeartHandshake,
+  UserRound,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-handyman.jpg";
+import heroImage from "@/assets/hero-tools.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,13 +27,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Serviços rápidos e confiáveis de montagem de móveis, elétrica, hidráulica e pequenos reparos para sua casa. Orçamento sem compromisso.",
+          "Serviços rápidos e confiáveis de montagem de móveis, elétrica, hidráulica e pequenos reparos. Você escolhe o profissional — inclusive opção com acompanhamento feminino.",
       },
       { property: "og:title", content: "Marido pra Quê? — Reparos e Montagens" },
       {
         property: "og:description",
         content:
-          "Você não precisa de marido — precisa de quem resolve. Montagem de móveis e reparos com agilidade.",
+          "Você não precisa de marido — precisa de quem resolve. Escolha entre profissional mulher, homem ou homem com acompanhante.",
       },
     ],
   }),
@@ -39,24 +43,43 @@ export const Route = createFileRoute("/")({
 const WHATSAPP = "https://wa.me/5511999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 const services = [
-  { icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas, escrivaninhas e móveis planejados." },
-  { icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV, varões e cortinas." },
-  { icon: Lightbulb, title: "Elétrica básica", desc: "Troca de tomadas, lustres, lâmpadas, interruptores e disjuntores." },
-  { icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões, válvulas e descargas." },
-  { icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes, portas e reparos em gesso." },
-  { icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas, portas e janelas." },
+  { icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
+  { icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
+  { icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
+  { icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
+  { icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes e reparos em gesso." },
+  { icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas e janelas." },
+];
+
+const professionals = [
+  {
+    icon: UserRound,
+    label: "Profissional mulher",
+    desc: "Atendimento feito por uma profissional mulher do início ao fim.",
+  },
+  {
+    icon: Wrench,
+    label: "Profissional homem",
+    desc: "Equipe masculina, qualificada e verificada para qualquer serviço.",
+  },
+  {
+    icon: HeartHandshake,
+    label: "Homem + acompanhante feminina",
+    desc: "Pensado para quem mora sozinha: o profissional vem com uma acompanhante mulher.",
+    highlight: true,
+  },
 ];
 
 const reasons = [
-  { icon: Clock, title: "Atendimento no mesmo dia", desc: "Agendamento rápido e pontualidade garantida." },
-  { icon: ShieldCheck, title: "Profissional de confiança", desc: "Equipe verificada, educada e com ferramentas próprias." },
-  { icon: Star, title: "Serviço com garantia", desc: "30 dias de garantia em todo serviço executado." },
+  { icon: Clock, title: "Atendimento ágil", desc: "Agendamento no mesmo dia, com pontualidade." },
+  { icon: ShieldCheck, title: "Equipe verificada", desc: "Documentos checados, conduta avaliada e referências reais." },
+  { icon: Star, title: "Garantia de 30 dias", desc: "Se algo não ficou bom, voltamos sem custo." },
 ];
 
 const testimonials = [
-  { name: "Camila R.", text: "Montaram meu guarda-roupa em 2 horas. Super organizados!", role: "Vila Mariana" },
+  { name: "Camila R.", text: "Pedi atendimento com acompanhante feminina e me senti super segura.", role: "Vila Mariana" },
   { name: "Rafael M.", text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.", role: "Pinheiros" },
-  { name: "Júlia A.", text: "Atendimento educado, preço justo. Virou meu contato fixo.", role: "Moema" },
+  { name: "Júlia A.", text: "Profissional pontual, educada e caprichosa. Virou meu contato fixo.", role: "Moema" },
 ];
 
 function Index() {
@@ -65,146 +88,191 @@ function Index() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <a href="#" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand shadow-brand">
-              <Wrench className="h-5 w-5 text-brand-foreground" />
+          <a href="#" className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
+              <Wrench className="h-4 w-4" />
             </span>
-            <span className="text-lg font-bold tracking-tight">
+            <span className="text-base font-semibold tracking-tight">
               Marido pra Quê<span className="text-brand">?</span>
             </span>
           </a>
-          <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
+          <nav className="hidden items-center gap-8 text-sm md:flex">
             <a href="#servicos" className="text-muted-foreground transition hover:text-foreground">Serviços</a>
+            <a href="#profissionais" className="text-muted-foreground transition hover:text-foreground">Profissionais</a>
             <a href="#porque" className="text-muted-foreground transition hover:text-foreground">Por que nós</a>
-            <a href="#depoimentos" className="text-muted-foreground transition hover:text-foreground">Depoimentos</a>
             <a href="#contato" className="text-muted-foreground transition hover:text-foreground">Contato</a>
           </nav>
-          <Button asChild className="rounded-full bg-brand text-brand-foreground shadow-brand hover:bg-brand/90">
+          <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
             <a href={WHATSAPP} target="_blank" rel="noreferrer">
-              <MessageCircle className="mr-1.5 h-4 w-4" /> Orçamento
+              Orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </a>
           </Button>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-warm" />
-        <div className="absolute -right-40 -top-40 -z-10 h-96 w-96 rounded-full bg-brand/20 blur-3xl" />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-2 md:py-24">
+      <section className="relative">
+        <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 md:grid-cols-[1.1fr_1fr] md:py-28">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-4 py-1.5 text-xs font-semibold text-brand">
-              <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
               Atendendo hoje em toda a cidade
             </span>
-            <h1 className="mt-5 text-balance text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl">
-              Você não precisa de marido. <span className="bg-gradient-brand bg-clip-text text-transparent">Precisa de quem resolve.</span>
+            <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight md:text-[4rem]">
+              Você não precisa de marido. <span className="text-brand">Precisa de quem resolve.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg text-muted-foreground">
-              Montagem de móveis, pequenos reparos, elétrica e hidráulica feitos com agilidade,
-              capricho e garantia. Sem dor de cabeça.
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
+              Montagem de móveis e pequenos reparos com agilidade e capricho.
+              Você escolhe o profissional — inclusive a opção com acompanhante feminina.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full bg-gradient-brand text-brand-foreground shadow-brand hover:opacity-95">
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
                 <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-5 w-5" /> Pedir orçamento grátis
+                  <MessageCircle className="mr-2 h-4 w-4" /> Pedir orçamento grátis
                 </a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-foreground/15 bg-background/60">
-                <a href="#servicos">Ver serviços</a>
+              <Button asChild size="lg" variant="ghost" className="rounded-full text-foreground hover:bg-muted">
+                <a href="#servicos">Ver serviços <ArrowRight className="ml-1.5 h-4 w-4" /></a>
               </Button>
             </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Sem taxa de visita</div>
               <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Garantia de 30 dias</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Pagamento no Pix ou cartão</div>
             </div>
           </div>
           <div className="relative">
-            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-brand opacity-20 blur-2xl" />
             <img
               src={heroImage}
-              alt="Profissional sorrindo enquanto monta móveis em uma sala iluminada"
+              alt="Ferramentas dispostas sobre fundo bege claro"
               width={1536}
-              height={1024}
-              className="rounded-[1.75rem] shadow-soft ring-1 ring-border/60"
+              height={1280}
+              className="aspect-[4/5] w-full rounded-3xl object-cover ring-1 ring-border"
             />
-            <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-card p-4 shadow-soft ring-1 ring-border md:block">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft">
-                  <Star className="h-5 w-5 fill-brand text-brand" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">4.9 / 5.0</div>
-                  <div className="text-xs text-muted-foreground">+1.200 serviços realizados</div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Profissionais — escolha */}
+      <section id="profissionais" className="border-t border-border bg-cream/60">
+        <div className="mx-auto max-w-6xl px-4 py-24">
+          <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-end">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Você escolhe</span>
+              <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+                Atendimento do jeito que faz sentido pra você.
+              </h2>
             </div>
+            <p className="text-muted-foreground md:text-lg">
+              Sabemos que receber alguém em casa exige confiança. Por isso oferecemos três
+              opções de atendimento — incluindo acompanhante feminina para clientes que moram
+              sozinhas e preferem mais segurança.
+            </p>
+          </div>
+
+          <div className="mt-14 grid gap-4 md:grid-cols-3">
+            {professionals.map(({ icon: Icon, label, desc, highlight }) => (
+              <div
+                key={label}
+                className={
+                  "relative flex flex-col rounded-2xl border p-7 transition hover:-translate-y-0.5 " +
+                  (highlight
+                    ? "border-brand/30 bg-brand-soft"
+                    : "border-border bg-card")
+                }
+              >
+                {highlight && (
+                  <span className="absolute -top-3 left-7 rounded-full bg-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-foreground">
+                    Diferencial
+                  </span>
+                )}
+                <div className={
+                  "flex h-11 w-11 items-center justify-center rounded-xl " +
+                  (highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")
+                }>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold">{label}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <a
+                  href={WHATSAPP}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-flex items-center text-sm font-medium text-foreground transition hover:text-brand"
+                >
+                  Solicitar <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex items-start gap-3 rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+            <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+            <p>
+              <span className="font-medium text-foreground">Política de segurança.</span> Todos os
+              profissionais e acompanhantes passam por verificação de documentos, antecedentes
+              e avaliação contínua dos clientes.
+            </p>
           </div>
         </div>
       </section>
 
       {/* Serviços */}
-      <section id="servicos" className="mx-auto max-w-6xl px-4 py-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-widest text-brand">Serviços</span>
-          <h2 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">Tudo o que sua casa pediu</h2>
-          <p className="mt-4 text-muted-foreground">
-            Da montagem do guarda-roupa ao vazamento da pia. Resolvemos rápido e do jeito certo.
+      <section id="servicos" className="mx-auto max-w-6xl px-4 py-24">
+        <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-end">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Serviços</span>
+            <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+              Tudo o que sua casa pediu.
+            </h2>
+          </div>
+          <p className="text-muted-foreground md:text-lg">
+            Da montagem do guarda-roupa ao vazamento da pia. Resolvemos rápido e do jeito certo,
+            com ferramentas próprias e zero bagunça.
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {services.map(({ icon: Icon, title, desc }) => (
-            <div
-              key={title}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-1 hover:shadow-soft"
-            >
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-soft opacity-0 transition group-hover:opacity-100" />
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-brand text-brand-foreground shadow-brand">
-                <Icon className="h-6 w-6" />
-              </div>
-              <h3 className="relative mt-5 text-lg font-bold">{title}</h3>
-              <p className="relative mt-2 text-sm text-muted-foreground">{desc}</p>
+            <div key={title} className="group bg-background p-7 transition hover:bg-cream">
+              <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
+              <h3 className="mt-5 text-base font-semibold">{title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Por que nós */}
-      <section id="porque" className="border-y border-border bg-cream/60">
-        <div className="mx-auto max-w-6xl px-4 py-20">
-          <div className="grid gap-10 md:grid-cols-3">
-            {reasons.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">{title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+      <section id="porque" className="border-y border-border bg-cream/50">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-3">
+          {reasons.map(({ icon: Icon, title, desc }) => (
+            <div key={title}>
+              <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
+              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Depoimentos */}
-      <section id="depoimentos" className="mx-auto max-w-6xl px-4 py-20">
+      <section className="mx-auto max-w-6xl px-4 py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="text-sm font-semibold uppercase tracking-widest text-brand">Depoimentos</span>
-          <h2 className="mt-2 text-4xl font-bold tracking-tight md:text-5xl">Quem chama, recomenda</h2>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Depoimentos</span>
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Quem chama, recomenda.</h2>
         </div>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <div className="mt-14 grid gap-5 md:grid-cols-3">
           {testimonials.map((t) => (
-            <figure key={t.name} className="rounded-2xl border border-border bg-card p-6 shadow-soft/50">
+            <figure key={t.name} className="rounded-2xl border border-border bg-card p-7">
               <div className="flex gap-0.5 text-brand">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
+                  <Star key={i} className="h-3.5 w-3.5 fill-current" />
                 ))}
               </div>
-              <blockquote className="mt-4 text-foreground">"{t.text}"</blockquote>
-              <figcaption className="mt-5 text-sm">
-                <div className="font-semibold">{t.name}</div>
+              <blockquote className="mt-4 text-foreground leading-relaxed">"{t.text}"</blockquote>
+              <figcaption className="mt-6 text-sm">
+                <div className="font-medium">{t.name}</div>
                 <div className="text-muted-foreground">{t.role}</div>
               </figcaption>
             </figure>
@@ -213,26 +281,27 @@ function Index() {
       </section>
 
       {/* CTA */}
-      <section id="contato" className="px-4 pb-20">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-brand p-10 text-brand-foreground shadow-brand md:p-14">
-          <div className="grid gap-8 md:grid-cols-[1.5fr_1fr] md:items-center">
+      <section id="contato" className="px-4 pb-24">
+        <div className="mx-auto max-w-5xl rounded-3xl bg-foreground p-10 text-background md:p-16">
+          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
                 Combinou pelo WhatsApp, resolvido no mesmo dia.
               </h2>
-              <p className="mt-3 text-brand-foreground/85">
-                Mande uma foto ou descreva o serviço. Te respondemos em minutos com orçamento.
+              <p className="mt-4 max-w-md text-background/70">
+                Mande uma foto ou descreva o serviço. Te respondemos em minutos com orçamento
+                e a opção de profissional escolhida por você.
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <Button asChild size="lg" className="rounded-full bg-background text-foreground hover:bg-background/90">
                 <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+                  <MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp
                 </a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-brand-foreground/30 bg-transparent text-brand-foreground hover:bg-brand-foreground/10 hover:text-brand-foreground">
+              <Button asChild size="lg" variant="outline" className="rounded-full border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background">
                 <a href="tel:+5511999999999">
-                  <Phone className="mr-2 h-5 w-5" /> (11) 99999-9999
+                  <Phone className="mr-2 h-4 w-4" /> (11) 99999-9999
                 </a>
               </Button>
             </div>
@@ -241,13 +310,13 @@ function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-cream/40">
+      <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground md:flex-row">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-brand">
-              <Wrench className="h-4 w-4 text-brand-foreground" />
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
+              <Wrench className="h-3.5 w-3.5" />
             </span>
-            <span className="font-semibold text-foreground">Marido pra Quê?</span>
+            <span className="font-medium text-foreground">Marido pra Quê?</span>
           </div>
           <p>© {new Date().getFullYear()} — Todos os direitos reservados.</p>
         </div>
@@ -259,9 +328,9 @@ function Index() {
         target="_blank"
         rel="noreferrer"
         aria-label="Falar no WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-brand text-brand-foreground shadow-brand transition hover:scale-105"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-soft transition hover:scale-105"
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-5 w-5" />
       </a>
     </div>
   );
