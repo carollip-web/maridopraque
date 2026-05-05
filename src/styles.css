@@ -2,6 +2,20 @@
 @source "../src";
 @import "tw-animate-css";
 
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --background-image-gradient-brand: var(--gradient-brand);
+  --background-image-gradient-warm: var(--gradient-warm);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-soft: var(--shadow-soft);
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -62,21 +76,30 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.875rem;
+  --background: oklch(0.985 0.01 80);
+  --foreground: oklch(0.22 0.03 50);
+  --brand: oklch(0.68 0.19 45);
+  --brand-foreground: oklch(0.99 0.01 80);
+  --brand-soft: oklch(0.94 0.05 75);
+  --ink: oklch(0.22 0.03 50);
+  --cream: oklch(0.97 0.02 85);
+  --gradient-brand: linear-gradient(135deg, oklch(0.72 0.2 50), oklch(0.62 0.21 35));
+  --gradient-warm: linear-gradient(180deg, oklch(0.985 0.01 80), oklch(0.94 0.05 75));
+  --shadow-brand: 0 20px 50px -20px oklch(0.62 0.21 35 / 0.45);
+  --shadow-soft: 0 10px 40px -15px oklch(0.22 0.03 50 / 0.15);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.68 0.19 45);
+  --primary-foreground: oklch(0.99 0.01 80);
+  --secondary: oklch(0.94 0.05 75);
+  --secondary-foreground: oklch(0.3 0.08 50);
+  --muted: oklch(0.95 0.015 80);
+  --muted-foreground: oklch(0.5 0.03 60);
+  --accent: oklch(0.55 0.12 200);
+  --accent-foreground: oklch(0.99 0.01 80);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
