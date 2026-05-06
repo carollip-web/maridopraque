@@ -44,34 +44,48 @@ function ClienteArea() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          
-          {/* Logo & Navigation */}
-          <div className="flex items-center gap-8">
-            <span className="text-sm font-black uppercase tracking-widest text-brand shrink-0">Área do Cliente</span>
-            
-            <nav className="hidden md:flex items-center gap-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id as Tab)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold transition-all ${
-                    activeTab === item.id 
-                    ? "bg-brand text-brand-foreground shadow-brand-soft" 
-                    : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+    <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
+      {/* Sidebar */}
+      <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-border shrink-0 z-20">
+        <div className="p-8 hidden md:block">
+           <span className="text-xs font-bold uppercase tracking-widest text-brand">Área do Cliente</span>
+        </div>
+        
+        <nav className="p-4 space-y-1">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as Tab)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === item.id 
+                ? "bg-brand text-brand-foreground shadow-brand-soft" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
-          {/* Right Actions (Bell & Avatar) */}
+        <div className="mt-auto p-4 border-t border-border hidden md:block">
+           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+             <LogOut className="h-4 w-4" />
+             Sair da conta
+           </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-10 max-w-6xl mx-auto w-full relative">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pt-4 pb-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-border/50">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {sidebarItems.find(i => i.id === activeTab)?.label}
+            </h1>
+            <p className="text-muted-foreground mt-1">Bem-vinda de volta, Carolina!</p>
+          </div>
+          
           <div className="flex items-center gap-4 relative">
             <button 
               onClick={() => {
@@ -96,21 +110,21 @@ function ClienteArea() {
 
             {/* Notification Dropdown */}
             {showNotifications && (
-               <div className="absolute top-16 right-14 w-80 bg-white rounded-3xl border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-                  <div className="p-5 border-b border-border flex justify-between items-center">
+               <div className="absolute top-14 right-14 w-80 bg-white rounded-2xl border border-border shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-4 border-b border-border flex justify-between items-center">
                      <h4 className="font-bold">Notificações</h4>
                      <button className="text-[10px] text-brand font-bold uppercase hover:underline">Marcar como lidas</button>
                   </div>
                   <div className="max-h-80 overflow-y-auto">
-                     <div className="p-5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group">
-                        <p className="text-sm font-bold group-hover:text-brand transition-colors">Orçamento Aprovado</p>
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.</p>
-                        <p className="text-[10px] text-muted-foreground mt-3 font-bold uppercase tracking-wider">Há 2 horas</p>
+                     <div className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
+                        <p className="text-sm font-bold">Orçamento Aprovado</p>
+                        <p className="text-xs text-muted-foreground mt-1">O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.</p>
+                        <p className="text-[10px] text-muted-foreground mt-2 font-bold">Há 2 horas</p>
                      </div>
-                     <div className="p-5 hover:bg-slate-50 transition-colors cursor-pointer group">
-                        <p className="text-sm font-bold group-hover:text-brand transition-colors">Lembrete de Serviço</p>
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.</p>
-                        <p className="text-[10px] text-muted-foreground mt-3 font-bold uppercase tracking-wider">Há 1 dia</p>
+                     <div className="p-4 hover:bg-slate-50 transition-colors cursor-pointer">
+                        <p className="text-sm font-bold">Lembrete de Serviço</p>
+                        <p className="text-xs text-muted-foreground mt-1">Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.</p>
+                        <p className="text-[10px] text-muted-foreground mt-2 font-bold">Há 1 dia</p>
                      </div>
                   </div>
                </div>
@@ -118,44 +132,34 @@ function ClienteArea() {
 
             {/* Profile Dropdown */}
             {showProfileMenu && (
-               <div className="absolute top-16 right-0 w-64 bg-white rounded-3xl border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-4 duration-300 overflow-hidden">
-                  <div className="p-6 border-b border-border bg-slate-50">
-                     <p className="font-bold text-base">Carolina L. Silva</p>
-                     <p className="text-xs text-muted-foreground mt-0.5">carolina@email.com</p>
+               <div className="absolute top-14 right-0 w-56 bg-white rounded-2xl border border-border shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                  <div className="p-4 border-b border-border bg-slate-50">
+                     <p className="font-bold text-sm">Carolina L. Silva</p>
+                     <p className="text-xs text-muted-foreground">carolina@email.com</p>
                   </div>
-                  <div className="p-3 space-y-1">
+                  <div className="p-2">
                      <button 
-                       className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-3 text-slate-700"
+                       className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                        onClick={() => { setActiveTab("dados"); setShowProfileMenu(false); }}
                      >
                        <User className="h-4 w-4" /> Meus Dados
                      </button>
                      <button 
-                       className="w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-3 text-slate-700"
+                       className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                        onClick={() => { setActiveTab("pagamentos"); setShowProfileMenu(false); }}
                      >
                        <CreditCard className="h-4 w-4" /> Pagamentos
                      </button>
                   </div>
-                  <div className="p-3 border-t border-border">
-                     <button className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-3">
+                  <div className="p-2 border-t border-border">
+                     <button className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
                        <LogOut className="h-4 w-4" /> Sair da conta
                      </button>
                   </div>
                </div>
             )}
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            {sidebarItems.find(i => i.id === activeTab)?.label}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-lg">Bem-vinda de volta, Carolina!</p>
-        </div>
+        </header>
 
         {activeTab === "inicio" && <DashboardTab />}
         {activeTab === "pedidos" && <PedidosTab />}
