@@ -19,11 +19,14 @@ export function Header() {
         <nav className="hidden items-center gap-8 text-sm md:flex">
           <Link to="/servicos" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Serviços</Link>
           <Link to="/profissionais" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Profissionais</Link>
-          <Link to="/pagamento" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Pagamento</Link>
           <Link to="/porque" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Por que nós</Link>
           <Link to="/contato" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Contato</Link>
+          <Link to="/login" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Entrar</Link>
+          <Link to="/cliente" className="flex items-center gap-1.5 rounded-full bg-brand/10 px-4 py-2 text-brand transition hover:bg-brand hover:text-brand-foreground [&.active]:bg-brand [&.active]:text-brand-foreground font-semibold">
+             Minha Conta
+          </Link>
         </nav>
-        <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
+        <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 md:hidden lg:flex">
           <a href={WHATSAPP} target="_blank" rel="noreferrer">
             Orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
           </a>

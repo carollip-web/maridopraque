@@ -13,7 +13,9 @@ import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as IndexRouteImport } from './routes/index'
@@ -38,9 +40,19 @@ const PagamentoRoute = PagamentoRouteImport.update({
   path: '/pagamento',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClienteRoute = ClienteRouteImport.update({
+  id: '/cliente',
+  path: '/cliente',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -63,7 +75,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
+  '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
@@ -73,7 +87,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
+  '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
@@ -84,7 +100,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
+  '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/login': typeof LoginRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
@@ -96,7 +114,9 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/checkout'
+    | '/cliente'
     | '/contato'
+    | '/login'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
@@ -106,7 +126,9 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/checkout'
+    | '/cliente'
     | '/contato'
+    | '/login'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
@@ -116,7 +138,9 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/checkout'
+    | '/cliente'
     | '/contato'
+    | '/login'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
@@ -127,7 +151,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AjudaRoute: typeof AjudaRoute
   CheckoutRoute: typeof CheckoutRoute
+  ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
+  LoginRoute: typeof LoginRoute
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRoute
@@ -164,11 +190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contato': {
       id: '/contato'
       path: '/contato'
       fullPath: '/contato'
       preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cliente': {
+      id: '/cliente'
+      path: '/cliente'
+      fullPath: '/cliente'
+      preLoaderRoute: typeof ClienteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -199,7 +239,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AjudaRoute: AjudaRoute,
   CheckoutRoute: CheckoutRoute,
+  ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
+  LoginRoute: LoginRoute,
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRoute,
