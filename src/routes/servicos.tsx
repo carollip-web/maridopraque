@@ -64,6 +64,8 @@ const serviceCategories = [
   }
 ];
 
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
+
 function Servicos() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
@@ -101,9 +103,14 @@ function Servicos() {
                     <p className="mt-4 text-muted-foreground leading-relaxed">
                       {item.details}
                     </p>
-                    <div className="mt-6 flex items-center text-sm font-semibold text-brand opacity-0 transition group-hover:opacity-100">
+                    <a 
+                      href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-6 flex items-center text-sm font-semibold text-brand opacity-0 transition group-hover:opacity-100 hover:underline"
+                    >
                       Pedir orçamento para este serviço →
-                    </div>
+                    </a>
                   </div>
                 ))}
               </div>
@@ -118,9 +125,14 @@ function Servicos() {
           Nossa equipe técnica está pronta para analisar seu caso específico e propor a melhor solução.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <button className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105">
+          <a 
+            href={WHATSAPP}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
+          >
             Chamar no WhatsApp
-          </button>
+          </a>
           <button className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10">
             Ver Central de Ajuda
           </button>
