@@ -2,7 +2,7 @@ import { Wrench, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
-const WHATSAPP = "https://wa.me/5511999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 export function Header() {
   return (

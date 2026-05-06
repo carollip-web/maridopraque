@@ -1,6 +1,6 @@
 import { Wrench, MessageCircle } from "lucide-react";
 
-const WHATSAPP = "https://wa.me/5511999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 export function Footer() {
   return (

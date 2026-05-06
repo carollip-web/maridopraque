@@ -6,7 +6,7 @@ export const Route = createFileRoute("/contato")({
   component: Contato,
 });
 
-const WHATSAPP = "https://wa.me/5511999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 function Contato() {
   return (
@@ -38,7 +38,7 @@ function Contato() {
             <div className="rounded-3xl border border-border p-8">
               <Phone className="h-6 w-6 text-brand mb-4" />
               <h3 className="font-bold">Telefone</h3>
-              <p className="mt-1 text-sm text-muted-foreground">(11) 99999-9999</p>
+              <p className="mt-1 text-sm text-muted-foreground">(21) 99999-9999</p>
             </div>
             <div className="rounded-3xl border border-border p-8">
               <Mail className="h-6 w-6 text-brand mb-4" />
@@ -56,7 +56,7 @@ function Contato() {
             <div>
               <h3 className="text-xl font-bold">Localização</h3>
               <p className="mt-1 text-muted-foreground leading-relaxed">
-                Atendemos em toda a Grande São Paulo e região metropolitana.
+                Atendemos em todo o Rio de Janeiro e região metropolitana.
               </p>
             </div>
           </div>
