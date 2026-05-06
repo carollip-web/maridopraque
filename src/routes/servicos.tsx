@@ -181,14 +181,27 @@ function Servicos() {
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                         * Materiais não inclusos • Preços base
                       </p>
-                      <a 
-                        href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center text-sm font-semibold text-brand hover:underline"
-                      >
-                        Solicitar Orçamento →
-                      </a>
+                      <div className="flex items-center gap-4">
+                        <a 
+                          href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          Solicitar Orçamento →
+                        </a>
+                        <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
+                          <Link 
+                            to="/checkout" 
+                            search={{ 
+                              service: item.name,
+                              price: 150 // Mock price or extracted from pricing
+                            }}
+                          >
+                            Agendar e Pagar (50%)
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
