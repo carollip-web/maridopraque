@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { QrCode, CreditCard, Wallet, ShieldCheck, Zap } from "lucide-react";
-import { PaymentSimulator } from "@/components/PaymentSimulator";
+import { QrCode, CreditCard, Wallet, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/pagamento")({
   component: Pagamento,
@@ -43,14 +42,21 @@ function Pagamento() {
         </div>
       </div>
 
-      <div className="mt-20 flex flex-col items-center justify-center rounded-3xl bg-foreground p-12 text-background md:p-20">
-        <Zap className="h-10 w-10 text-brand mb-6" fill="currentColor" />
-        <h2 className="text-3xl font-bold text-center">Quer simular ou pagar agora?</h2>
-        <p className="mt-4 text-center text-background/70 max-w-md">
-          Você pode usar nosso simulador para conferir o valor do seu serviço e realizar o pagamento de forma antecipada.
+      <div className="mt-20 rounded-3xl bg-brand p-12 text-center text-brand-foreground md:p-20">
+        <ShieldCheck className="h-12 w-12 mx-auto mb-6" />
+        <h2 className="text-3xl font-bold md:text-4xl">Segurança total no pagamento.</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-lg opacity-90">
+          Você só paga quando o serviço estiver concluído e aprovado por você. Aceitamos Pix com desconto ou cartão com parcelamento, tudo direto com o profissional no local.
         </p>
-        <div className="mt-10">
-          <PaymentSimulator />
+        <div className="mt-10 flex justify-center">
+          <a 
+            href="https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20pagamentos."
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-background px-10 py-4 font-bold text-foreground transition hover:scale-105 shadow-xl"
+          >
+            Tirar dúvidas no WhatsApp
+          </a>
         </div>
       </div>
 

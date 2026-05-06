@@ -14,7 +14,6 @@ import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as ContatoRouteImport } from './routes/contato'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -43,11 +42,6 @@ const ContatoRoute = ContatoRouteImport.update({
   path: '/contato',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AjudaRoute = AjudaRouteImport.update({
   id: '/ajuda',
   path: '/ajuda',
@@ -62,7 +56,6 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -72,7 +65,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -83,7 +75,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
   '/contato': typeof ContatoRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -95,7 +86,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/ajuda'
-    | '/checkout'
     | '/contato'
     | '/pagamento'
     | '/porque'
@@ -105,7 +95,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/ajuda'
-    | '/checkout'
     | '/contato'
     | '/pagamento'
     | '/porque'
@@ -115,7 +104,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/ajuda'
-    | '/checkout'
     | '/contato'
     | '/pagamento'
     | '/porque'
@@ -126,7 +114,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AjudaRoute: typeof AjudaRoute
-  CheckoutRoute: typeof CheckoutRoute
   ContatoRoute: typeof ContatoRoute
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
@@ -171,13 +158,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContatoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/ajuda': {
       id: '/ajuda'
       path: '/ajuda'
@@ -198,7 +178,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AjudaRoute: AjudaRoute,
-  CheckoutRoute: CheckoutRoute,
   ContatoRoute: ContatoRoute,
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,

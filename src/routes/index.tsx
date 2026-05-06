@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-tools.jpg";
-import { PaymentSimulator } from "@/components/PaymentSimulator";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -122,16 +121,18 @@ function Index() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-                <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Orçamento WhatsApp
-                </a>
+                <Link to="/servicos">
+                  Conhecer nossos serviços <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
-              <PaymentSimulator />
+              <Button asChild variant="outline" size="lg" className="rounded-full">
+                <Link to="/porque">Por que nos escolher?</Link>
+              </Button>
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Sem taxa de visita</div>
               <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Garantia de 30 dias</div>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Pagamento no Pix ou cartão</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Pagamento facilitado</div>
             </div>
           </div>
           <div className="relative">
@@ -146,8 +147,29 @@ function Index() {
         </div>
       </section>
 
+      {/* Por que nós (Diferenciais no topo) */}
+      <section id="porque" className="border-y border-border bg-brand-soft/30 py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-16 text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Nossos Diferenciais</span>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">O que nos torna únicos.</h2>
+          </div>
+          <div className="grid gap-10 md:grid-cols-3">
+            {reasons.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-2xl border border-border bg-card p-8 transition hover:shadow-soft">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-brand-foreground mb-6">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Profissionais — escolha */}
-      <section id="profissionais" className="border-t border-border bg-cream/60">
+      <section id="profissionais" className="bg-cream/60">
         <div className="mx-auto max-w-6xl px-4 py-24">
           <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-end">
             <div>
@@ -244,21 +266,8 @@ function Index() {
         </div>
       </section>
 
-      {/* Por que nós */}
-      <section id="porque" className="border-y border-border bg-cream/50">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 md:grid-cols-3">
-          {reasons.map(({ icon: Icon, title, desc }) => (
-            <div key={title}>
-              <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
-              <h3 className="mt-5 text-lg font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Depoimentos */}
-      <section className="mx-auto max-w-6xl px-4 py-24">
+      <section className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Depoimentos</span>
           <h2 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Quem chama, recomenda.</h2>
@@ -282,11 +291,11 @@ function Index() {
       </section>
 
       {/* Métodos de Pagamento */}
-      <section id="pagamento" className="mx-auto max-w-6xl px-4 py-24">
+      <section id="pagamento" className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
         <div className="text-center">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Pagamento</span>
           <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">Formas de pagamento seguras.</h2>
-          <p className="mt-4 text-muted-foreground md:text-lg">Facilitamos o acerto para que você foque no que importa: sua casa pronta.</p>
+          <p className="mt-4 text-muted-foreground md:text-lg">O pagamento é feito apenas após a realização do serviço.</p>
         </div>
 
         <div className="mt-14 grid gap-6 md:grid-cols-3">
@@ -300,13 +309,6 @@ function Index() {
             </div>
           ))}
         </div>
-        
-        <div className="mt-12 flex justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-sm text-muted-foreground">Quer agilizar? Você pode pagar agora e agendar depois.</p>
-            <PaymentSimulator />
-          </div>
-        </div>
       </section>
 
       {/* CTA */}
@@ -315,7 +317,7 @@ function Index() {
           <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
             <div>
               <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-                Combinou pelo WhatsApp, resolvido no mesmo dia.
+                Peça seu orçamento pelo WhatsApp agora.
               </h2>
               <p className="mt-4 max-w-md text-background/70">
                 Mande uma foto ou descreva o serviço. Te respondemos em minutos com orçamento
@@ -323,14 +325,14 @@ function Index() {
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="rounded-full bg-background text-foreground hover:bg-background/90">
+              <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90">
                 <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp
+                  <MessageCircle className="mr-2 h-4 w-4" /> Solicitar Orçamento
                 </a>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background">
-                <a href="tel:+5511999999999">
-                  <Phone className="mr-2 h-4 w-4" /> (11) 99999-9999
+                <a href="tel:+5521999999999">
+                  <Phone className="mr-2 h-4 w-4" /> (21) 99999-9999
                 </a>
               </Button>
             </div>
