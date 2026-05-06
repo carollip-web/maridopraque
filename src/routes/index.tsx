@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Hammer,
   Wrench,
@@ -101,31 +101,6 @@ const testimonials = [
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <a href="#" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
-              <Wrench className="h-4 w-4" />
-            </span>
-            <span className="text-base font-semibold tracking-tight">
-              Marido pra Quê<span className="text-brand">?</span>
-            </span>
-          </a>
-          <nav className="hidden items-center gap-8 text-sm md:flex">
-            <a href="#servicos" className="text-muted-foreground transition hover:text-foreground">Serviços</a>
-            <a href="#profissionais" className="text-muted-foreground transition hover:text-foreground">Profissionais</a>
-            <a href="#pagamento" className="text-muted-foreground transition hover:text-foreground">Pagamento</a>
-            <a href="#porque" className="text-muted-foreground transition hover:text-foreground">Por que nós</a>
-            <a href="#contato" className="text-muted-foreground transition hover:text-foreground">Contato</a>
-          </nav>
-          <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-            <a href={WHATSAPP} target="_blank" rel="noreferrer">
-              Orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </a>
-          </Button>
-        </div>
-      </header>
 
       {/* Hero */}
       <section className="relative">
@@ -209,14 +184,12 @@ function Index() {
                 </div>
                 <h3 className="mt-5 text-lg font-semibold">{label}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-                <a
-                  href={WHATSAPP}
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to="/profissionais"
                   className="mt-6 inline-flex items-center text-sm font-medium text-foreground transition hover:text-brand"
                 >
-                  Solicitar <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </a>
+                  Saiba mais <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Link>
               </div>
             ))}
           </div>
@@ -255,6 +228,12 @@ function Index() {
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
             </div>
           ))}
+        </div>
+        
+        <div className="mt-12 flex justify-center">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/servicos">Ver todos os serviços <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          </Button>
         </div>
       </section>
 
@@ -352,29 +331,6 @@ function Index() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground md:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
-              <Wrench className="h-3.5 w-3.5" />
-            </span>
-            <span className="font-medium text-foreground">Marido pra Quê?</span>
-          </div>
-          <p>© {new Date().getFullYear()} — Todos os direitos reservados.</p>
-        </div>
-      </footer>
-
-      {/* Floating WhatsApp */}
-      <a
-        href={WHATSAPP}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Falar no WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-soft transition hover:scale-105"
-      >
-        <MessageCircle className="h-5 w-5" />
-      </a>
     </div>
   );
 }

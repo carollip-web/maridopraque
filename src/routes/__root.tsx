@@ -74,6 +74,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
 }
