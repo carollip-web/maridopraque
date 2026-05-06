@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Hammer, Drill, Lightbulb, ShowerHead, PaintRoller, Wrench, Scale, FileText, HardHat } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/servicos")({
   component: Servicos,
@@ -176,18 +177,23 @@ function Servicos() {
                       </div>
                     )}
 
-                    <div className="mt-6 flex items-center justify-between">
+                    <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                         * Materiais não inclusos • Preços base
                       </p>
-                      <a 
-                        href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center text-sm font-semibold text-brand hover:underline"
-                      >
-                        Solicitar Orçamento →
-                      </a>
+                      <div className="flex items-center gap-4">
+                        <a 
+                          href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                        >
+                          Solicitar Orçamento →
+                        </a>
+                        <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
+                          <Link to="/checkout" search={{ service: item.name }}>Pagar agora</Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
