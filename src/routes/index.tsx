@@ -19,6 +19,9 @@ import {
   CreditCard,
   QrCode,
   Wallet,
+  Scale,
+  FileText,
+  HardHat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-tools.jpg";
@@ -27,11 +30,11 @@ import { PaymentSimulator } from "@/components/PaymentSimulator";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Marido pra Quê? — Montagem de móveis e pequenos reparos" },
+      { title: "Marido pra Quê? — Reparos, Obras e Regularização" },
       {
         name: "description",
         content:
-          "Serviços rápidos e confiáveis de montagem de móveis, elétrica, hidráulica e pequenos reparos. Você escolhe o profissional — inclusive opção com acompanhamento feminino.",
+          "Serviços rápidos de montagem, reparos, legalização de projetos, regularização de obras e segurança do trabalho. Você escolhe o profissional — inclusive opção com acompanhamento feminino.",
       },
       { property: "og:title", content: "Marido pra Quê? — Reparos e Montagens" },
       {
@@ -53,6 +56,9 @@ const services = [
   { icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
   { icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes e reparos em gesso." },
   { icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas e janelas." },
+  { icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
+  { icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
+  { icon: HardHat, title: "Segurança do trabalho", desc: "Laudos, treinamentos e gestão de segurança especializada." },
 ];
 
 const professionals = [
@@ -133,7 +139,7 @@ function Index() {
               Você não precisa de marido. <span className="text-brand">Precisa de quem resolve.</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Montagem de móveis e pequenos reparos com agilidade e capricho.
+              De pequenos reparos à regularização de obras com agilidade e capricho.
               Você escolhe o profissional — inclusive a opção com acompanhante feminina.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
