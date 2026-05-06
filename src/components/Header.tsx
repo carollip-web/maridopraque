@@ -1,13 +1,24 @@
 import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/hooks/useAuth";
 
 const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { isLoggedIn, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setShowProfileMenu(false);
+    navigate({ to: "/" });
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -25,7 +36,6 @@ export function Header() {
           <Link to="/profissionais" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Profissionais</Link>
           <Link to="/porque" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Por que nós</Link>
           <Link to="/contato" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Contato</Link>
-          <Link to="/login" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Entrar</Link>
         </nav>
         
         <div className="flex items-center gap-4">
@@ -36,45 +46,65 @@ export function Header() {
           </Button>
 
           <div className="flex items-center gap-4 relative">
-            <button 
-              onClick={() => {
-                 setShowNotifications(!showNotifications);
-                 setShowProfileMenu(false);
-              }}
-              className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
-            >
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-[10px] right-[10px] h-2.5 w-2.5 rounded-full bg-brand border-2 border-white box-content" />
-            </button>
+            {isLoggedIn && (
+              <button 
+                onClick={() => {
+                   setShowNotifications(!showNotifications);
+                   setShowProfileMenu(false);
+                }}
+                className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
+              >
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-[10px] right-[10px] h-2.5 w-2.5 rounded-full bg-brand border-2 border-white box-content" />
+                )}
+              </button>
+            )}
             
             <button 
               onClick={() => {
                  setShowProfileMenu(!showProfileMenu);
                  setShowNotifications(false);
               }}
-              className="h-11 w-11 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand font-bold text-lg shadow-sm hover:bg-brand/20 transition-colors focus:outline-none focus:ring-2 focus:ring-brand/20"
+              className={`h-11 w-11 rounded-full border flex items-center justify-center font-bold text-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand/20 ${isLoggedIn ? "bg-brand/10 border-brand/20 text-brand hover:bg-brand/20" : "bg-white border-border text-muted-foreground hover:bg-slate-50"}`}
             >
-              C
+              {isLoggedIn ? "C" : <User className="h-5 w-5" />}
             </button>
 
             {/* Notification Dropdown */}
-            {showNotifications && (
-               <div className="absolute top-14 right-14 w-80 bg-white rounded-2xl border border-border shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="p-4 border-b border-border flex justify-between items-center">
+            {showNotifications && isLoggedIn && (
+               <div className="absolute top-14 right-14 w-80 bg-white rounded-2xl border border-border shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                  <div className="p-4 border-b border-border flex justify-between items-center bg-slate-50">
                      <h4 className="font-bold">Notificações</h4>
-                     <button className="text-[10px] text-brand font-bold uppercase hover:underline">Marcar como lidas</button>
+                     {unreadCount > 0 && (
+                       <button className="text-[10px] text-brand font-bold uppercase hover:underline" onClick={markAllAsRead}>Marcar como lidas</button>
+                     )}
                   </div>
                   <div className="max-h-80 overflow-y-auto">
-                     <div className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
-                        <p className="text-sm font-bold">Orçamento Aprovado</p>
-                        <p className="text-xs text-muted-foreground mt-1">O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.</p>
-                        <p className="text-[10px] text-muted-foreground mt-2 font-bold">Há 2 horas</p>
-                     </div>
-                     <div className="p-4 hover:bg-slate-50 transition-colors cursor-pointer">
-                        <p className="text-sm font-bold">Lembrete de Serviço</p>
-                        <p className="text-xs text-muted-foreground mt-1">Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.</p>
-                        <p className="text-[10px] text-muted-foreground mt-2 font-bold">Há 1 dia</p>
-                     </div>
+                     {notifications.length === 0 ? (
+                       <div className="p-8 text-center text-muted-foreground text-sm">Nenhuma notificação.</div>
+                     ) : (
+                       notifications.map(n => (
+                         <div key={n.id} className={`p-4 border-b border-border transition-colors ${n.read ? "bg-white opacity-60" : "bg-brand/5 hover:bg-brand/10"}`}>
+                            <div className="flex justify-between items-start mb-1">
+                               <p className={`text-sm font-bold ${!n.read && "text-brand"}`}>{n.title}</p>
+                               {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{n.desc}</p>
+                            <div className="flex justify-between items-center mt-3">
+                               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
+                               {!n.read && (
+                                 <button className="text-[10px] text-brand font-bold hover:underline uppercase" onClick={() => markAsRead(n.id)}>Lida</button>
+                               )}
+                            </div>
+                         </div>
+                       ))
+                     )}
+                  </div>
+                  <div className="p-2 border-t border-border bg-slate-50">
+                     <Link to="/cliente" search={{ tab: "notificacoes" }} className="block w-full text-center text-xs font-bold text-brand uppercase hover:underline py-2" onClick={() => setShowNotifications(false)}>
+                        Ver todas as notificações
+                     </Link>
                   </div>
                </div>
             )}
@@ -82,24 +112,45 @@ export function Header() {
             {/* Profile Dropdown */}
             {showProfileMenu && (
                <div className="absolute top-14 right-0 w-56 bg-white rounded-2xl border border-border shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
-                  <div className="p-4 border-b border-border bg-slate-50">
-                     <p className="font-bold text-sm">Carolina L. Silva</p>
-                     <p className="text-xs text-muted-foreground">carolina@email.com</p>
-                  </div>
-                  <div className="p-2">
-                     <Link 
-                       to="/cliente"
-                       className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
-                       onClick={() => setShowProfileMenu(false)}
-                     >
-                       <User className="h-4 w-4" /> Minha Conta
-                     </Link>
-                  </div>
-                  <div className="p-2 border-t border-border">
-                     <button className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
-                       <LogOut className="h-4 w-4" /> Sair da conta
-                     </button>
-                  </div>
+                  {isLoggedIn ? (
+                    <>
+                      <div className="p-4 border-b border-border bg-slate-50">
+                         <p className="font-bold text-sm">Carolina L. Silva</p>
+                         <p className="text-xs text-muted-foreground">carolina@email.com</p>
+                      </div>
+                      <div className="p-2">
+                         <Link 
+                           to="/cliente"
+                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                           onClick={() => setShowProfileMenu(false)}
+                         >
+                           <User className="h-4 w-4" /> Minha Conta
+                         </Link>
+                      </div>
+                      <div className="p-2 border-t border-border">
+                         <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
+                           <LogOut className="h-4 w-4" /> Sair da conta
+                         </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-2">
+                       <Link 
+                         to="/login"
+                         className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                         onClick={() => setShowProfileMenu(false)}
+                       >
+                         Entrar
+                       </Link>
+                       <Link 
+                         to="/login"
+                         className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                         onClick={() => setShowProfileMenu(false)}
+                       >
+                         Cadastre-se
+                       </Link>
+                    </div>
+                  )}
                </div>
             )}
           </div>

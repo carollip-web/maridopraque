@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Chrome, Github, ShieldCheck, Wrench } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Chrome, Github, ShieldCheck, Wrench, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -10,6 +11,15 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuth = (e: React.FormEvent) => {
+    e.preventDefault();
+    login();
+    navigate({ to: "/cliente" });
+  };
 
   return (
     <div className="min-h-[calc(100-64px)] flex items-center justify-center p-4 py-20 bg-slate-50/50">
@@ -34,7 +44,7 @@ function LoginPage() {
         </div>
 
         <div className="bg-white rounded-[2.5rem] border border-border p-8 shadow-xl">
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleAuth}>
             {isRegistering && (
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Nome Completo</label>
@@ -84,10 +94,19 @@ function LoginPage() {
               </div>
             </div>
 
-            <Button asChild size="lg" className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg">
-               <Link to="/cliente">
-                  {isRegistering ? "Criar Minha Conta" : "Entrar Agora"}
-               </Link>
+            <div className="flex items-center pt-1">
+              <button 
+                type="button" 
+                onClick={() => setKeepLoggedIn(!keepLoggedIn)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-1"
+              >
+                {keepLoggedIn ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
+                Manter conectado
+              </button>
+            </div>
+
+            <Button type="submit" size="lg" className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg mt-2">
+               {isRegistering ? "Criar Minha Conta" : "Entrar Agora"}
             </Button>
           </form>
 

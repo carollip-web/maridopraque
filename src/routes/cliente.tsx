@@ -21,23 +21,31 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export const Route = createFileRoute("/cliente")({
   component: ClienteArea,
 });
 
-type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados";
+type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notificacoes";
 
 function ClienteArea() {
   const [activeTab, setActiveTab] = useState<Tab>("inicio");
+
+  useEffect(() => {
+     if (window.location.search.includes("tab=notificacoes")) {
+        setActiveTab("notificacoes");
+     }
+  }, []);
 
   const sidebarItems = [
     { id: "inicio", label: "Meu Painel", icon: LayoutDashboard },
     { id: "pedidos", label: "Pedidos e Orçamentos", icon: ClipboardList },
     { id: "servicos", label: "Histórico de Serviços", icon: History },
     { id: "pagamentos", label: "Pagamentos", icon: CreditCard },
+    { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "dados", label: "Meus Dados", icon: User },
   ];
 
@@ -85,17 +93,62 @@ function ClienteArea() {
           </div>
         </header>
 
-        {activeTab === "inicio" && <DashboardTab />}
+        {activeTab === "inicio" && <DashboardTab setActiveTab={setActiveTab} />}
         {activeTab === "pedidos" && <PedidosTab />}
         {activeTab === "servicos" && <ServicosTab />}
         {activeTab === "pagamentos" && <PagamentosTab />}
+        {activeTab === "notificacoes" && <NotificacoesTab />}
         {activeTab === "dados" && <DadosTab />}
       </main>
     </div>
   );
 }
 
-function DashboardTab() {
+function NotificacoesTab() {
+  const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold">Notificações</h3>
+        {unreadCount > 0 && (
+          <Button variant="ghost" size="sm" className="text-brand font-bold text-xs hover:bg-brand/10" onClick={markAllAsRead}>
+            Marcar todas como lidas
+          </Button>
+        )}
+      </div>
+
+      <div className="bg-white rounded-[2rem] border border-border shadow-soft divide-y divide-border overflow-hidden">
+        {notifications.length === 0 ? (
+           <div className="p-12 text-center text-muted-foreground">Você não tem nenhuma notificação.</div>
+        ) : (
+           notifications.map((n) => (
+             <div key={n.id} className={`p-6 flex gap-4 transition-colors ${n.read ? "bg-white" : "bg-brand/5"}`}>
+                <div className="mt-1">
+                   <div className={`h-2.5 w-2.5 rounded-full ${n.read ? "bg-slate-300" : "bg-brand"}`} />
+                </div>
+                <div className="flex-1">
+                   <div className="flex items-center justify-between mb-1">
+                      <p className={`text-sm font-bold ${n.read ? "text-slate-600" : "text-brand"}`}>{n.title}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
+                   </div>
+                   <p className="text-sm text-muted-foreground leading-relaxed">{n.desc}</p>
+                   
+                   {!n.read && (
+                      <button className="text-[10px] font-bold uppercase text-brand hover:underline mt-3" onClick={() => markAsRead(n.id)}>
+                        Marcar como lida
+                      </button>
+                   )}
+                </div>
+             </div>
+           ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [showBanner, setShowBanner] = useState(true);
 
   return (
@@ -123,7 +176,7 @@ function DashboardTab() {
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-bold">Atividade Recente</h2>
-            <button className="text-sm font-semibold text-brand hover:underline">Ver tudo</button>
+            <button className="text-sm font-semibold text-brand hover:underline" onClick={() => setActiveTab("servicos")}>Ver tudo</button>
           </div>
           <div className="space-y-6">
             {[
@@ -131,8 +184,12 @@ function DashboardTab() {
               { title: "Orçamento: Pintura Sala", status: "Aguardando aprovação", date: "Há 2 dias", type: "orcamento" },
               { title: "Montagem de Guarda-roupa", status: "Agendado para 10/05", date: "Há 3 dias", type: "pedido" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 group cursor-pointer">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
+              <div 
+                key={i} 
+                className="flex items-center gap-4 group cursor-pointer" 
+                onClick={() => setActiveTab(item.type === "servico" ? "servicos" : "pedidos")}
+              >
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${
                   item.type === "servico" ? "bg-green-50 text-green-600" : 
                   item.type === "orcamento" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
                 }`}>
@@ -415,6 +472,8 @@ function PagamentosTab() {
 function DadosTab() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_2fr] animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -450,13 +509,32 @@ function DadosTab() {
               <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
            </h4>
            <div className="space-y-3">
-              <Button variant="outline" className="w-full rounded-xl justify-between text-xs font-bold py-6 group">
-                Alterar Senha
-                <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <Button variant="outline" className="w-full rounded-xl justify-between text-xs font-bold py-6 group">
+              {!isEditingPassword ? (
+                 <Button variant="outline" className="w-full rounded-xl justify-between text-xs font-bold py-6 group" onClick={() => setIsEditingPassword(true)}>
+                   Alterar Senha
+                   <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                 </Button>
+              ) : (
+                 <div className="p-4 border border-brand/20 bg-brand/5 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-xs font-bold text-brand">Criar nova senha</p>
+                    <input type="password" placeholder="Senha Atual" className="w-full p-2.5 rounded-lg border border-border bg-white text-xs focus:outline-none focus:ring-1 focus:ring-brand" />
+                    <input type="password" placeholder="Nova Senha" className="w-full p-2.5 rounded-lg border border-border bg-white text-xs focus:outline-none focus:ring-1 focus:ring-brand" />
+                    <div className="flex gap-2 justify-end pt-1">
+                       <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setIsEditingPassword(false)}>Cancelar</Button>
+                       <Button size="sm" className="h-8 text-xs bg-brand text-white rounded-full px-4 font-bold" onClick={() => setIsEditingPassword(false)}>Atualizar</Button>
+                    </div>
+                 </div>
+              )}
+
+              <Button 
+                variant="outline" 
+                className={`w-full rounded-xl justify-between text-xs font-bold py-6 group transition-all ${is2FAEnabled ? "border-brand/30 bg-brand/5" : ""}`}
+                onClick={() => setIs2FAEnabled(!is2FAEnabled)}
+              >
                 Autenticação em 2 Fatores
-                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Desativado</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full transition-colors ${is2FAEnabled ? "bg-brand text-white" : "bg-amber-100 text-amber-700"}`}>
+                  {is2FAEnabled ? "Ativado" : "Desativado"}
+                </span>
               </Button>
            </div>
         </section>
