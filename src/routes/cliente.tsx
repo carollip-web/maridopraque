@@ -483,12 +483,25 @@ function DadosTab() {
   const [promoEmails, setPromoEmails] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { profilePhoto, updatePhoto } = useAuth();
+  const { profilePhoto, updatePhoto, userData, updateUserData } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [formData, setFormData] = useState(userData);
+
+  // Sincronizar formData se userData mudar (ex: login)
+  useEffect(() => {
+    setFormData(userData);
+  }, [userData]);
+
+  const handleSaveProfile = () => {
+    updateUserData(formData);
+    setIsEditingProfile(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
 
   const handleSaveAll = () => {
     setIsSaving(true);
-    // Simular salvamento
+    updateUserData(formData); // Garante que tudo seja salvo
     setTimeout(() => {
       setIsSaving(false);
       setShowSuccess(true);
@@ -525,7 +538,7 @@ function DadosTab() {
               <Camera className="h-4 w-4" />
             </div>
           </div>
-          <h3 className="text-xl font-bold">Carolina L. Silva</h3>
+          <h3 className="text-xl font-bold">{userData.name}</h3>
           <p className="text-sm text-muted-foreground">Cliente Nível Gold</p>
           
           <div className="mt-8 pt-8 border-t border-border flex justify-around">
@@ -589,8 +602,11 @@ function DadosTab() {
                  <Button size="sm" variant="ghost" className="text-brand font-bold" onClick={() => setIsEditingProfile(true)}>Editar</Button>
               ) : (
                  <div className="flex gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => setIsEditingProfile(false)}>Cancelar</Button>
-                    <Button size="sm" className="bg-brand text-white rounded-full px-6 font-bold" onClick={() => setIsEditingProfile(false)}>Salvar</Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setFormData(userData); // Reset form
+                      setIsEditingProfile(false);
+                    }}>Cancelar</Button>
+                    <Button size="sm" className="bg-brand text-white rounded-full px-6 font-bold" onClick={handleSaveProfile}>Salvar</Button>
                  </div>
               )}
            </div>
@@ -599,52 +615,58 @@ function DadosTab() {
               <div className="grid gap-x-12 gap-y-8 sm:grid-cols-2 animate-in fade-in duration-300">
                  <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
-                   <p className="text-lg font-medium text-slate-800">Carolina Lima Silva</p>
+                   <p className="text-lg font-medium text-slate-800">{userData.name}</p>
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
-                   <p className="text-lg font-medium text-slate-800">(21) 98822-1100</p>
+                   <p className="text-lg font-medium text-slate-800">{userData.whatsapp}</p>
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
-                   <p className="text-lg font-medium text-slate-800">12/08/1992</p>
+                   <p className="text-lg font-medium text-slate-800">{userData.birthDate}</p>
                  </div>
                  <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail</label>
-                   <p className="text-lg font-medium text-slate-800">carolina@email.com</p>
+                   <p className="text-lg font-medium text-slate-800">{userData.email}</p>
                  </div>
               </div>
            ) : (
               <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
-                   <input type="text" defaultValue="Carolina Lima Silva" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
-                 </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
-                   <input type="text" defaultValue="111.222.333-44" disabled className="w-full text-sm font-medium pb-2 border-b border-slate-100 text-slate-400 bg-transparent cursor-not-allowed" />
-                   <p className="text-[10px] text-muted-foreground">O CPF não pode ser alterado.</p>
+                   <input 
+                     type="text" 
+                     value={formData.name} 
+                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                     className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" 
+                   />
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
-                   <input type="text" defaultValue="(21) 98822-1100" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                   <input 
+                     type="text" 
+                     value={formData.whatsapp} 
+                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                     className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" 
+                   />
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
-                   <input type="email" defaultValue="carolina@email.com" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                   <input 
+                     type="email" 
+                     value={formData.email} 
+                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                     className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" 
+                   />
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
-                   <input type="date" defaultValue="1992-08-12" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
-                 </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
-                   <select className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent appearance-none">
-                      <option value="Feminino">Feminino</option>
-                      <option value="Masculino">Masculino</option>
-                      <option value="Outro">Outro</option>
-                      <option value="Prefiro não informar">Prefiro não informar</option>
-                   </select>
+                   <input 
+                     type="text" 
+                     value={formData.birthDate} 
+                     onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                     className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" 
+                   />
                  </div>
               </div>
            )}
