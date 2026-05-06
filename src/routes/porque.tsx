@@ -76,12 +76,52 @@ function PorqueNos() {
         </div>
       </div>
 
-      <div className="mt-24 border-t border-border pt-24 text-center">
-        <h2 className="text-4xl font-bold">Pronto para ter sua casa em ordem?</h2>
-        <div className="mt-10 flex justify-center gap-4">
-          <button className="rounded-full bg-foreground px-8 py-4 font-semibold text-background transition hover:bg-foreground/90">
-            Falar com a equipe
-          </button>
+      <div className="mt-32">
+        <h2 className="text-3xl font-bold tracking-tight text-center mb-16">O que dizem nossas clientes</h2>
+        <div className="grid gap-8 md:grid-cols-3">
+          {[
+            {
+              name: "Juliana Silva",
+              role: "Arquiteta",
+              content: "Contratei para a regularização de uma obra complexa no Rio. Foram extremamente profissionais e resolveram toda a burocracia na prefeitura."
+            },
+            {
+              name: "Beatriz Santos",
+              role: "Mora sozinha",
+              content: "A opção de vir com acompanhante feminina me deu muita paz de espírito. O serviço foi rápido e deixaram tudo limpinho."
+            },
+            {
+              name: "Carla Ferreira",
+              role: "Empresária",
+              content: "Montaram toda a mobília do meu novo escritório em um único dia. Preço justo e equipe muito educada. Recomendo de olhos fechados."
+            }
+          ].map((testi, i) => (
+            <div key={i} className="rounded-3xl border border-border bg-card p-8 shadow-sm">
+              <div className="flex gap-1 text-brand mb-4">
+                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
+              </div>
+              <p className="text-muted-foreground leading-relaxed italic mb-6">"{testi.content}"</p>
+              <div className="font-bold">{testi.name}</div>
+              <div className="text-sm text-muted-foreground">{testi.role}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-32 rounded-[3rem] bg-brand p-12 text-center text-brand-foreground md:p-24">
+        <h2 className="text-4xl font-bold md:text-5xl">Pronto para ter sua casa em ordem?</h2>
+        <p className="mt-6 text-lg opacity-90 max-w-xl mx-auto">
+          Junte-se a mais de 2.500 clientes satisfeitos no Rio de Janeiro. Agende seu serviço agora mesmo pelo WhatsApp.
+        </p>
+        <div className="mt-10 flex justify-center">
+          <a 
+            href="https://wa.me/5521999999999?text=Olá!%20Vim%20pelo%20site%20e%20quero%20um%20orçamento."
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-background px-10 py-4 font-bold text-foreground transition hover:scale-105 shadow-xl"
+          >
+            Falar com a equipe no WhatsApp
+          </a>
         </div>
       </div>
     </div>
