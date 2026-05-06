@@ -8,6 +8,7 @@ import {
   User, 
   History, 
   ChevronRight, 
+  ChevronLeft, 
   Search,
   Bell,
   Settings,

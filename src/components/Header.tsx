@@ -1,6 +1,6 @@
 import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,26 @@ export function Header() {
     setShowProfileMenu(false);
     navigate({ to: "/" });
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const container = document.getElementById("header-menu-container");
+      if (container && !container.contains(event.target as Node)) {
+        setShowNotifications(false);
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showNotifications || showProfileMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showNotifications, showProfileMenu]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -45,7 +65,7 @@ export function Header() {
             </a>
           </Button>
 
-          <div className="flex items-center gap-4 relative">
+          <div id="header-menu-container" className="flex items-center gap-4 relative">
             {isLoggedIn && (
               <button 
                 onClick={() => {
