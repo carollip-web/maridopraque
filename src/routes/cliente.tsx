@@ -84,12 +84,12 @@ function ClienteArea() {
             <p className="text-muted-foreground mt-1">Bem-vinda de volta, Carolina!</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <button className="relative p-2.5 rounded-full border border-border bg-white hover:bg-muted transition-colors">
+          <div className="flex items-center gap-4">
+            <button className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm">
               <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-brand border-2 border-white" />
+              <span className="absolute top-[10px] right-[10px] h-2.5 w-2.5 rounded-full bg-brand border-2 border-white box-content" />
             </button>
-            <div className="h-10 w-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand font-bold">
+            <div className="h-11 w-11 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center text-brand font-bold text-lg shadow-sm">
               C
             </div>
           </div>
@@ -336,6 +336,8 @@ function ServicosTab() {
 }
 
 function PagamentosTab() {
+  const [isAddingCard, setIsAddingCard] = useState(false);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid gap-6 md:grid-cols-2">
@@ -364,12 +366,30 @@ function PagamentosTab() {
                 </div>
                 <span className="text-[10px] font-bold uppercase text-brand">Padrão</span>
              </div>
-             <div className="flex items-center justify-between p-4 rounded-xl border border-border border-dashed hover:border-brand transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                   <Plus className="h-5 w-5 text-muted-foreground" />
-                   <span className="text-sm font-medium text-muted-foreground">Adicionar novo método</span>
-                </div>
-             </div>
+             {!isAddingCard ? (
+                 <div className="flex items-center justify-between p-4 rounded-xl border border-border border-dashed hover:border-brand transition-colors cursor-pointer" onClick={() => setIsAddingCard(true)}>
+                    <div className="flex items-center gap-3">
+                       <Plus className="h-5 w-5 text-muted-foreground" />
+                       <span className="text-sm font-medium text-muted-foreground">Adicionar novo método</span>
+                    </div>
+                 </div>
+             ) : (
+                 <div className="p-4 rounded-xl border border-brand/20 bg-brand/5 animate-in fade-in duration-300">
+                    <h4 className="font-bold text-sm mb-3 text-brand">Novo Cartão de Crédito</h4>
+                    <div className="space-y-3">
+                       <input type="text" placeholder="Número do Cartão" className="w-full p-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+                       <div className="flex gap-3">
+                          <input type="text" placeholder="MM/AA" className="w-1/2 p-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+                          <input type="text" placeholder="CVC" className="w-1/2 p-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+                       </div>
+                       <input type="text" placeholder="Nome como no cartão" className="w-full p-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-1 focus:ring-brand" />
+                       <div className="flex gap-2 justify-end pt-2">
+                          <Button size="sm" variant="ghost" className="h-8" onClick={() => setIsAddingCard(false)}>Cancelar</Button>
+                          <Button size="sm" className="bg-brand text-white rounded-full h-8 px-4 font-bold" onClick={() => setIsAddingCard(false)}>Salvar Cartão</Button>
+                       </div>
+                    </div>
+                 </div>
+             )}
           </div>
         </div>
       </div>
