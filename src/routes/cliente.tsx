@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -34,6 +34,13 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const [activeTab, setActiveTab] = useState<Tab>("inicio");
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate({ to: "/" });
+  };
 
   useEffect(() => {
      if (window.location.search.includes("tab=notificacoes")) {
@@ -73,10 +80,20 @@ function ClienteArea() {
               {item.label}
             </button>
           ))}
+          <button
+            onClick={handleLogout}
+            className="w-full md:hidden flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair da conta
+          </button>
         </nav>
 
         <div className="mt-auto p-4 border-t border-border hidden md:block">
-           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors">
+           <button 
+             onClick={handleLogout}
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+           >
              <LogOut className="h-4 w-4" />
              Sair da conta
            </button>
@@ -107,6 +124,62 @@ function ClienteArea() {
 
 function NotificacoesTab() {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  const selectedNotification = notifications.find(n => n.id === selectedId);
+
+  const handleNotificationClick = (id: number) => {
+    markAsRead(id);
+    setSelectedId(id);
+  };
+
+  if (selectedNotification) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <button 
+          onClick={() => setSelectedId(null)}
+          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
+        >
+          <ChevronLeft className="h-4 w-4" /> Voltar para notificações
+        </button>
+
+        <div className="bg-white rounded-[2rem] border border-border p-8 md:p-12 shadow-soft">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-14 w-14 rounded-2xl bg-[#fefaf9] flex items-center justify-center">
+              <Bell className="h-7 w-7 text-[#b85c45]" />
+            </div>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{selectedNotification.time}</p>
+          </div>
+
+          <h3 className="text-2xl font-bold text-slate-800 mb-4">{selectedNotification.title}</h3>
+          <div className="prose prose-slate max-w-none">
+            <p className="text-lg text-slate-600 leading-relaxed mb-8">
+              {selectedNotification.desc}
+            </p>
+            
+            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest text-[10px]">Informações Adicionais</p>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Protocolo</p>
+                  <p className="text-sm font-bold">#2026-0{selectedNotification.id}X-88</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ação Necessária</p>
+                  <p className="text-sm font-bold text-brand">Ver detalhes completos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row gap-4">
+            <Button className="bg-[#1a1513] text-white rounded-full px-8 font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform">Ir para o Serviço</Button>
+            <Button variant="outline" className="rounded-full px-8 font-bold h-12 border-border" onClick={() => setSelectedId(null)}>Marcar como resolvido</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -121,24 +194,28 @@ function NotificacoesTab() {
 
       <div className="bg-white rounded-[2rem] border border-border shadow-soft divide-y divide-border overflow-hidden">
         {notifications.length === 0 ? (
-           <div className="p-12 text-center text-muted-foreground">Você não tem nenhuma notificação.</div>
+           <div className="p-12 text-center text-muted-foreground font-medium">Você não tem nenhuma notificação no momento.</div>
         ) : (
            notifications.map((n) => (
-             <div key={n.id} className={`p-6 md:p-8 flex gap-5 transition-colors ${n.read ? "bg-white" : "bg-[#fefaf9]"}`}>
+             <div 
+               key={n.id} 
+               onClick={() => handleNotificationClick(n.id)}
+               className={`p-6 md:p-8 flex gap-5 transition-all cursor-pointer group hover:bg-slate-50 ${n.read ? "bg-white" : "bg-[#fefaf9]"}`}
+             >
                 <div className="mt-1.5 shrink-0">
-                   <div className={`h-2.5 w-2.5 rounded-full ${n.read ? "bg-slate-300" : "bg-[#b85c45]"}`} />
+                   <div className={`h-2.5 w-2.5 rounded-full transition-colors ${n.read ? "bg-slate-200" : "bg-[#b85c45]"}`} />
                 </div>
                 <div className="flex-1">
                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <p className={`text-base font-bold ${n.read ? "text-slate-700" : "text-[#b85c45]"}`}>{n.title}</p>
+                      <p className={`text-base font-bold transition-colors ${n.read ? "text-slate-700" : "text-[#b85c45] group-hover:text-brand"}`}>{n.title}</p>
                       <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
                    </div>
-                   <p className="text-sm text-muted-foreground leading-relaxed md:max-w-2xl">{n.desc}</p>
+                   <p className="text-sm text-muted-foreground leading-relaxed md:max-w-2xl group-hover:text-slate-600 transition-colors">{n.desc}</p>
                    
                    {!n.read && (
-                      <button className="text-[10px] font-bold uppercase tracking-wider text-[#b85c45] hover:underline mt-4" onClick={() => markAsRead(n.id)}>
-                        Marcar como lida
-                      </button>
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-[#b85c45] mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Clique para abrir →
+                      </span>
                    )}
                 </div>
              </div>
@@ -243,6 +320,10 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 }
 
 function PedidosTab() {
+  const [view, setView] = useState<"list" | "detail" | "new">("list");
+  const [selectedPedido, setSelectedPedido] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const pedidos = [
     { 
       id: "#8842", 
@@ -273,6 +354,169 @@ function PedidosTab() {
     },
   ];
 
+  const filteredPedidos = pedidos.filter(p => 
+    p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (view === "new") {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <button 
+          onClick={() => setView("list")}
+          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
+        >
+          <ChevronLeft className="h-4 w-4" /> Voltar para pedidos
+        </button>
+
+        <section className="bg-white rounded-[2.5rem] border border-border p-8 md:p-12 shadow-soft">
+           <div className="max-w-2xl">
+              <h2 className="text-3xl font-bold mb-2">Novo Pedido</h2>
+              <p className="text-muted-foreground mb-10">Conte-nos o que você precisa e enviaremos um profissional qualificado.</p>
+
+              <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); setView("list"); }}>
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">O que você precisa?</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Instalação de chuveiro, pintura de porta..." 
+                      className="w-full text-lg font-medium pb-4 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent" 
+                    />
+                 </div>
+
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Descrição Detalhada</label>
+                    <textarea 
+                      placeholder="Descreva o serviço com o máximo de detalhes possível..." 
+                      rows={3}
+                      className="w-full text-base font-medium pb-4 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent resize-none" 
+                    />
+                 </div>
+
+                 <div className="grid gap-8 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Urgência</label>
+                       <select className="w-full text-sm font-medium pb-2 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent appearance-none">
+                          <option>Padrão (até 48h)</option>
+                          <option>Urgente (hoje)</option>
+                          <option>Agendado (escolher data)</option>
+                       </select>
+                    </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fotos do Local</label>
+                       <div className="flex gap-2">
+                          <button type="button" className="h-12 w-12 rounded-xl bg-slate-50 border border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-brand hover:text-brand transition-all">
+                             <Plus className="h-5 w-5" />
+                          </button>
+                          <p className="text-xs text-muted-foreground flex items-center">Opcional, ajuda no orçamento.</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="pt-8 flex gap-4">
+                    <Button type="submit" className="bg-brand text-white rounded-full px-12 font-bold h-14 shadow-xl hover:scale-[1.02] transition-transform">Solicitar Orçamento</Button>
+                    <Button type="button" variant="ghost" onClick={() => setView("list")} className="h-14 font-bold">Cancelar</Button>
+                 </div>
+              </form>
+           </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (view === "detail" && selectedPedido) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+        <button 
+          onClick={() => setView("list")}
+          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
+        >
+          <ChevronLeft className="h-4 w-4" /> Voltar para pedidos
+        </button>
+
+        <section className="bg-white rounded-[2.5rem] border border-border p-8 md:p-12 shadow-soft">
+           <div className="flex flex-col md:flex-row justify-between gap-8 mb-12">
+              <div className="flex items-start gap-6">
+                 <div className={`h-20 w-20 rounded-3xl flex items-center justify-center font-bold text-xl shrink-0 ${
+                    selectedPedido.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
+                    selectedPedido.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
+                 }`}>
+                    {selectedPedido.id}
+                 </div>
+                 <div>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-3 ${
+                      selectedPedido.status === "Agendado" ? "bg-green-100 text-green-700" : 
+                      selectedPedido.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {selectedPedido.status}
+                    </span>
+                    <h2 className="text-3xl font-bold">{selectedPedido.title}</h2>
+                    <p className="text-muted-foreground mt-2">{selectedPedido.description}</p>
+                 </div>
+              </div>
+              <div className="text-right">
+                 <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Investimento</p>
+                 <p className="text-3xl font-bold text-slate-800">{selectedPedido.price}</p>
+              </div>
+           </div>
+
+           <div className="grid gap-12 lg:grid-cols-2">
+              <div className="space-y-8">
+                 <div className="space-y-4">
+                    <h4 className="font-bold text-lg flex items-center gap-2">
+                       <Clock className="h-5 w-5 text-brand" /> Timeline do Pedido
+                    </h4>
+                    <div className="space-y-6 pl-4 border-l-2 border-slate-100">
+                       <div className="relative pl-6">
+                          <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
+                          <p className="text-sm font-bold">Pedido solicitado</p>
+                          <p className="text-xs text-muted-foreground">{selectedPedido.date}</p>
+                       </div>
+                       {selectedPedido.status !== "Em Análise" && (
+                          <div className="relative pl-6">
+                             <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
+                             <p className="text-sm font-bold">Orçamento enviado</p>
+                             <p className="text-xs text-muted-foreground">Há 1 dia</p>
+                          </div>
+                       )}
+                       {selectedPedido.status === "Agendado" && (
+                          <div className="relative pl-6">
+                             <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-green-500 border-4 border-white shadow-sm" />
+                             <p className="text-sm font-bold">Serviço agendado</p>
+                             <p className="text-xs text-muted-foreground">{selectedPedido.date}</p>
+                          </div>
+                       )}
+                    </div>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 {selectedPedido.prof !== "-" && (
+                    <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Profissional Responsável</h4>
+                       <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-full bg-slate-200" />
+                          <div>
+                             <p className="font-bold">{selectedPedido.prof}</p>
+                             <p className="text-xs text-muted-foreground">Especialista em Manutenção</p>
+                          </div>
+                          <Button size="sm" variant="outline" className="ml-auto rounded-full text-xs font-bold">Conversar</Button>
+                       </div>
+                    </div>
+                 )}
+                 <div className="flex gap-4">
+                    {selectedPedido.status === "Aguardando Aprovação" && (
+                       <Button className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg">Aprovar Orçamento</Button>
+                    )}
+                    <Button variant="outline" className="flex-1 rounded-full font-bold h-12">Suporte</Button>
+                 </div>
+              </div>
+           </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -280,66 +524,82 @@ function PedidosTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input 
             type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por ID ou serviço..." 
             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
           />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="rounded-full px-6 shadow-sm">Filtrar</Button>
-          <Button className="rounded-full px-6 bg-[#b85c45] hover:bg-[#b85c45]/90 text-white shadow-sm font-medium">Novo Pedido</Button>
+          <Button 
+            onClick={() => setView("new")}
+            className="rounded-full px-6 bg-[#b85c45] hover:bg-[#b85c45]/90 text-white shadow-sm font-medium"
+          >
+            Novo Pedido
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-6">
-        {pedidos.map((p) => (
-          <div key={p.id} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-border shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all cursor-pointer group">
-            <div className="flex items-start gap-5">
-              <div className={`h-16 w-16 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                p.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
-                p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
-              }`}>
-                {p.id}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold text-lg">{p.title}</h3>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    p.status === "Agendado" ? "bg-green-100 text-green-700" : 
-                    p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
-                  }`}>
-                    {p.status}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-1">{p.description}</p>
-                <div className="flex items-center gap-4 mt-3">
-                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" /> {p.date}
-                   </div>
-                   {p.prof !== "-" && (
-                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Wrench className="h-3.5 w-3.5" /> {p.prof}
-                     </div>
-                   )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-8 justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-              <div className="text-left md:text-right">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Investimento</p>
-                <p className="text-xl font-bold text-foreground">{p.price}</p>
-              </div>
-              <div className="flex gap-3">
-                {p.status === "Aguardando Aprovação" && (
-                  <Button size="sm" className="rounded-full bg-[#b85c45] hover:bg-[#b85c45]/90 text-white h-10 px-5 font-medium">Aprovar</Button>
-                )}
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10 group-hover:bg-[#b85c45] group-hover:text-white transition-colors border-border shadow-sm">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+        {filteredPedidos.length === 0 ? (
+          <div className="p-12 text-center text-muted-foreground font-medium bg-white rounded-[2.5rem] border border-dashed border-border">
+             Nenhum pedido encontrado com esses termos.
           </div>
-        ))}
+        ) : (
+          filteredPedidos.map((p) => (
+            <div 
+              key={p.id} 
+              onClick={() => { setSelectedPedido(p); setView("detail"); }}
+              className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-border shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all cursor-pointer group"
+            >
+              <div className="flex items-start gap-5">
+                <div className={`h-16 w-16 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                  p.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
+                  p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
+                }`}>
+                  {p.id}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-lg group-hover:text-brand transition-colors">{p.title}</h3>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      p.status === "Agendado" ? "bg-green-100 text-green-700" : 
+                      p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {p.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">{p.description}</p>
+                  <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {p.date}</span>
+                    {p.prof !== "-" && <span className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5" /> {p.prof}</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between md:flex-col md:items-end gap-2 shrink-0">
+                <div className="text-right">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-0.5">Investimento</p>
+                  <p className="text-xl font-bold text-slate-800">{p.price}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {p.status === "Aguardando Aprovação" && (
+                    <Button 
+                      size="sm" 
+                      className="bg-brand text-white rounded-full px-6 font-bold shadow-md hover:scale-105 transition-transform"
+                      onClick={(e) => { e.stopPropagation(); alert("Orçamento Aprovado!"); }}
+                    >
+                      Aprovar
+                    </Button>
+                  )}
+                  <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center group-hover:bg-brand group-hover:text-white group-hover:border-brand transition-all">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -783,18 +1043,6 @@ function DadosTab() {
                  </div>
               </div>
            </div>
-
-           {showSuccess && (
-             <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 animate-in fade-in duration-300">
-               <div className="text-center animate-in zoom-in duration-300">
-                 <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                   <ShieldCheck className="h-8 w-8" />
-                 </div>
-                 <h4 className="text-lg font-bold">Alterações Salvas!</h4>
-                 <p className="text-sm text-muted-foreground">Suas preferências foram atualizadas.</p>
-               </div>
-             </div>
-           )}
         </section>
 
         {/* Footer Actions */}
@@ -822,6 +1070,18 @@ function DadosTab() {
            </Button>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showSuccess && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-8 duration-500">
+          <div className="bg-[#1a1513] text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-white/10">
+            <div className="h-6 w-6 bg-green-500 text-white rounded-full flex items-center justify-center">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <p className="font-bold text-sm tracking-wide">Alterações salvas com sucesso!</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
