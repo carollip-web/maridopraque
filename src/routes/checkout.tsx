@@ -6,16 +6,21 @@ import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/checkout")({
   component: Checkout,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      service: (search.service as string) || "Serviço Geral",
+    };
+  },
 });
 
 function Checkout() {
+  const { service } = Route.useSearch();
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock data - in a real app these would come from URL params or state management
-  const service = "Montagem de Guarda-Roupa";
-  const basePrice = 180;
+  // Mock pricing logic based on service
+  const basePrice = service.includes("Guarda-Roupa") ? 180 : 120;
   const discount = paymentMethod === "pix" ? 0.05 : 0;
   const finalPrice = basePrice * (1 - discount);
 
