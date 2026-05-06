@@ -17,7 +17,8 @@ const professionalDetails = [
       "Cuidado e capricho nos detalhes",
       "Ambiente de total segurança e respeito",
       "Especialista em pequenos reparos e montagens"
-    ]
+    ],
+    observation: "Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto."
   },
   {
     id: "homem",
@@ -81,6 +82,11 @@ function Profissionais() {
                 <p className="mt-6 text-muted-foreground leading-relaxed">
                   {prof.longDesc}
                 </p>
+                {prof.observation && (
+                  <p className="mt-6 text-sm font-medium text-brand/80 leading-relaxed">
+                    * {prof.observation}
+                  </p>
+                )}
               </div>
 
               <div className="rounded-3xl bg-background/50 p-8 border border-border/50">

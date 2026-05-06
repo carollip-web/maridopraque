@@ -309,6 +309,10 @@ function Checkout() {
               <Lock className="h-4 w-4 text-brand" />
               Dados protegidos com SSL 256 bits.
             </div>
+            <div className="flex items-start gap-3 text-[10px] text-muted-foreground pt-4 border-t border-border italic leading-relaxed">
+              <Info className="h-3.5 w-3.5 text-brand shrink-0" />
+              Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+            </div>
           </div>
         </div>
       </div>

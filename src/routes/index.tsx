@@ -220,13 +220,21 @@ function Index() {
             ))}
           </div>
 
-          <div className="mt-10 flex items-start gap-3 rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-            <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
-            <p>
-              <span className="font-medium text-foreground">Política de segurança.</span> Todos os
-              profissionais e acompanhantes passam por verificação de documentos, antecedentes
-              e avaliação contínua dos clientes.
-            </p>
+          <div className="mt-10 flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+            <div className="flex items-start gap-3 text-sm text-muted-foreground">
+              <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+              <p>
+                <span className="font-medium text-foreground">Política de segurança.</span> Todos os
+                profissionais e acompanhantes passam por verificação de documentos, antecedentes
+                e avaliação contínua dos clientes.
+              </p>
+            </div>
+            <div className="flex items-start gap-3 text-sm text-muted-foreground border-t border-border pt-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+              <p>
+                <span className="font-medium text-foreground">Disponibilidade.</span> Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+              </p>
+            </div>
           </div>
         </div>
       </section>

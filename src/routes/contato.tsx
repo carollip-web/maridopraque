@@ -32,6 +32,9 @@ function Contato() {
                 Mandar mensagem agora
               </a>
             </Button>
+            <p className="mt-6 text-[11px] font-medium leading-relaxed text-brand-foreground/70 text-center italic">
+              * Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
