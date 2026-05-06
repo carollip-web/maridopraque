@@ -164,7 +164,7 @@ function Index() {
           </div>
 
           <div className="mt-14 grid gap-4 md:grid-cols-3">
-            {professionals.map(({ icon: Icon, label, desc, highlight }) => (
+            {professionals.map(({ id, icon: Icon, label, desc, highlight }) => (
               <div
                 key={label}
                 className={
@@ -189,7 +189,7 @@ function Index() {
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
                 <Link
                   to="/profissionais"
-                  hash={prof.id}
+                  hash={id}
                   className="mt-6 inline-flex items-center text-sm font-medium text-foreground transition hover:text-brand"
                 >
                   Saiba mais <ArrowRight className="ml-1 h-3.5 w-3.5" />
