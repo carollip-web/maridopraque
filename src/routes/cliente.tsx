@@ -16,7 +16,10 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
-  Plus
+  Plus,
+  Camera,
+  ShieldCheck,
+  X
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -103,6 +106,8 @@ function ClienteArea() {
 }
 
 function DashboardTab() {
+  const [showBanner, setShowBanner] = useState(true);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Stats */}
@@ -156,14 +161,22 @@ function DashboardTab() {
 
         {/* Quick Actions */}
         <section className="space-y-6">
-           <div className="bg-foreground text-background rounded-[2rem] p-8 shadow-xl relative overflow-hidden">
-              <Plus className="absolute -right-4 -top-4 h-32 w-32 text-white/10 rotate-12" />
-              <h3 className="text-xl font-bold mb-2">Novo Serviço?</h3>
-              <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pelo WhatsApp.</p>
-              <Button className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold">
-                 Solicitar Agora
-              </Button>
-           </div>
+           {showBanner && (
+             <div className="bg-foreground text-background rounded-[2rem] p-8 shadow-xl relative overflow-hidden animate-in fade-in zoom-in duration-300">
+                <button 
+                  onClick={() => setShowBanner(false)}
+                  className="absolute right-6 top-6 z-10 p-2 rounded-full bg-white/10 text-white/50 hover:bg-white/20 hover:text-white transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <Plus className="absolute -right-4 -top-4 h-32 w-32 text-white/10 rotate-12" />
+                <h3 className="text-xl font-bold mb-2">Novo Serviço?</h3>
+                <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pelo WhatsApp.</p>
+                <Button className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold">
+                   Solicitar Agora
+                </Button>
+             </div>
+           )}
            
            <div className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
               <h3 className="font-bold mb-4">Dica de Segurança</h3>
@@ -391,79 +404,152 @@ function PagamentosTab() {
 
 function DadosTab() {
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.5fr] animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="grid gap-8 lg:grid-cols-[1fr_2fr] animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Profile Sidebar */}
-      <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft text-center">
-        <div className="relative mx-auto w-24 h-24 mb-6">
-          <div className="w-full h-full rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold">
-            C
+      <div className="space-y-6">
+        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft text-center">
+          <div className="relative mx-auto w-24 h-24 mb-6">
+            <div className="w-full h-full rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold">
+              C
+            </div>
+            <button className="absolute bottom-0 right-0 p-2 rounded-full bg-foreground text-background shadow-lg border-2 border-white transition hover:scale-110">
+              <Camera className="h-4 w-4" />
+            </button>
           </div>
-          <button className="absolute bottom-0 right-0 p-2 rounded-full bg-foreground text-background shadow-lg border-2 border-white">
-            <Camera className="h-4 w-4" />
-          </button>
-        </div>
-        <h3 className="text-xl font-bold">Carolina L. Silva</h3>
-        <p className="text-sm text-muted-foreground">Cliente desde Abril, 2026</p>
-        
-        <div className="mt-8 space-y-3">
-          <Button variant="outline" className="w-full rounded-full">Editar Perfil</Button>
-          <Button variant="ghost" className="w-full rounded-full text-muted-foreground hover:text-red-500">Excluir Conta</Button>
-        </div>
-      </section>
+          <h3 className="text-xl font-bold">Carolina L. Silva</h3>
+          <p className="text-sm text-muted-foreground">Cliente Nível Gold</p>
+          
+          <div className="mt-8 pt-8 border-t border-border flex justify-around">
+             <div>
+                <p className="text-xl font-bold">12</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Serviços</p>
+             </div>
+             <div className="w-px h-10 bg-border" />
+             <div>
+                <p className="text-xl font-bold">4.9</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Nota</p>
+             </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
+           <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
+           </h4>
+           <div className="space-y-3">
+              <Button variant="outline" className="w-full rounded-xl justify-between text-xs font-bold py-6 group">
+                Alterar Senha
+                <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <Button variant="outline" className="w-full rounded-xl justify-between text-xs font-bold py-6 group">
+                Autenticação em 2 Fatores
+                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Desativado</span>
+              </Button>
+           </div>
+        </section>
+      </div>
 
       {/* Profile Forms */}
       <div className="space-y-8">
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
-           <div className="flex items-center gap-3 mb-8">
-              <User className="h-5 w-5 text-brand" />
-              <h3 className="font-bold text-lg">Dados Cadastrais</h3>
+           <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                 <User className="h-5 w-5 text-brand" />
+                 <h3 className="font-bold text-lg">Dados Cadastrais</h3>
+              </div>
+              <Button size="sm" variant="ghost" className="text-brand font-bold">Editar</Button>
            </div>
-           <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">Nome Completo</label>
-                <div className="p-3 rounded-xl bg-slate-50 border border-border text-sm">Carolina Lima Silva</div>
+           <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">Carolina Lima Silva</p>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">CPF</label>
-                <div className="p-3 rounded-xl bg-slate-50 border border-border text-sm">***.442.***-89</div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">***.442.***-89</p>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">WhatsApp</label>
-                <div className="p-3 rounded-xl bg-slate-50 border border-border text-sm">(21) 98822-1100</div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">(21) 98822-1100</p>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase">E-mail</label>
-                <div className="p-3 rounded-xl bg-slate-50 border border-border text-sm">carolina@email.com</div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">carolina@email.com</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">12/08/1992</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
+                <p className="text-sm font-medium pb-2 border-b border-slate-100">Feminino</p>
               </div>
            </div>
         </section>
 
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
-           <div className="flex items-center gap-3 mb-8">
-              <MapPin className="h-5 w-5 text-brand" />
-              <h3 className="font-bold text-lg">Endereços Salvos</h3>
+           <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                 <MapPin className="h-5 w-5 text-brand" />
+                 <h3 className="font-bold text-lg">Endereços de Atendimento</h3>
+              </div>
+              <Button size="sm" className="rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white font-bold">
+                 + Novo
+              </Button>
+           </div>
+           <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { label: "Casa", address: "Rua das Flores, 120, Apto 402", neighbor: "Ipanema, RJ", cep: "22410-003", default: true },
+                { label: "Trabalho", address: "Av. Rio Branco, 500, Sala 12", neighbor: "Centro, RJ", cep: "20040-003", default: false },
+              ].map((addr) => (
+                <div key={addr.label} className={`p-6 rounded-[1.5rem] border transition-all ${addr.default ? "border-brand/20 bg-brand-soft/30 ring-1 ring-brand/10" : "border-border bg-slate-50 hover:bg-white hover:shadow-md"}`}>
+                   <div className="flex justify-between items-start mb-4">
+                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${addr.default ? "bg-brand text-white" : "bg-white text-muted-foreground"}`}>
+                         <MapPin className="h-4 w-4" />
+                      </div>
+                      {addr.default && <span className="text-[10px] font-bold uppercase text-brand">Padrão</span>}
+                   </div>
+                   <p className="font-bold text-sm mb-1">{addr.label}</p>
+                   <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{addr.address}</p>
+                   <p className="text-xs text-muted-foreground leading-relaxed">{addr.neighbor}</p>
+                   <p className="text-[10px] font-mono text-muted-foreground mt-2">{addr.cep}</p>
+                   
+                   <div className="mt-4 pt-4 border-t border-border/40 flex gap-4">
+                      <button className="text-[10px] font-bold uppercase text-brand hover:underline">Editar</button>
+                      {!addr.default && <button className="text-[10px] font-bold uppercase text-muted-foreground hover:text-brand hover:underline">Tornar Padrão</button>}
+                   </div>
+                </div>
+              ))}
+           </div>
+        </section>
+
+        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
+           <div className="flex items-center gap-3 mb-6">
+              <Bell className="h-5 w-5 text-brand" />
+              <h3 className="font-bold text-lg">Preferências de Contato</h3>
            </div>
            <div className="space-y-4">
               {[
-                { label: "Casa", address: "Rua das Flores, 120, Apto 402 — Ipanema, RJ" },
-                { label: "Trabalho", address: "Av. Rio Branco, 500, Sala 12 — Centro, RJ" },
-              ].map((addr) => (
-                <div key={addr.label} className="p-4 rounded-2xl border border-border bg-slate-50 flex items-start gap-4">
-                   <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm">
-                      <MapPin className="h-5 w-5 text-brand" />
+                { t: "Notificações via WhatsApp", d: "Avisos de agendamento e chegada do profissional.", active: true },
+                { t: "E-mails de Promoção", d: "Receba cupons de desconto e dicas de manutenção.", active: false },
+              ].map(pref => (
+                <div key={pref.t} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
+                   <div>
+                      <p className="text-sm font-bold">{pref.t}</p>
+                      <p className="text-[10px] text-muted-foreground">{pref.d}</p>
                    </div>
-                   <div className="flex-1">
-                      <p className="font-bold text-sm">{addr.label}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-1">{addr.address}</p>
+                   <div className={`h-6 w-11 rounded-full p-1 transition-colors cursor-pointer ${pref.active ? "bg-brand" : "bg-slate-300"}`}>
+                      <div className={`h-4 w-4 rounded-full bg-white transition-transform ${pref.active ? "translate-x-5" : "translate-x-0"}`} />
                    </div>
-                   <button className="text-xs font-bold text-brand">Editar</button>
                 </div>
               ))}
-              <Button variant="outline" className="w-full rounded-xl border-dashed py-6 text-muted-foreground hover:border-brand hover:text-brand transition-all">
-                <Plus className="mr-2 h-4 w-4" /> Adicionar Novo Endereço
-              </Button>
            </div>
         </section>
+
+        <div className="pt-4 flex justify-end gap-4">
+           <Button variant="ghost" className="rounded-full font-bold text-muted-foreground">Cancelar Alterações</Button>
+           <Button className="rounded-full px-8 bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg">Salvar Tudo</Button>
+        </div>
       </div>
     </div>
   );

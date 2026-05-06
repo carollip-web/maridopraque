@@ -26,6 +26,7 @@ export function Footer() {
             <Link to="/pagamento" className="transition hover:text-brand">Pagamento</Link>
             <Link to="/ajuda" className="transition hover:text-brand">Central de Ajuda</Link>
             <Link to="/contato" className="transition hover:text-brand">Contato</Link>
+            <Link to="/admin" className="text-[10px] opacity-20 transition hover:opacity-100">Admin</Link>
           </nav>
 
           <div className="flex flex-col items-center gap-2 md:items-end">
