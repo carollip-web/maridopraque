@@ -111,7 +111,7 @@ export function Header() {
                            onClick={() => {
                              markAsRead(n.id);
                              setShowNotifications(false);
-                             window.location.href = "/cliente?tab=notificacoes";
+                             navigate({ to: "/cliente", search: { tab: "notificacoes", id: n.id } as any });
                            }}
                          >
                             <div className="flex justify-between items-start mb-1">

@@ -40,6 +40,7 @@ function Checkout() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedProf, setSelectedProf] = useState<string | null>(null);
+  const [showProfInfoModal, setShowProfInfoModal] = useState(false);
   const [files, setFiles] = useState<{ name: string; type: string }[]>([]);
 
   const upfrontPercentage = 0.5;
@@ -187,7 +188,10 @@ function Checkout() {
                 ].map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => setSelectedProf(p.id)}
+                    onClick={() => {
+                      setSelectedProf(p.id);
+                      if (p.id === "mulher") setShowProfInfoModal(true);
+                    }}
                     className={`w-full flex items-center gap-6 p-6 rounded-3xl border text-left transition ${
                       selectedProf === p.id ? "border-brand bg-brand-soft/20 ring-1 ring-brand" : "border-border hover:bg-muted"
                     }`}
@@ -394,6 +398,27 @@ function Checkout() {
             </div>
           </div>
         </div>
+
+        {/* Professional Info Modal */}
+        {showProfInfoModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowProfInfoModal(false)} />
+            <div className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 p-8 md:p-10 text-center">
+               <div className="h-20 w-20 rounded-3xl bg-pink-50 text-pink-500 flex items-center justify-center mx-auto mb-6">
+                  <User className="h-10 w-10" />
+               </div>
+               <h3 className="text-2xl font-bold mb-4">Atendimento Feminino</h3>
+               <p className="text-slate-600 leading-relaxed mb-8">
+                 Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. 
+                 <br /><br />
+                 Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+               </p>
+               <Button onClick={() => setShowProfInfoModal(false)} className="w-full bg-brand text-white rounded-full h-14 font-bold text-lg shadow-lg">
+                 Entendido
+               </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

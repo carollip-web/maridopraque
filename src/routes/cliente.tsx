@@ -22,7 +22,9 @@ import {
   ShieldCheck,
   X,
   MessageCircle,
-  Phone
+  Phone,
+  Filter,
+  ChevronDown
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -131,6 +133,18 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
   const [showFullDetails, setShowFullDetails] = useState(false);
 
   const selectedNotification = notifications.find(n => n.id === selectedId);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    if (id) {
+      const numId = parseInt(id);
+      if (!isNaN(numId)) {
+        setSelectedId(numId);
+        markAsRead(numId);
+      }
+    }
+  }, []);
 
   const handleBackToList = () => {
     setSelectedId(null);
@@ -428,6 +442,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [selectedPedido, setSelectedPedido] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
 
   const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
@@ -642,25 +657,44 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
           />
         </div>
         
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex bg-slate-100 p-1 rounded-full border border-border/50">
-            {filters.map((f) => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                  activeFilter === f 
-                  ? "bg-white text-brand shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative">
+            <button 
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className="flex items-center gap-2 px-6 h-11 rounded-full border border-border bg-white text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
+            >
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span>Status: <span className="text-brand">{activeFilter}</span></span>
+              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showFilterDropdown ? "rotate-180" : ""}`} />
+            </button>
+
+            {showFilterDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
+                <div className="absolute top-full mt-2 right-0 w-56 bg-white rounded-2xl border border-border shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+                  {filters.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        setActiveFilter(f);
+                        setShowFilterDropdown(false);
+                      }}
+                      className={`w-full text-left px-5 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 ${
+                        activeFilter === f ? "text-brand bg-brand-soft/20" : "text-muted-foreground"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block" />
+          
+          <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
+          
           <Button 
-            onClick={() => setActiveTab("servicos")}
+            onClick={() => navigate({ to: "/servicos" })}
             className="rounded-full px-8 bg-brand hover:bg-brand/90 text-white shadow-lg shadow-brand/20 font-bold h-11"
           >
             Novo Pedido
