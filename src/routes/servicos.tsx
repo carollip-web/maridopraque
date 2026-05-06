@@ -7,6 +7,7 @@ export const Route = createFileRoute("/servicos")({
 
 const serviceCategories = [
   {
+    id: "montagem",
     title: "Montagem e Instalação",
     icon: Hammer,
     description: "Serviços especializados em colocar sua casa em ordem com precisão e segurança.",
@@ -22,6 +23,7 @@ const serviceCategories = [
     ]
   },
   {
+    id: "reparos",
     title: "Reparos e Manutenção",
     icon: Wrench,
     description: "Soluções rápidas para os problemas do dia a dia que exigem técnica e ferramentas certas.",
@@ -41,6 +43,7 @@ const serviceCategories = [
     ]
   },
   {
+    id: "engenharia",
     title: "Engenharia e Legalização",
     icon: Scale,
     description: "Suporte técnico e burocrático para garantir que sua obra ou projeto esteja 100% legalizado.",
@@ -76,7 +79,7 @@ function Servicos() {
 
       <div className="space-y-32">
         {serviceCategories.map((category) => (
-          <section key={category.title} className="relative">
+          <section id={category.id} key={category.title} className="relative scroll-mt-32">
             <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
               <div className="sticky top-24 self-start">
                 <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand mb-6">

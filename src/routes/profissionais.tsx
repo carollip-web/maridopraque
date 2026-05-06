@@ -7,6 +7,7 @@ export const Route = createFileRoute("/profissionais")({
 
 const professionalDetails = [
   {
+    id: "mulher",
     title: "Profissional Mulher",
     icon: UserRound,
     description: "Atendimento feito por uma profissional mulher do início ao fim.",
@@ -19,6 +20,7 @@ const professionalDetails = [
     ]
   },
   {
+    id: "homem",
     title: "Profissional Homem",
     icon: Wrench,
     description: "Equipe masculina qualificada, verificada e educada.",
@@ -31,6 +33,7 @@ const professionalDetails = [
     ]
   },
   {
+    id: "acompanhante",
     title: "Homem + Acompanhante Feminina",
     icon: HeartHandshake,
     description: "Segurança em dobro: o técnico pesado com apoio feminino.",
@@ -60,7 +63,7 @@ function Profissionais() {
 
       <div className="space-y-24">
         {professionalDetails.map((prof) => (
-          <section key={prof.title} className={"relative rounded-[3rem] p-8 md:p-16 border transition " + (prof.highlight ? "border-brand/20 bg-brand-soft/50 shadow-soft" : "border-border bg-card")}>
+          <section id={prof.id} key={prof.title} className={"relative scroll-mt-32 rounded-[3rem] p-8 md:p-16 border transition " + (prof.highlight ? "border-brand/20 bg-brand-soft/50 shadow-soft" : "border-border bg-card")}>
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
                 <div className={"flex h-16 w-16 items-center justify-center rounded-2xl mb-8 " + (prof.highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")}>

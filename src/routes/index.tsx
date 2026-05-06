@@ -50,29 +50,32 @@ export const Route = createFileRoute("/")({
 const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
 
 const services = [
-  { icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
-  { icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
-  { icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
-  { icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
-  { icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes e reparos em gesso." },
-  { icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas e janelas." },
-  { icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
-  { icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
-  { icon: HardHat, title: "Segurança do trabalho", desc: "Laudos, treinamentos e gestão de segurança especializada." },
+  { categoryId: "montagem", icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
+  { categoryId: "montagem", icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
+  { categoryId: "reparos", icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
+  { categoryId: "reparos", icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
+  { categoryId: "reparos", icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes e reparos em gesso." },
+  { categoryId: "reparos", icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas e janelas." },
+  { categoryId: "engenharia", icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
+  { categoryId: "engenharia", icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
+  { categoryId: "engenharia", icon: HardHat, title: "Segurança do trabalho", desc: "Laudos, treinamentos e gestão de segurança especializada." },
 ];
 
 const professionals = [
   {
+    id: "mulher",
     icon: UserRound,
     label: "Profissional mulher",
     desc: "Atendimento feito por uma profissional mulher do início ao fim.",
   },
   {
+    id: "homem",
     icon: Wrench,
     label: "Profissional homem",
     desc: "Equipe masculina, qualificada e verificada para qualquer serviço.",
   },
   {
+    id: "acompanhante",
     icon: HeartHandshake,
     label: "Homem + acompanhante feminina",
     desc: "Pensado para quem mora sozinha: o profissional vem com uma acompanhante mulher.",
@@ -186,6 +189,7 @@ function Index() {
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
                 <Link
                   to="/profissionais"
+                  hash={prof.id}
                   className="mt-6 inline-flex items-center text-sm font-medium text-foreground transition hover:text-brand"
                 >
                   Saiba mais <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -221,12 +225,15 @@ function Index() {
         </div>
 
         <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {services.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="group bg-background p-7 transition hover:bg-cream">
+          {services.map(({ categoryId, icon: Icon, title, desc }) => (
+            <Link key={title} to="/servicos" hash={categoryId} className="group bg-background p-7 transition hover:bg-cream">
               <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
               <h3 className="mt-5 text-base font-semibold">{title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-            </div>
+              <div className="mt-4 flex items-center text-xs font-semibold text-brand opacity-0 transition group-hover:opacity-100">
+                Ver detalhes →
+              </div>
+            </Link>
           ))}
         </div>
         
