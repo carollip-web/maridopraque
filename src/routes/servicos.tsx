@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Hammer, Drill, Lightbulb, ShowerHead, PaintRoller, Wrench, Scale, FileText, HardHat } from "lucide-react";
 
 export const Route = createFileRoute("/servicos")({
@@ -211,9 +211,12 @@ function Servicos() {
           >
             Chamar no WhatsApp
           </a>
-          <button className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10">
+          <Link 
+            to="/ajuda"
+            className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10"
+          >
             Ver Central de Ajuda
-          </button>
+          </Link>
         </div>
       </div>
     </div>
