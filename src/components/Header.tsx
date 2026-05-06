@@ -85,26 +85,37 @@ export function Header() {
                        <div className="p-8 text-center text-muted-foreground text-sm">Nenhuma notificação.</div>
                      ) : (
                        notifications.map(n => (
-                         <div key={n.id} className={`p-4 border-b border-border transition-colors ${n.read ? "bg-white opacity-60" : "bg-brand/5 hover:bg-brand/10"}`}>
+                         <div 
+                           key={n.id} 
+                           className={`p-4 border-b border-border transition-colors cursor-pointer group ${n.read ? "bg-white opacity-60 hover:opacity-100" : "bg-brand/5 hover:bg-brand/10"}`}
+                           onClick={() => {
+                             markAsRead(n.id);
+                             setShowNotifications(false);
+                             window.location.href = "/cliente?tab=notificacoes";
+                           }}
+                         >
                             <div className="flex justify-between items-start mb-1">
-                               <p className={`text-sm font-bold ${!n.read && "text-brand"}`}>{n.title}</p>
+                               <p className={`text-sm font-bold group-hover:text-brand transition-colors ${!n.read ? "text-brand" : "text-foreground"}`}>{n.title}</p>
                                {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5" />}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{n.desc}</p>
                             <div className="flex justify-between items-center mt-3">
                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
-                               {!n.read && (
-                                 <button className="text-[10px] text-brand font-bold hover:underline uppercase" onClick={() => markAsRead(n.id)}>Lida</button>
-                               )}
                             </div>
                          </div>
                        ))
                      )}
                   </div>
                   <div className="p-2 border-t border-border bg-slate-50">
-                     <Link to="/cliente" search={{ tab: "notificacoes" }} className="block w-full text-center text-xs font-bold text-brand uppercase hover:underline py-2" onClick={() => setShowNotifications(false)}>
+                     <button 
+                       className="block w-full text-center text-xs font-bold text-[#b85c45] uppercase hover:underline py-2" 
+                       onClick={() => {
+                         setShowNotifications(false);
+                         window.location.href = "/cliente?tab=notificacoes";
+                       }}
+                     >
                         Ver todas as notificações
-                     </Link>
+                     </button>
                   </div>
                </div>
             )}

@@ -276,20 +276,20 @@ function PedidosTab() {
           <input 
             type="text" 
             placeholder="Buscar por ID ou serviço..." 
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
+            className="w-full pl-10 pr-4 py-2.5 rounded-full border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
           />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl px-4">Filtrar</Button>
-          <Button className="rounded-xl px-4 bg-brand text-brand-foreground">Novo Pedido</Button>
+          <Button variant="outline" className="rounded-full px-6 shadow-sm">Filtrar</Button>
+          <Button className="rounded-full px-6 bg-[#b85c45] hover:bg-[#b85c45]/90 text-white shadow-sm font-medium">Novo Pedido</Button>
         </div>
       </div>
 
       <div className="grid gap-6">
         {pedidos.map((p) => (
-          <div key={p.id} className="bg-white p-7 rounded-[2rem] border border-border shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all cursor-pointer group">
+          <div key={p.id} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-border shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all cursor-pointer group">
             <div className="flex items-start gap-5">
-              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xs shrink-0 ${
+              <div className={`h-16 w-16 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
                 p.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
                 p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
               }`}>
@@ -298,7 +298,7 @@ function PedidosTab() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-bold text-lg">{p.title}</h3>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                     p.status === "Agendado" ? "bg-green-100 text-green-700" : 
                     p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
                   }`}>
@@ -324,11 +324,11 @@ function PedidosTab() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Investimento</p>
                 <p className="text-xl font-bold text-foreground">{p.price}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {p.status === "Aguardando Aprovação" && (
-                  <Button size="sm" className="rounded-full bg-brand text-brand-foreground h-9 px-4">Aprovar</Button>
+                  <Button size="sm" className="rounded-full bg-[#b85c45] hover:bg-[#b85c45]/90 text-white h-10 px-5 font-medium">Aprovar</Button>
                 )}
-                <Button variant="outline" size="icon" className="rounded-full h-9 w-9 group-hover:bg-brand group-hover:text-brand-foreground transition-colors">
+                <Button variant="outline" size="icon" className="rounded-full h-10 w-10 group-hover:bg-[#b85c45] group-hover:text-white transition-colors border-border shadow-sm">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
