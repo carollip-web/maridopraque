@@ -111,6 +111,9 @@ function AdminArea() {
            {activeTab === "pedidos" && <AdminPedidos />}
            {activeTab === "profissionais" && <AdminProfissionais />}
            {activeTab === "clientes" && <AdminClientes />}
+           {activeTab === "servicos" && <AdminServicos />}
+           {activeTab === "financeiro" && <AdminFinanceiro />}
+           {activeTab === "config" && <AdminConfig />}
         </div>
       </main>
     </div>
@@ -381,3 +384,180 @@ function AdminClientes() {
     </div>
   );
 }
+function AdminServicos() {
+  const categories = [
+    { name: "Pequenos Reparos", count: 24, icon: Wrench },
+    { name: "Elétrica", count: 18, icon: Zap },
+    { name: "Hidráulica", count: 12, icon: Droplets },
+    { name: "Montagem", count: 15, icon: LayoutGrid },
+  ];
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+       <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Catálogo de Serviços</h2>
+          <Button className="bg-brand text-white rounded-lg">+ Novo Serviço</Button>
+       </div>
+
+       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((cat) => (
+             <div key={cat.name} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
+                <div className="h-12 w-12 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-brand group-hover:text-white transition-colors">
+                   <cat.icon className="h-6 w-6" />
+                </div>
+                <div>
+                   <p className="font-bold text-slate-900">{cat.name}</p>
+                   <p className="text-xs text-slate-500">{cat.count} itens ativos</p>
+                </div>
+             </div>
+          ))}
+       </div>
+
+       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+             <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                <tr>
+                   <th className="px-6 py-4">Nome do Serviço</th>
+                   <th className="px-6 py-4">Categoria</th>
+                   <th className="px-6 py-4">Preço Médio</th>
+                   <th className="px-6 py-4">Popolaridade</th>
+                   <th className="px-6 py-4 text-right">Status</th>
+                </tr>
+             </thead>
+             <tbody className="divide-y divide-slate-100">
+                {[
+                  { name: "Troca de Resistência", cat: "Elétrica", price: "R$ 80", pop: "Alta", status: "Ativo" },
+                  { name: "Instalação de Chuveiro", cat: "Hidráulica", price: "R$ 120", pop: "Alta", status: "Ativo" },
+                  { name: "Montagem de Cama", cat: "Montagem", price: "R$ 150", pop: "Média", status: "Ativo" },
+                  { name: "Pintura de Parede (m²)", cat: "Reparos", price: "R$ 45", pop: "Média", status: "Inativo" },
+                ].map((s) => (
+                   <tr key={s.name} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-bold">{s.name}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{s.cat}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-slate-900">{s.price}</td>
+                      <td className="px-6 py-4">
+                         <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full bg-brand ${s.pop === "Alta" ? "w-full" : "w-1/2"}`} />
+                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${s.status === "Ativo" ? "bg-green-50 text-green-600" : "bg-slate-100 text-slate-400"}`}>
+                            {s.status}
+                         </span>
+                      </td>
+                   </tr>
+                ))}
+             </tbody>
+          </table>
+       </div>
+    </div>
+  );
+}
+
+function AdminFinanceiro() {
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+       <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Relatório Financeiro</h2>
+          <Button variant="outline" className="rounded-lg">Baixar Relatório Completo</Button>
+       </div>
+
+       <div className="grid gap-6 md:grid-cols-3">
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <p className="text-sm text-slate-500 mb-1">Volume Bruto (Mês)</p>
+             <h3 className="text-3xl font-bold">R$ 52.120,40</h3>
+             <div className="mt-4 flex items-center gap-1 text-green-600 text-xs font-bold">
+                <ArrowUpRight className="h-3 w-3" /> +8.4% vs mês anterior
+             </div>
+          </div>
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <p className="text-sm text-slate-500 mb-1">Líquido Plataforma</p>
+             <h3 className="text-3xl font-bold">R$ 10.424,08</h3>
+             <div className="mt-4 flex items-center gap-1 text-green-600 text-xs font-bold">
+                <ArrowUpRight className="h-3 w-3" /> Taxa média: 20%
+             </div>
+          </div>
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <p className="text-sm text-slate-500 mb-1">Pagamentos Pendentes</p>
+             <h3 className="text-3xl font-bold">R$ 4.150,00</h3>
+             <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
+                <Clock className="h-3 w-3" /> 8 transações em análise
+             </div>
+          </div>
+       </div>
+
+       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="p-6 border-b border-slate-100 font-bold">Fluxo de Caixa Recente</div>
+          <div className="p-6 space-y-6">
+             {[
+               { t: "Pagamento de Serviço #4092", v: "+ R$ 80,00", d: "Hoje, 14:30", s: "Concluído", c: "text-green-600" },
+               { t: "Repasse Profissional: Mariana S.", v: "- R$ 64,00", d: "Hoje, 10:00", s: "Processado", c: "text-slate-900" },
+               { t: "Pagamento de Serviço #4088", v: "+ R$ 150,00", d: "Ontem", s: "Concluído", c: "text-green-600" },
+             ].map((f, i) => (
+                <div key={i} className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-0 last:pb-0">
+                   <div>
+                      <p className="text-sm font-bold">{f.t}</p>
+                      <p className="text-xs text-slate-400">{f.d} • {f.s}</p>
+                   </div>
+                   <p className={`font-bold ${f.c}`}>{f.v}</p>
+                </div>
+             ))}
+          </div>
+       </section>
+    </div>
+  );
+}
+
+function AdminConfig() {
+  return (
+    <div className="max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+       <h2 className="text-2xl font-bold">Configurações do Sistema</h2>
+
+       <div className="space-y-6">
+          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <h3 className="font-bold mb-6 text-slate-900">Configurações Gerais</h3>
+             <div className="space-y-4">
+                <div className="grid gap-2">
+                   <label className="text-xs font-bold uppercase text-slate-500">Número Principal (WhatsApp)</label>
+                   <input type="text" defaultValue="+55 (21) 99999-9999" className="p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand outline-none" />
+                </div>
+                <div className="grid gap-2">
+                   <label className="text-xs font-bold uppercase text-slate-500">E-mail de Notificações</label>
+                   <input type="email" defaultValue="contato@maridopraque.com" className="p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand outline-none" />
+                </div>
+             </div>
+          </section>
+
+          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <h3 className="font-bold mb-6 text-slate-900">Taxas e Repasses</h3>
+             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                   <p className="text-sm font-bold">Comissão da Plataforma</p>
+                   <p className="text-xs text-slate-500">Porcentagem retida em cada serviço.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                   <input type="number" defaultValue="20" className="w-16 p-2 rounded-lg border border-slate-200 text-center font-bold" />
+                   <span className="font-bold text-slate-500">%</span>
+                </div>
+             </div>
+          </section>
+
+          <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+             <h3 className="font-bold mb-6 text-slate-900">Segurança do Painel</h3>
+             <Button variant="outline" className="w-full rounded-lg py-6 border-dashed text-slate-400 hover:text-brand transition-colors">
+                Atualizar Senha Administrativa
+             </Button>
+          </section>
+
+          <div className="flex justify-end">
+             <Button className="bg-brand text-white rounded-lg px-10 h-12 font-bold shadow-lg">Salvar Configurações</Button>
+          </div>
+       </div>
+    </div>
+  );
+}
+
+// Additional icons for Services
+const Zap = (props: any) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.71 14.71 4l-2.82 9.42 8.11-1.41-10.71 10.71 2.82-9.42z"/></svg>
+const Droplets = (props: any) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16.3c2.2 0 4-1.8 4-4 0-3.3-4-8-4-8s-4 4.7-4 8c0 2.2 1.8 4 4 4Z"/><path d="M17 21.3c1.6 0 3-1.4 3-3 0-2.5-3-6-3-6s-3 3.5-3 6c0 1.6 1.4 3 3 3Z"/></svg>
+const LayoutGrid = (props: any) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
