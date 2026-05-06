@@ -6,8 +6,8 @@ const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamen
 export function Footer() {
   return (
     <>
-      <footer className="border-t border-border bg-card/30">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 py-12 text-sm text-muted-foreground md:flex-row">
+      <footer className="sticky bottom-0 z-40 border-t border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 py-6 text-sm text-muted-foreground md:flex-row">
           <div className="flex flex-col items-center gap-4 md:items-start">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">

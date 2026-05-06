@@ -11,7 +11,7 @@ export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, logout, profilePhoto } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -39,9 +39,9 @@ export function Header() {
         </nav>
         
         <div className="flex items-center gap-4">
-          <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 hidden lg:flex">
+          <Button asChild size="sm" className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md">
             <a href={WHATSAPP} target="_blank" rel="noreferrer">
-              Orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              Orçamento
             </a>
           </Button>
 
@@ -66,9 +66,9 @@ export function Header() {
                  setShowProfileMenu(!showProfileMenu);
                  setShowNotifications(false);
               }}
-              className={`h-11 w-11 rounded-full border flex items-center justify-center font-bold text-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand/20 ${isLoggedIn ? "bg-brand/10 border-brand/20 text-brand hover:bg-brand/20" : "bg-white border-border text-muted-foreground hover:bg-slate-50"}`}
+              className={`h-11 w-11 rounded-full border flex items-center justify-center font-bold text-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand/20 overflow-hidden ${isLoggedIn && !profilePhoto ? "bg-brand/10 border-brand/20 text-brand hover:bg-brand/20" : "bg-white border-border text-muted-foreground hover:bg-slate-50"}`}
             >
-              {isLoggedIn ? "C" : <User className="h-5 w-5" />}
+              {isLoggedIn ? (profilePhoto ? <img src={profilePhoto} className="h-full w-full object-cover" alt="Perfil" /> : "C") : <User className="h-5 w-5" />}
             </button>
 
             {/* Notification Dropdown */}

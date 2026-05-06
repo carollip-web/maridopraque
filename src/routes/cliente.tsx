@@ -21,9 +21,10 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/cliente")({
   component: ClienteArea,
@@ -112,7 +113,7 @@ function NotificacoesTab() {
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold">Notificações</h3>
         {unreadCount > 0 && (
-          <Button variant="ghost" size="sm" className="text-brand font-bold text-xs hover:bg-brand/10" onClick={markAllAsRead}>
+          <Button variant="ghost" size="sm" className="text-[#b85c45] font-bold text-xs hover:bg-[#b85c45]/10 px-2" onClick={markAllAsRead}>
             Marcar todas como lidas
           </Button>
         )}
@@ -123,19 +124,19 @@ function NotificacoesTab() {
            <div className="p-12 text-center text-muted-foreground">Você não tem nenhuma notificação.</div>
         ) : (
            notifications.map((n) => (
-             <div key={n.id} className={`p-6 flex gap-4 transition-colors ${n.read ? "bg-white" : "bg-brand/5"}`}>
-                <div className="mt-1">
-                   <div className={`h-2.5 w-2.5 rounded-full ${n.read ? "bg-slate-300" : "bg-brand"}`} />
+             <div key={n.id} className={`p-6 md:p-8 flex gap-5 transition-colors ${n.read ? "bg-white" : "bg-[#fefaf9]"}`}>
+                <div className="mt-1.5 shrink-0">
+                   <div className={`h-2.5 w-2.5 rounded-full ${n.read ? "bg-slate-300" : "bg-[#b85c45]"}`} />
                 </div>
                 <div className="flex-1">
-                   <div className="flex items-center justify-between mb-1">
-                      <p className={`text-sm font-bold ${n.read ? "text-slate-600" : "text-brand"}`}>{n.title}</p>
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <p className={`text-base font-bold ${n.read ? "text-slate-700" : "text-[#b85c45]"}`}>{n.title}</p>
                       <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
                    </div>
-                   <p className="text-sm text-muted-foreground leading-relaxed">{n.desc}</p>
+                   <p className="text-sm text-muted-foreground leading-relaxed md:max-w-2xl">{n.desc}</p>
                    
                    {!n.read && (
-                      <button className="text-[10px] font-bold uppercase text-brand hover:underline mt-3" onClick={() => markAsRead(n.id)}>
+                      <button className="text-[10px] font-bold uppercase tracking-wider text-[#b85c45] hover:underline mt-4" onClick={() => markAsRead(n.id)}>
                         Marcar como lida
                       </button>
                    )}
@@ -156,16 +157,20 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Serviços Realizados", value: "12", icon: CheckCircle2, color: "text-green-600" },
-          { label: "Pedidos Ativos", value: "2", icon: Clock, color: "text-brand" },
-          { label: "Orçamentos Pendentes", value: "1", icon: AlertCircle, color: "text-amber-500" },
-          { label: "Total Investido", value: "R$ 2.450", icon: CreditCard, color: "text-slate-600" },
+          { label: "Serviços Realizados", value: "12", icon: CheckCircle2, color: "text-green-600", tab: "servicos" as const },
+          { label: "Pedidos Ativos", value: "2", icon: Clock, color: "text-[#b85c45]", tab: "pedidos" as const },
+          { label: "Orçamentos Pendentes", value: "1", icon: AlertCircle, color: "text-amber-500", tab: "pedidos" as const },
+          { label: "Total Investido", value: "R$ 2.450", icon: CreditCard, color: "text-slate-600", tab: "pagamentos" as const },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white p-6 rounded-3xl border border-border shadow-soft">
-            <div className={`h-10 w-10 rounded-2xl bg-muted flex items-center justify-center mb-4 ${stat.color}`}>
-              <stat.icon className="h-5 w-5" />
+          <div 
+            key={stat.label} 
+            className="bg-white p-6 rounded-3xl border border-border shadow-soft hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group"
+            onClick={() => setActiveTab(stat.tab)}
+          >
+            <div className={`h-11 w-11 rounded-full bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-brand/10 transition-colors`}>
+              <stat.icon className={`h-5 w-5 ${stat.color}`} />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+            <p className="text-sm font-medium text-muted-foreground group-hover:text-brand transition-colors">{stat.label}</p>
             <p className="text-2xl font-bold mt-1">{stat.value}</p>
           </div>
         ))}
@@ -474,19 +479,51 @@ function DadosTab() {
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [whatsappNotifications, setWhatsappNotifications] = useState(true);
+  const [promoEmails, setPromoEmails] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { profilePhoto, updatePhoto } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveAll = () => {
+    setIsSaving(true);
+    // Simular salvamento
+    setTimeout(() => {
+      setIsSaving(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1500);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updatePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_2fr] animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Profile Sidebar */}
       <div className="space-y-6">
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft text-center">
-          <div className="relative mx-auto w-24 h-24 mb-6">
-            <div className="w-full h-full rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold">
-              C
-            </div>
-            <button className="absolute bottom-0 right-0 p-2 rounded-full bg-foreground text-background shadow-lg border-2 border-white transition hover:scale-110">
+          <div className="relative mx-auto w-24 h-24 mb-6 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <input type="file" className="hidden" accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
+            {profilePhoto ? (
+               <img src={profilePhoto} alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-brand/20" />
+            ) : (
+               <div className="w-full h-full rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold">
+                 C
+               </div>
+            )}
+            <div className="absolute bottom-0 right-0 p-2 rounded-full bg-[#2a1f1d] text-white shadow-lg border-2 border-white transition group-hover:scale-110">
               <Camera className="h-4 w-4" />
-            </button>
+            </div>
           </div>
           <h3 className="text-xl font-bold">Carolina L. Silva</h3>
           <p className="text-sm text-muted-foreground">Cliente Nível Gold</p>
@@ -559,30 +596,22 @@ function DadosTab() {
            </div>
            
            {!isEditingProfile ? (
-              <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
-                 <div className="space-y-1.5">
+              <div className="grid gap-x-12 gap-y-8 sm:grid-cols-2 animate-in fade-in duration-300">
+                 <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">Carolina Lima Silva</p>
+                   <p className="text-lg font-medium text-slate-800">Carolina Lima Silva</p>
                  </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">***.442.***-89</p>
-                 </div>
-                 <div className="space-y-1.5">
+                 <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">(21) 98822-1100</p>
+                   <p className="text-lg font-medium text-slate-800">(21) 98822-1100</p>
                  </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">carolina@email.com</p>
-                 </div>
-                 <div className="space-y-1.5">
+                 <div className="space-y-2">
                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">12/08/1992</p>
+                   <p className="text-lg font-medium text-slate-800">12/08/1992</p>
                  </div>
-                 <div className="space-y-1.5">
-                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
-                   <p className="text-sm font-medium pb-2 border-b border-slate-100">Feminino</p>
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail</label>
+                   <p className="text-lg font-medium text-slate-800">carolina@email.com</p>
                  </div>
               </div>
            ) : (
@@ -693,32 +722,82 @@ function DadosTab() {
            </div>
         </section>
 
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
-           <div className="flex items-center gap-3 mb-6">
-              <Bell className="h-5 w-5 text-brand" />
+        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft relative overflow-hidden">
+           <div className="flex items-center gap-3 mb-8">
+              <div className="h-10 w-10 rounded-2xl bg-brand/10 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-brand" />
+              </div>
               <h3 className="font-bold text-lg">Preferências de Contato</h3>
            </div>
+           
            <div className="space-y-4">
-              {[
-                { t: "Notificações via WhatsApp", d: "Avisos de agendamento e chegada do profissional.", active: true },
-                { t: "E-mails de Promoção", d: "Receba cupons de desconto e dicas de manutenção.", active: false },
-              ].map(pref => (
-                <div key={pref.t} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                   <div>
-                      <p className="text-sm font-bold">{pref.t}</p>
-                      <p className="text-[10px] text-muted-foreground">{pref.d}</p>
-                   </div>
-                   <div className={`h-6 w-11 rounded-full p-1 transition-colors cursor-pointer ${pref.active ? "bg-brand" : "bg-slate-300"}`}>
-                      <div className={`h-4 w-4 rounded-full bg-white transition-transform ${pref.active ? "translate-x-5" : "translate-x-0"}`} />
-                   </div>
-                </div>
-              ))}
+              <div 
+                className="flex items-center justify-between p-6 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 hover:border-brand/10 transition-colors cursor-pointer group"
+                onClick={() => setWhatsappNotifications(!whatsappNotifications)}
+              >
+                 <div>
+                    <p className="text-sm font-bold group-hover:text-brand transition-colors">Notificações via WhatsApp</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Avisos de agendamento e chegada do profissional.</p>
+                 </div>
+                 <div 
+                   className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${whatsappNotifications ? 'bg-[#b85c45]' : 'bg-slate-200'}`}
+                 >
+                   <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${whatsappNotifications ? 'translate-x-5' : 'translate-x-0'}`} />
+                 </div>
+              </div>
+
+              <div 
+                className="flex items-center justify-between p-6 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 hover:border-brand/10 transition-colors cursor-pointer group"
+                onClick={() => setPromoEmails(!promoEmails)}
+              >
+                 <div>
+                    <p className="text-sm font-bold group-hover:text-brand transition-colors">E-mails de Promoção</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Receba cupons de desconto e dicas de manutenção.</p>
+                 </div>
+                 <div 
+                   className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${promoEmails ? 'bg-[#b85c45]' : 'bg-slate-200'}`}
+                 >
+                   <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${promoEmails ? 'translate-x-5' : 'translate-x-0'}`} />
+                 </div>
+              </div>
            </div>
+
+           {showSuccess && (
+             <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 animate-in fade-in duration-300">
+               <div className="text-center animate-in zoom-in duration-300">
+                 <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                   <ShieldCheck className="h-8 w-8" />
+                 </div>
+                 <h4 className="text-lg font-bold">Alterações Salvas!</h4>
+                 <p className="text-sm text-muted-foreground">Suas preferências foram atualizadas.</p>
+               </div>
+             </div>
+           )}
         </section>
 
-        <div className="pt-4 flex justify-end gap-4">
-           <Button variant="ghost" className="rounded-full font-bold text-muted-foreground">Cancelar Alterações</Button>
-           <Button className="rounded-full px-8 bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg">Salvar Tudo</Button>
+        {/* Footer Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-6 pt-4">
+           <button 
+             className="text-sm font-bold text-muted-foreground hover:text-brand transition-colors"
+             onClick={() => {
+               setWhatsappNotifications(true);
+               setPromoEmails(false);
+             }}
+           >
+              Cancelar Alterações
+           </button>
+           <Button 
+             onClick={handleSaveAll}
+             disabled={isSaving}
+             className="w-full sm:w-auto h-14 rounded-full bg-[#1a1513] hover:bg-black text-white px-12 font-bold shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70"
+           >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </div>
+              ) : "Salvar Tudo"}
+           </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 let isLoggedIn = false;
+let profilePhoto: string | null = null;
 const listeners = new Set<() => void>();
 
 const notifyListeners = () => {
@@ -8,13 +9,18 @@ const notifyListeners = () => {
 };
 
 export const authStore = {
-  getSnapshot: () => isLoggedIn,
+  getSnapshot: () => ({ isLoggedIn, profilePhoto }),
   login: () => {
     isLoggedIn = true;
     notifyListeners();
   },
   logout: () => {
     isLoggedIn = false;
+    profilePhoto = null;
+    notifyListeners();
+  },
+  updatePhoto: (dataUrl: string) => {
+    profilePhoto = dataUrl;
     notifyListeners();
   },
   subscribe: (listener: () => void) => {
@@ -24,17 +30,19 @@ export const authStore = {
 };
 
 export function useAuth() {
-  const [loggedIn, setLoggedIn] = useState(authStore.getSnapshot());
+  const [state, setState] = useState(authStore.getSnapshot());
 
   useEffect(() => {
     return authStore.subscribe(() => {
-      setLoggedIn(authStore.getSnapshot());
+      setState(authStore.getSnapshot());
     });
   }, []);
 
   return {
-    isLoggedIn: loggedIn,
+    isLoggedIn: state.isLoggedIn,
+    profilePhoto: state.profilePhoto,
     login: authStore.login,
-    logout: authStore.logout
+    logout: authStore.logout,
+    updatePhoto: authStore.updatePhoto
   };
 }
