@@ -36,7 +36,7 @@ function ClienteArea() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const sidebarItems = [
-    { id: "inicio", label: "Dashboard", icon: LayoutDashboard },
+    { id: "inicio", label: "Meu Painel", icon: LayoutDashboard },
     { id: "pedidos", label: "Pedidos e Orçamentos", icon: ClipboardList },
     { id: "servicos", label: "Histórico de Serviços", icon: History },
     { id: "pagamentos", label: "Pagamentos", icon: CreditCard },
