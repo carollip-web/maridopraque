@@ -403,6 +403,9 @@ function PagamentosTab() {
 }
 
 function DadosTab() {
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_2fr] animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Profile Sidebar */}
@@ -457,34 +460,77 @@ function DadosTab() {
                  <User className="h-5 w-5 text-brand" />
                  <h3 className="font-bold text-lg">Dados Cadastrais</h3>
               </div>
-              <Button size="sm" variant="ghost" className="text-brand font-bold">Editar</Button>
+              {!isEditingProfile ? (
+                 <Button size="sm" variant="ghost" className="text-brand font-bold" onClick={() => setIsEditingProfile(true)}>Editar</Button>
+              ) : (
+                 <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditingProfile(false)}>Cancelar</Button>
+                    <Button size="sm" className="bg-brand text-white rounded-full px-6 font-bold" onClick={() => setIsEditingProfile(false)}>Salvar</Button>
+                 </div>
+              )}
            </div>
-           <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">Carolina Lima Silva</p>
+           
+           {!isEditingProfile ? (
+              <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">Carolina Lima Silva</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">***.442.***-89</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">(21) 98822-1100</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">carolina@email.com</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">12/08/1992</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
+                   <p className="text-sm font-medium pb-2 border-b border-slate-100">Feminino</p>
+                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">***.442.***-89</p>
+           ) : (
+              <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome Completo</label>
+                   <input type="text" defaultValue="Carolina Lima Silva" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">CPF</label>
+                   <input type="text" defaultValue="111.222.333-44" disabled className="w-full text-sm font-medium pb-2 border-b border-slate-100 text-slate-400 bg-transparent cursor-not-allowed" />
+                   <p className="text-[10px] text-muted-foreground">O CPF não pode ser alterado.</p>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
+                   <input type="text" defaultValue="(21) 98822-1100" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
+                   <input type="email" defaultValue="carolina@email.com" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
+                   <input type="date" defaultValue="1992-08-12" className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent" />
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
+                   <select className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent appearance-none">
+                      <option value="Feminino">Feminino</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Outro">Outro</option>
+                      <option value="Prefiro não informar">Prefiro não informar</option>
+                   </select>
+                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">(21) 98822-1100</p>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail Principal</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">carolina@email.com</p>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data de Nascimento</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">12/08/1992</p>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gênero</label>
-                <p className="text-sm font-medium pb-2 border-b border-slate-100">Feminino</p>
-              </div>
-           </div>
+           )}
         </section>
 
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
@@ -493,10 +539,45 @@ function DadosTab() {
                  <MapPin className="h-5 w-5 text-brand" />
                  <h3 className="font-bold text-lg">Endereços de Atendimento</h3>
               </div>
-              <Button size="sm" className="rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white font-bold">
-                 + Novo
-              </Button>
+              {!isAddingAddress && (
+                 <Button size="sm" className="rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white font-bold transition-colors" onClick={() => setIsAddingAddress(true)}>
+                    + Novo
+                 </Button>
+              )}
            </div>
+
+           {isAddingAddress && (
+              <div className="mb-8 p-6 rounded-2xl border border-brand/30 bg-brand/5 animate-in fade-in duration-300">
+                 <h4 className="font-bold mb-4 text-brand">Adicionar Novo Endereço</h4>
+                 <div className="grid gap-4 sm:grid-cols-2 mb-6">
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase">Nome do Local (Ex: Casa)</label>
+                       <input type="text" className="w-full p-2.5 rounded-xl border border-border bg-white text-sm" placeholder="Meu Apartamento" />
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase">CEP</label>
+                       <input type="text" className="w-full p-2.5 rounded-xl border border-border bg-white text-sm" placeholder="00000-000" />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase">Endereço Completo</label>
+                       <input type="text" className="w-full p-2.5 rounded-xl border border-border bg-white text-sm" placeholder="Rua, Avenida, etc." />
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase">Número</label>
+                       <input type="text" className="w-full p-2.5 rounded-xl border border-border bg-white text-sm" placeholder="123" />
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-bold text-muted-foreground uppercase">Complemento / Bairro</label>
+                       <input type="text" className="w-full p-2.5 rounded-xl border border-border bg-white text-sm" placeholder="Apto 101, Centro" />
+                    </div>
+                 </div>
+                 <div className="flex gap-3 justify-end">
+                    <Button variant="ghost" onClick={() => setIsAddingAddress(false)}>Cancelar</Button>
+                    <Button className="bg-brand text-white rounded-full font-bold px-8" onClick={() => setIsAddingAddress(false)}>Salvar Endereço</Button>
+                 </div>
+              </div>
+           )}
+
            <div className="grid gap-4 sm:grid-cols-2">
               {[
                 { label: "Casa", address: "Rua das Flores, 120, Apto 402", neighbor: "Ipanema, RJ", cep: "22410-003", default: true },
@@ -517,6 +598,7 @@ function DadosTab() {
                    <div className="mt-4 pt-4 border-t border-border/40 flex gap-4">
                       <button className="text-[10px] font-bold uppercase text-brand hover:underline">Editar</button>
                       {!addr.default && <button className="text-[10px] font-bold uppercase text-muted-foreground hover:text-brand hover:underline">Tornar Padrão</button>}
+                      {!addr.default && <button className="text-[10px] font-bold uppercase text-red-500 hover:underline ml-auto">Remover</button>}
                    </div>
                 </div>
               ))}
