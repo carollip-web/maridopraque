@@ -20,7 +20,9 @@ import {
   Plus,
   Camera,
   ShieldCheck,
-  X
+  X,
+  MessageCircle,
+  Phone
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -113,21 +115,27 @@ function ClienteArea() {
         </header>
 
         {activeTab === "inicio" && <DashboardTab setActiveTab={setActiveTab} />}
-        {activeTab === "pedidos" && <PedidosTab />}
+        {activeTab === "pedidos" && <PedidosTab setActiveTab={setActiveTab} />}
         {activeTab === "servicos" && <ServicosTab />}
         {activeTab === "pagamentos" && <PagamentosTab />}
-        {activeTab === "notificacoes" && <NotificacoesTab />}
+        {activeTab === "notificacoes" && <NotificacoesTab setActiveTab={setActiveTab} />}
         {activeTab === "dados" && <DadosTab />}
       </main>
     </div>
   );
 }
 
-function NotificacoesTab() {
+function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showFullDetails, setShowFullDetails] = useState(false);
 
   const selectedNotification = notifications.find(n => n.id === selectedId);
+
+  const handleBackToList = () => {
+    setSelectedId(null);
+    setShowFullDetails(false);
+  };
 
   const handleNotificationClick = (id: number) => {
     markAsRead(id);
@@ -135,10 +143,95 @@ function NotificacoesTab() {
   };
 
   if (selectedNotification) {
+    if (showFullDetails) {
+      return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+          <button 
+            onClick={() => setShowFullDetails(false)}
+            className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
+          >
+            <ChevronLeft className="h-4 w-4" /> Voltar para a mensagem
+          </button>
+
+          <div className="bg-white rounded-[2rem] border border-border p-8 md:p-12 shadow-soft">
+            <h3 className="text-2xl font-bold text-slate-800 mb-8">Detalhamento Completo</h3>
+            
+            <div className="space-y-10">
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Resumo do Serviço</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Tipo:</span>
+                      <span className="text-sm font-bold">{selectedNotification.title}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Protocolo:</span>
+                      <span className="text-sm font-bold">#2026-0{selectedNotification.id}X-88</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Data Solicitação:</span>
+                      <span className="text-sm font-bold">{selectedNotification.time}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Financeiro</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Mão de Obra:</span>
+                      <span className="text-sm font-bold">R$ 120,00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Taxa de Visita:</span>
+                      <span className="text-sm font-bold">R$ 30,00</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 flex justify-between">
+                      <span className="text-sm font-bold text-brand">Total Estimado:</span>
+                      <span className="text-sm font-bold text-brand">R$ 150,00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Histórico de Alterações</p>
+                 <div className="space-y-4">
+                    {[
+                      { date: "Hoje, 14:00", text: "Orçamento aprovado pelo profissional" },
+                      { date: "Ontem, 09:30", text: "Profissional Ricardo M. aceitou o chamado" },
+                      { date: "Ontem, 08:00", text: "Pedido registrado no sistema" },
+                    ].map((h, i) => (
+                      <div key={i} className="flex gap-4 items-start">
+                         <div className="h-2 w-2 rounded-full bg-slate-300 mt-1.5 shrink-0" />
+                         <div>
+                            <p className="text-sm font-medium text-slate-700">{h.text}</p>
+                            <p className="text-[10px] text-muted-foreground">{h.date}</p>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-border">
+               <Button 
+                 onClick={() => setActiveTab("pedidos")}
+                 className="bg-brand text-white rounded-full px-8 font-bold h-12 shadow-lg"
+               >
+                 Acessar Central de Pedidos
+               </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
         <button 
-          onClick={() => setSelectedId(null)}
+          onClick={handleBackToList}
           className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
         >
           <ChevronLeft className="h-4 w-4" /> Voltar para notificações
@@ -167,15 +260,25 @@ function NotificacoesTab() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ação Necessária</p>
-                  <p className="text-sm font-bold text-brand">Ver detalhes completos</p>
+                  <button 
+                    onClick={() => setShowFullDetails(true)}
+                    className="text-sm font-bold text-brand hover:underline block text-left"
+                  >
+                    Ver detalhes completos
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row gap-4">
-            <Button className="bg-[#1a1513] text-white rounded-full px-8 font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform">Ir para o Serviço</Button>
-            <Button variant="outline" className="rounded-full px-8 font-bold h-12 border-border" onClick={() => setSelectedId(null)}>Marcar como resolvido</Button>
+            <Button 
+              onClick={() => setActiveTab("pedidos")}
+              className="bg-[#1a1513] text-white rounded-full px-8 font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
+            >
+              Ir para o Serviço
+            </Button>
+            <Button variant="outline" className="rounded-full px-8 font-bold h-12 border-border" onClick={handleBackToList}>Marcar como resolvido</Button>
           </div>
         </div>
       </div>
@@ -320,10 +423,16 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   );
 }
 
-function PedidosTab() {
-  const [view, setView] = useState<"list" | "detail" | "new">("list");
+function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
+  const [view, setView] = useState<"list" | "detail">("list");
   const [selectedPedido, setSelectedPedido] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("Todos");
+  const [showConversar, setShowConversar] = useState(false);
+
+  const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
+
+  const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20sobre%20meu%20pedido.";
 
   const pedidos = [
     { 
@@ -355,75 +464,12 @@ function PedidosTab() {
     },
   ];
 
-  const filteredPedidos = pedidos.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (view === "new") {
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-        <button 
-          onClick={() => setView("list")}
-          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
-        >
-          <ChevronLeft className="h-4 w-4" /> Voltar para pedidos
-        </button>
-
-        <section className="bg-white rounded-[2.5rem] border border-border p-8 md:p-12 shadow-soft">
-           <div className="max-w-2xl">
-              <h2 className="text-3xl font-bold mb-2">Novo Pedido</h2>
-              <p className="text-muted-foreground mb-10">Conte-nos o que você precisa e enviaremos um profissional qualificado.</p>
-
-              <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); setView("list"); }}>
-                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">O que você precisa?</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Instalação de chuveiro, pintura de porta..." 
-                      className="w-full text-lg font-medium pb-4 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent" 
-                    />
-                 </div>
-
-                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Descrição Detalhada</label>
-                    <textarea 
-                      placeholder="Descreva o serviço com o máximo de detalhes possível..." 
-                      rows={3}
-                      className="w-full text-base font-medium pb-4 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent resize-none" 
-                    />
-                 </div>
-
-                 <div className="grid gap-8 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Urgência</label>
-                       <select className="w-full text-sm font-medium pb-2 border-b border-border focus:outline-none focus:border-brand transition-colors bg-transparent appearance-none">
-                          <option>Padrão (até 48h)</option>
-                          <option>Urgente (hoje)</option>
-                          <option>Agendado (escolher data)</option>
-                       </select>
-                    </div>
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fotos do Local</label>
-                       <div className="flex gap-2">
-                          <button type="button" className="h-12 w-12 rounded-xl bg-slate-50 border border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-brand hover:text-brand transition-all">
-                             <Plus className="h-5 w-5" />
-                          </button>
-                          <p className="text-xs text-muted-foreground flex items-center">Opcional, ajuda no orçamento.</p>
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="pt-8 flex gap-4">
-                    <Button type="submit" className="bg-brand text-white rounded-full px-12 font-bold h-14 shadow-xl hover:scale-[1.02] transition-transform">Solicitar Orçamento</Button>
-                    <Button type="button" variant="ghost" onClick={() => setView("list")} className="h-14 font-bold">Cancelar</Button>
-                 </div>
-              </form>
-           </div>
-        </section>
-      </div>
-    );
-  }
+  const filteredPedidos = pedidos.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         p.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = activeFilter === "Todos" || p.status === activeFilter;
+    return matchesSearch && matchesFilter;
+  });
 
   if (view === "detail" && selectedPedido) {
     return (
@@ -501,7 +547,14 @@ function PedidosTab() {
                              <p className="font-bold">{selectedPedido.prof}</p>
                              <p className="text-xs text-muted-foreground">Especialista em Manutenção</p>
                           </div>
-                          <Button size="sm" variant="outline" className="ml-auto rounded-full text-xs font-bold">Conversar</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="ml-auto rounded-full text-xs font-bold hover:bg-slate-100"
+                            onClick={() => setShowConversar(true)}
+                          >
+                            Conversar
+                          </Button>
                        </div>
                     </div>
                  )}
@@ -509,33 +562,106 @@ function PedidosTab() {
                     {selectedPedido.status === "Aguardando Aprovação" && (
                        <Button className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg">Aprovar Orçamento</Button>
                     )}
-                    <Button variant="outline" className="flex-1 rounded-full font-bold h-12">Suporte</Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 rounded-full font-bold h-12"
+                      onClick={() => window.open(WHATSAPP, "_blank")}
+                    >
+                      Suporte
+                    </Button>
                  </div>
               </div>
            </div>
         </section>
+
+        {/* Modal Conversar */}
+        {showConversar && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowConversar(false)} />
+            <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+               <div className="p-8 text-center border-b border-border">
+                  <div className="h-16 w-16 rounded-full bg-slate-100 mx-auto mb-4 flex items-center justify-center">
+                     <User className="h-8 w-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-bold">Falar com {selectedPedido.prof}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Como você prefere conversar?</p>
+               </div>
+               <div className="p-4 space-y-2">
+                  <button 
+                    onClick={() => window.open(WHATSAPP, "_blank")}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-green-50 transition-colors group"
+                  >
+                     <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                           <MessageCircle className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                           <p className="font-bold text-sm">WhatsApp</p>
+                           <p className="text-[10px] text-muted-foreground">Conversar por texto agora</p>
+                        </div>
+                     </div>
+                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-green-500 transition-colors" />
+                  </button>
+                  <button 
+                    onClick={() => window.location.href = "tel:21999999999"}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-blue-50 transition-colors group"
+                  >
+                     <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                           <Phone className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                           <p className="font-bold text-sm">Ligação Direta</p>
+                           <p className="text-[10px] text-muted-foreground">Falar por voz com o profissional</p>
+                        </div>
+                     </div>
+                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                  </button>
+               </div>
+               <div className="p-4 bg-slate-50">
+                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full font-bold text-xs uppercase tracking-widest">Cancelar</Button>
+               </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row gap-4 justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <input 
             type="text" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por ID ou serviço..." 
-            className="w-full pl-10 pr-4 py-2.5 rounded-full border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
+            className="w-full pl-12 pr-4 py-3.5 rounded-full border border-border bg-white text-base focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-soft transition-all"
           />
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full px-6 shadow-sm">Filtrar</Button>
+        
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex bg-slate-100 p-1 rounded-full border border-border/50">
+            {filters.map((f) => (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                  activeFilter === f 
+                  ? "bg-white text-brand shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block" />
           <Button 
-            onClick={() => setView("new")}
-            className="rounded-full px-6 bg-[#b85c45] hover:bg-[#b85c45]/90 text-white shadow-sm font-medium"
+            onClick={() => setActiveTab("servicos")}
+            className="rounded-full px-8 bg-brand hover:bg-brand/90 text-white shadow-lg shadow-brand/20 font-bold h-11"
           >
             Novo Pedido
           </Button>

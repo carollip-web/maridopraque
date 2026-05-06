@@ -14,7 +14,11 @@ import {
   Clock, 
   Upload,
   ChevronRight,
-  Info
+  Info,
+  User,
+  Wrench,
+  HeartHandshake,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +39,7 @@ function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [selectedProf, setSelectedProf] = useState<string | null>(null);
   const [files, setFiles] = useState<{ name: string; type: string }[]>([]);
 
   const upfrontPercentage = 0.5;
@@ -52,11 +57,11 @@ function Checkout() {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      setStep(4);
+      setStep(5);
     }, 2000);
   };
 
-  if (step === 4) {
+  if (step === 5) {
     return (
       <div className="mx-auto max-w-xl px-4 py-32 text-center">
         <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -90,12 +95,12 @@ function Checkout() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
         <div className="flex items-center gap-4">
-           {[1, 2, 3].map((s) => (
+           {[1, 2, 3, 4].map((s) => (
              <div key={s} className="flex items-center gap-2">
                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s ? "bg-brand text-brand-foreground" : "bg-muted text-muted-foreground"}`}>
                  {s}
                </div>
-               {s < 3 && <div className={`h-px w-8 ${step > s ? "bg-brand" : "bg-muted"}`} />}
+               {s < 4 && <div className={`h-px w-8 ${step > s ? "bg-brand" : "bg-muted"}`} />}
              </div>
            ))}
         </div>
@@ -149,10 +154,78 @@ function Checkout() {
             </div>
           )}
 
-          {/* Step 2: Schedule */}
+          {/* Step 2: Professional Choice */}
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-              <h2 className="text-3xl font-bold mb-8">2. Agendamento</h2>
+              <h2 className="text-3xl font-bold mb-2">2. Escolha do Profissional</h2>
+              <p className="text-muted-foreground mb-8">Personalize seu atendimento para maior conforto e segurança.</p>
+              
+              <div className="space-y-4">
+                {[
+                  { 
+                    id: "mulher", 
+                    icon: User, 
+                    title: "Profissional mulher", 
+                    desc: "Atendimento feito por uma profissional mulher do início ao fim.",
+                    color: "bg-pink-50 text-pink-600"
+                  },
+                  { 
+                    id: "homem", 
+                    icon: Wrench, 
+                    title: "Profissional homem", 
+                    desc: "Equipe masculina, qualificada e verificada para qualquer serviço.",
+                    color: "bg-slate-100 text-slate-600"
+                  },
+                  { 
+                    id: "acompanhante", 
+                    icon: HeartHandshake, 
+                    title: "Homem + acompanhante feminina", 
+                    desc: "Pensado para quem mora sozinha: o profissional vem com uma acompanhante mulher.",
+                    color: "bg-brand-soft text-brand",
+                    highlight: true
+                  },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedProf(p.id)}
+                    className={`w-full flex items-center gap-6 p-6 rounded-3xl border text-left transition ${
+                      selectedProf === p.id ? "border-brand bg-brand-soft/20 ring-1 ring-brand" : "border-border hover:bg-muted"
+                    }`}
+                  >
+                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 ${p.color}`}>
+                       <p.icon className="h-7 w-7" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-lg">{p.title}</h4>
+                        {p.highlight && (
+                          <span className="bg-brand text-brand-foreground text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Diferencial</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{p.desc}</p>
+                      <span className="text-[10px] font-bold text-brand uppercase tracking-widest mt-2 block">Saiba mais</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3 mt-10">
+                <Button variant="ghost" onClick={() => setStep(1)} className="rounded-full">Voltar</Button>
+                <Button 
+                  disabled={!selectedProf}
+                  onClick={() => setStep(3)} 
+                  className="flex-1 h-14 rounded-full"
+                >
+                  Confirmar Profissional <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Schedule */}
+          {step === 3 && (
+            <div className="animate-in fade-in slide-in-from-left-4 duration-500">
+              <h2 className="text-3xl font-bold mb-8">3. Agendamento</h2>
               <div className="space-y-8">
                 <div>
                   <label className="block text-sm font-medium mb-4">Selecione uma data</label>
@@ -188,10 +261,10 @@ function Checkout() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="ghost" onClick={() => setStep(1)} className="rounded-full">Voltar</Button>
+                  <Button variant="ghost" onClick={() => setStep(2)} className="rounded-full">Voltar</Button>
                   <Button 
                     disabled={!selectedDate || !selectedTime}
-                    onClick={() => setStep(3)} 
+                    onClick={() => setStep(4)} 
                     className="flex-1 h-14 rounded-full"
                   >
                     Confirmar Data <ChevronRight className="ml-2 h-4 w-4" />
@@ -201,10 +274,10 @@ function Checkout() {
             </div>
           )}
 
-          {/* Step 3: Payment */}
-          {step === 3 && (
+          {/* Step 4: Payment */}
+          {step === 4 && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-              <h2 className="text-3xl font-bold mb-8">3. Pagamento do Sinal</h2>
+              <h2 className="text-3xl font-bold mb-8">4. Pagamento do Sinal</h2>
               <div className="space-y-8">
                 <div className="rounded-2xl bg-brand-soft/30 p-6 flex gap-4">
                   <Info className="h-5 w-5 text-brand shrink-0" />
@@ -258,7 +331,7 @@ function Checkout() {
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="ghost" onClick={() => setStep(2)} className="rounded-full">Voltar</Button>
+                  <Button variant="ghost" onClick={() => setStep(3)} className="rounded-full">Voltar</Button>
                   <Button 
                     disabled={!paymentMethod || isProcessing}
                     onClick={handlePayment} 
@@ -284,6 +357,12 @@ function Checkout() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Data</span>
                 <span className="font-semibold text-brand">{selectedDate}</span>
+              </div>
+            )}
+            {selectedProf && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Preferência</span>
+                <span className="font-semibold text-brand capitalize">{selectedProf}</span>
               </div>
             )}
             <div className="pt-4 border-t border-border flex justify-between">
