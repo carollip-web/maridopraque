@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { 
   CreditCard, 
@@ -40,7 +40,7 @@ function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const setStep = (newStep: number) => {
-    navigate({ search: (prev) => ({ ...prev, step: newStep }) });
+    navigate({ to: "/checkout", search: { service, price: basePrice, step: newStep } });
   };
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");

@@ -28,7 +28,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminArea,
 });
 
-type AdminTab = "dashboard" | "pedidos" | "profissionais" | "servicos" | "clientes" | "financeiro";
+type AdminTab = "dashboard" | "pedidos" | "profissionais" | "servicos" | "clientes" | "financeiro" | "config";
 
 function AdminArea() {
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
