@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosRouteImport } from './routes/servicos'
+import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
@@ -24,6 +25,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const ServicosRoute = ServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissionalRoute = ProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfissionaisRoute = ProfissionaisRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRoute
+  ProfissionalRoute: typeof ProfissionalRoute
   ServicosRoute: typeof ServicosRoute
 }
 
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/servicos'
       fullPath: '/servicos'
       preLoaderRoute: typeof ServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissional': {
+      id: '/profissional'
+      path: '/profissional'
+      fullPath: '/profissional'
+      preLoaderRoute: typeof ProfissionalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profissionais': {
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRoute,
+  ProfissionalRoute: ProfissionalRoute,
   ServicosRoute: ServicosRoute,
 }
 export const routeTree = rootRouteImport

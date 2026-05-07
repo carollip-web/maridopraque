@@ -63,11 +63,12 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => decisaoSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const update: Record<string, any> = { status: data.decisao };
-    if (data.decisao === "aprovado") update.data_aprovacao = new Date().toISOString();
     const { data: row, error } = await supabase
       .from("orcamentos")
-      .update(update)
+      .update({
+        status: data.decisao,
+        data_aprovacao: data.decisao === "aprovado" ? new Date().toISOString() : null,
+      })
       .eq("id", data.orcamentoId)
       .select()
       .single();
