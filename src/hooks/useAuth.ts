@@ -1,81 +1,87 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
 
-const STORAGE_KEY = "marido_pra_que_auth";
+export type Role = "cliente" | "profissional" | "admin";
 
-let authState = {
-  isLoggedIn: false,
-  profilePhoto: null as string | null,
-  userData: {
-    name: "Carolina Lima Silva",
-    whatsapp: "(21) 98822-1100",
-    birthDate: "12/08/1992",
-    email: "carolina@email.com"
-  }
-};
-
-// Initialize from localStorage
-try {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    authState = {
-       isLoggedIn: !!parsed.isLoggedIn,
-       profilePhoto: parsed.profilePhoto || null,
-       userData: parsed.userData || authState.userData
-    };
-  }
-} catch (e) {
-  console.error("Auth storage error:", e);
+interface UserProfile {
+  id: string;
+  nome: string;
+  email: string | null;
+  whatsapp: string | null;
 }
 
-const listeners = new Set<() => void>();
-
-const notifyListeners = () => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(authState));
-  listeners.forEach((listener) => listener());
-};
-
-export const authStore = {
-  getSnapshot: () => ({ ...authState }),
-  login: () => {
-    authState.isLoggedIn = true;
-    notifyListeners();
-  },
-  logout: () => {
-    authState.isLoggedIn = false;
-    authState.profilePhoto = null;
-    notifyListeners();
-  },
-  updatePhoto: (dataUrl: string) => {
-    authState.profilePhoto = dataUrl;
-    notifyListeners();
-  },
-  updateUserData: (data: typeof authState.userData) => {
-    authState.userData = { ...data };
-    notifyListeners();
-  },
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => { listeners.delete(listener); };
-  }
-};
+interface AuthState {
+  session: Session | null;
+  user: User | null;
+  profile: UserProfile | null;
+  roles: Role[];
+  loading: boolean;
+}
 
 export function useAuth() {
-  const [state, setState] = useState(authStore.getSnapshot());
+  const [state, setState] = useState<AuthState>({
+    session: null,
+    user: null,
+    profile: null,
+    roles: [],
+    loading: true,
+  });
 
   useEffect(() => {
-    return authStore.subscribe(() => {
-      setState(authStore.getSnapshot());
+    let mounted = true;
+
+    const loadProfile = async (userId: string) => {
+      const [{ data: profile }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+      if (!mounted) return;
+      setState((s) => ({
+        ...s,
+        profile: profile
+          ? { id: profile.id, nome: profile.nome, email: profile.email, whatsapp: profile.whatsapp }
+          : null,
+        roles: (roles ?? []).map((r) => r.role as Role),
+      }));
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setState((s) => ({ ...s, session, user: session?.user ?? null, loading: false }));
+      if (session?.user) {
+        setTimeout(() => loadProfile(session.user.id), 0);
+      } else {
+        setState((s) => ({ ...s, profile: null, roles: [] }));
+      }
     });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setState((s) => ({ ...s, session, user: session?.user ?? null, loading: false }));
+      if (session?.user) loadProfile(session.user.id);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {
-    isLoggedIn: state.isLoggedIn,
-    profilePhoto: state.profilePhoto,
-    userData: state.userData,
-    login: authStore.login,
-    logout: authStore.logout,
-    updatePhoto: authStore.updatePhoto,
-    updateUserData: authStore.updateUserData
+    ...state,
+    isLoggedIn: !!state.session,
+    isProfissional: state.roles.includes("profissional") || state.roles.includes("admin"),
+    isAdmin: state.roles.includes("admin"),
+    // legacy compatibility
+    profilePhoto: null as string | null,
+    userData: {
+      name: state.profile?.nome ?? "",
+      whatsapp: state.profile?.whatsapp ?? "",
+      birthDate: "",
+      email: state.profile?.email ?? state.user?.email ?? "",
+    },
+    login: () => {},
+    logout: async () => { await supabase.auth.signOut(); },
+    updatePhoto: (_: string) => {},
+    updateUserData: (_: any) => {},
   };
 }

@@ -1,55 +1,79 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Notification = {
-  id: number;
+  id: string;
   title: string;
   desc: string;
   time: string;
   read: boolean;
-  pedidoId?: string; // linked pedido/service ID
+  pedidoId?: string;
 };
 
-let notifications: Notification[] = [
-  { id: 1, title: "Orçamento Aprovado", desc: "O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.", time: "Há 2 horas", read: false, pedidoId: "#8830" },
-  { id: 2, title: "Lembrete de Serviço", desc: "Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.", time: "Há 1 dia", read: false, pedidoId: "#8842" },
-  { id: 3, title: "Pagamento Confirmado", desc: "Seu pagamento via Pix foi processado com sucesso.", time: "Há 3 dias", read: true, pedidoId: "#8839" },
-];
-
-const listeners = new Set<() => void>();
-
-const notifyListeners = () => {
-  listeners.forEach((listener) => listener());
-};
-
-export const notificationsStore = {
-  getSnapshot: () => notifications,
-  markAsRead: (id: number) => {
-    notifications = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-    notifyListeners();
-  },
-  markAllAsRead: () => {
-    notifications = notifications.map(n => ({ ...n, read: true }));
-    notifyListeners();
-  },
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => { listeners.delete(listener); };
-  }
-};
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "agora";
+  if (m < 60) return `Há ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `Há ${h}h`;
+  return `Há ${Math.floor(h / 24)}d`;
+}
 
 export function useNotifications() {
-  const [data, setData] = useState(notificationsStore.getSnapshot());
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    return notificationsStore.subscribe(() => {
-      setData(notificationsStore.getSnapshot());
+    let userId: string | undefined;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const fetchAll = async () => {
+      const { data } = await supabase
+        .from("notificacoes")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setNotifications(
+        (data ?? []).map((n) => ({
+          id: n.id,
+          title: n.titulo,
+          desc: n.mensagem,
+          time: timeAgo(n.created_at),
+          read: n.lida,
+          pedidoId: n.orcamento_id ?? undefined,
+        }))
+      );
+    };
+
+    supabase.auth.getUser().then(({ data }) => {
+      userId = data.user?.id;
+      if (!userId) return;
+      fetchAll();
+      channel = supabase
+        .channel("notif-" + userId)
+        .on("postgres_changes", { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${userId}` }, () => fetchAll())
+        .subscribe();
     });
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
+  const markAsRead = async (id: string | number) => {
+    await supabase.from("notificacoes").update({ lida: true }).eq("id", String(id));
+    setNotifications((prev) => prev.map((n) => (n.id === String(id) ? { ...n, read: true } : n)));
+  };
+
+  const markAllAsRead = async () => {
+    await supabase.from("notificacoes").update({ lida: true }).eq("lida", false);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
   return {
-    notifications: data,
-    markAsRead: notificationsStore.markAsRead,
-    markAllAsRead: notificationsStore.markAllAsRead,
-    unreadCount: data.filter(n => !n.read).length
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    unreadCount: notifications.filter((n) => !n.read).length,
   };
 }
