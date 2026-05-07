@@ -59,10 +59,8 @@ export function Header() {
         </nav>
         
         <div className="flex items-center gap-4">
-          <Button asChild size="sm" className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md">
-            <a href={WHATSAPP} target="_blank" rel="noreferrer">
-              Orçamento
-            </a>
+          <Button onClick={() => navigate({ to: "/servicos" })} size="sm" className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md">
+            Orçamento
           </Button>
 
           <div id="header-menu-container" className="flex items-center gap-4 relative">
@@ -111,7 +109,7 @@ export function Header() {
                            onClick={() => {
                              markAsRead(n.id);
                              setShowNotifications(false);
-                             navigate({ to: "/cliente", search: { tab: "notificacoes", id: n.id } as any });
+                             navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(n.id) } as any });
                            }}
                          >
                             <div className="flex justify-between items-start mb-1">

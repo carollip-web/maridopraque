@@ -32,26 +32,34 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/cliente")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      tab: (search.tab as Tab) || "inicio",
+      id: search.id != null ? String(search.id) : undefined,
+    };
+  },
   component: ClienteArea,
 });
 
 type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notificacoes";
 
 function ClienteArea() {
-  const [activeTab, setActiveTab] = useState<Tab>("inicio");
+  const { tab: activeTab } = Route.useSearch();
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  const setActiveTab = (newTab: Tab) => {
+    navigate({ 
+      to: "/cliente", 
+      // Only clear id when leaving notificacoes tab
+      search: (prev: any) => ({ ...prev, tab: newTab, id: newTab === "notificacoes" ? prev.id : undefined }) 
+    });
+  };
 
   const handleLogout = () => {
     logout();
     navigate({ to: "/" });
   };
-
-  useEffect(() => {
-     if (window.location.search.includes("tab=notificacoes")) {
-        setActiveTab("notificacoes");
-     }
-  }, []);
 
   const sidebarItems = [
     { id: "inicio", label: "Meu Painel", icon: LayoutDashboard },
@@ -129,22 +137,24 @@ function ClienteArea() {
 
 function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
+  const { id } = Route.useSearch();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showFullDetails, setShowFullDetails] = useState(false);
 
   const selectedNotification = notifications.find(n => n.id === selectedId);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
     if (id) {
-      const numId = parseInt(id);
+      const numId = parseInt(String(id), 10);
       if (!isNaN(numId)) {
         setSelectedId(numId);
         markAsRead(numId);
       }
+    } else {
+      // If no id in URL, reset to list view
+      setSelectedId(null);
     }
-  }, []);
+  }, [id]);
 
   const handleBackToList = () => {
     setSelectedId(null);
@@ -419,7 +429,10 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                 <Plus className="absolute -right-4 -top-4 h-32 w-32 text-white/10 rotate-12" />
                 <h3 className="text-xl font-bold mb-2">Novo Serviço?</h3>
                 <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pelo WhatsApp.</p>
-                <Button className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold">
+                <Button 
+                  onClick={() => navigate({ to: "/servicos" })}
+                  className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold"
+                >
                    Solicitar Agora
                 </Button>
              </div>
@@ -1100,9 +1113,13 @@ function DadosTab() {
                  <h3 className="font-bold text-lg">Endereços de Atendimento</h3>
               </div>
               {!isAddingAddress && (
-                 <Button size="sm" className="rounded-full bg-brand/10 text-brand hover:bg-brand hover:text-white font-bold transition-colors" onClick={() => setIsAddingAddress(true)}>
-                    + Novo
-                 </Button>
+                 <Button 
+            onClick={() => navigate({ to: "/servicos" })}
+            size="sm" 
+            className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md"
+          >
+            Orçamento
+          </Button>
               )}
            </div>
 

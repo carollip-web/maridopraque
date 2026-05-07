@@ -28,15 +28,20 @@ export const Route = createFileRoute("/checkout")({
     return {
       service: (search.service as string) || "Serviço Geral",
       price: Number(search.price) || 120,
+      step: Number(search.step) || 1,
     };
   },
 });
 
 function Checkout() {
-  const { service, price: basePrice } = Route.useSearch();
-  const [step, setStep] = useState(1);
+  const { service, price: basePrice, step } = Route.useSearch();
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const setStep = (newStep: number) => {
+    navigate({ search: (prev) => ({ ...prev, step: newStep }) });
+  };
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedProf, setSelectedProf] = useState<string | null>(null);
