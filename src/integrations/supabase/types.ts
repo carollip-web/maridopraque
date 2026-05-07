@@ -14,16 +14,213 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      notificacoes: {
+        Row: {
+          created_at: string
+          id: string
+          lida: boolean
+          link: string | null
+          mensagem: string
+          orcamento_id: string | null
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem: string
+          orcamento_id?: string | null
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string
+          orcamento_id?: string | null
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          auto_aprovado: boolean
+          cliente_id: string
+          created_at: string
+          data_aprovacao: string | null
+          data_pagamento: string | null
+          descricao: string | null
+          id: string
+          observacoes_profissional: string | null
+          profissional_id: string | null
+          service_id: string | null
+          service_name: string
+          status: Database["public"]["Enums"]["orcamento_status"]
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          auto_aprovado?: boolean
+          cliente_id: string
+          created_at?: string
+          data_aprovacao?: string | null
+          data_pagamento?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes_profissional?: string | null
+          profissional_id?: string | null
+          service_id?: string | null
+          service_name: string
+          status?: Database["public"]["Enums"]["orcamento_status"]
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          auto_aprovado?: boolean
+          cliente_id?: string
+          created_at?: string
+          data_aprovacao?: string | null
+          data_pagamento?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes_profissional?: string | null
+          profissional_id?: string | null
+          service_id?: string | null
+          service_name?: string
+          status?: Database["public"]["Enums"]["orcamento_status"]
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          total_servicos_pagos: number
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+          nome?: string
+          total_servicos_pagos?: number
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          total_servicos_pagos?: number
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      services_catalog: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          is_fixed_price: boolean
+          nome: string
+          preco_fixo: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          is_fixed_price?: boolean
+          nome: string
+          preco_fixo?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          is_fixed_price?: boolean
+          nome?: string
+          preco_fixo?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "cliente" | "profissional" | "admin"
+      orcamento_status:
+        | "fixo_auto"
+        | "customizado_pendente"
+        | "enviado"
+        | "aprovado"
+        | "recusado"
+        | "pago"
+        | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +347,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["cliente", "profissional", "admin"],
+      orcamento_status: [
+        "fixo_auto",
+        "customizado_pendente",
+        "enviado",
+        "aprovado",
+        "recusado",
+        "pago",
+        "cancelado",
+      ],
+    },
   },
 } as const
