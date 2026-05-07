@@ -141,7 +141,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
   const { id, details } = Route.useSearch();
   const navigate = useNavigate();
 
-  const selectedId = id ? parseInt(String(id), 10) : null;
+  const selectedId = id ? String(id) : null;
   const selectedNotification = selectedId != null ? notifications.find(n => n.id === selectedId) : null;
   const showFullDetails = details === true;
 
@@ -151,7 +151,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
     }
   }, [selectedId]);
 
-  const openNotification = (notifId: number) => {
+  const openNotification = (notifId: string) => {
     markAsRead(notifId);
     navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, id: String(notifId), details: undefined }) });
   };
