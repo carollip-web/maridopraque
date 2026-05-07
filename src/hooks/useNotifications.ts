@@ -6,12 +6,13 @@ export type Notification = {
   desc: string;
   time: string;
   read: boolean;
+  pedidoId?: string; // linked pedido/service ID
 };
 
 let notifications: Notification[] = [
-  { id: 1, title: "Orçamento Aprovado", desc: "O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.", time: "Há 2 horas", read: false },
-  { id: 2, title: "Lembrete de Serviço", desc: "Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.", time: "Há 1 dia", read: false },
-  { id: 3, title: "Pagamento Confirmado", desc: "Seu pagamento via Pix foi processado com sucesso.", time: "Há 3 dias", read: true },
+  { id: 1, title: "Orçamento Aprovado", desc: "O profissional Ricardo M. aprovou seu orçamento para Pintura de Quarto.", time: "Há 2 horas", read: false, pedidoId: "#8830" },
+  { id: 2, title: "Lembrete de Serviço", desc: "Seu serviço de Montagem de Guarda-roupa está agendado para amanhã às 10:00.", time: "Há 1 dia", read: false, pedidoId: "#8842" },
+  { id: 3, title: "Pagamento Confirmado", desc: "Seu pagamento via Pix foi processado com sucesso.", time: "Há 3 dias", read: true, pedidoId: "#8839" },
 ];
 
 const listeners = new Set<() => void>();

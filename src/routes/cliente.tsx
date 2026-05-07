@@ -299,7 +299,13 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
 
           <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row gap-4">
             <Button 
-              onClick={() => setActiveTab("pedidos")}
+              onClick={() => {
+                if (selectedNotification.pedidoId) {
+                  navigate({ search: (prev: any) => ({ tab: "pedidos", pedidoId: selectedNotification.pedidoId, id: undefined, details: undefined }) });
+                } else {
+                  setActiveTab("pedidos");
+                }
+              }}
               className="bg-[#1a1513] text-white rounded-full px-8 font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
             >
               Ir para o Serviço
