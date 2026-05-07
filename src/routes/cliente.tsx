@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, notificationsStore } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/cliente")({
@@ -466,6 +466,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
+  const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
 
   const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
 
@@ -501,7 +502,27 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     },
   ];
 
+  // Simple in-memory store for pedido status updates
+  const [pedidoStatuses, setPedidoStatuses] = useState<Record<string, string>>({});
+
+  const getPedidoStatus = (id: string, defaultStatus: string) =>
+    pedidoStatuses[id] ?? defaultStatus;
+
+  const handleApprove = () => {
+    setApprovalStep("processing");
+    setTimeout(() => {
+      // Update status in local store
+      setPedidoStatuses(prev => ({ ...prev, [selectedPedido!.id]: "Agendado" }));
+      // Add success notification
+      notificationsStore.markAllAsRead(); // just to trigger listener; real backend would add
+      setApprovalStep("success");
+    }, 2200);
+  };
+
   const selectedPedido = pedidoId ? pedidos.find(p => p.id === pedidoId) : null;
+  const selectedPedidoWithStatus = selectedPedido
+    ? { ...selectedPedido, status: getPedidoStatus(selectedPedido.id, selectedPedido.status) }
+    : null;
 
   const openPedido = (id: string) => {
     navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: id }) });
@@ -518,7 +539,8 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     return matchesSearch && matchesFilter;
   });
 
-  if (selectedPedido) {
+  if (selectedPedidoWithStatus) {
+    const sp = selectedPedidoWithStatus;
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
         <button 
@@ -532,25 +554,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
            <div className="flex flex-col md:flex-row justify-between gap-8 mb-12">
               <div className="flex items-start gap-6">
                  <div className={`h-20 w-20 rounded-3xl flex items-center justify-center font-bold text-xl shrink-0 ${
-                    selectedPedido.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
-                    selectedPedido.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
+                    sp.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
+                    sp.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
                  }`}>
-                    {selectedPedido.id}
+                    {sp.id}
                  </div>
                  <div>
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-3 ${
-                      selectedPedido.status === "Agendado" ? "bg-green-100 text-green-700" : 
-                      selectedPedido.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
+                      sp.status === "Agendado" ? "bg-green-100 text-green-700" : 
+                      sp.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
                     }`}>
-                      {selectedPedido.status}
+                      {sp.status}
                     </span>
-                    <h2 className="text-3xl font-bold">{selectedPedido.title}</h2>
-                    <p className="text-muted-foreground mt-2">{selectedPedido.description}</p>
+                    <h2 className="text-3xl font-bold">{sp.title}</h2>
+                    <p className="text-muted-foreground mt-2">{sp.description}</p>
                  </div>
               </div>
               <div className="text-right">
                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Investimento</p>
-                 <p className="text-3xl font-bold text-slate-800">{selectedPedido.price}</p>
+                 <p className="text-3xl font-bold text-slate-800">{sp.price}</p>
               </div>
            </div>
 
@@ -564,20 +586,20 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                        <div className="relative pl-6">
                           <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
                           <p className="text-sm font-bold">Pedido solicitado</p>
-                          <p className="text-xs text-muted-foreground">{selectedPedido.date}</p>
+                          <p className="text-xs text-muted-foreground">{sp.date}</p>
                        </div>
-                       {selectedPedido.status !== "Em Análise" && (
+                       {sp.status !== "Em Análise" && (
                           <div className="relative pl-6">
                              <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
                              <p className="text-sm font-bold">Orçamento enviado</p>
                              <p className="text-xs text-muted-foreground">Há 1 dia</p>
                           </div>
                        )}
-                       {selectedPedido.status === "Agendado" && (
+                       {sp.status === "Agendado" && (
                           <div className="relative pl-6">
                              <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-green-500 border-4 border-white shadow-sm" />
-                             <p className="text-sm font-bold">Serviço agendado</p>
-                             <p className="text-xs text-muted-foreground">{selectedPedido.date}</p>
+                             <p className="text-sm font-bold">Serviço agendado ✓</p>
+                             <p className="text-xs text-muted-foreground">{sp.date}</p>
                           </div>
                        )}
                     </div>
@@ -585,13 +607,13 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
               </div>
 
               <div className="space-y-6">
-                 {selectedPedido.prof !== "-" && (
+                 {sp.prof !== "-" && (
                     <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Profissional Responsável</h4>
                        <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-full bg-slate-200" />
                           <div>
-                             <p className="font-bold">{selectedPedido.prof}</p>
+                             <p className="font-bold">{sp.prof}</p>
                              <p className="text-xs text-muted-foreground">Especialista em Manutenção</p>
                           </div>
                           <Button 
@@ -606,8 +628,13 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     </div>
                  )}
                  <div className="flex gap-4">
-                    {selectedPedido.status === "Aguardando Aprovação" && (
-                       <Button className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg">Aprovar Orçamento</Button>
+                    {sp.status === "Aguardando Aprovação" && (
+                       <Button 
+                         className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
+                         onClick={() => setApprovalStep("confirm")}
+                       >
+                         Aprovar Orçamento
+                       </Button>
                     )}
                     <Button 
                       variant="outline" 
@@ -668,6 +695,112 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                <div className="p-4 bg-slate-50">
                   <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full font-bold text-xs uppercase tracking-widest">Cancelar</Button>
                </div>
+            </div>
+          </div>
+        )}
+
+        {/* Approval Modal */}
+        {approvalStep && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => approvalStep === "confirm" ? setApprovalStep(null) : undefined} />
+            <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+
+              {/* Step 1: Confirm */}
+              {approvalStep === "confirm" && (
+                <div className="p-8 md:p-10">
+                  <div className="text-center mb-8">
+                    <div className="h-16 w-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                      <FileText className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-2xl font-bold">Confirmar Aprovação</h3>
+                    <p className="text-muted-foreground mt-2 text-sm">Revise o orçamento antes de confirmar</p>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-2xl p-6 space-y-4 mb-8">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Serviço</span>
+                      <span className="font-bold">{sp.title}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Profissional</span>
+                      <span className="font-bold">{sp.prof}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Mão de obra</span>
+                      <span className="font-bold">R$ 420,00</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Taxa de visita</span>
+                      <span className="font-bold">R$ 30,00</span>
+                    </div>
+                    <div className="pt-3 border-t border-slate-200 flex justify-between">
+                      <span className="font-bold text-brand">Total</span>
+                      <span className="font-bold text-brand text-lg">{sp.price}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground text-center mb-8 leading-relaxed">
+                    Ao aprovar, você concorda com os termos do serviço. O profissional será notificado imediatamente.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setApprovalStep(null)} className="flex-1 rounded-full h-13 font-bold">
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleApprove} className="flex-1 bg-brand text-white rounded-full h-13 font-bold shadow-lg hover:scale-[1.02] transition-transform">
+                      ✓ Confirmar Aprovação
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Processing */}
+              {approvalStep === "processing" && (
+                <div className="p-12 text-center">
+                  <div className="relative h-24 w-24 mx-auto mb-8">
+                    <div className="absolute inset-0 rounded-full border-4 border-brand/20" />
+                    <div className="absolute inset-0 rounded-full border-4 border-brand border-t-transparent animate-spin" />
+                    <div className="absolute inset-3 rounded-full bg-brand/10 flex items-center justify-center">
+                      <CheckCircle2 className="h-8 w-8 text-brand animate-pulse" />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Processando...</h3>
+                  <p className="text-muted-foreground text-sm">Confirmando sua aprovação e notificando o profissional.</p>
+                </div>
+              )}
+
+              {/* Step 3: Success */}
+              {approvalStep === "success" && (
+                <div className="p-10 text-center">
+                  <div className="h-24 w-24 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6 animate-in zoom-in duration-500">
+                    <CheckCircle2 className="h-12 w-12 text-green-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Orçamento Aprovado!</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    <span className="font-bold text-slate-700">{sp.prof}</span> foi notificado e seu serviço está confirmado.
+                  </p>
+                  <div className="bg-green-50 rounded-2xl p-4 my-6 text-left space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium text-green-800">Status atualizado → <strong>Agendado</strong></span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium text-green-800">Profissional notificado via WhatsApp</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium text-green-800">Confirmação enviada para seu e-mail</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setApprovalStep(null)}
+                    className="w-full bg-[#1a1513] text-white rounded-full h-14 font-bold shadow-lg"
+                  >
+                    Perfeito, obrigada!
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
