@@ -36,6 +36,8 @@ export const Route = createFileRoute("/cliente")({
     return {
       tab: (search.tab as Tab) || "inicio",
       id: search.id != null ? String(search.id) : undefined,
+      pedidoId: search.pedidoId != null ? String(search.pedidoId) : undefined,
+      details: search.details === "true" || search.details === true,
     };
   },
   component: ClienteArea,
@@ -51,8 +53,7 @@ function ClienteArea() {
   const setActiveTab = (newTab: Tab) => {
     navigate({ 
       to: "/cliente", 
-      // Only clear id when leaving notificacoes tab
-      search: (prev: any) => ({ ...prev, tab: newTab, id: newTab === "notificacoes" ? prev.id : undefined }) 
+      search: (prev: any) => ({ tab: newTab, id: undefined, pedidoId: undefined, details: undefined })
     });
   };
 
@@ -137,33 +138,34 @@ function ClienteArea() {
 
 function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
-  const { id } = Route.useSearch();
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [showFullDetails, setShowFullDetails] = useState(false);
+  const { id, details } = Route.useSearch();
+  const navigate = useNavigate();
 
-  const selectedNotification = notifications.find(n => n.id === selectedId);
+  const selectedId = id ? parseInt(String(id), 10) : null;
+  const selectedNotification = selectedId != null ? notifications.find(n => n.id === selectedId) : null;
+  const showFullDetails = details === true;
 
   useEffect(() => {
-    if (id) {
-      const numId = parseInt(String(id), 10);
-      if (!isNaN(numId)) {
-        setSelectedId(numId);
-        markAsRead(numId);
-      }
-    } else {
-      // If no id in URL, reset to list view
-      setSelectedId(null);
+    if (selectedId != null) {
+      markAsRead(selectedId);
     }
-  }, [id]);
+  }, [selectedId]);
 
-  const handleBackToList = () => {
-    setSelectedId(null);
-    setShowFullDetails(false);
+  const openNotification = (notifId: number) => {
+    markAsRead(notifId);
+    navigate({ search: (prev: any) => ({ ...prev, id: String(notifId), details: undefined }) });
   };
 
-  const handleNotificationClick = (id: number) => {
-    markAsRead(id);
-    setSelectedId(id);
+  const handleBackToList = () => {
+    navigate({ search: (prev: any) => ({ ...prev, id: undefined, details: undefined }) });
+  };
+
+  const openFullDetails = () => {
+    navigate({ search: (prev: any) => ({ ...prev, details: true }) });
+  };
+
+  const closeFullDetails = () => {
+    navigate({ search: (prev: any) => ({ ...prev, details: undefined }) });
   };
 
   if (selectedNotification) {
@@ -171,7 +173,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
       return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
           <button 
-            onClick={() => setShowFullDetails(false)}
+            onClick={closeFullDetails}
             className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
           >
             <ChevronLeft className="h-4 w-4" /> Voltar para a mensagem
@@ -285,7 +287,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
                 <div className="space-y-1">
                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ação Necessária</p>
                   <button 
-                    onClick={() => setShowFullDetails(true)}
+                    onClick={openFullDetails}
                     className="text-sm font-bold text-brand hover:underline block text-left"
                   >
                     Ver detalhes completos
@@ -327,7 +329,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
            notifications.map((n) => (
              <div 
                key={n.id} 
-               onClick={() => handleNotificationClick(n.id)}
+               onClick={() => openNotification(n.id)}
                className={`p-6 md:p-8 flex gap-5 transition-all cursor-pointer group hover:bg-slate-50 ${n.read ? "bg-white" : "bg-[#fefaf9]"}`}
              >
                 <div className="mt-1.5 shrink-0">
@@ -451,8 +453,8 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 }
 
 function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
-  const [view, setView] = useState<"list" | "detail">("list");
-  const [selectedPedido, setSelectedPedido] = useState<any>(null);
+  const { pedidoId } = Route.useSearch();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -492,6 +494,16 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     },
   ];
 
+  const selectedPedido = pedidoId ? pedidos.find(p => p.id === pedidoId) : null;
+
+  const openPedido = (id: string) => {
+    navigate({ search: (prev: any) => ({ ...prev, pedidoId: id }) });
+  };
+
+  const closePedido = () => {
+    navigate({ search: (prev: any) => ({ ...prev, pedidoId: undefined }) });
+  };
+
   const filteredPedidos = pedidos.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -499,11 +511,11 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     return matchesSearch && matchesFilter;
   });
 
-  if (view === "detail" && selectedPedido) {
+  if (selectedPedido) {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
         <button 
-          onClick={() => setView("list")}
+          onClick={closePedido}
           className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
         >
           <ChevronLeft className="h-4 w-4" /> Voltar para pedidos
@@ -724,7 +736,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
           filteredPedidos.map((p) => (
             <div 
               key={p.id} 
-              onClick={() => { setSelectedPedido(p); setView("detail"); }}
+              onClick={() => { openPedido(p.id); }}
               className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-border shadow-soft flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all cursor-pointer group"
             >
               <div className="flex items-start gap-5">
