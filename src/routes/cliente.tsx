@@ -141,7 +141,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
   const { id, details } = Route.useSearch();
   const navigate = useNavigate();
 
-  const selectedId = id ? parseInt(String(id), 10) : null;
+  const selectedId = id ? String(id) : null;
   const selectedNotification = selectedId != null ? notifications.find(n => n.id === selectedId) : null;
   const showFullDetails = details === true;
 
@@ -151,21 +151,21 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
     }
   }, [selectedId]);
 
-  const openNotification = (notifId: number) => {
+  const openNotification = (notifId: string) => {
     markAsRead(notifId);
-    navigate({ search: (prev: any) => ({ ...prev, id: String(notifId), details: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, id: String(notifId), details: undefined }) });
   };
 
   const handleBackToList = () => {
-    navigate({ search: (prev: any) => ({ ...prev, id: undefined, details: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, id: undefined, details: undefined }) });
   };
 
   const openFullDetails = () => {
-    navigate({ search: (prev: any) => ({ ...prev, details: true }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, details: true }) });
   };
 
   const closeFullDetails = () => {
-    navigate({ search: (prev: any) => ({ ...prev, details: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, details: undefined }) });
   };
 
   if (selectedNotification) {
@@ -301,7 +301,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
             <Button 
               onClick={() => {
                 if (selectedNotification.pedidoId) {
-                  navigate({ search: (prev: any) => ({ tab: "pedidos", pedidoId: selectedNotification.pedidoId, id: undefined, details: undefined }) });
+                  navigate({ to: "/cliente", search: () => ({ tab: "pedidos" as Tab, pedidoId: selectedNotification.pedidoId, id: undefined, details: undefined }) });
                 } else {
                   setActiveTab("pedidos");
                 }
@@ -364,6 +364,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
 
 function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [showBanner, setShowBanner] = useState(true);
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -503,11 +504,11 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const selectedPedido = pedidoId ? pedidos.find(p => p.id === pedidoId) : null;
 
   const openPedido = (id: string) => {
-    navigate({ search: (prev: any) => ({ ...prev, pedidoId: id }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: id }) });
   };
 
   const closePedido = () => {
-    navigate({ search: (prev: any) => ({ ...prev, pedidoId: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: undefined }) });
   };
 
   const filteredPedidos = pedidos.filter(p => {
@@ -927,6 +928,7 @@ function PagamentosTab() {
 }
 
 function DadosTab() {
+  const navigate = useNavigate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);

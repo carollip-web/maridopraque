@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosRouteImport } from './routes/servicos'
+import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
+import { Route as OrcamentosRouteImport } from './routes/orcamentos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
@@ -24,6 +26,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const ServicosRoute = ServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissionalRoute = ProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfissionaisRoute = ProfissionaisRouteImport.update({
@@ -39,6 +46,11 @@ const PorqueRoute = PorqueRouteImport.update({
 const PagamentoRoute = PagamentoRouteImport.update({
   id: '/pagamento',
   path: '/pagamento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrcamentosRoute = OrcamentosRouteImport.update({
+  id: '/orcamentos',
+  path: '/orcamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -85,9 +97,11 @@ export interface FileRoutesByFullPath {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRoutesByTo {
@@ -98,9 +112,11 @@ export interface FileRoutesByTo {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRoutesById {
@@ -112,9 +128,11 @@ export interface FileRoutesById {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
+  '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
 }
 export interface FileRouteTypes {
@@ -127,9 +145,11 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/orcamentos'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,9 +160,11 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/orcamentos'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   id:
     | '__root__'
@@ -153,9 +175,11 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/orcamentos'
     | '/pagamento'
     | '/porque'
     | '/profissionais'
+    | '/profissional'
     | '/servicos'
   fileRoutesById: FileRoutesById
 }
@@ -167,9 +191,11 @@ export interface RootRouteChildren {
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
   LoginRoute: typeof LoginRoute
+  OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRoute
+  ProfissionalRoute: typeof ProfissionalRoute
   ServicosRoute: typeof ServicosRoute
 }
 
@@ -180,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/servicos'
       fullPath: '/servicos'
       preLoaderRoute: typeof ServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissional': {
+      id: '/profissional'
+      path: '/profissional'
+      fullPath: '/profissional'
+      preLoaderRoute: typeof ProfissionalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profissionais': {
@@ -201,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/pagamento'
       fullPath: '/pagamento'
       preLoaderRoute: typeof PagamentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orcamentos': {
+      id: '/orcamentos'
+      path: '/orcamentos'
+      fullPath: '/orcamentos'
+      preLoaderRoute: typeof OrcamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -263,20 +303,13 @@ const rootRouteChildren: RootRouteChildren = {
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
   LoginRoute: LoginRoute,
+  OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRoute,
+  ProfissionalRoute: ProfissionalRoute,
   ServicosRoute: ServicosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
