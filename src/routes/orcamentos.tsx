@@ -370,18 +370,40 @@ function MeusOrcamentos() {
           <h1 className="text-3xl font-bold tracking-tight">Meus Orçamentos</h1>
           <p className="text-muted-foreground mt-1">Preço tabelado e materiais opcionais.</p>
         </div>
-        <Button
-          onClick={() => {
-            if (showNew) resetForm();
-            else {
-              setStep(1);
-              setShowNew(true);
-            }
-          }}
-          className="rounded-full bg-brand text-brand-foreground gap-2"
-        >
-          <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasDraft && !showNew && (
+            <>
+              <Button
+                onClick={carregarRascunho}
+                variant="outline"
+                className="rounded-full gap-2"
+              >
+                <Save className="h-4 w-4" /> Retomar rascunho
+              </Button>
+              <Button
+                onClick={limparRascunho}
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label="Descartar rascunho"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          <Button
+            onClick={() => {
+              if (showNew) resetForm();
+              else {
+                setStep(1);
+                setShowNew(true);
+              }
+            }}
+            className="rounded-full bg-brand text-brand-foreground gap-2"
+          >
+            <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
+          </Button>
+        </div>
       </div>
 
       {showNew && (
