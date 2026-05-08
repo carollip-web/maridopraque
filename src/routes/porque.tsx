@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clock, ShieldCheck, Star, CheckCircle2, Heart, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/porque")({
