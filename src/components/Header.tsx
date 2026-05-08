@@ -144,17 +144,42 @@ export function Header() {
                   {isLoggedIn ? (
                     <>
                       <div className="p-4 border-b border-border bg-slate-50">
-                         <p className="font-bold text-sm">Carolina L. Silva</p>
-                         <p className="text-xs text-muted-foreground">carolina@email.com</p>
+                         <p className="font-bold text-sm truncate">{userData.name || "Minha conta"}</p>
+                         <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
                       </div>
                       <div className="p-2">
-                         <Link 
+                         <Link
                            to="/cliente"
                            className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                            onClick={() => setShowProfileMenu(false)}
                          >
                            <User className="h-4 w-4" /> Minha Conta
                          </Link>
+                         <Link
+                           to="/orcamentos"
+                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                           onClick={() => setShowProfileMenu(false)}
+                         >
+                           <FileText className="h-4 w-4" /> Meus orçamentos
+                         </Link>
+                         {isProfissional && (
+                           <Link
+                             to="/profissional"
+                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                             onClick={() => setShowProfileMenu(false)}
+                           >
+                             <Briefcase className="h-4 w-4" /> Painel Profissional
+                           </Link>
+                         )}
+                         {isAdmin && (
+                           <Link
+                             to="/admin"
+                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                             onClick={() => setShowProfileMenu(false)}
+                           >
+                             <ShieldCheck className="h-4 w-4" /> Painel Admin
+                           </Link>
+                         )}
                       </div>
                       <div className="p-2 border-t border-border">
                          <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
