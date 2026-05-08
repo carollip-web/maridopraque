@@ -547,14 +547,22 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
       
       const list = data || [];
       // Normalize statuses for the UI filters
-      return list.map(o => ({
-        ...o,
-        title: o.service_name,
-        uiStatus: o.status === "customizado_pendente" ? "Em Análise" :
+      return list.map(o => {
+        const uiStatus = o.status === "customizado_pendente" ? "Em Análise" :
                  o.status === "enviado" ? "Aguardando Aprovação" :
-                 o.status === "aprovado" ? "Agendado" : o.status,
-        displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir"
-      }));
+                 o.status === "aprovado" ? "Agendado" : o.status;
+        return {
+          ...o,
+          title: o.service_name,
+          description: o.descricao ?? "",
+          uiStatus,
+          status: uiStatus as string,
+          date: new Date(o.created_at).toLocaleDateString(),
+          prof: "-",
+          price: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
+          displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
+        };
+      });
     },
     enabled: !!user,
   });
