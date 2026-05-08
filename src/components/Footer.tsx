@@ -7,32 +7,24 @@ export function Footer() {
   return (
     <>
       <footer className="border-t border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground md:flex-row">
-          <div className="flex flex-col items-center gap-4 md:items-start">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
-                <Wrench className="h-3.5 w-3.5" />
-              </span>
-              <span className="font-medium text-foreground">Marido pra Quê?</span>
-            </div>
-            <p className="max-w-[240px] text-center text-xs leading-relaxed md:text-left">
-              Soluções inteligentes em reparos e obras para o Rio de Janeiro.
-            </p>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded bg-foreground text-background">
+              <Wrench className="h-3 w-3" />
+            </span>
+            <span className="font-medium text-foreground">Marido pra Quê?</span>
           </div>
-          
-          <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4 font-medium text-foreground">
+
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] font-medium text-foreground">
             <Link to="/servicos" className="transition hover:text-brand">Serviços</Link>
             <Link to="/profissionais" className="transition hover:text-brand">Equipe</Link>
             <Link to="/pagamento" className="transition hover:text-brand">Pagamento</Link>
-            <Link to="/ajuda" className="transition hover:text-brand">Central de Ajuda</Link>
+            <Link to="/ajuda" className="transition hover:text-brand">Ajuda</Link>
             <Link to="/contato" className="transition hover:text-brand">Contato</Link>
             <Link to="/admin" className="text-[10px] opacity-20 transition hover:opacity-100">Admin</Link>
           </nav>
 
-          <div className="flex flex-col items-center gap-2 md:items-end">
-             <p>© {new Date().getFullYear()} — Todos os direitos reservados.</p>
-             <p className="text-[10px] uppercase tracking-widest opacity-50">Feito com ❤️ no RJ</p>
-          </div>
+          <p className="text-[11px]">© {new Date().getFullYear()} — Marido pra Quê?</p>
         </div>
       </footer>
 
