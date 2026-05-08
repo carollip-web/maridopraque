@@ -30,6 +30,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { AvaliacaoForm } from "@/components/AvaliacaoForm";
+import { IndicacaoCard } from "@/components/IndicacaoCard";
 
 export const Route = createFileRoute("/cliente")({
   validateSearch: (search: Record<string, unknown>) => {
