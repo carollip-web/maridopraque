@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosAdminRouteImport } from './routes/servicos-admin'
 import { Route as ServicosRouteImport } from './routes/servicos'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
@@ -35,6 +36,11 @@ const ServicosAdminRoute = ServicosAdminRouteImport.update({
 const ServicosRoute = ServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfissionalRoute = ProfissionalRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
@@ -245,6 +257,7 @@ export interface RootRouteChildren {
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRouteWithChildren
   ProfissionalRoute: typeof ProfissionalRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
 }
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/servicos'
       fullPath: '/servicos'
       preLoaderRoute: typeof ServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profissional': {
@@ -411,6 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRouteWithChildren,
   ProfissionalRoute: ProfissionalRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
 }
