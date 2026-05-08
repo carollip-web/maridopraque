@@ -185,22 +185,44 @@ function MeusOrcamentos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Auto-abre o formulário quando vem de "Pedir orçamento agora" / catálogo
+  // Auto-abre o formulário quando vem de "Pedir orçamento agora" / catálogo.
+  // Roda 1x quando os parâmetros mudam: abre imediatamente; tenta casar
+  // serviceId (exato) e depois serviceName (normalizado, com fuzzy).
+  // Sem match → form abre no passo 1 e avisamos no toast.
+  const [autoMatched, setAutoMatched] = useState<string | null>(null);
   useEffect(() => {
-    if (!servicos.length) return;
     if (!search.new && !search.serviceId && !search.serviceName) return;
     setShowNew(true);
+
+    // Aguarda o catálogo carregar antes de tentar casar (mas o form já está aberto)
+    if (!servicos.length) return;
+
+    // Chave para não re-rodar a cada digitação do form
+    const key = `${search.serviceId ?? ""}|${search.serviceName ?? ""}|${search.new ?? ""}`;
+    if (autoMatched === key) return;
+    setAutoMatched(key);
+
+    let matched: Servico | undefined;
     if (search.serviceId) {
-      const s = servicos.find((x) => x.id === search.serviceId);
-      if (s) { setSelServiceId(s.id); setStep(2); }
-    } else if (search.serviceName) {
-      const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const target = norm(search.serviceName);
-      const s = servicos.find((x) => norm(x.nome) === target) ||
-                servicos.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
-      if (s) { setSelServiceId(s.id); setStep(2); }
+      matched = servicos.find((x) => x.id === search.serviceId);
     }
-  }, [servicos, search.new, search.serviceId, search.serviceName]);
+    if (!matched && search.serviceName) {
+      const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const target = norm(search.serviceName);
+      matched =
+        servicos.find((x) => norm(x.nome) === target) ||
+        servicos.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
+    }
+
+    if (matched) {
+      setSelServiceId(matched.id);
+      setStep(2);
+    } else if (search.serviceId || search.serviceName) {
+      const label = search.serviceName ?? "selecionado";
+      toast.info(`"${label}" não está no catálogo. Escolha o serviço mais próximo abaixo.`);
+      setStep(1);
+    }
+  }, [servicos, search.new, search.serviceId, search.serviceName, autoMatched]);
 
   const selServico = servicos.find((s) => s.id === selServiceId);
   const sugeridos = useMemo(() => {
