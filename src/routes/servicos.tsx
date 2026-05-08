@@ -113,7 +113,7 @@ const serviceCategories = [
   }
 ];
 
-const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
 
 function Servicos() {
   return (
