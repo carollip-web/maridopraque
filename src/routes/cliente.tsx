@@ -449,6 +449,8 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
              </div>
            )}
            
+           <IndicacaoCard />
+
            <div className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
               <h3 className="font-bold mb-4">Dica de Segurança</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
