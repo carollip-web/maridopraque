@@ -152,11 +152,28 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center pt-1">
+            <div className="flex items-center justify-between pt-1">
               <button type="button" onClick={() => setKeepLoggedIn(!keepLoggedIn)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground ml-1">
                 {keepLoggedIn ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
                 Manter conectado
               </button>
+              {!isRegistering && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setError(null); setInfo(null);
+                    if (!email) return setError("Digite seu e-mail acima primeiro.");
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                    if (error) setError(error.message);
+                    else setInfo("Enviamos um link de recuperação para seu e-mail.");
+                  }}
+                  className="text-sm font-medium text-brand hover:underline mr-1"
+                >
+                  Esqueci a senha
+                </button>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
