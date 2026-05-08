@@ -535,6 +535,51 @@ function MeusOrcamentos() {
              })}
           </ol>
 
+          {/* Resumo dinâmico — atualiza com serviço selecionado e materiais */}
+          {selServico && selServico.preco_min != null && selServico.preco_max != null && (() => {
+            const min = Number(selServico.preco_min);
+            const max = Number(selServico.preco_max);
+            const media = (min + max) / 2;
+            const horas = Math.max(0.5, Math.min(8, media / 80));
+            const tempo =
+              horas < 1 ? "≈ 30 min"
+              : horas < 1.5 ? "≈ 1 h"
+              : horas < 5 ? `≈ ${Math.round(horas * 2) / 2} h`
+              : `≈ ${Math.round(horas)} h`;
+            const totalMin = min + subtotalMat;
+            const totalMax = max + subtotalMat;
+            const qtdMat = Object.keys(picked).length;
+            return (
+              <div className="rounded-xl border border-brand/30 bg-brand-soft/40 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">
+                      Resumo da solicitação
+                    </p>
+                    <p className="mt-1 font-bold text-foreground truncate">{selServico.nome}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {qtdMat > 0 ? `${qtdMat} material(is) selecionado(s)` : "Sem materiais adicionais"}
+                      {" · "}Tempo médio: <span className="font-semibold text-foreground">{tempo}</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Total estimado
+                    </p>
+                    <p className="text-lg font-bold text-brand whitespace-nowrap">
+                      {min === max ? brl(totalMin) : `${brl(totalMin)} – ${brl(totalMax)}`}
+                    </p>
+                    {subtotalMat > 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Mão de obra {brl(min)}–{brl(max)} + materiais {brl(subtotalMat)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Step 1: Serviço */}
           {step === 1 && (
             <div className="space-y-4">
