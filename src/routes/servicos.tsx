@@ -187,27 +187,13 @@ function Servicos() {
 
                     <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        * Materiais não inclusos • Preços base
+                        * Materiais não inclusos • Sem compromisso até você aprovar
                       </p>
-                      <div className="flex items-center gap-4">
-                        <Link
-                          to="/orcamentos"
-                          className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
-                        >
+                      <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
+                        <Link to="/orcamentos">
                           Solicitar Orçamento →
                         </Link>
-                        <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
-                          <Link 
-                            to="/checkout" 
-                            search={{ 
-                              service: item.name,
-                              price: 150 // Mock price or extracted from pricing
-                            }}
-                          >
-                            Agendar e Pagar (50%)
-                          </Link>
-                        </Button>
-                      </div>
+                      </Button>
                     </div>
                   </div>
                 ))}
