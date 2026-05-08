@@ -11,7 +11,7 @@ const faqs = [
     category: "Geral",
     icon: HelpCircle,
     questions: [
-      { q: "Como faço para solicitar um orçamento?", a: "Você pode solicitar clicando no botão do WhatsApp em qualquer página ou preenchendo o simulador na página de pagamentos. Te responderemos em poucos minutos." },
+      { q: "Como faço para solicitar um orçamento?", a: "Acesse a página de Orçamentos, escolha o serviço, marque os materiais opcionais e envie o pedido. Um profissional retornará com o valor dentro do range de preço." },
       { q: "Posso escolher uma profissional mulher?", a: "Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto." },
       { q: "Atendem aos finais de semana?", a: "Sim! Atendemos de segunda a sexta das 08h às 19h e aos sábados das 08h às 14h. Também temos plantão 24h para emergências via WhatsApp." },
     ]

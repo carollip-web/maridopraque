@@ -113,7 +113,7 @@ const serviceCategories = [
   }
 ];
 
-const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
 
 function Servicos() {
   return (
@@ -182,14 +182,12 @@ function Servicos() {
                         * Materiais não inclusos • Preços base
                       </p>
                       <div className="flex items-center gap-4">
-                        <a 
-                          href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <Link
+                          to="/orcamentos"
                           className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
                         >
                           Solicitar Orçamento →
-                        </a>
+                        </Link>
                         <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
                           <Link 
                             to="/checkout" 

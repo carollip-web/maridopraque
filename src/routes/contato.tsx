@@ -6,7 +6,7 @@ export const Route = createFileRoute("/contato")({
   component: Contato,
 });
 
-const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20um%20orçamento.";
+const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20com%20a%20equipe.";
 
 function Contato() {
   return (
