@@ -182,14 +182,12 @@ function Servicos() {
                         * Materiais não inclusos • Preços base
                       </p>
                       <div className="flex items-center gap-4">
-                        <a 
-                          href={`${WHATSAPP}%20Serviço:%20${encodeURIComponent(item.name)}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <Link
+                          to="/orcamentos"
                           className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
                         >
                           Solicitar Orçamento →
-                        </a>
+                        </Link>
                         <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
                           <Link 
                             to="/checkout" 
