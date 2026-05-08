@@ -3,6 +3,14 @@ import { MessageCircle, Phone, Mail, MapPin, Clock, Instagram, Facebook } from "
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/contato")({
+  head: () => ({
+    meta: [
+      { title: "Contato — WhatsApp, telefone e e-mail | Marido pra Quê?" },
+      { name: "description", content: "Fale com a gente pelo WhatsApp, telefone ou e-mail. Atendimento ágil de segunda a sábado, com plantão 24h para emergências." },
+      { property: "og:title", content: "Fale com a Marido pra Quê?" },
+      { property: "og:description", content: "WhatsApp, telefone e e-mail — escolha o canal que prefere." },
+    ],
+  }),
   component: Contato,
 });
 
