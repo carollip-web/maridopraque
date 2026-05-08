@@ -631,13 +631,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                        </div>
                     </div>
                  )}
-                 <div className="flex gap-4">
+                 <div className="flex flex-wrap gap-4">
                     {sp.status === "Aguardando Aprovação" && (
                        <Button 
                          className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
                          onClick={() => setApprovalStep("confirm")}
                        >
                          Aprovar Orçamento
+                       </Button>
+                    )}
+                    {(sp.status === "Agendado" || sp.status === "Aprovado") && (
+                       <Button
+                         variant="outline"
+                         className="flex-1 rounded-full font-bold h-12"
+                         onClick={async () => {
+                           const { toast } = await import("sonner");
+                           toast.success("Pedido de reagendamento enviado ao profissional");
+                         }}
+                       >
+                         Solicitar Reagendamento
                        </Button>
                     )}
                     <Button 
