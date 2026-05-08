@@ -794,26 +794,26 @@ function MeusOrcamentos() {
               </div>
 
               {selServico.preco_min != null && selServico.preco_max != null && (
-                <div className="rounded-2xl bg-brand/5 border border-brand/20 p-4 text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mão de obra (range)</span>
-                    <span>
+                <div className="rounded-2xl border border-border bg-card p-5 text-sm space-y-2">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Mão de obra</span>
+                    <span className="tabular-nums text-foreground">
                       {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Materiais</span>
-                    <span>{brl(subtotalMat)}</span>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Materiais</span>
+                    <span className="tabular-nums text-foreground">{brl(subtotalMat)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-base pt-2 border-t border-brand/20">
+                  <div className="flex justify-between font-semibold text-base pt-3 mt-1 border-t border-border">
                     <span>Total estimado</span>
-                    <span>
+                    <span className="tabular-nums">
                       {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
                       {brl(Number(selServico.preco_max) + subtotalMat)}
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground pt-1">
-                    O valor final da mão de obra ficará dentro do range tabelado e será confirmado pelo profissional.
+                    O valor final da mão de obra será confirmado pelo profissional.
                   </p>
                 </div>
               )}
