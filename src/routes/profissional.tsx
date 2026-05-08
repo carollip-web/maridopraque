@@ -27,9 +27,12 @@ export const Route = createFileRoute("/profissional")({
 
 type Orcamento = {
   id: string;
+  service_id: string | null;
   service_name: string;
   descricao: string | null;
   valor: number | null;
+  valor_servico: number | null;
+  taxa_material: number;
   status:
     | "fixo_auto"
     | "customizado_pendente"
@@ -47,6 +50,9 @@ type Orcamento = {
   data_pagamento: string | null;
   auto_aprovado: boolean;
 };
+
+type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
+type OrcMat = { orcamento_id: string; nome_snapshot: string; unidade_snapshot: string; quantidade: number; subtotal: number };
 
 type Profile = { id: string; nome: string; whatsapp: string | null; email: string | null };
 
