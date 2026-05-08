@@ -2,6 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clock, ShieldCheck, Star, CheckCircle2, Heart, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/porque")({
+  head: () => ({
+    meta: [
+      { title: "Por que escolher a Marido pra Quê? — Diferenciais" },
+      { name: "description", content: "Pontualidade, garantia de 30 dias, profissionais verificados e atendimento com acompanhante feminina. Conheça nossos diferenciais." },
+      { property: "og:title", content: "Por que escolher a Marido pra Quê?" },
+      { property: "og:description", content: "Reparos com confiança: equipe verificada e garantia de 30 dias." },
+    ],
+  }),
   component: PorqueNos,
 });
 
