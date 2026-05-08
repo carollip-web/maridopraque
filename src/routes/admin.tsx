@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AdminMetrics } from "@/components/AdminMetrics";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
