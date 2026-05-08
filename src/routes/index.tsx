@@ -122,7 +122,7 @@ function Index() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="brand" size="xl">
-                <Link to="/orcamentos">
+                <Link to="/orcamentos" search={{ new: 1 }}>
                   Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>

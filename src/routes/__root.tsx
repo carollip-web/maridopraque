@@ -19,6 +19,7 @@ function NotFoundComponent() {
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             to="/orcamentos"
+            search={{ new: 1 }}
             className="inline-flex h-11 items-center justify-center rounded-full bg-brand px-7 text-sm font-semibold text-brand-foreground shadow-brand transition hover:-translate-y-0.5"
           >
             Pedir orçamento agora

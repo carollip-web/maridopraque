@@ -190,7 +190,7 @@ function Servicos() {
                         * Materiais não inclusos • Sem compromisso até você aprovar
                       </p>
                       <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
-                        <Link to="/orcamentos">
+                        <Link to="/orcamentos" search={{ new: 1, serviceName: item.name }}>
                           Solicitar Orçamento →
                         </Link>
                       </Button>
