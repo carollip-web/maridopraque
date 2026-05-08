@@ -408,6 +408,16 @@ function MeusOrcamentos() {
 
       {showNew && (
         <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
+          {editingId && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
+              <Pencil className="h-4 w-4" /> Editando solicitação enviada — alterações são possíveis até o profissional responder.
+            </div>
+          )}
+          {!editingId && draftSavedAt && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Save className="h-3 w-3" /> Rascunho salvo automaticamente
+            </p>
+          )}
           {/* Stepper */}
           <ol className="flex items-center gap-2 text-xs font-semibold">
             {[
