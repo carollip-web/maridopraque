@@ -101,6 +101,7 @@ function MeusOrcamentos() {
   const [descricao, setDescricao] = useState("");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const solicitar = useServerFn(solicitarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
