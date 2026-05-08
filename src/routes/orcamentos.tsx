@@ -31,6 +31,7 @@ export const Route = createFileRoute("/orcamentos")({
     new: s.new === "1" || s.new === 1 || s.new === true ? 1 : undefined,
     serviceName: typeof s.serviceName === "string" ? s.serviceName : undefined,
     serviceId: typeof s.serviceId === "string" ? s.serviceId : undefined,
+    categoria: typeof s.categoria === "string" ? s.categoria : undefined,
   }),
   head: () => ({
     meta: [
