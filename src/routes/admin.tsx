@@ -28,6 +28,7 @@ import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
@@ -150,6 +151,8 @@ function AdminArea() {
   );
 }
 
+import { useQuery } from "@tanstack/react-query";
+
 /* ============== PEDIDOS ============== */
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -163,32 +166,33 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
 };
 
 function AdminPedidos() {
-  const [orcamentos, setOrcamentos] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("todos");
 
-  const reload = async () => {
-    setLoading(true);
-    const { data: orcs } = await supabase
-      .from("orcamentos")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    const list = orcs || [];
-    const ids = Array.from(new Set(list.flatMap((o: any) => [o.cliente_id, o.profissional_id]).filter(Boolean)));
-    let map: Record<string, any> = {};
-    if (ids.length > 0) {
-      const { data: profs } = await supabase.from("profiles").select("id, nome, email").in("id", ids);
-      map = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["admin", "orcamentos"],
+    queryFn: async () => {
+      const { data: orcs } = await supabase
+        .from("orcamentos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      
+      const list = orcs || [];
+      const ids = Array.from(new Set(list.flatMap((o: any) => [o.cliente_id, o.profissional_id]).filter(Boolean)));
+      
+      let profileMap: Record<string, any> = {};
+      if (ids.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("id, nome, email").in("id", ids);
+        profileMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
+      }
+      
+      return { orcamentos: list, profiles: profileMap };
     }
-    setOrcamentos(list);
-    setProfiles(map);
-    setLoading(false);
-  };
+  });
 
-  useEffect(() => { reload(); }, []);
+  const orcamentos = data?.orcamentos || [];
+  const profiles = data?.profiles || {};
 
   const filtered = useMemo(() => {
     return orcamentos.filter((o) => {
@@ -227,7 +231,7 @@ function AdminPedidos() {
               className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none"
             />
           </div>
-          <Button variant="outline" className="rounded-lg gap-2" onClick={reload}>
+          <Button variant="outline" className="rounded-lg gap-2" onClick={() => refetch()}>
             <Filter className="h-4 w-4" /> Atualizar
           </Button>
         </div>
@@ -261,13 +265,25 @@ function AdminPedidos() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {loading && (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">Carregando…</td></tr>
+              {isLoading && (
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-40" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-md" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
+                      <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                    </tr>
+                  ))}
+                </>
               )}
-              {!loading && filtered.length === 0 && (
+              {!isLoading && filtered.length === 0 && (
                 <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">Nenhum pedido encontrado.</td></tr>
               )}
-              {!loading && filtered.map((o) => {
+              {!isLoading && filtered.map((o) => {
                 const meta = STATUS_COLORS[o.status] ?? { bg: "bg-slate-100", color: "text-slate-600", label: o.status };
                 const cli = profiles[o.cliente_id];
                 const prof = o.profissional_id ? profiles[o.profissional_id] : null;
@@ -300,14 +316,12 @@ function AdminPedidos() {
 /* ============== PROFISSIONAIS ============== */
 
 function AdminProfissionais() {
-  const [pros, setPros] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
+  const { data: pros = [], isLoading } = useQuery({
+    queryKey: ["admin", "profissionais"],
+    queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "profissional");
       const ids = (roles || []).map((r: any) => r.user_id);
-      if (ids.length === 0) { setPros([]); setLoading(false); return; }
+      if (ids.length === 0) return [];
 
       const [{ data: profs }, { data: perfis }, { data: orcs }, { data: avs }] = await Promise.all([
         supabase.from("profiles").select("id, nome, email").in("id", ids),
@@ -333,7 +347,7 @@ function AdminProfissionais() {
         stats[a.profissional_id].n += 1;
       });
 
-      const list = (profs || []).map((p: any) => {
+      return (profs || []).map((p: any) => {
         const s = stats[p.id] || { ganhos: 0, servicos: 0, nota: 0, n: 0 };
         const perfil = perfilMap[p.id];
         return {
@@ -347,10 +361,8 @@ function AdminProfissionais() {
           rating: s.n > 0 ? (s.nota / s.n) : null,
         };
       });
-      setPros(list);
-      setLoading(false);
-    })();
-  }, []);
+    }
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -359,15 +371,33 @@ function AdminProfissionais() {
         <p className="text-sm text-slate-500">{pros.length} no total</p>
       </div>
 
-      {loading && <p className="text-sm text-slate-400">Carregando…</p>}
-      {!loading && pros.length === 0 && (
+      {isLoading && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex justify-between">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <Skeleton className="h-2 w-2 rounded-full" />
+              </div>
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <div className="pt-4 border-t flex gap-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {!isLoading && pros.length === 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
           Nenhum profissional cadastrado ainda.
         </div>
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {pros.map((pro) => (
+        {!isLoading && pros.map((pro) => (
           <div key={pro.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-start justify-between mb-4">
               <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold">
@@ -410,12 +440,11 @@ function AdminProfissionais() {
 /* ============== CLIENTES ============== */
 
 function AdminClientes() {
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
 
-  useEffect(() => {
-    (async () => {
+  const { data: clientes = [], isLoading } = useQuery({
+    queryKey: ["admin", "clientes"],
+    queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       const proIds = new Set((roles || []).filter((r: any) => r.role !== "cliente").map((r: any) => r.user_id));
       const { data: profs } = await supabase
@@ -423,10 +452,9 @@ function AdminClientes() {
         .select("id, nome, email, whatsapp, total_servicos_pagos, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
-      setClientes((profs || []).filter((p: any) => !proIds.has(p.id)));
-      setLoading(false);
-    })();
-  }, []);
+      return (profs || []).filter((p: any) => !proIds.has(p.id));
+    }
+  });
 
   const filtered = clientes.filter(
     (c) =>
@@ -449,10 +477,31 @@ function AdminClientes() {
           />
         </div>
       </div>
-      {loading && <p className="text-sm text-slate-400">Carregando…</p>}
-      {!loading && filtered.length === 0 && <p className="text-sm text-slate-400">Nenhum cliente encontrado.</p>}
+      
+      {isLoading && (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+              <div className="space-y-1 text-right">
+                <Skeleton className="h-4 w-20 ml-auto" />
+                <Skeleton className="h-3 w-16 ml-auto" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && filtered.length === 0 && <p className="text-sm text-slate-400">Nenhum cliente encontrado.</p>}
+      
       <div className="space-y-4">
-        {filtered.map((c) => (
+        {!isLoading && filtered.map((c) => (
           <div key={c.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
             <div className="flex items-center gap-4 min-w-0">
               <div className="h-10 w-10 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-sm shrink-0">
@@ -477,24 +526,21 @@ function AdminClientes() {
 /* ============== SERVIÇOS ============== */
 
 function AdminServicos() {
-  const [servicos, setServicos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
+  const { data: servicos = [], isLoading } = useQuery({
+    queryKey: ["admin", "servicos"],
+    queryFn: async () => {
       const { data } = await supabase
         .from("services_catalog")
         .select("*")
         .order("categoria")
         .order("nome");
-      setServicos(data || []);
-      setLoading(false);
-    })();
-  }, []);
+      return data || [];
+    }
+  });
 
   const categorias = useMemo(() => {
     const map: Record<string, number> = {};
-    servicos.forEach((s) => { map[s.categoria] = (map[s.categoria] || 0) + 1; });
+    servicos.forEach((s: any) => { map[s.categoria] = (map[s.categoria] || 0) + 1; });
     return Object.entries(map);
   }, [servicos]);
 
@@ -509,7 +555,13 @@ function AdminServicos() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {categorias.map(([cat, count]) => (
+        {isLoading && [...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        ))}
+        {!isLoading && categorias.map(([cat, count]) => (
           <div key={cat} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p className="font-bold capitalize">{cat}</p>
             <p className="text-xs text-slate-500">{count} {count === 1 ? "item ativo" : "itens ativos"}</p>
@@ -528,11 +580,18 @@ function AdminServicos() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {loading && <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400 text-sm">Carregando…</td></tr>}
-            {!loading && servicos.length === 0 && (
+            {isLoading && [...Array(5)].map((_, i) => (
+              <tr key={i}>
+                <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
+                <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
+                <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
+                <td className="px-6 py-4 text-right"><Skeleton className="h-5 w-16 ml-auto rounded-full" /></td>
+              </tr>
+            ))}
+            {!isLoading && servicos.length === 0 && (
               <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400 text-sm">Nenhum serviço cadastrado.</td></tr>
             )}
-            {servicos.map((s) => (
+            {!isLoading && servicos.map((s: any) => (
               <tr key={s.id} className="hover:bg-slate-50">
                 <td className="px-6 py-4 text-sm font-bold">{s.nome}</td>
                 <td className="px-6 py-4 text-sm text-slate-600 capitalize">{s.categoria}</td>
@@ -643,23 +702,44 @@ function AdminFinanceiro() {
 
 /* ============== CONFIG ============== */
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const configSchema = z.object({
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  whatsapp: z.string().min(10, "WhatsApp inválido"),
+});
+
+type ConfigValues = z.infer<typeof configSchema>;
+
 function AdminConfig() {
   const { profile, user } = useAuth();
-  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp || "");
-  const [nome, setNome] = useState(profile?.nome || "");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setWhatsapp(profile?.whatsapp || "");
-    setNome(profile?.nome || "");
-  }, [profile]);
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ConfigValues>({
+    resolver: zodResolver(configSchema),
+    defaultValues: {
+      nome: profile?.nome || "",
+      whatsapp: profile?.whatsapp || "",
+    },
+  });
 
-  const salvar = async () => {
+  useEffect(() => {
+    if (profile) {
+      reset({
+        nome: profile.nome || "",
+        whatsapp: profile.whatsapp || "",
+      });
+    }
+  }, [profile, reset]);
+
+  const onSubmit = async (values: ConfigValues) => {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ nome, whatsapp })
+      .update({ nome: values.nome, whatsapp: values.whatsapp })
       .eq("id", user.id);
     setSaving(false);
     if (error) toast.error("Erro ao salvar", { description: error.message });
@@ -681,14 +761,14 @@ function AdminConfig() {
 
       <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold mb-6 text-slate-900 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-brand" /> Perfil do administrador</h3>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-2">
             <label className="text-xs font-bold uppercase text-slate-500">Nome</label>
             <input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand outline-none"
+              {...register("nome")}
+              className={`p-3 rounded-lg border text-sm focus:ring-2 focus:ring-brand outline-none ${errors.nome ? "border-red-500 ring-red-100" : "border-slate-200"}`}
             />
+            {errors.nome && <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>}
           </div>
           <div className="grid gap-2">
             <label className="text-xs font-bold uppercase text-slate-500">E-mail</label>
@@ -701,18 +781,18 @@ function AdminConfig() {
           <div className="grid gap-2">
             <label className="text-xs font-bold uppercase text-slate-500">WhatsApp</label>
             <input
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              {...register("whatsapp")}
               placeholder="+55 (21) 99999-9999"
-              className="p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand outline-none"
+              className={`p-3 rounded-lg border text-sm focus:ring-2 focus:ring-brand outline-none ${errors.whatsapp ? "border-red-500 ring-red-100" : "border-slate-200"}`}
             />
+            {errors.whatsapp && <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>}
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={salvar} disabled={saving} className="bg-brand text-white rounded-lg">
+            <Button type="submit" disabled={saving} className="bg-brand text-white rounded-lg">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar alterações"}
             </Button>
           </div>
-        </div>
+        </form>
       </section>
 
       <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">

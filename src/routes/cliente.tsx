@@ -27,6 +27,11 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -368,29 +373,66 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
 function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [showBanner, setShowBanner] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["cliente", "stats", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("orcamentos")
+        .select("status, valor, service_name, created_at")
+        .eq("cliente_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      const list = data || [];
+      return {
+        concluidos: list.filter(o => o.status === "pago").length,
+        ativos: list.filter(o => ["aprovado", "enviado"].includes(o.status)).length,
+        pendentes: list.filter(o => o.status === "customizado_pendente").length,
+        total: list.filter(o => o.status === "pago").reduce((acc, o) => acc + (o.valor || 0), 0),
+        recentes: list.slice(0, 3),
+      };
+    },
+    enabled: !!user,
+  });
+
+  const statsItems = [
+    { label: "Serviços Realizados", value: stats?.concluidos ?? "0", icon: CheckCircle2, color: "text-green-600", tab: "servicos" as const },
+    { label: "Pedidos Ativos", value: stats?.ativos ?? "0", icon: Clock, color: "text-[#b85c45]", tab: "pedidos" as const },
+    { label: "Orçamentos Pendentes", value: stats?.pendentes ?? "0", icon: AlertCircle, color: "text-amber-500", tab: "pedidos" as const },
+    { label: "Total Investido", value: `R$ ${stats?.total.toFixed(0) ?? "0"}`, icon: CreditCard, color: "text-slate-600", tab: "pagamentos" as const },
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Serviços Realizados", value: "12", icon: CheckCircle2, color: "text-green-600", tab: "servicos" as const },
-          { label: "Pedidos Ativos", value: "2", icon: Clock, color: "text-[#b85c45]", tab: "pedidos" as const },
-          { label: "Orçamentos Pendentes", value: "1", icon: AlertCircle, color: "text-amber-500", tab: "pedidos" as const },
-          { label: "Total Investido", value: "R$ 2.450", icon: CreditCard, color: "text-slate-600", tab: "pagamentos" as const },
-        ].map((stat) => (
-          <div 
-            key={stat.label} 
-            className="bg-white p-6 rounded-3xl border border-border shadow-soft hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group"
-            onClick={() => setActiveTab(stat.tab)}
-          >
-            <div className={`h-11 w-11 rounded-full bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-brand/10 transition-colors`}>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-3xl border border-border shadow-soft space-y-4">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-16" />
+              </div>
             </div>
-            <p className="text-sm font-medium text-muted-foreground group-hover:text-brand transition-colors">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{stat.value}</p>
-          </div>
-        ))}
+          ))
+        ) : (
+          statsItems.map((stat) => (
+            <div 
+              key={stat.label} 
+              className="bg-white p-6 rounded-3xl border border-border shadow-soft hover:shadow-md hover:border-brand/20 transition-all cursor-pointer group"
+              onClick={() => setActiveTab(stat.tab)}
+            >
+              <div className={`h-11 w-11 rounded-full bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-brand/10 transition-colors`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground group-hover:text-brand transition-colors">{stat.label}</p>
+              <p className="text-2xl font-bold mt-1">{stat.value}</p>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
@@ -398,33 +440,52 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-bold">Atividade Recente</h2>
-            <button className="text-sm font-semibold text-brand hover:underline" onClick={() => setActiveTab("servicos")}>Ver tudo</button>
+            <button className="text-sm font-semibold text-brand hover:underline" onClick={() => setActiveTab("pedidos")}>Ver tudo</button>
           </div>
           <div className="space-y-6">
-            {[
-              { title: "Instalação de Chuveiro", status: "Concluído", date: "Ontem, 14:30", type: "servico" },
-              { title: "Orçamento: Pintura Sala", status: "Aguardando aprovação", date: "Há 2 dias", type: "orcamento" },
-              { title: "Montagem de Guarda-roupa", status: "Agendado para 10/05", date: "Há 3 dias", type: "pedido" },
-            ].map((item, i) => (
-              <div 
-                key={i} 
-                className="flex items-center gap-4 group cursor-pointer" 
-                onClick={() => setActiveTab(item.type === "servico" ? "servicos" : "pedidos")}
-              >
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${
-                  item.type === "servico" ? "bg-green-50 text-green-600" : 
-                  item.type === "orcamento" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
-                }`}>
-                  {item.type === "servico" ? <CheckCircle2 className="h-5 w-5" /> : 
-                   item.type === "orcamento" ? <FileText className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+            {isLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                  <Skeleton className="h-4 w-4" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold group-hover:text-brand transition-colors">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.status} • {item.date}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            ))}
+              ))
+            ) : (
+              (stats?.recentes || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">Nenhuma atividade recente.</p>
+              ) : (
+                stats?.recentes.map((item: any, i: number) => {
+                  const isConcluido = item.status === "pago";
+                  const isOrcamento = item.status === "customizado_pendente";
+                  return (
+                    <div 
+                      key={i} 
+                      className="flex items-center gap-4 group cursor-pointer" 
+                      onClick={() => setActiveTab(isConcluido ? "servicos" : "pedidos")}
+                    >
+                      <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${
+                        isConcluido ? "bg-green-50 text-green-600" : 
+                        isOrcamento ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                      }`}>
+                        {isConcluido ? <CheckCircle2 className="h-5 w-5" /> : 
+                         isOrcamento ? <FileText className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold group-hover:text-brand transition-colors">{item.service_name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {isConcluido ? "Concluído" : isOrcamento ? "Aguardando orçamento" : "Em andamento"} • {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  );
+                })
+              )
+            )}
           </div>
         </section>
 
@@ -467,45 +528,38 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { pedidoId } = Route.useSearch();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
   const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
 
+  const { data: pedidos = [], isLoading } = useQuery({
+    queryKey: ["cliente", "pedidos", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("orcamentos")
+        .select("*")
+        .eq("cliente_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      const list = data || [];
+      // Normalize statuses for the UI filters
+      return list.map(o => ({
+        ...o,
+        title: o.service_name,
+        uiStatus: o.status === "customizado_pendente" ? "Em Análise" :
+                 o.status === "enviado" ? "Aguardando Aprovação" :
+                 o.status === "aprovado" ? "Agendado" : o.status,
+        displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir"
+      }));
+    },
+    enabled: !!user,
+  });
+
   const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
-
   const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20sobre%20meu%20pedido.";
-
-  const pedidos = [
-    { 
-      id: "#8842", 
-      title: "Montagem de Painel de TV", 
-      status: "Agendado", 
-      date: "10/05/2026", 
-      price: "R$ 150", 
-      prof: "Mariana S.",
-      description: "Montagem de painel articulado em parede de drywall." 
-    },
-    { 
-      id: "#8839", 
-      title: "Reparo Hidráulico Cozinha", 
-      status: "Em Análise", 
-      date: "Solicitado hoje", 
-      price: "A definir", 
-      prof: "-",
-      description: "Vazamento no sifão da pia da cozinha." 
-    },
-    { 
-      id: "#8830", 
-      title: "Pintura de Quarto", 
-      status: "Aguardando Aprovação", 
-      date: "Há 2 dias", 
-      price: "R$ 450", 
-      prof: "Ricardo M.",
-      description: "Pintura completa de quarto de 12m² com massa corrida." 
-    },
-  ];
 
   // Simple in-memory store for pedido status updates
   const [pedidoStatuses, setPedidoStatuses] = useState<Record<string, string>>({});
@@ -885,12 +939,30 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
       </div>
 
       <div className="grid gap-6">
-        {filteredPedidos.length === 0 ? (
+        {isLoading && (
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-border shadow-soft space-y-6">
+               <div className="flex justify-between">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-16 w-16 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-24 rounded-full" />
+               </div>
+               <Skeleton className="h-20 w-full rounded-2xl" />
+            </div>
+          ))
+        )}
+
+        {!isLoading && filteredPedidos.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground font-medium bg-white rounded-[2.5rem] border border-dashed border-border">
              Nenhum pedido encontrado com esses termos.
           </div>
         ) : (
-          filteredPedidos.map((p) => (
+          !isLoading && filteredPedidos.map((p) => (
             <div 
               key={p.id} 
               onClick={() => { openPedido(p.id); }}
@@ -901,7 +973,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                   p.status === "Agendado" ? "bg-blue-50 text-blue-600" : 
                   p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-600"
                 }`}>
-                  {p.id}
+                  {p.id.slice(0, 4)}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -910,27 +982,26 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       p.status === "Agendado" ? "bg-green-100 text-green-700" : 
                       p.status === "Em Análise" ? "bg-slate-100 text-slate-600" : "bg-amber-100 text-amber-700"
                     }`}>
-                      {p.status}
+                      {p.uiStatus}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">{p.description}</p>
+                  <p className="text-sm text-muted-foreground mb-4">{p.descricao || "Sem descrição."}</p>
                   <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {p.date}</span>
-                    {p.prof !== "-" && <span className="flex items-center gap-1.5"><Wrench className="h-3.5 w-3.5" /> {p.prof}</span>}
+                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {new Date(p.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center justify-between md:flex-col md:items-end gap-2 shrink-0">
                 <div className="text-right">
                   <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-0.5">Investimento</p>
-                  <p className="text-xl font-bold text-slate-800">{p.price}</p>
+                  <p className="text-xl font-bold text-slate-800">{p.displayPrice}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {p.status === "Aguardando Aprovação" && (
+                  {p.status === "enviado" && (
                     <Button 
                       size="sm" 
                       className="bg-brand text-white rounded-full px-6 font-bold shadow-md hover:scale-105 transition-transform"
-                      onClick={(e) => { e.stopPropagation(); alert("Orçamento Aprovado!"); }}
+                      onClick={(e) => { e.stopPropagation(); navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: p.id }) }); }}
                     >
                       Aprovar
                     </Button>
@@ -951,29 +1022,26 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 function ServicosTab() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [servicos, setServicos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [repetindo, setRepetindo] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { supabase } = await import("@/integrations/supabase/client");
+  const { data: servicos = [], isLoading } = useQuery({
+    queryKey: ["cliente", "servicos", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       const { data } = await supabase
         .from("orcamentos")
         .select("id, service_name, service_id, valor, profissional_id, data_pagamento, created_at")
         .eq("cliente_id", user.id)
         .eq("status", "pago")
         .order("data_pagamento", { ascending: false });
-      setServicos(data || []);
-      setLoading(false);
-    })();
-  }, [user]);
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const repetir = async (s: any) => {
     if (!user) return;
     setRepetindo(s.id);
-    const { supabase } = await import("@/integrations/supabase/client");
     const { data, error } = await supabase
       .from("orcamentos")
       .insert({
@@ -986,15 +1054,29 @@ function ServicosTab() {
       .single();
     setRepetindo(null);
     if (error || !data) {
-      const { toast } = await import("sonner");
       toast.error("Não foi possível repetir o pedido");
       return;
     }
-    navigate({ to: "/cliente", search: () => ({ tab: "pedidos" as Tab, pedidoId: data.id, id: undefined, details: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, tab: "pedidos" as Tab, pedidoId: data.id, id: undefined, details: undefined }) });
   };
 
-  if (loading) {
-    return <div className="text-center text-muted-foreground py-12">Carregando histórico…</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-border p-6 md:p-8 space-y-6">
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <Skeleton className="h-6 w-24" />
+            </div>
+            <Skeleton className="h-20 w-full rounded-xl" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (servicos.length === 0) {
@@ -1046,12 +1128,11 @@ function ServicosTab() {
 
 function PagamentosTab() {
   const { user } = useAuth();
-  const [transacoes, setTransacoes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
+  
+  const { data: transacoes = [], isLoading } = useQuery({
+    queryKey: ["cliente", "pagamentos", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       const { data } = await supabase
         .from("orcamentos")
         .select("id, service_name, valor, status, data_pagamento, created_at")
@@ -1059,10 +1140,10 @@ function PagamentosTab() {
         .eq("status", "pago")
         .order("data_pagamento", { ascending: false })
         .limit(20);
-      setTransacoes(data || []);
-      setLoading(false);
-    })();
-  }, [user?.id]);
+      return data || [];
+    },
+    enabled: !!user,
+  });
 
   const total = transacoes.reduce((s, t) => s + Number(t.valor || 0), 0);
 
@@ -1073,7 +1154,11 @@ function PagamentosTab() {
           <CreditCard className="absolute -right-6 -bottom-6 h-32 w-32 text-white/5" />
           <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-60 mb-8">Total já investido</p>
           <div className="space-y-1">
-            <p className="text-4xl font-bold tracking-tight">R$ {total.toFixed(2)}</p>
+            {isLoading ? (
+              <Skeleton className="h-10 w-40 bg-white/10" />
+            ) : (
+              <p className="text-4xl font-bold tracking-tight">R$ {total.toFixed(2)}</p>
+            )}
             <p className="text-sm opacity-60">Em {transacoes.length} {transacoes.length === 1 ? "serviço pago" : "serviços pagos"}</p>
           </div>
           <div className="mt-10 flex justify-between items-end">
@@ -1101,13 +1186,28 @@ function PagamentosTab() {
       <section>
         <h3 className="text-xl font-bold mb-6">Últimas transações</h3>
         <div className="bg-white rounded-2xl border border-border shadow-soft divide-y divide-border">
-          {loading && <div className="p-6 text-sm text-muted-foreground">Carregando…</div>}
-          {!loading && transacoes.length === 0 && (
+          {isLoading && (
+            <div className="p-6 space-y-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-10 w-10 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              ))}
+            </div>
+          )}
+          {!isLoading && transacoes.length === 0 && (
             <div className="p-10 text-center text-sm text-muted-foreground">
               Nenhum pagamento registrado ainda. Quando você pagar um orçamento, aparecerá aqui.
             </div>
           )}
-          {transacoes.map((t) => {
+          {!isLoading && transacoes.map((t) => {
             const d = t.data_pagamento ? new Date(t.data_pagamento) : new Date(t.created_at);
             return (
               <div key={t.id} className="flex items-center justify-between p-6">
@@ -1146,6 +1246,13 @@ type Endereco = {
   is_padrao: boolean;
 };
 
+const profileSchema = z.object({
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  whatsapp: z.string().min(10, "WhatsApp inválido"),
+});
+
+type ProfileValues = z.infer<typeof profileSchema>;
+
 function DadosTab() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1155,8 +1262,22 @@ function DadosTab() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const [nome, setNome] = useState(profile?.nome ?? "");
-  const [whatsapp, setWhatsapp] = useState(profile?.whatsapp ?? "");
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      nome: profile?.nome ?? "",
+      whatsapp: profile?.whatsapp ?? "",
+    }
+  });
+
+  useEffect(() => {
+    if (profile) {
+      reset({
+        nome: profile.nome ?? "",
+        whatsapp: profile.whatsapp ?? "",
+      });
+    }
+  }, [profile, reset]);
 
   const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [editingAddr, setEditingAddr] = useState<Endereco | null>(null);
@@ -1165,11 +1286,6 @@ function DadosTab() {
   const prefsKey = user ? `mpq_prefs_${user.id}` : null;
   const [whatsappNotifications, setWhatsappNotifications] = useState(true);
   const [promoEmails, setPromoEmails] = useState(false);
-
-  useEffect(() => {
-    setNome(profile?.nome ?? "");
-    setWhatsapp(profile?.whatsapp ?? "");
-  }, [profile?.nome, profile?.whatsapp]);
 
   useEffect(() => {
     if (!prefsKey || typeof window === "undefined") return;
@@ -1189,23 +1305,10 @@ function DadosTab() {
     window.localStorage.setItem(prefsKey, JSON.stringify(merged));
   };
 
-  const loadEnderecos = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("cliente_enderecos")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("is_padrao", { ascending: false })
-      .order("created_at", { ascending: true });
-    setEnderecos((data as any) || []);
-  };
-
-  useEffect(() => { loadEnderecos(); }, [user?.id]);
-
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (values: ProfileValues) => {
     if (!user) return;
     setSavingProfile(true);
-    const { error } = await supabase.from("profiles").update({ nome, whatsapp }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ nome: values.nome, whatsapp: values.whatsapp }).eq("id", user.id);
     setSavingProfile(false);
     if (error) {
       toastError("Não foi possível salvar", error.message);
@@ -1248,6 +1351,21 @@ function DadosTab() {
     setIsAddingAddress(true);
   };
 
+  const { data: enderecos = [], isLoading: loadingEnderecos, refetch: refetchEnderecos } = useQuery({
+    queryKey: ["cliente", "enderecos", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from("cliente_enderecos")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("is_padrao", { ascending: false })
+        .order("created_at", { ascending: true });
+      return (data as any) || [];
+    },
+    enabled: !!user,
+  });
+
   const handleSaveAddr = async () => {
     if (!user) return;
     if (!addrForm.logradouro.trim()) { toastError("Endereço", "Informe o logradouro"); return; }
@@ -1270,20 +1388,20 @@ function DadosTab() {
     }
     setIsAddingAddress(false);
     resetAddrForm();
-    await loadEnderecos();
+    refetchEnderecos();
   };
 
   const handleSetDefault = async (id: string) => {
     if (!user) return;
     await supabase.from("cliente_enderecos").update({ is_padrao: false }).eq("user_id", user.id);
     await supabase.from("cliente_enderecos").update({ is_padrao: true }).eq("id", id);
-    await loadEnderecos();
+    refetchEnderecos();
   };
 
   const handleRemoveAddr = async (id: string) => {
     if (!confirm("Remover este endereço?")) return;
     await supabase.from("cliente_enderecos").delete().eq("id", id);
-    await loadEnderecos();
+    refetchEnderecos();
   };
 
   return (
@@ -1343,11 +1461,10 @@ function DadosTab() {
             ) : (
               <div className="flex gap-2">
                 <Button size="sm" variant="ghost" onClick={() => {
-                  setNome(profile?.nome ?? "");
-                  setWhatsapp(profile?.whatsapp ?? "");
+                  reset();
                   setIsEditingProfile(false);
                 }}>Cancelar</Button>
-                <Button size="sm" disabled={savingProfile} className="bg-brand text-white rounded-full px-6 font-bold" onClick={handleSaveProfile}>
+                <Button size="sm" disabled={savingProfile} className="bg-brand text-white rounded-full px-6 font-bold" onClick={handleSubmit(handleSaveProfile)}>
                   {savingProfile ? "Salvando…" : "Salvar"}
                 </Button>
               </div>
@@ -1370,21 +1487,23 @@ function DadosTab() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
+            <form onSubmit={handleSubmit(handleSaveProfile)} className="grid gap-x-8 gap-y-6 sm:grid-cols-2 animate-in fade-in duration-300">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome completo</label>
                 <input
-                  type="text" value={nome} onChange={(e) => setNome(e.target.value)}
-                  className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent"
+                  {...register("nome")}
+                  className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.nome ? "border-red-500" : "border-brand focus:border-brand"}`}
                 />
+                {errors.nome && <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp</label>
                 <input
-                  type="text" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)}
+                  {...register("whatsapp")}
                   placeholder="+55 (21) 99999-9999"
-                  className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none focus:border-brand transition-colors bg-transparent"
+                  className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.whatsapp ? "border-red-500" : "border-brand focus:border-brand"}`}
                 />
+                {errors.whatsapp && <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">E-mail</label>
@@ -1394,7 +1513,7 @@ function DadosTab() {
                 />
                 <p className="text-[10px] text-muted-foreground">O e-mail é o seu identificador de login e não pode ser editado por aqui.</p>
               </div>
-            </div>
+            </form>
           )}
         </section>
 
@@ -1465,11 +1584,30 @@ function DadosTab() {
             </div>
           )}
 
-          {enderecos.length === 0 && !isAddingAddress ? (
+          {loadingEnderecos && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="p-6 rounded-[1.5rem] border border-border bg-slate-50 space-y-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <div className="pt-4 flex gap-4">
+                    <Skeleton className="h-3 w-10" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loadingEnderecos && enderecos.length === 0 && !isAddingAddress ? (
             <p className="text-sm text-muted-foreground text-center py-6">Você ainda não cadastrou endereços.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {enderecos.map((addr) => (
+              {!loadingEnderecos && enderecos.map((addr) => (
                 <div key={addr.id} className={`p-6 rounded-[1.5rem] border transition-all ${addr.is_padrao ? "border-brand/20 bg-brand-soft/30 ring-1 ring-brand/10" : "border-border bg-slate-50 hover:bg-white hover:shadow-md"}`}>
                   <div className="flex justify-between items-start mb-4">
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${addr.is_padrao ? "bg-brand text-white" : "bg-white text-muted-foreground"}`}>
