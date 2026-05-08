@@ -505,26 +505,33 @@ function MeusOrcamentos() {
               const Icon = s.icon;
               const active = step === s.n;
               const done = step > s.n;
+              // Pode navegar para passos já visitados/concluídos, ou para o atual.
+              // Avançar exige Serviço selecionado.
+              const canGo = s.n <= step || (s.n === 2 && !!selServiceId) || (s.n === 3 && !!selServiceId);
               return (
                 <li key={s.n} className="flex items-center gap-2 flex-1">
-                  <div
+                  <button
+                    type="button"
+                    onClick={() => canGo && setStep(s.n as 1 | 2 | 3)}
+                    disabled={!canGo}
+                    aria-current={active ? "step" : undefined}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
                       active
                         ? "bg-brand text-brand-foreground border-brand"
                         : done
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : "bg-slate-50 text-muted-foreground border-border"
-                    }`}
+                          ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                          : "bg-slate-50 text-muted-foreground border-border hover:bg-slate-100"
+                    } ${canGo ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span>
                       {s.n}. {s.label}
                     </span>
-                  </div>
+                  </button>
                   {i < 2 && <div className="flex-1 h-px bg-border" />}
-                </li>
-              );
-            })}
+                 </li>
+               );
+             })}
           </ol>
 
           {/* Step 1: Serviço */}
