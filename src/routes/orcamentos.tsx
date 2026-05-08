@@ -283,10 +283,8 @@ function MeusOrcamentos() {
     setDescricao(o.descricao ?? "");
     const mats = orcMats[o.id] ?? [];
     const p: Record<string, number> = {};
-    mats.forEach((m: any) => {
-      // Reaproveitamos o id do material via lookup pelo nome (snapshot)
-      const found = materiais.find((x) => x.nome === m.nome_snapshot);
-      if (found) p[found.id] = Number(m.quantidade);
+    mats.forEach((m) => {
+      if (m.material_id) p[m.material_id] = Number(m.quantidade);
     });
     setPicked(p);
     setStep(1);
