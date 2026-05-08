@@ -756,33 +756,32 @@ function MeusOrcamentos() {
           {/* Step 3: Confirmar */}
           {step === 3 && selServico && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border p-4 space-y-2">
-                <div>
-                  <p className="text-xs uppercase font-bold text-muted-foreground">Serviço</p>
-                  <p className="font-semibold">{selServico.nome}</p>
-                </div>
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
                 {descricao.trim() && (
-                  <div>
-                    <p className="text-xs uppercase font-bold text-muted-foreground">Descrição</p>
-                    <p className="text-sm">{descricao}</p>
+                  <div className="px-5 py-4 border-b border-border">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Descrição
+                    </p>
+                    <p className="mt-1 text-sm text-foreground whitespace-pre-line">{descricao}</p>
                   </div>
                 )}
+
                 {Object.keys(picked).length > 0 && (
-                  <div>
-                    <p className="text-xs uppercase font-bold text-muted-foreground">Materiais</p>
-                    <ul className="text-sm space-y-1 mt-1">
+                  <div className="px-5 py-4 border-b border-border">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Materiais ({Object.keys(picked).length})
+                    </p>
+                    <ul className="mt-2 text-sm divide-y divide-border/60">
                       {Object.entries(picked).map(([id, qty]) => {
                         const m = materiais.find((x) => x.id === id);
                         if (!m) return null;
                         return (
-                          <li key={id} className="flex justify-between">
-                            <span>
-                              {m.nome}{" "}
-                              <span className="text-muted-foreground">
-                                × {qty} {m.unidade}
-                              </span>
+                          <li key={id} className="flex justify-between py-1.5">
+                            <span className="text-foreground">
+                              {m.nome}
+                              <span className="text-muted-foreground"> · {qty} {m.unidade}</span>
                             </span>
-                            <span className="font-medium tabular-nums">
+                            <span className="font-medium tabular-nums text-foreground">
                               {brl(Number(m.preco_atual) * qty)}
                             </span>
                           </li>
@@ -791,32 +790,32 @@ function MeusOrcamentos() {
                     </ul>
                   </div>
                 )}
-              </div>
 
-              {selServico.preco_min != null && selServico.preco_max != null && (
-                <div className="rounded-2xl border border-border bg-card p-5 text-sm space-y-2">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Mão de obra</span>
-                    <span className="tabular-nums text-foreground">
-                      {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
-                    </span>
+                {selServico.preco_min != null && selServico.preco_max != null && (
+                  <div className="px-5 py-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Mão de obra</span>
+                      <span className="tabular-nums">
+                        {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Materiais</span>
+                      <span className="tabular-nums">{brl(subtotalMat)}</span>
+                    </div>
+                    <div className="flex justify-between items-baseline pt-3 mt-1 border-t border-border">
+                      <span className="font-semibold">Total estimado</span>
+                      <span className="text-base font-semibold tabular-nums">
+                        {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
+                        {brl(Number(selServico.preco_max) + subtotalMat)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
+                      O valor final será confirmado pelo profissional após avaliação no local.
+                    </p>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Materiais</span>
-                    <span className="tabular-nums text-foreground">{brl(subtotalMat)}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-base pt-3 mt-1 border-t border-border">
-                    <span>Total estimado</span>
-                    <span className="tabular-nums">
-                      {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
-                      {brl(Number(selServico.preco_max) + subtotalMat)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground pt-1">
-                    O valor final da mão de obra será confirmado pelo profissional.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="flex justify-between gap-2">
                 <Button
