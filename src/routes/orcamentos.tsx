@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { decidirOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
 import {
   Loader2,
   CheckCircle2,
@@ -21,6 +21,9 @@ import {
   ChevronRight,
   Wrench,
   ClipboardCheck,
+  Save,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
