@@ -31,6 +31,7 @@ export const Route = createFileRoute("/orcamentos")({
     new: s.new === "1" || s.new === 1 || s.new === true ? 1 : undefined,
     serviceName: typeof s.serviceName === "string" ? s.serviceName : undefined,
     serviceId: typeof s.serviceId === "string" ? s.serviceId : undefined,
+    categoria: typeof s.categoria === "string" ? s.categoria : undefined,
   }),
   head: () => ({
     meta: [
@@ -205,6 +206,18 @@ function MeusOrcamentos() {
     let matched: Servico | undefined;
     if (search.serviceId) {
       matched = servicos.find((x) => x.id === search.serviceId);
+      // Validação extra: se vier com categoria, precisa bater
+      if (matched && search.categoria) {
+        const norm = (t: string) => t.toLowerCase().trim();
+        if (norm(matched.categoria) !== norm(search.categoria)) {
+          toast.error(`O serviço selecionado não pertence à categoria "${search.categoria}".`);
+          matched = undefined;
+        }
+      }
+      // serviceId passado mas não encontrado entre os ativos
+      if (!matched && !search.serviceName) {
+        toast.info("O serviço escolhido não está mais disponível. Selecione outro abaixo.");
+      }
     }
     if (!matched && search.serviceName) {
       const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -222,7 +235,7 @@ function MeusOrcamentos() {
       toast.info(`"${label}" não está no catálogo. Escolha o serviço mais próximo abaixo.`);
       setStep(1);
     }
-  }, [servicos, search.new, search.serviceId, search.serviceName, autoMatched]);
+  }, [servicos, search.new, search.serviceId, search.serviceName, search.categoria, autoMatched]);
 
   const selServico = servicos.find((s) => s.id === selServiceId);
   const sugeridos = useMemo(() => {
