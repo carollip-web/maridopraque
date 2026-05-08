@@ -24,6 +24,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
 
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
   id: '/servicos-admin',
@@ -100,6 +101,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServicosCategoriaRoute = ServicosCategoriaRouteImport.update({
+  id: '/$categoria',
+  path: '/$categoria',
+  getParentRoute: () => ServicosRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,8 +121,9 @@ export interface FileRoutesByFullPath {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/servicos/$categoria': typeof ServicosCategoriaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,8 +139,9 @@ export interface FileRoutesByTo {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/servicos/$categoria': typeof ServicosCategoriaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,8 +158,9 @@ export interface FileRoutesById {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
-  '/servicos': typeof ServicosRoute
+  '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/servicos/$categoria': typeof ServicosCategoriaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/profissional'
     | '/servicos'
     | '/servicos-admin'
+    | '/servicos/$categoria'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/profissional'
     | '/servicos'
     | '/servicos-admin'
+    | '/servicos/$categoria'
   id:
     | '__root__'
     | '/'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/profissional'
     | '/servicos'
     | '/servicos-admin'
+    | '/servicos/$categoria'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,7 +233,7 @@ export interface RootRouteChildren {
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRoute
   ProfissionalRoute: typeof ProfissionalRoute
-  ServicosRoute: typeof ServicosRoute
+  ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
 }
 
@@ -332,8 +344,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/servicos/$categoria': {
+      id: '/servicos/$categoria'
+      path: '/$categoria'
+      fullPath: '/servicos/$categoria'
+      preLoaderRoute: typeof ServicosCategoriaRouteImport
+      parentRoute: typeof ServicosRoute
+    }
   }
 }
+
+interface ServicosRouteChildren {
+  ServicosCategoriaRoute: typeof ServicosCategoriaRoute
+}
+
+const ServicosRouteChildren: ServicosRouteChildren = {
+  ServicosCategoriaRoute: ServicosCategoriaRoute,
+}
+
+const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
+  ServicosRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -349,7 +380,7 @@ const rootRouteChildren: RootRouteChildren = {
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRoute,
   ProfissionalRoute: ProfissionalRoute,
-  ServicosRoute: ServicosRoute,
+  ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
 }
 export const routeTree = rootRouteImport
