@@ -589,6 +589,16 @@ function MeusOrcamentos() {
                 </div>
               )}
 
+              {selServico && selServico.preco_min != null && selServico.preco_max != null && (
+                <div className="rounded-xl bg-brand/5 border border-brand/20 p-3 text-sm flex justify-between items-center">
+                  <span className="text-muted-foreground">Total estimado</span>
+                  <span className="font-bold tabular-nums">
+                    {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
+                    {brl(Number(selServico.preco_max) + subtotalMat)}
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-between gap-2">
                 <Button
                   variant="outline"
