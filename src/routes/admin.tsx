@@ -394,9 +394,12 @@ function AdminServicos() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-       <div className="flex justify-between items-center">
+       <div className="flex justify-between items-center flex-wrap gap-3">
           <h2 className="text-2xl font-bold">Catálogo de Serviços</h2>
-          <Button className="bg-brand text-white rounded-lg">+ Novo Serviço</Button>
+          <div className="flex gap-2">
+             <Link to="/materiais-admin"><Button variant="outline" className="rounded-lg">Materiais</Button></Link>
+             <Link to="/servicos-admin"><Button className="bg-brand text-white rounded-lg">Gerenciar serviços</Button></Link>
+          </div>
        </div>
 
        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
