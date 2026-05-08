@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ServicosAdminRouteImport } from './routes/servicos-admin'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
@@ -24,6 +25,11 @@ import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ServicosAdminRoute = ServicosAdminRouteImport.update({
+  id: '/servicos-admin',
+  path: '/servicos-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicosRoute = ServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
+  '/servicos-admin': typeof ServicosAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
+  '/servicos-admin': typeof ServicosAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/profissionais': typeof ProfissionaisRoute
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRoute
+  '/servicos-admin': typeof ServicosAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/profissionais'
     | '/profissional'
     | '/servicos'
+    | '/servicos-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/profissionais'
     | '/profissional'
     | '/servicos'
+    | '/servicos-admin'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/profissionais'
     | '/profissional'
     | '/servicos'
+    | '/servicos-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,10 +222,18 @@ export interface RootRouteChildren {
   ProfissionaisRoute: typeof ProfissionaisRoute
   ProfissionalRoute: typeof ProfissionalRoute
   ServicosRoute: typeof ServicosRoute
+  ServicosAdminRoute: typeof ServicosAdminRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/servicos-admin': {
+      id: '/servicos-admin'
+      path: '/servicos-admin'
+      fullPath: '/servicos-admin'
+      preLoaderRoute: typeof ServicosAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/servicos': {
       id: '/servicos'
       path: '/servicos'
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfissionaisRoute: ProfissionaisRoute,
   ProfissionalRoute: ProfissionalRoute,
   ServicosRoute: ServicosRoute,
+  ServicosAdminRoute: ServicosAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
