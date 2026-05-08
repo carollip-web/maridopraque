@@ -185,6 +185,23 @@ function MeusOrcamentos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // Auto-abre o formulário quando vem de "Pedir orçamento agora" / catálogo
+  useEffect(() => {
+    if (!servicos.length) return;
+    if (!search.new && !search.serviceId && !search.serviceName) return;
+    setShowNew(true);
+    if (search.serviceId) {
+      const s = servicos.find((x) => x.id === search.serviceId);
+      if (s) { setSelServiceId(s.id); setStep(2); }
+    } else if (search.serviceName) {
+      const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const target = norm(search.serviceName);
+      const s = servicos.find((x) => norm(x.nome) === target) ||
+                servicos.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
+      if (s) { setSelServiceId(s.id); setStep(2); }
+    }
+  }, [servicos, search.new, search.serviceId, search.serviceName]);
+
   const selServico = servicos.find((s) => s.id === selServiceId);
   const sugeridos = useMemo(() => {
     if (!selServiceId) return [] as Material[];
