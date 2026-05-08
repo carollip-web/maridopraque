@@ -134,3 +134,72 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { orcamento: row };
   });
+
+const editarSchema = z.object({
+  orcamentoId: z.string().uuid(),
+  descricao: z.string().trim().max(2000).optional(),
+  materiais: z.array(materialItemSchema).max(30).optional(),
+});
+
+export const editarOrcamento = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => editarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Só pode editar enquanto o profissional ainda não respondeu
+    const { data: orc, error: e0 } = await supabase
+      .from("orcamentos")
+      .select("id, cliente_id, status")
+      .eq("id", data.orcamentoId)
+      .single();
+    if (e0 || !orc) throw new Error("Orçamento não encontrado.");
+    if (orc.cliente_id !== userId) throw new Error("Sem permissão para editar.");
+    if (orc.status !== "customizado_pendente") {
+      throw new Error("Este orçamento já está em análise e não pode mais ser editado.");
+    }
+
+    const { error: eu } = await supabase
+      .from("orcamentos")
+      .update({ descricao: data.descricao ?? null })
+      .eq("id", data.orcamentoId);
+    if (eu) throw new Error(eu.message);
+
+    // Substitui materiais
+    const { error: ed } = await supabase
+      .from("orcamento_materiais")
+      .delete()
+      .eq("orcamento_id", data.orcamentoId);
+    if (ed) throw new Error(ed.message);
+
+    if (data.materiais && data.materiais.length > 0) {
+      const ids = data.materiais.map((m) => m.materialId);
+      const { data: mats, error: e2 } = await supabase
+        .from("materiais")
+        .select("id, nome, unidade, preco_atual")
+        .in("id", ids);
+      if (e2) throw new Error(e2.message);
+
+      const items = data.materiais
+        .map((m) => {
+          const mat = mats?.find((x) => x.id === m.materialId);
+          if (!mat) return null;
+          return {
+            orcamento_id: data.orcamentoId,
+            material_id: mat.id,
+            nome_snapshot: mat.nome,
+            unidade_snapshot: mat.unidade,
+            quantidade: m.quantidade,
+            preco_unitario: Number(mat.preco_atual),
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (items.length > 0) {
+        const { error: e3 } = await supabase.from("orcamento_materiais").insert(items);
+        if (e3) throw new Error(e3.message);
+      }
+    }
+
+    return { ok: true };
+  });

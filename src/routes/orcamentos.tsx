@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { decidirOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
 import {
   Loader2,
   CheckCircle2,
@@ -21,6 +21,9 @@ import {
   ChevronRight,
   Wrench,
   ClipboardCheck,
+  Save,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
@@ -66,6 +69,7 @@ type OrcamentoRow = {
 type OrcMaterial = {
   id: string;
   orcamento_id: string;
+  material_id: string;
   nome_snapshot: string;
   unidade_snapshot: string;
   quantidade: number;
@@ -102,8 +106,14 @@ function MeusOrcamentos() {
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  const draftKey = user ? `orc-draft-${user.id}` : null;
 
   const solicitar = useServerFn(solicitarOrcamento);
+  const editar = useServerFn(editarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
 
   useEffect(() => {
@@ -200,6 +210,85 @@ function MeusOrcamentos() {
     setPicked({});
     setStep(1);
     setShowNew(false);
+    setEditingId(null);
+  };
+
+  // ----- Rascunho (localStorage) -----
+  useEffect(() => {
+    if (!draftKey || typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(draftKey);
+      if (raw) setHasDraft(true);
+    } catch {}
+  }, [draftKey]);
+
+  // Auto-save enquanto o wizard está aberto em modo "novo"
+  useEffect(() => {
+    if (!draftKey || !showNew || editingId) return;
+    if (typeof window === "undefined") return;
+    if (!selServiceId && !descricao && Object.keys(picked).length === 0) return;
+    const t = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          draftKey,
+          JSON.stringify({ selServiceId, descricao, picked, step, savedAt: Date.now() }),
+        );
+        setDraftSavedAt(Date.now());
+        setHasDraft(true);
+      } catch {}
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [draftKey, showNew, editingId, selServiceId, descricao, picked, step]);
+
+  const carregarRascunho = () => {
+    if (!draftKey || typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw) as {
+        selServiceId?: string;
+        descricao?: string;
+        picked?: Record<string, number>;
+        step?: 1 | 2 | 3;
+      };
+      setSelServiceId(d.selServiceId ?? "");
+      setDescricao(d.descricao ?? "");
+      setPicked(d.picked ?? {});
+      setStep(d.step ?? 1);
+      setEditingId(null);
+      setShowNew(true);
+      toast.success("Rascunho restaurado.");
+    } catch {
+      toast.error("Não foi possível restaurar o rascunho.");
+    }
+  };
+
+  const limparRascunho = () => {
+    if (!draftKey || typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(draftKey);
+    } catch {}
+    setHasDraft(false);
+    setDraftSavedAt(null);
+    toast.success("Rascunho descartado.");
+  };
+
+  const startEdit = (o: OrcamentoRow) => {
+    if (o.status !== "customizado_pendente") {
+      toast.error("Não é mais possível editar este orçamento.");
+      return;
+    }
+    setEditingId(o.id);
+    setSelServiceId(o.service_id ?? "");
+    setDescricao(o.descricao ?? "");
+    const mats = orcMats[o.id] ?? [];
+    const p: Record<string, number> = {};
+    mats.forEach((m) => {
+      if (m.material_id) p[m.material_id] = Number(m.quantidade);
+    });
+    setPicked(p);
+    setStep(1);
+    setShowNew(true);
   };
 
   const goToStep2 = () => {
@@ -236,11 +325,30 @@ function MeusOrcamentos() {
     }
     setSaving(true);
     try {
-      await solicitar({ data: payload });
-      toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
+      if (editingId) {
+        await editar({
+          data: {
+            orcamentoId: editingId,
+            descricao: payload.descricao,
+            materiais: payload.materiais,
+          },
+        });
+        toast.success("Orçamento atualizado.");
+      } else {
+        await solicitar({ data: payload });
+        toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
+        // limpa rascunho após envio bem-sucedido
+        if (draftKey && typeof window !== "undefined") {
+          try {
+            window.localStorage.removeItem(draftKey);
+          } catch {}
+          setHasDraft(false);
+          setDraftSavedAt(null);
+        }
+      }
       resetForm();
     } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível enviar a solicitação.");
+      toast.error(e?.message ?? "Não foi possível salvar.");
     } finally {
       setSaving(false);
     }
@@ -261,22 +369,54 @@ function MeusOrcamentos() {
           <h1 className="text-3xl font-bold tracking-tight">Meus Orçamentos</h1>
           <p className="text-muted-foreground mt-1">Preço tabelado e materiais opcionais.</p>
         </div>
-        <Button
-          onClick={() => {
-            if (showNew) resetForm();
-            else {
-              setStep(1);
-              setShowNew(true);
-            }
-          }}
-          className="rounded-full bg-brand text-brand-foreground gap-2"
-        >
-          <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasDraft && !showNew && (
+            <>
+              <Button
+                onClick={carregarRascunho}
+                variant="outline"
+                className="rounded-full gap-2"
+              >
+                <Save className="h-4 w-4" /> Retomar rascunho
+              </Button>
+              <Button
+                onClick={limparRascunho}
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label="Descartar rascunho"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          <Button
+            onClick={() => {
+              if (showNew) resetForm();
+              else {
+                setStep(1);
+                setShowNew(true);
+              }
+            }}
+            className="rounded-full bg-brand text-brand-foreground gap-2"
+          >
+            <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
+          </Button>
+        </div>
       </div>
 
       {showNew && (
         <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
+          {editingId && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
+              <Pencil className="h-4 w-4" /> Editando solicitação enviada — alterações são possíveis até o profissional responder.
+            </div>
+          )}
+          {!editingId && draftSavedAt && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Save className="h-3 w-3" /> Rascunho salvo automaticamente
+            </p>
+          )}
           {/* Stepper */}
           <ol className="flex items-center gap-2 text-xs font-semibold">
             {[
@@ -445,6 +585,16 @@ function MeusOrcamentos() {
               ) : (
                 <div className="rounded-2xl bg-slate-50 border border-border p-6 text-center text-sm text-muted-foreground">
                   Nenhum material sugerido para este serviço. Você pode seguir para a confirmação.
+                </div>
+              )}
+
+              {selServico && selServico.preco_min != null && selServico.preco_max != null && (
+                <div className="rounded-xl bg-brand/5 border border-brand/20 p-3 text-sm flex justify-between items-center">
+                  <span className="text-muted-foreground">Total estimado</span>
+                  <span className="font-bold tabular-nums">
+                    {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
+                    {brl(Number(selServico.preco_max) + subtotalMat)}
+                  </span>
                 </div>
               )}
 
@@ -661,9 +811,18 @@ function MeusOrcamentos() {
                   </Button>
                 )}
                 {o.status === "customizado_pendente" && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" /> Um profissional vai analisar e enviar o valor.
-                  </p>
+                  <>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2 flex-1">
+                      <Clock className="h-4 w-4" /> Um profissional vai analisar e enviar o valor.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => startEdit(o)}
+                      className="rounded-full gap-2"
+                    >
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
