@@ -241,7 +241,8 @@ function MeusOrcamentos() {
 
     if (matched) {
       setSelServiceId(matched.id);
-      setStep(2);
+      // Mantém na etapa 1 para o usuário conferir o serviço auto-preenchido.
+      setStep(1);
     } else if (search.serviceId || search.serviceName) {
       const label = search.serviceName ?? "selecionado";
       toast.info(`"${label}" não está no catálogo. Escolha o serviço mais próximo abaixo.`);
