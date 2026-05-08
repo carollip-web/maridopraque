@@ -27,6 +27,11 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === "1" || s.new === 1 || s.new === true ? 1 : undefined,
+    serviceName: typeof s.serviceName === "string" ? s.serviceName : undefined,
+    serviceId: typeof s.serviceId === "string" ? s.serviceId : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Meus Orçamentos — Solicitar online | Marido pra Quê?" },
