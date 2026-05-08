@@ -140,7 +140,11 @@ export function QuickEstimator() {
             </Button>
             <Button asChild variant="outline" size="lg" className="flex-1">
               {selected ? (
-                <Link to="/servicos/$categoria" params={{ categoria: selected.categoria }}>
+                <Link
+                  to="/servicos/$categoria"
+                  params={{ categoria: selected.categoria }}
+                  search={{ service: selected.id }}
+                >
                   Ver catálogo completo
                 </Link>
               ) : (

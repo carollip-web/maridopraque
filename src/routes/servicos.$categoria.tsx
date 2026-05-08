@@ -102,6 +102,7 @@ function estimarTempo(min: number | null, max: number | null): string {
 export const Route = createFileRoute("/servicos/$categoria")({
   validateSearch: (s: Record<string, unknown>) => ({
     q: typeof s.q === "string" ? s.q : undefined,
+    service: typeof s.service === "string" ? s.service : undefined,
   }),
   beforeLoad: ({ params }) => {
     if (!categorias[params.categoria]) throw notFound();
@@ -147,6 +148,20 @@ function CategoriaPage() {
   useEffect(() => {
     if (search.q !== undefined) setQuery(search.q);
   }, [search.q]);
+
+  // Sincronia com o estimador rápido / vitrine: abre e rola até o serviço solicitado
+  useEffect(() => {
+    if (!search.service || !servicos) return;
+    const exists = servicos.some((s) => s.id === search.service);
+    if (!exists) return;
+    setOpenId(search.service);
+    if (typeof window !== "undefined") {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`servico-${search.service}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [search.service, servicos]);
 
   useEffect(() => {
     Promise.all([
@@ -273,7 +288,8 @@ function CategoriaPage() {
               return (
                 <article
                   key={s.id}
-                  className={`flex flex-col rounded-2xl border bg-card p-6 transition ${
+                  id={`servico-${s.id}`}
+                  className={`scroll-mt-24 flex flex-col rounded-2xl border bg-card p-6 transition ${
                     isOpen ? "border-brand shadow-soft" : "border-border hover:shadow-soft"
                   }`}
                 >
