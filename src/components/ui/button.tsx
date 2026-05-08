@@ -5,23 +5,33 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        default:
+          "bg-primary text-primary-foreground shadow-soft hover:bg-primary/90 hover:shadow-brand hover:-translate-y-0.5",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+          "border border-border bg-background shadow-sm hover:border-brand/40 hover:bg-brand-soft hover:text-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        brand:
+          "bg-brand text-brand-foreground shadow-brand hover:bg-brand/90 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_oklch(0.5_0.13_30/0.55)]",
+        hero:
+          "bg-foreground text-background shadow-soft hover:bg-foreground/90 hover:-translate-y-0.5 hover:shadow-brand",
+        soft:
+          "bg-brand-soft text-foreground hover:bg-brand-soft/80 hover:text-brand",
       },
       size: {
-        default: "h-9 px-4 py-2",
+        default: "h-10 px-5 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        lg: "h-11 rounded-full px-8 text-[0.95rem]",
+        xl: "h-13 rounded-full px-10 text-base font-semibold",
+        icon: "h-10 w-10",
       },
     },
     defaultVariants: {
