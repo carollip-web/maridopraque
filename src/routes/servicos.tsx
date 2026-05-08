@@ -1,5 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Hammer, Wrench, Scale, Package, Loader2 } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  Hammer, Wrench, Scale, Package, Loader2,
+  Drill, Lightbulb, ShowerHead, PaintRoller, FileText, HardHat,
+  CheckCircle2, ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,32 +29,75 @@ type Servico = {
   descricao: string | null;
 };
 
-const categoriaMeta: Record<string, { titulo: string; description: string; icon: typeof Hammer }> = {
+type CatMeta = {
+  titulo: string;
+  description: string;
+  icon: typeof Hammer;
+  beneficios: string[];
+};
+
+const categoriaMeta: Record<string, CatMeta> = {
   montagem: {
     titulo: "Montagem e Instalação",
-    description: "Móveis, suportes, prateleiras, cortinas — tudo no lugar com nivelamento profissional.",
+    description: "Móveis novos ou de mudança, suportes, prateleiras, cortinas — tudo no lugar com nivelamento profissional.",
     icon: Hammer,
+    beneficios: [
+      "Ferramenta própria e bucha certa pra cada parede",
+      "Marcação prévia e nível a laser, sem furo errado",
+      "Atendimento no mesmo dia em toda a cidade",
+    ],
   },
   reparos: {
     titulo: "Reparos e Manutenção",
-    description: "Pequenos reparos resolvidos com técnica e segurança: elétrica, hidráulica, pintura.",
+    description: "Pequenos reparos resolvidos com técnica e segurança — elétrica, hidráulica, pintura e gesso.",
     icon: Wrench,
+    beneficios: [
+      "Garantia de 30 dias em qualquer reparo",
+      "Profissionais com NR-10 para serviços elétricos",
+      "Limpeza do ambiente após o serviço",
+    ],
   },
   engenharia: {
     titulo: "Engenharia e Legalização",
-    description: "Aprovação de projetos, alvarás, laudos e segurança do trabalho com responsável técnico.",
+    description: "Aprovação de projetos, alvarás, laudos técnicos e segurança do trabalho com responsável técnico.",
     icon: Scale,
+    beneficios: [
+      "Engenheiros responsáveis com ART/RRT",
+      "Acompanhamento até protocolo e aprovação",
+      "Diagnóstico inicial gratuito",
+    ],
   },
 };
 
-const fallbackMeta = { titulo: "Outros serviços", description: "Mais serviços do nosso catálogo.", icon: Package };
+const fallbackMeta: CatMeta = {
+  titulo: "Outros serviços",
+  description: "Mais serviços do nosso catálogo.",
+  icon: Package,
+  beneficios: [],
+};
+
+function iconForServico(nome: string, categoria: string) {
+  const n = nome.toLowerCase();
+  if (n.includes("furo") || n.includes("fixa")) return Drill;
+  if (n.includes("eletric") || n.includes("tomada") || n.includes("lustre") || n.includes("lamp")) return Lightbulb;
+  if (n.includes("hidr") || n.includes("vazam") || n.includes("torneira") || n.includes("descarg")) return ShowerHead;
+  if (n.includes("pint") || n.includes("gesso")) return PaintRoller;
+  if (n.includes("legali") || n.includes("projeto")) return FileText;
+  if (n.includes("seguran") || n.includes("nr-")) return HardHat;
+  if (n.includes("regulariza") || n.includes("habite") || n.includes("alvar")) return Scale;
+  if (n.includes("montagem") || n.includes("móvel") || n.includes("guarda") || n.includes("estante")) return Hammer;
+  return (categoriaMeta[categoria]?.icon ?? Package);
+}
 
 const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
 
 const brl = (v: number) => `R$ ${Math.round(v)}`;
 
 function Servicos() {
+  const navigate = useNavigate();
   const [servicos, setServicos] = useState<Servico[] | null>(null);
+  // Por categoria: serviceId selecionado no dropdown
+  const [picked, setPicked] = useState<Record<string, string>>({});
 
   useEffect(() => {
     supabase
@@ -69,7 +116,6 @@ function Servicos() {
       const key = (s.categoria || "outros").toLowerCase();
       (map.get(key) ?? map.set(key, []).get(key)!).push(s);
     });
-    // ordem preferida
     const order = ["montagem", "reparos", "engenharia"];
     return Array.from(map.entries()).sort(([a], [b]) => {
       const ia = order.indexOf(a); const ib = order.indexOf(b);
@@ -80,6 +126,12 @@ function Servicos() {
     });
   }, [servicos]);
 
+  const goToOrcamento = (categoria: string, items: Servico[]) => {
+    const id = picked[categoria] || items[0]?.id;
+    if (!id) return;
+    navigate({ to: "/orcamentos", search: { new: 1, serviceId: id } });
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="mb-20">
@@ -88,7 +140,7 @@ function Servicos() {
           Nossos Serviços Especializados.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Preços tabelados e atualizados em tempo real. Materiais opcionais discriminados no orçamento.
+          Preços tabelados e atualizados em tempo real. Escolha a categoria, selecione o serviço e peça seu orçamento — sem compromisso até você aprovar.
         </p>
       </div>
 
@@ -109,53 +161,101 @@ function Servicos() {
         {grupos.map(([categoria, items]) => {
           const meta = categoriaMeta[categoria] ?? { ...fallbackMeta, titulo: categoria.charAt(0).toUpperCase() + categoria.slice(1) };
           const Icon = meta.icon;
+          const selectedId = picked[categoria] || items[0]?.id || "";
+          const selected = items.find((i) => i.id === selectedId);
+          const min = selected?.preco_min != null ? Number(selected.preco_min) : null;
+          const max = selected?.preco_max != null ? Number(selected.preco_max) : null;
+          const priceLabel =
+            min != null && max != null
+              ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+              : "Sob consulta";
+
           return (
             <section id={categoria} key={categoria} className="relative scroll-mt-32">
               <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
-                <div className="sticky top-24 self-start">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand mb-6">
-                    <Icon className="h-8 w-8" />
+                {/* Coluna esquerda: cabeçalho da categoria */}
+                <div className="lg:sticky lg:top-24 self-start space-y-6">
+                  <div>
+                    <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand mb-6">
+                      <Icon className="h-8 w-8" />
+                    </div>
+                    <h2 className="text-3xl font-bold tracking-tight">{meta.titulo}</h2>
+                    <p className="mt-4 text-muted-foreground leading-relaxed">{meta.description}</p>
                   </div>
-                  <h2 className="text-3xl font-bold tracking-tight">{meta.titulo}</h2>
-                  <p className="mt-4 text-muted-foreground leading-relaxed">{meta.description}</p>
+
+                  {meta.beneficios.length > 0 && (
+                    <ul className="space-y-2">
+                      {meta.beneficios.map((b) => (
+                        <li key={b} className="flex items-start gap-2 text-sm text-foreground">
+                          <CheckCircle2 className="h-4 w-4 mt-0.5 text-brand flex-shrink-0" />
+                          <span>{b}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
-                <div className="grid gap-6">
-                  {items.map((item) => {
-                    const min = item.preco_min != null ? Number(item.preco_min) : null;
-                    const max = item.preco_max != null ? Number(item.preco_max) : null;
-                    const priceLabel =
-                      min != null && max != null
-                        ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+                {/* Coluna direita: cards informativos + um único CTA com dropdown */}
+                <div className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {items.map((item) => {
+                      const ItIcon = iconForServico(item.nome, categoria);
+                      const iMin = item.preco_min != null ? Number(item.preco_min) : null;
+                      const iMax = item.preco_max != null ? Number(item.preco_max) : null;
+                      const iPrice = iMin != null && iMax != null
+                        ? iMin === iMax ? brl(iMin) : `${brl(iMin)}–${brl(iMax)}`
                         : "Sob consulta";
-                    return (
-                      <div key={item.id} className="group rounded-3xl border border-border bg-card p-8 transition hover:shadow-soft">
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-                            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-                            {item.nome}
-                          </h3>
-                          <span className="rounded-full bg-brand-soft px-4 py-1.5 text-sm font-bold text-brand whitespace-nowrap">
-                            {priceLabel}
-                          </span>
+                      return (
+                        <div key={item.id} className="rounded-2xl border border-border bg-card p-5 transition hover:shadow-soft hover:-translate-y-0.5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                              <ItIcon className="h-5 w-5" />
+                            </div>
+                            <span className="text-xs font-bold text-brand whitespace-nowrap">{iPrice}</span>
+                          </div>
+                          <h3 className="mt-4 font-bold text-foreground">{item.nome}</h3>
+                          {item.descricao && (
+                            <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{item.descricao}</p>
+                          )}
                         </div>
-                        {item.descricao && (
-                          <p className="mt-4 text-muted-foreground leading-relaxed">{item.descricao}</p>
-                        )}
+                      );
+                    })}
+                  </div>
 
-                        <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                            * Materiais opcionais à parte • Sem compromisso até você aprovar
-                          </p>
-                          <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
-                            <Link to="/orcamentos" search={{ new: 1, serviceId: item.id }}>
-                              Solicitar Orçamento →
-                            </Link>
-                          </Button>
-                        </div>
+                  {/* CTA único da categoria com dropdown */}
+                  <div className="rounded-3xl border border-brand/20 bg-brand-soft/40 p-6">
+                    <p className="text-xs font-bold uppercase tracking-wider text-brand">Pedir orçamento desta categoria</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                      <div>
+                        <label className="text-xs font-semibold text-muted-foreground">Selecione o serviço</label>
+                        <select
+                          value={selectedId}
+                          onChange={(e) => setPicked((p) => ({ ...p, [categoria]: e.target.value }))}
+                          className="mt-1 w-full h-12 px-3 rounded-xl border border-border bg-background text-foreground"
+                        >
+                          {items.map((i) => {
+                            const im = i.preco_min != null ? Number(i.preco_min) : null;
+                            const iM = i.preco_max != null ? Number(i.preco_max) : null;
+                            const tail = im != null && iM != null
+                              ? im === iM ? ` — ${brl(im)}` : ` — ${brl(im)}–${brl(iM)}`
+                              : "";
+                            return (
+                              <option key={i.id} value={i.id}>{i.nome}{tail}</option>
+                            );
+                          })}
+                        </select>
                       </div>
-                    );
-                  })}
+                      <Button
+                        onClick={() => goToOrcamento(categoria, items)}
+                        className="h-12 rounded-xl bg-brand text-brand-foreground shadow-brand hover:scale-[1.02] sm:min-w-[200px]"
+                      >
+                        Solicitar Orçamento <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Estimado: <span className="font-bold text-foreground">{priceLabel}</span> · Materiais opcionais discriminados na próxima etapa · Sem compromisso até você aprovar.
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
