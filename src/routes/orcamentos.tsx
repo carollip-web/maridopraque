@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,10 @@ import {
   Package,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Wrench,
+  ClipboardCheck,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
@@ -95,6 +101,7 @@ function MeusOrcamentos() {
   const [descricao, setDescricao] = useState("");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const solicitar = useServerFn(solicitarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
@@ -179,25 +186,61 @@ function MeusOrcamentos() {
     });
   };
 
+  const novoSchema = z.object({
+    serviceId: z.string().uuid({ message: "Selecione um serviço válido." }),
+    descricao: z.string().trim().max(2000, "Descrição muito longa.").optional(),
+    materiais: z
+      .array(z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }))
+      .max(50, "Máximo de 50 itens de material."),
+  });
+
+  const resetForm = () => {
+    setSelServiceId("");
+    setDescricao("");
+    setPicked({});
+    setStep(1);
+    setShowNew(false);
+  };
+
+  const goToStep2 = () => {
+    if (!selServico) {
+      toast.error("Selecione um serviço para continuar.");
+      return;
+    }
+    if (selServico.preco_min == null || selServico.preco_max == null) {
+      toast.error("Este serviço ainda não tem preço tabelado. Escolha outro.");
+      return;
+    }
+    if (Number(selServico.preco_min) > Number(selServico.preco_max)) {
+      toast.error("Range de preço inválido para este serviço.");
+      return;
+    }
+    setStep(2);
+  };
+
   const handleNew = async () => {
     if (!selServico) return;
+    const payload = {
+      serviceId: selServico.id,
+      serviceName: selServico.nome,
+      descricao: descricao.trim() || undefined,
+      materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
+        materialId,
+        quantidade,
+      })),
+    };
+    const parsed = novoSchema.safeParse(payload);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+      return;
+    }
     setSaving(true);
     try {
-      await solicitar({
-        data: {
-          serviceId: selServico.id,
-          serviceName: selServico.nome,
-          descricao: descricao.trim() || undefined,
-          materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
-            materialId,
-            quantidade,
-          })),
-        },
-      });
-      setSelServiceId("");
-      setDescricao("");
-      setPicked({});
-      setShowNew(false);
+      await solicitar({ data: payload });
+      toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
+      resetForm();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível enviar a solicitação.");
     } finally {
       setSaving(false);
     }
@@ -219,142 +262,300 @@ function MeusOrcamentos() {
           <p className="text-muted-foreground mt-1">Preço tabelado e materiais opcionais.</p>
         </div>
         <Button
-          onClick={() => setShowNew(!showNew)}
+          onClick={() => {
+            if (showNew) resetForm();
+            else {
+              setStep(1);
+              setShowNew(true);
+            }
+          }}
           className="rounded-full bg-brand text-brand-foreground gap-2"
         >
-          <Plus className="h-4 w-4" /> Nova solicitação
+          <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
         </Button>
       </div>
 
       {showNew && (
-        <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-4">
-          <div>
-            <label className="text-xs uppercase font-bold text-muted-foreground">Serviço</label>
-            <select
-              value={selServiceId}
-              onChange={(e) => {
-                setSelServiceId(e.target.value);
-                setPicked({});
-              }}
-              className="w-full mt-1 h-12 px-3 rounded-xl border border-border bg-slate-50"
-            >
-              <option value="">Selecione um serviço…</option>
-              {servicos.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nome}
-                  {s.preco_min != null && s.preco_max != null
-                    ? ` — ${brl(Number(s.preco_min))} a ${brl(Number(s.preco_max))}`
-                    : ""}
-                </option>
-              ))}
-            </select>
-            {selServico && selServico.preco_min != null && selServico.preco_max != null && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Range tabelado:{" "}
-                <span className="font-semibold text-foreground">
-                  {brl(Number(selServico.preco_min))} a {brl(Number(selServico.preco_max))}
-                </span>
-                . O profissional confirmará o valor exato dentro desse range.
-              </p>
-            )}
-          </div>
+        <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
+          {/* Stepper */}
+          <ol className="flex items-center gap-2 text-xs font-semibold">
+            {[
+              { n: 1, label: "Serviço", icon: Wrench },
+              { n: 2, label: "Materiais", icon: Package },
+              { n: 3, label: "Confirmar", icon: ClipboardCheck },
+            ].map((s, i) => {
+              const Icon = s.icon;
+              const active = step === s.n;
+              const done = step > s.n;
+              return (
+                <li key={s.n} className="flex items-center gap-2 flex-1">
+                  <div
+                    className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+                      active
+                        ? "bg-brand text-brand-foreground border-brand"
+                        : done
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-slate-50 text-muted-foreground border-border"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>
+                      {s.n}. {s.label}
+                    </span>
+                  </div>
+                  {i < 2 && <div className="flex-1 h-px bg-border" />}
+                </li>
+              );
+            })}
+          </ol>
 
-          <textarea
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            maxLength={2000}
-            placeholder="Descreva detalhes (opcional)"
-            rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-border bg-slate-50"
-          />
-
-          {sugeridos.length > 0 && (
-            <div className="rounded-2xl bg-slate-50 border border-border p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Package className="h-4 w-4 text-brand" />
-                <h4 className="font-bold text-sm">Materiais opcionais</h4>
-                <span className="text-xs text-muted-foreground">(taxa adicional)</span>
+          {/* Step 1: Serviço */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs uppercase font-bold text-muted-foreground">
+                  Serviço <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selServiceId}
+                  onChange={(e) => {
+                    setSelServiceId(e.target.value);
+                    setPicked({});
+                  }}
+                  className="w-full mt-1 h-12 px-3 rounded-xl border border-border bg-slate-50"
+                >
+                  <option value="">Selecione um serviço…</option>
+                  {servicos.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome}
+                      {s.preco_min != null && s.preco_max != null
+                        ? ` — ${brl(Number(s.preco_min))} a ${brl(Number(s.preco_max))}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+                {selServico && selServico.preco_min != null && selServico.preco_max != null && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Range tabelado:{" "}
+                    <span className="font-semibold text-foreground">
+                      {brl(Number(selServico.preco_min))} a {brl(Number(selServico.preco_max))}
+                    </span>
+                    . O profissional confirmará o valor exato dentro desse range.
+                  </p>
+                )}
+                {selServico && (selServico.preco_min == null || selServico.preco_max == null) && (
+                  <p className="text-xs text-amber-700 mt-2">
+                    Este serviço ainda não tem preço tabelado. Escolha outro item.
+                  </p>
+                )}
               </div>
-              <ul className="space-y-2">
-                {sugeridos.map((m) => {
-                  const sm = serviceMats.find(
-                    (s) => s.service_id === selServiceId && s.material_id === m.id,
-                  );
-                  const qtyDefault = Number(sm?.quantidade_sugerida ?? 1);
-                  const checked = m.id in picked;
-                  const qty = picked[m.id] ?? qtyDefault;
-                  return (
-                    <li key={m.id} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-border">
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={() => togglePick(m.id, qtyDefault)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {brl(Number(m.preco_atual))} / {m.unidade}
-                          {m.preco_fonte === "marketplace" && " · marketplace"}
-                        </p>
-                      </div>
-                      {checked && (
-                        <input
-                          type="number"
-                          min={1}
-                          max={1000}
-                          value={qty}
-                          onChange={(e) =>
-                            setPicked((p) => ({ ...p, [m.id]: Math.max(1, Number(e.target.value) || 1) }))
-                          }
-                          className="w-16 h-9 px-2 rounded-lg border border-border text-sm text-right"
-                        />
-                      )}
-                      {checked && (
-                        <span className="text-sm font-bold tabular-nums w-20 text-right">
-                          {brl(Number(m.preco_atual) * qty)}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              {Object.keys(picked).length > 0 && (
-                <div className="flex justify-between items-center pt-3 mt-3 border-t border-border text-sm">
-                  <span className="text-muted-foreground">Subtotal materiais</span>
-                  <span className="font-bold">{brl(subtotalMat)}</span>
+
+              <div>
+                <label className="text-xs uppercase font-bold text-muted-foreground">
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  value={descricao}
+                  onChange={(e) => setDescricao(e.target.value)}
+                  maxLength={2000}
+                  placeholder="Ex.: 2 prateleiras na sala, parede de drywall…"
+                  rows={3}
+                  className="w-full mt-1 px-4 py-3 rounded-xl border border-border bg-slate-50"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1 text-right">
+                  {descricao.length}/2000
+                </p>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={goToStep2}
+                  disabled={!selServiceId}
+                  className="rounded-full bg-foreground text-background font-bold gap-2"
+                >
+                  Continuar <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Materiais */}
+          {step === 2 && (
+            <div className="space-y-4">
+              {sugeridos.length > 0 ? (
+                <div className="rounded-2xl bg-slate-50 border border-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Package className="h-4 w-4 text-brand" />
+                    <h4 className="font-bold text-sm">Materiais opcionais</h4>
+                    <span className="text-xs text-muted-foreground">(taxa adicional)</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {sugeridos.map((m) => {
+                      const sm = serviceMats.find(
+                        (s) => s.service_id === selServiceId && s.material_id === m.id,
+                      );
+                      const qtyDefault = Number(sm?.quantidade_sugerida ?? 1);
+                      const checked = m.id in picked;
+                      const qty = picked[m.id] ?? qtyDefault;
+                      return (
+                        <li
+                          key={m.id}
+                          className="flex items-center gap-3 bg-white rounded-xl p-3 border border-border"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => togglePick(m.id, qtyDefault)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{m.nome}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {brl(Number(m.preco_atual))} / {m.unidade}
+                              {m.preco_fonte === "marketplace" && " · marketplace"}
+                            </p>
+                          </div>
+                          {checked && (
+                            <input
+                              type="number"
+                              min={1}
+                              max={1000}
+                              value={qty}
+                              onChange={(e) => {
+                                const n = Math.min(1000, Math.max(1, Number(e.target.value) || 1));
+                                setPicked((p) => ({ ...p, [m.id]: n }));
+                              }}
+                              className="w-16 h-9 px-2 rounded-lg border border-border text-sm text-right"
+                            />
+                          )}
+                          {checked && (
+                            <span className="text-sm font-bold tabular-nums w-20 text-right">
+                              {brl(Number(m.preco_atual) * qty)}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {Object.keys(picked).length > 0 && (
+                    <div className="flex justify-between items-center pt-3 mt-3 border-t border-border text-sm">
+                      <span className="text-muted-foreground">Subtotal materiais</span>
+                      <span className="font-bold">{brl(subtotalMat)}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-slate-50 border border-border p-6 text-center text-sm text-muted-foreground">
+                  Nenhum material sugerido para este serviço. Você pode seguir para a confirmação.
                 </div>
               )}
-            </div>
-          )}
 
-          {selServico && selServico.preco_min != null && selServico.preco_max != null && (
-            <div className="rounded-2xl bg-brand/5 border border-brand/20 p-4 text-sm space-y-1">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mão de obra (range)</span>
-                <span>
-                  {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Materiais</span>
-                <span>{brl(subtotalMat)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-base pt-2 border-t border-brand/20">
-                <span>Total estimado</span>
-                <span>
-                  {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
-                  {brl(Number(selServico.preco_max) + subtotalMat)}
-                </span>
+              <div className="flex justify-between gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="rounded-full gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  className="rounded-full bg-foreground text-background font-bold gap-2"
+                >
+                  Continuar <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           )}
 
-          <Button
-            onClick={handleNew}
-            disabled={saving || !selServico}
-            className="bg-foreground text-background rounded-full font-bold w-full"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar solicitação"}
-          </Button>
+          {/* Step 3: Confirmar */}
+          {step === 3 && selServico && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border p-4 space-y-2">
+                <div>
+                  <p className="text-xs uppercase font-bold text-muted-foreground">Serviço</p>
+                  <p className="font-semibold">{selServico.nome}</p>
+                </div>
+                {descricao.trim() && (
+                  <div>
+                    <p className="text-xs uppercase font-bold text-muted-foreground">Descrição</p>
+                    <p className="text-sm">{descricao}</p>
+                  </div>
+                )}
+                {Object.keys(picked).length > 0 && (
+                  <div>
+                    <p className="text-xs uppercase font-bold text-muted-foreground">Materiais</p>
+                    <ul className="text-sm space-y-1 mt-1">
+                      {Object.entries(picked).map(([id, qty]) => {
+                        const m = materiais.find((x) => x.id === id);
+                        if (!m) return null;
+                        return (
+                          <li key={id} className="flex justify-between">
+                            <span>
+                              {m.nome}{" "}
+                              <span className="text-muted-foreground">
+                                × {qty} {m.unidade}
+                              </span>
+                            </span>
+                            <span className="font-medium tabular-nums">
+                              {brl(Number(m.preco_atual) * qty)}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {selServico.preco_min != null && selServico.preco_max != null && (
+                <div className="rounded-2xl bg-brand/5 border border-brand/20 p-4 text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mão de obra (range)</span>
+                    <span>
+                      {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Materiais</span>
+                    <span>{brl(subtotalMat)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-base pt-2 border-t border-brand/20">
+                    <span>Total estimado</span>
+                    <span>
+                      {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
+                      {brl(Number(selServico.preco_max) + subtotalMat)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground pt-1">
+                    O valor final da mão de obra ficará dentro do range tabelado e será confirmado pelo profissional.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-between gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="rounded-full gap-2"
+                  disabled={saving}
+                >
+                  <ChevronLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={handleNew}
+                  disabled={saving}
+                  className="bg-foreground text-background rounded-full font-bold gap-2"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <ClipboardCheck className="h-4 w-4" /> Enviar solicitação
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
