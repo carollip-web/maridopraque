@@ -50,15 +50,15 @@ export const Route = createFileRoute("/")({
 
 
 const services = [
-  { categoryId: "montagem", q: "móvel", icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
-  { categoryId: "montagem", q: "furo", icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
-  { categoryId: "reparos", q: "elétric", icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
-  { categoryId: "reparos", q: "hidráulic", icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
-  { categoryId: "reparos", q: "pintura", icon: PaintRoller, title: "Pequenas pinturas", desc: "Retoques, paredes e reparos em gesso." },
-  { categoryId: "reparos", q: "reparo", icon: Wrench, title: "Reparos em geral", desc: "Fechaduras, dobradiças, gavetas e janelas." },
-  { categoryId: "engenharia", q: "projeto", icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
-  { categoryId: "engenharia", q: "regulariza", icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
-  { categoryId: "engenharia", q: "segurança", icon: HardHat, title: "Segurança do trabalho", desc: "Laudos, treinamentos e gestão de segurança especializada." },
+  { categoryId: "montagem", q: "Guarda-roupa", icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
+  { categoryId: "montagem", q: "Kit fixação", icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
+  { categoryId: "reparos", q: "tomada", icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
+  { categoryId: "reparos", q: "vazamento", icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
+  { categoryId: "reparos", q: "chuveiro", icon: PaintRoller, title: "Resistência de chuveiro", desc: "Troca de resistência, lustres e ventilador de teto." },
+  { categoryId: "reparos", q: "descarga", icon: Wrench, title: "Reparos em geral", desc: "Descargas, dobradiças, gavetas e janelas." },
+  { categoryId: "engenharia", q: "Legalização", icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
+  { categoryId: "engenharia", q: "Legalização", icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
+  { categoryId: "engenharia", q: "Legalização", icon: HardHat, title: "Engenharia em geral", desc: "Laudos, projetos e acompanhamento técnico especializado." },
 ];
 
 const professionals = [
