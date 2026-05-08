@@ -18,7 +18,7 @@ import {
   XCircle,
   CreditCard,
   User,
-  MessageSquare,
+  Package,
 } from "lucide-react";
 
 export const Route = createFileRoute("/profissional")({
