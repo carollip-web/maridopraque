@@ -1289,7 +1289,7 @@ function DadosTab() {
     }
   }, [profile, reset]);
 
-  const [enderecos, setEnderecos] = useState<Endereco[]>([]);
+  
   const [editingAddr, setEditingAddr] = useState<Endereco | null>(null);
   const [addrForm, setAddrForm] = useState({ rotulo: "Casa", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
 
