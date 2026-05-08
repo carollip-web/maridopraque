@@ -2,6 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { UserRound, Wrench, HeartHandshake, ShieldCheck, Users, Star } from "lucide-react";
 
 export const Route = createFileRoute("/profissionais")({
+  head: () => ({
+    meta: [
+      { title: "Nossos Profissionais — Mulher, Homem ou com Acompanhante" },
+      { name: "description", content: "Escolha o tipo de atendimento: profissional mulher, homem ou homem com acompanhante feminina. Todos verificados e treinados." },
+      { property: "og:title", content: "Nossos Profissionais — Marido pra Quê?" },
+      { property: "og:description", content: "Atendimento do jeito que faz sentido pra você, com segurança." },
+    ],
+  }),
   component: Profissionais,
 });
 
