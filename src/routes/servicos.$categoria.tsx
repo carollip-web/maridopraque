@@ -1,8 +1,12 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Hammer, Wrench, Scale, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Hammer, Wrench, Scale, ArrowRight, CheckCircle2, Search, X,
+  Clock, ListChecks, Info, ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CategoryMeta = {
   slug: string;
@@ -12,6 +16,7 @@ type CategoryMeta = {
   description: string;
   icon: typeof Hammer;
   beneficios: string[];
+  observacoesPadrao: string[];
 };
 
 const categorias: Record<string, CategoryMeta> = {
@@ -28,6 +33,10 @@ const categorias: Record<string, CategoryMeta> = {
       "Sem furo errado: marcação prévia e nivelamento a laser",
       "Atendimento no mesmo dia em toda a cidade",
     ],
+    observacoesPadrao: [
+      "Tenha o manual ou link do produto à mão para conferência rápida.",
+      "Limpamos o ambiente ao final; resíduos de embalagem são descartados.",
+    ],
   },
   reparos: {
     slug: "reparos",
@@ -41,6 +50,10 @@ const categorias: Record<string, CategoryMeta> = {
       "Garantia de 30 dias em qualquer reparo",
       "Profissionais com NR-10 para serviços elétricos",
       "Limpeza do ambiente após o serviço",
+    ],
+    observacoesPadrao: [
+      "Em reparos elétricos é necessário desligar o disjuntor por alguns minutos.",
+      "Vazamentos antigos podem revelar danos adicionais — diagnóstico no local.",
     ],
   },
   engenharia: {
@@ -56,6 +69,10 @@ const categorias: Record<string, CategoryMeta> = {
       "Acompanhamento até o protocolo e aprovação",
       "Diagnóstico inicial gratuito por WhatsApp",
     ],
+    observacoesPadrao: [
+      "Prazos dependem do órgão público — informamos a previsão na visita técnica.",
+      "Documentos do imóvel (matrícula/IPTU) agilizam a abertura do processo.",
+    ],
   },
 };
 
@@ -66,8 +83,21 @@ type Servico = {
   preco_max: number | null;
   descricao: string | null;
 };
+type ServiceMaterial = { service_id: string; material_id: string; quantidade_sugerida: number };
+type Material = { id: string; nome: string; unidade: string };
 
-const brl = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+const brl = (v: number) => `R$ ${v.toFixed(0)}`;
+
+// ~R$ 80/h de mão de obra; mínimo 30min, máximo 8h
+function estimarTempo(min: number | null, max: number | null): string {
+  if (min == null || max == null) return "Sob consulta";
+  const media = (Number(min) + Number(max)) / 2;
+  const horas = Math.max(0.5, Math.min(8, media / 80));
+  if (horas < 1) return "≈ 30 min";
+  if (horas < 1.5) return "≈ 1 h";
+  if (horas < 5) return `≈ ${Math.round(horas * 2) / 2} h`;
+  return `≈ ${Math.round(horas)} h (½ período)`;
+}
 
 export const Route = createFileRoute("/servicos/$categoria")({
   beforeLoad: ({ params }) => {
@@ -103,16 +133,48 @@ function CategoriaPage() {
   const { categoria } = Route.useParams();
   const cat = categorias[categoria]!;
   const Icon = cat.icon;
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [servicos, setServicos] = useState<Servico[] | null>(null);
+  const [serviceMats, setServiceMats] = useState<ServiceMaterial[]>([]);
+  const [materiais, setMateriais] = useState<Material[]>([]);
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("services_catalog")
-      .select("id, nome, preco_min, preco_max, descricao")
-      .eq("ativo", true)
-      .eq("categoria", cat.nome)
-      .then(({ data }) => setServicos((data ?? []) as Servico[]));
+    Promise.all([
+      supabase
+        .from("services_catalog")
+        .select("id, nome, preco_min, preco_max, descricao")
+        .eq("ativo", true)
+        .eq("categoria", cat.nome)
+        .order("nome"),
+      supabase.from("service_materiais").select("service_id, material_id, quantidade_sugerida"),
+      supabase.from("materiais").select("id, nome, unidade").eq("ativo", true),
+    ]).then(([s, sm, m]) => {
+      setServicos((s.data ?? []) as Servico[]);
+      setServiceMats((sm.data ?? []) as ServiceMaterial[]);
+      setMateriais((m.data ?? []) as Material[]);
+    });
   }, [cat.nome]);
+
+  const itensTipicosFor = (serviceId: string) =>
+    serviceMats
+      .filter((sm) => sm.service_id === serviceId)
+      .map((sm) => {
+        const mat = materiais.find((m) => m.id === sm.material_id);
+        if (!mat) return null;
+        return { nome: mat.nome, qtd: Number(sm.quantidade_sugerida), unidade: mat.unidade };
+      })
+      .filter(Boolean) as { nome: string; qtd: number; unidade: string }[];
+
+  const filtered = useMemo(() => {
+    const list = servicos ?? [];
+    const term = query.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (!term) return list;
+    return list.filter((s) => {
+      const hay = `${s.nome} ${s.descricao ?? ""}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return term.split(/\s+/).every((t) => hay.includes(t));
+    });
+  }, [servicos, query]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
@@ -151,50 +213,148 @@ function CategoriaPage() {
       </div>
 
       <section className="mt-16">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Serviços nesta categoria
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Preços tabelados. Solicite seu orçamento e o profissional confirma o valor exato.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Serviços nesta categoria
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Preços tabelados. Toque em um serviço para ver a estimativa completa.
+            </p>
+          </div>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por nome ou palavra-chave..."
+              className="pl-9 pr-9 h-11 rounded-xl"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground"
+                aria-label="Limpar busca"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
 
-        {servicos.length === 0 ? (
-          <p className="mt-10 text-sm text-muted-foreground">
-            Carregando serviços…
-          </p>
+        {servicos === null ? (
+          <p className="mt-10 text-sm text-muted-foreground">Carregando serviços…</p>
+        ) : filtered.length === 0 ? (
+          <div className="mt-10 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            Nenhum serviço encontrado{query ? ` para "${query}"` : ""}.
+          </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {servicos.map((s) => (
-              <article
-                key={s.id}
-                className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 transition hover:shadow-soft"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold">{s.nome}</h3>
-                  {s.descricao && (
-                    <p className="mt-2 text-sm text-muted-foreground">{s.descricao}</p>
-                  )}
-                  {s.preco_min != null && s.preco_max != null && (
-                    <p className="mt-4 text-sm">
-                      <span className="text-muted-foreground">Faixa: </span>
-                      <span className="font-semibold">
-                        {brl(Number(s.preco_min))} a {brl(Number(s.preco_max))}
-                      </span>
-                    </p>
-                  )}
-                </div>
-                <Button
-                  asChild
-                  variant="brand"
-                  size="sm"
-                  className="mt-6 self-start rounded-full"
+            {filtered.map((s) => {
+              const isOpen = openId === s.id;
+              const min = s.preco_min != null ? Number(s.preco_min) : null;
+              const max = s.preco_max != null ? Number(s.preco_max) : null;
+              const priceLabel =
+                min != null && max != null
+                  ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+                  : "Sob consulta";
+              const tempo = estimarTempo(min, max);
+              const itens = itensTipicosFor(s.id);
+              return (
+                <article
+                  key={s.id}
+                  className={`flex flex-col rounded-2xl border bg-card p-6 transition ${
+                    isOpen ? "border-brand shadow-soft" : "border-border hover:shadow-soft"
+                  }`}
                 >
-                  <Link to="/orcamentos">
-                    Pedir orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </article>
-            ))}
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-semibold">{s.nome}</h3>
+                      <span className="text-sm font-bold text-brand whitespace-nowrap">{priceLabel}</span>
+                    </div>
+                    {s.descricao && (
+                      <p className="mt-2 text-sm text-muted-foreground">{s.descricao}</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(isOpen ? null : s.id)}
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline self-start"
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen ? "Ocultar estimativa" : "Ver estimativa completa"}
+                    <ChevronDown className={`h-3.5 w-3.5 transition ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-4 space-y-3 rounded-xl bg-brand-soft/40 p-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Tempo médio
+                          </p>
+                          <p className="mt-0.5 text-sm font-bold text-foreground">{tempo}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Faixa estimada
+                          </p>
+                          <p className="mt-0.5 text-sm font-bold text-foreground">{priceLabel}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                          <ListChecks className="h-3 w-3" /> Itens típicos
+                        </p>
+                        {itens.length > 0 ? (
+                          <ul className="mt-1 space-y-0.5 text-xs text-foreground">
+                            {itens.slice(0, 5).map((it) => (
+                              <li key={it.nome} className="truncate">
+                                • {it.nome}
+                                {it.qtd > 1 ? ` (${it.qtd}${it.unidade !== "un" ? ` ${it.unidade}` : ""})` : ""}
+                              </li>
+                            ))}
+                            {itens.length > 5 && (
+                              <li className="text-muted-foreground">+ {itens.length - 5} outros</li>
+                            )}
+                          </ul>
+                        ) : (
+                          <p className="mt-1 text-xs text-muted-foreground">Nenhum material obrigatório.</p>
+                        )}
+                      </div>
+                      {cat.observacoesPadrao.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Observações
+                          </p>
+                          <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                            {cat.observacoesPadrao.map((o) => (
+                              <li key={o}>• {o}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    asChild
+                    variant="brand"
+                    size="sm"
+                    className="mt-5 self-start rounded-full"
+                  >
+                    <Link
+                      to="/orcamentos"
+                      search={{ new: 1, serviceId: s.id, categoria: cat.nome }}
+                    >
+                      Pedir orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
