@@ -1063,6 +1063,7 @@ function ServicosTab() {
       .single();
     setRepetindo(null);
     if (error || !data) {
+      const { toast } = await import("sonner");
       toast.error("Não foi possível repetir o pedido");
       return;
     }
