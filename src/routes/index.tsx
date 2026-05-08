@@ -332,14 +332,14 @@ function Index() {
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90">
+              <Button asChild variant="brand" size="xl">
                 <Link to="/orcamentos">
-                  <FileText className="mr-2 h-4 w-4" /> Solicitar Orçamento
+                  <FileText className="mr-1 h-4 w-4" /> Solicitar orçamento
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background">
+              <Button asChild size="lg" variant="outline" className="border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background hover:border-background/40">
                 <a href="tel:+5521999999999">
-                  <Phone className="mr-2 h-4 w-4" /> (21) 99999-9999
+                  <Phone className="mr-1 h-4 w-4" /> (21) 99999-9999
                 </a>
               </Button>
             </div>
