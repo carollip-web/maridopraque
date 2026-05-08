@@ -250,6 +250,26 @@ function MeusOrcamentos() {
     }
   }, [servicos, search.new, search.serviceId, search.serviceName, search.categoria, autoMatched]);
 
+  // Re-sincroniza o dropdown com o serviço da vitrine se o usuário voltar
+  // para a etapa 1 e a seleção tiver sido perdida (ex.: limpeza acidental).
+  useEffect(() => {
+    if (step !== 1 || selServiceId || !showNew || editingId) return;
+    if (!servicos.length) return;
+    if (!search.serviceId && !search.serviceName) return;
+    const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    let m: Servico | undefined;
+    if (search.serviceId) m = servicos.find((x) => x.id === search.serviceId);
+    if (!m && search.serviceName) {
+      const target = norm(search.serviceName);
+      const pool = search.categoria
+        ? servicos.filter((x) => norm(x.categoria) === norm(search.categoria!))
+        : servicos;
+      m = pool.find((x) => norm(x.nome) === target) ||
+          pool.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
+    }
+    if (m) setSelServiceId(m.id);
+  }, [step, selServiceId, showNew, editingId, servicos, search.serviceId, search.serviceName, search.categoria]);
+
   const selServico = servicos.find((s) => s.id === selServiceId);
   const sugeridos = useMemo(() => {
     if (!selServiceId) return [] as Material[];
