@@ -232,40 +232,16 @@ function ProfissionalArea() {
             </TabsList>
 
             <TabsContent value="pendentes" className="mt-6">
-              <Grid
-                items={filterBy(["customizado_pendente"])}
-                profiles={profiles}
-                mode="enviar"
-                enviar={enviar}
-                emptyMsg="Nenhuma solicitação aguardando."
-              />
+              <Grid items={filterBy(["customizado_pendente"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Nenhuma solicitação aguardando." />
             </TabsContent>
             <TabsContent value="enviados" className="mt-6">
-              <Grid
-                items={filterBy(["enviado"])}
-                profiles={profiles}
-                mode="revisar"
-                enviar={enviar}
-                emptyMsg="Nenhum orçamento aguardando aprovação do cliente."
-              />
+              <Grid items={filterBy(["enviado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento aguardando aprovação do cliente." />
             </TabsContent>
             <TabsContent value="ativos" className="mt-6">
-              <Grid
-                items={filterBy(["aprovado", "pago"])}
-                profiles={profiles}
-                mode="info"
-                enviar={enviar}
-                emptyMsg="Nenhum serviço em andamento."
-              />
+              <Grid items={filterBy(["aprovado", "pago"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum serviço em andamento." />
             </TabsContent>
             <TabsContent value="finalizados" className="mt-6">
-              <Grid
-                items={filterBy(["recusado", "cancelado"])}
-                profiles={profiles}
-                mode="info"
-                enviar={enviar}
-                emptyMsg="Sem orçamentos encerrados."
-              />
+              <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Sem orçamentos encerrados." />
             </TabsContent>
           </Tabs>
         )}
@@ -301,12 +277,16 @@ function Stat({
 function Grid({
   items,
   profiles,
+  catalog,
+  orcMats,
   mode,
   enviar,
   emptyMsg,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
+  catalog: Record<string, ServicoCat>;
+  orcMats: Record<string, OrcMat[]>;
   mode: "enviar" | "revisar" | "info";
   enviar: any;
   emptyMsg: string;
@@ -325,6 +305,8 @@ function Grid({
           key={o.id}
           o={o}
           cliente={profiles[o.cliente_id]}
+          range={o.service_id ? catalog[o.service_id] : undefined}
+          materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}
         />
