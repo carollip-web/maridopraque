@@ -288,7 +288,8 @@ function CategoriaPage() {
               return (
                 <article
                   key={s.id}
-                  className={`flex flex-col rounded-2xl border bg-card p-6 transition ${
+                  id={`servico-${s.id}`}
+                  className={`scroll-mt-24 flex flex-col rounded-2xl border bg-card p-6 transition ${
                     isOpen ? "border-brand shadow-soft" : "border-border hover:shadow-soft"
                   }`}
                 >
