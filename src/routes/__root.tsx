@@ -4,19 +4,30 @@ import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <div className="flex min-h-[70vh] items-center justify-center bg-background px-4 py-20">
+      <div className="max-w-lg text-center">
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          Erro 404
+        </span>
+        <h1 className="mt-4 text-balance text-5xl font-semibold tracking-tight md:text-6xl">
+          Essa página tirou folga.
+        </h1>
+        <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+          O link pode ter mudado, mas o seu reparo a gente resolve. Peça um orçamento
+          em menos de 2 minutos ou volte para o início.
         </p>
-        <div className="mt-6">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/orcamentos"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-brand px-7 text-sm font-semibold text-brand-foreground shadow-brand transition hover:-translate-y-0.5"
+          >
+            Pedir orçamento agora
+          </Link>
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-background px-7 text-sm font-medium text-foreground transition hover:bg-brand-soft"
           >
-            Go home
+            Voltar para o início
           </Link>
         </div>
       </div>
