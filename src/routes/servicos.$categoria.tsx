@@ -149,6 +149,20 @@ function CategoriaPage() {
     if (search.q !== undefined) setQuery(search.q);
   }, [search.q]);
 
+  // Sincronia com o estimador rápido / vitrine: abre e rola até o serviço solicitado
+  useEffect(() => {
+    if (!search.service || !servicos) return;
+    const exists = servicos.some((s) => s.id === search.service);
+    if (!exists) return;
+    setOpenId(search.service);
+    if (typeof window !== "undefined") {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`servico-${search.service}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [search.service, servicos]);
+
   useEffect(() => {
     Promise.all([
       supabase
