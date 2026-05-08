@@ -105,6 +105,7 @@ const brl = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 function MeusOrcamentos() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [list, setList] = useState<OrcamentoRow[]>([]);
   const [orcMats, setOrcMats] = useState<Record<string, OrcMaterial[]>>({});
   const [showNew, setShowNew] = useState(false);
