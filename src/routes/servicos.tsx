@@ -3,6 +3,14 @@ import { Hammer, Drill, Lightbulb, ShowerHead, PaintRoller, Wrench, Scale, FileT
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/servicos")({
+  head: () => ({
+    meta: [
+      { title: "Serviços — Montagem, Reparos e Engenharia | Marido pra Quê?" },
+      { name: "description", content: "Catálogo completo: montagem de móveis, reparos elétricos e hidráulicos, pintura, legalização de obras e segurança do trabalho. Preços tabelados." },
+      { property: "og:title", content: "Catálogo de Serviços — Marido pra Quê?" },
+      { property: "og:description", content: "Tudo o que sua casa precisa, com preço tabelado e profissionais verificados." },
+    ],
+  }),
   component: Servicos,
 });
 

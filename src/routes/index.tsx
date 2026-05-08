@@ -24,6 +24,7 @@ import {
   HardHat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QuickEstimator } from "@/components/QuickEstimator";
 import heroImage from "@/assets/hero-tools.jpg";
 
 export const Route = createFileRoute("/")({
@@ -147,6 +148,9 @@ function Index() {
         </div>
       </section>
 
+      {/* Estimador rápido */}
+      <QuickEstimator />
+
       {/* Por que nós (Diferenciais no topo) */}
       <section id="porque" className="border-y border-border bg-brand-soft/30 py-24">
         <div className="mx-auto max-w-6xl px-4">
@@ -256,7 +260,12 @@ function Index() {
 
         <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {services.map(({ categoryId, icon: Icon, title, desc }) => (
-            <Link key={title} to="/servicos" hash={categoryId} className="group bg-background p-7 transition hover:bg-cream">
+            <Link
+              key={title}
+              to="/servicos/$categoria"
+              params={{ categoria: categoryId }}
+              className="group bg-background p-7 transition hover:bg-cream"
+            >
               <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
               <h3 className="mt-5 text-base font-semibold">{title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
