@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes: {
+        Row: {
+          cliente_id: string
+          comentario: string | null
+          created_at: string
+          id: string
+          nota: number
+          orcamento_id: string
+          profissional_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota: number
+          orcamento_id: string
+          profissional_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota?: number
+          orcamento_id?: string
+          profissional_id?: string | null
+        }
+        Relationships: []
+      }
+      indicacoes: {
+        Row: {
+          codigo: string
+          created_at: string
+          desconto_percent: number
+          id: string
+          user_id: string
+          usos: number
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          desconto_percent?: number
+          id?: string
+          user_id: string
+          usos?: number
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          desconto_percent?: number
+          id?: string
+          user_id?: string
+          usos?: number
+        }
+        Relationships: []
+      }
       materiais: {
         Row: {
           ativo: boolean
@@ -138,12 +195,14 @@ export type Database = {
           auto_aprovado: boolean
           cliente_id: string
           created_at: string
+          data_agendada: string | null
           data_aprovacao: string | null
           data_pagamento: string | null
           descricao: string | null
           id: string
           observacoes_profissional: string | null
           profissional_id: string | null
+          reagendamento_solicitado: string | null
           service_id: string | null
           service_name: string
           status: Database["public"]["Enums"]["orcamento_status"]
@@ -156,12 +215,14 @@ export type Database = {
           auto_aprovado?: boolean
           cliente_id: string
           created_at?: string
+          data_agendada?: string | null
           data_aprovacao?: string | null
           data_pagamento?: string | null
           descricao?: string | null
           id?: string
           observacoes_profissional?: string | null
           profissional_id?: string | null
+          reagendamento_solicitado?: string | null
           service_id?: string | null
           service_name: string
           status?: Database["public"]["Enums"]["orcamento_status"]
@@ -174,12 +235,14 @@ export type Database = {
           auto_aprovado?: boolean
           cliente_id?: string
           created_at?: string
+          data_agendada?: string | null
           data_aprovacao?: string | null
           data_pagamento?: string | null
           descricao?: string | null
           id?: string
           observacoes_profissional?: string | null
           profissional_id?: string | null
+          reagendamento_solicitado?: string | null
           service_id?: string | null
           service_name?: string
           status?: Database["public"]["Enums"]["orcamento_status"]
@@ -225,6 +288,42 @@ export type Database = {
           total_servicos_pagos?: number
           updated_at?: string
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      profissional_perfil: {
+        Row: {
+          ativo: boolean
+          bio: string | null
+          cidade: string | null
+          created_at: string
+          especialidades: string[] | null
+          foto_url: string | null
+          slug: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          bio?: string | null
+          cidade?: string | null
+          created_at?: string
+          especialidades?: string[] | null
+          foto_url?: string | null
+          slug?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          bio?: string | null
+          cidade?: string | null
+          created_at?: string
+          especialidades?: string[] | null
+          foto_url?: string | null
+          slug?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

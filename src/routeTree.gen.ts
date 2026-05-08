@@ -25,6 +25,7 @@ import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
+import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
   id: '/servicos-admin',
@@ -106,6 +107,11 @@ const ServicosCategoriaRoute = ServicosCategoriaRouteImport.update({
   path: '/$categoria',
   getParentRoute: () => ServicosRoute,
 } as any)
+const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
+  id: '/perfil/$slug',
+  path: '/perfil/$slug',
+  getParentRoute: () => ProfissionaisRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -119,11 +125,12 @@ export interface FileRoutesByFullPath {
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
-  '/profissionais': typeof ProfissionaisRoute
+  '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
+  '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -137,11 +144,12 @@ export interface FileRoutesByTo {
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
-  '/profissionais': typeof ProfissionaisRoute
+  '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
+  '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,11 +164,12 @@ export interface FileRoutesById {
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
-  '/profissionais': typeof ProfissionaisRoute
+  '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
+  '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
+    | '/profissionais/perfil/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
+    | '/profissionais/perfil/$slug'
   id:
     | '__root__'
     | '/'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/servicos/$categoria'
+    | '/profissionais/perfil/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,7 +243,7 @@ export interface RootRouteChildren {
   OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
-  ProfissionaisRoute: typeof ProfissionaisRoute
+  ProfissionaisRoute: typeof ProfissionaisRouteWithChildren
   ProfissionalRoute: typeof ProfissionalRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
@@ -351,8 +363,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicosCategoriaRouteImport
       parentRoute: typeof ServicosRoute
     }
+    '/profissionais/perfil/$slug': {
+      id: '/profissionais/perfil/$slug'
+      path: '/perfil/$slug'
+      fullPath: '/profissionais/perfil/$slug'
+      preLoaderRoute: typeof ProfissionaisPerfilSlugRouteImport
+      parentRoute: typeof ProfissionaisRoute
+    }
   }
 }
+
+interface ProfissionaisRouteChildren {
+  ProfissionaisPerfilSlugRoute: typeof ProfissionaisPerfilSlugRoute
+}
+
+const ProfissionaisRouteChildren: ProfissionaisRouteChildren = {
+  ProfissionaisPerfilSlugRoute: ProfissionaisPerfilSlugRoute,
+}
+
+const ProfissionaisRouteWithChildren = ProfissionaisRoute._addFileChildren(
+  ProfissionaisRouteChildren,
+)
 
 interface ServicosRouteChildren {
   ServicosCategoriaRoute: typeof ServicosCategoriaRoute
@@ -378,7 +409,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,
-  ProfissionaisRoute: ProfissionaisRoute,
+  ProfissionaisRoute: ProfissionaisRouteWithChildren,
   ProfissionalRoute: ProfissionalRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,

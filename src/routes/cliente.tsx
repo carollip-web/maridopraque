@@ -30,6 +30,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { AvaliacaoForm } from "@/components/AvaliacaoForm";
+import { IndicacaoCard } from "@/components/IndicacaoCard";
 
 export const Route = createFileRoute("/cliente")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -447,6 +449,8 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
              </div>
            )}
            
+           <IndicacaoCard />
+
            <div className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
               <h3 className="font-bold mb-4">Dica de Segurança</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -627,13 +631,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                        </div>
                     </div>
                  )}
-                 <div className="flex gap-4">
+                 <div className="flex flex-wrap gap-4">
                     {sp.status === "Aguardando Aprovação" && (
                        <Button 
                          className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
                          onClick={() => setApprovalStep("confirm")}
                        >
                          Aprovar Orçamento
+                       </Button>
+                    )}
+                    {(sp.status === "Agendado" || sp.status === "Aprovado") && (
+                       <Button
+                         variant="outline"
+                         className="flex-1 rounded-full font-bold h-12"
+                         onClick={async () => {
+                           const { toast } = await import("sonner");
+                           toast.success("Pedido de reagendamento enviado ao profissional");
+                         }}
+                       >
+                         Solicitar Reagendamento
                        </Button>
                     )}
                     <Button 
@@ -932,43 +948,97 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 }
 
 function ServicosTab() {
-  const servicos = [
-    { id: "#8750", title: "Troca de Resistência Chuveiro", date: "02/05/2026", price: "R$ 80", prof: "Mariana S.", rating: 5 },
-    { id: "#8621", title: "Instalação de Lustre", date: "20/04/2026", price: "R$ 120", prof: "Ricardo M.", rating: 5 },
-    { id: "#8500", title: "Furos e Quadros", date: "15/04/2026", price: "R$ 90", prof: "Juliana P.", rating: 4 },
-  ];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [servicos, setServicos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [repetindo, setRepetindo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase
+        .from("orcamentos")
+        .select("id, service_name, service_id, valor, profissional_id, data_pagamento, created_at")
+        .eq("cliente_id", user.id)
+        .eq("status", "pago")
+        .order("data_pagamento", { ascending: false });
+      setServicos(data || []);
+      setLoading(false);
+    })();
+  }, [user]);
+
+  const repetir = async (s: any) => {
+    if (!user) return;
+    setRepetindo(s.id);
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data, error } = await supabase
+      .from("orcamentos")
+      .insert({
+        cliente_id: user.id,
+        service_id: s.service_id,
+        service_name: s.service_name,
+        descricao: `Repetição do pedido ${s.id.slice(0, 8)}`,
+      })
+      .select("id")
+      .single();
+    setRepetindo(null);
+    if (error || !data) {
+      const { toast } = await import("sonner");
+      toast.error("Não foi possível repetir o pedido");
+      return;
+    }
+    navigate({ to: "/cliente", search: () => ({ tab: "pedidos" as Tab, pedidoId: data.id, id: undefined, details: undefined }) });
+  };
+
+  if (loading) {
+    return <div className="text-center text-muted-foreground py-12">Carregando histórico…</div>;
+  }
+
+  if (servicos.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-dashed border-border p-12 text-center">
+        <History className="h-10 w-10 text-muted-foreground/50 mx-auto mb-4" />
+        <p className="font-bold text-lg">Você ainda não tem serviços concluídos</p>
+        <p className="text-sm text-muted-foreground mt-2 mb-6">Quando um serviço for pago e finalizado, ele aparece aqui.</p>
+        <Button asChild className="rounded-full bg-brand text-brand-foreground font-bold h-11 px-6">
+          <Link to="/orcamentos">Pedir um orçamento</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-       <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-soft">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground font-bold">
-              <tr>
-                <th className="px-6 py-4">Serviço</th>
-                <th className="px-6 py-4">Data</th>
-                <th className="px-6 py-4">Profissional</th>
-                <th className="px-6 py-4">Valor</th>
-                <th className="px-6 py-4">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {servicos.map((s) => (
-                <tr key={s.id} className="hover:bg-muted/20 transition-colors group">
-                  <td className="px-6 py-5">
-                    <div className="font-bold">{s.title}</div>
-                    <div className="text-xs text-muted-foreground">{s.id}</div>
-                  </td>
-                  <td className="px-6 py-5 text-sm text-muted-foreground">{s.date}</td>
-                  <td className="px-6 py-5 text-sm font-medium">{s.prof}</td>
-                  <td className="px-6 py-5 text-sm font-bold">{s.price}</td>
-                  <td className="px-6 py-5">
-                    <button className="text-xs font-bold text-brand hover:underline">Revisar nota fiscal</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-       </div>
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {servicos.map((s) => (
+        <article key={s.id} className="bg-white rounded-2xl border border-border shadow-soft p-6 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-lg">{s.service_name}</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                #{s.id.slice(0, 8)} • {s.data_pagamento ? new Date(s.data_pagamento).toLocaleDateString("pt-BR") : "—"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold">R$ {Number(s.valor || 0).toFixed(2)}</span>
+              <Button
+                onClick={() => repetir(s)}
+                disabled={repetindo === s.id}
+                size="sm"
+                variant="outline"
+                className="rounded-full font-bold h-9 px-4"
+              >
+                {repetindo === s.id ? "..." : "Pedir de novo"}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-border">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Como foi este serviço?</p>
+            <AvaliacaoForm orcamentoId={s.id} clienteId={user!.id} profissionalId={s.profissional_id} />
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
