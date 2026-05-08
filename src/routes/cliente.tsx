@@ -437,9 +437,9 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                 </button>
                 <Plus className="absolute -right-4 -top-4 h-32 w-32 text-white/10 rotate-12" />
                 <h3 className="text-xl font-bold mb-2">Novo Serviço?</h3>
-                <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pelo WhatsApp.</p>
+                <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pela plataforma.</p>
                 <Button 
-                  onClick={() => navigate({ to: "/servicos" })}
+                  onClick={() => navigate({ to: "/orcamentos" })}
                   className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold"
                 >
                    Solicitar Agora
