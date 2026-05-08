@@ -570,30 +570,24 @@ function MeusOrcamentos() {
             const totalMax = max + subtotalMat;
             const qtdMat = Object.keys(picked).length;
             return (
-              <div className="rounded-xl border border-brand/30 bg-brand-soft/40 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="rounded-2xl border border-border bg-card px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">
-                      Resumo da solicitação
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Resumo
                     </p>
-                    <p className="mt-1 font-bold text-foreground truncate">{selServico.nome}</p>
+                    <p className="mt-1 font-semibold text-foreground truncate">{selServico.nome}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {qtdMat > 0 ? `${qtdMat} material(is) selecionado(s)` : "Sem materiais adicionais"}
-                      {" · "}Tempo médio: <span className="font-semibold text-foreground">{tempo}</span>
+                      {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} · {tempo}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Total estimado
                     </p>
-                    <p className="text-lg font-bold text-brand whitespace-nowrap">
+                    <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
                       {min === max ? brl(totalMin) : `${brl(totalMin)} – ${brl(totalMax)}`}
                     </p>
-                    {subtotalMat > 0 && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Mão de obra {brl(min)}–{brl(max)} + materiais {brl(subtotalMat)}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -740,15 +734,6 @@ function MeusOrcamentos() {
                 </div>
               )}
 
-              {selServico && selServico.preco_min != null && selServico.preco_max != null && (
-                <div className="rounded-xl bg-brand/5 border border-brand/20 p-3 text-sm flex justify-between items-center">
-                  <span className="text-muted-foreground">Total estimado</span>
-                  <span className="font-bold tabular-nums">
-                    {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
-                    {brl(Number(selServico.preco_max) + subtotalMat)}
-                  </span>
-                </div>
-              )}
 
               <div className="flex justify-between gap-2">
                 <Button
@@ -809,26 +794,26 @@ function MeusOrcamentos() {
               </div>
 
               {selServico.preco_min != null && selServico.preco_max != null && (
-                <div className="rounded-2xl bg-brand/5 border border-brand/20 p-4 text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mão de obra (range)</span>
-                    <span>
+                <div className="rounded-2xl border border-border bg-card p-5 text-sm space-y-2">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Mão de obra</span>
+                    <span className="tabular-nums text-foreground">
                       {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Materiais</span>
-                    <span>{brl(subtotalMat)}</span>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Materiais</span>
+                    <span className="tabular-nums text-foreground">{brl(subtotalMat)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-base pt-2 border-t border-brand/20">
+                  <div className="flex justify-between font-semibold text-base pt-3 mt-1 border-t border-border">
                     <span>Total estimado</span>
-                    <span>
+                    <span className="tabular-nums">
                       {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
                       {brl(Number(selServico.preco_max) + subtotalMat)}
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground pt-1">
-                    O valor final da mão de obra ficará dentro do range tabelado e será confirmado pelo profissional.
+                    O valor final da mão de obra será confirmado pelo profissional.
                   </p>
                 </div>
               )}
