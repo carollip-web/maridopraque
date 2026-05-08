@@ -318,20 +318,27 @@ function Grid({
 function OrcamentoCard({
   o,
   cliente,
+  range,
+  materiais,
   mode,
   enviar,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
+  range: ServicoCat | undefined;
+  materiais: OrcMat[];
   mode: "enviar" | "revisar" | "info";
   enviar: any;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
-  const [valor, setValor] = useState(o.valor != null ? String(o.valor).replace(".", ",") : "");
+  const initialValor = o.valor_servico ?? o.valor ?? null;
+  const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
 
   const meta = STATUS_META[o.status];
+  const min = range?.preco_min != null ? Number(range.preco_min) : null;
+  const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
@@ -339,9 +346,13 @@ function OrcamentoCard({
       toast.error("Informe um valor válido");
       return;
     }
+    if (min != null && max != null && (v < min || v > max)) {
+      toast.error(`Valor fora do range tabelado (R$ ${min.toFixed(2)} – R$ ${max.toFixed(2)})`);
+      return;
+    }
     setSaving(true);
     try {
-      await enviar({ data: { orcamentoId: o.id, valor: v, observacoes: obs || undefined } });
+      await enviar({ data: { orcamentoId: o.id, valorServico: v, observacoes: obs || undefined } });
       toast.success(mode === "revisar" ? "Orçamento atualizado" : "Orçamento enviado ao cliente");
       if (mode === "revisar") setEditing(false);
     } catch (e: any) {
@@ -350,12 +361,6 @@ function OrcamentoCard({
       setSaving(false);
     }
   };
-
-  const whatsappLink =
-    cliente?.whatsapp &&
-    `https://wa.me/${cliente.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
-      `Olá ${cliente.nome || ""}, sobre o seu orçamento de "${o.service_name}"...`,
-    )}`;
 
   return (
     <div className="bg-white rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-4">
