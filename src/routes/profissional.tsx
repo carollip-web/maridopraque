@@ -78,6 +78,9 @@ function ProfissionalArea() {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user]);
 
+  const [catalog, setCatalog] = useState<Record<string, ServicoCat>>({});
+  const [orcMats, setOrcMats] = useState<Record<string, OrcMat[]>>({});
+
   const refresh = async () => {
     const { data, error } = await supabase
       .from("orcamentos")
@@ -101,6 +104,31 @@ function ProfissionalArea() {
       (profs ?? []).forEach((p: any) => (map[p.id] = p));
       setProfiles(map);
     }
+
+    const serviceIds = Array.from(new Set(list.map((o) => o.service_id).filter(Boolean) as string[]));
+    if (serviceIds.length) {
+      const { data: cats } = await supabase
+        .from("services_catalog")
+        .select("id, preco_min, preco_max")
+        .in("id", serviceIds);
+      const cmap: Record<string, ServicoCat> = {};
+      (cats ?? []).forEach((c: any) => (cmap[c.id] = c));
+      setCatalog(cmap);
+    }
+
+    const orcIds = list.map((o) => o.id);
+    if (orcIds.length) {
+      const { data: oms } = await supabase
+        .from("orcamento_materiais")
+        .select("orcamento_id, nome_snapshot, unidade_snapshot, quantidade, subtotal")
+        .in("orcamento_id", orcIds);
+      const grouped: Record<string, OrcMat[]> = {};
+      (oms ?? []).forEach((m: any) => {
+        (grouped[m.orcamento_id] ||= []).push(m as OrcMat);
+      });
+      setOrcMats(grouped);
+    }
+
     setLoadingList(false);
   };
 
