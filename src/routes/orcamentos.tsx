@@ -570,30 +570,24 @@ function MeusOrcamentos() {
             const totalMax = max + subtotalMat;
             const qtdMat = Object.keys(picked).length;
             return (
-              <div className="rounded-xl border border-brand/30 bg-brand-soft/40 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="rounded-2xl border border-border bg-card px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">
-                      Resumo da solicitação
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Resumo
                     </p>
-                    <p className="mt-1 font-bold text-foreground truncate">{selServico.nome}</p>
+                    <p className="mt-1 font-semibold text-foreground truncate">{selServico.nome}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {qtdMat > 0 ? `${qtdMat} material(is) selecionado(s)` : "Sem materiais adicionais"}
-                      {" · "}Tempo médio: <span className="font-semibold text-foreground">{tempo}</span>
+                      {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} · {tempo}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Total estimado
                     </p>
-                    <p className="text-lg font-bold text-brand whitespace-nowrap">
+                    <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
                       {min === max ? brl(totalMin) : `${brl(totalMin)} – ${brl(totalMax)}`}
                     </p>
-                    {subtotalMat > 0 && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Mão de obra {brl(min)}–{brl(max)} + materiais {brl(subtotalMat)}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
