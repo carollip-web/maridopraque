@@ -102,6 +102,7 @@ function estimarTempo(min: number | null, max: number | null): string {
 export const Route = createFileRoute("/servicos/$categoria")({
   validateSearch: (s: Record<string, unknown>) => ({
     q: typeof s.q === "string" ? s.q : undefined,
+    service: typeof s.service === "string" ? s.service : undefined,
   }),
   beforeLoad: ({ params }) => {
     if (!categorias[params.categoria]) throw notFound();
