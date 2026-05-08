@@ -3,6 +3,14 @@ import { Search, HelpCircle, MessageCircle, FileQuestion, ShieldCheck, CreditCar
 import { useState } from "react";
 
 export const Route = createFileRoute("/ajuda")({
+  head: () => ({
+    meta: [
+      { title: "Central de Ajuda — Perguntas frequentes | Marido pra Quê?" },
+      { name: "description", content: "Tire suas dúvidas sobre orçamento, segurança, formas de pagamento e garantia dos serviços. Respostas rápidas e claras." },
+      { property: "og:title", content: "Central de Ajuda — Marido pra Quê?" },
+      { property: "og:description", content: "Perguntas frequentes sobre orçamento, segurança e pagamento." },
+    ],
+  }),
   component: Ajuda,
 });
 
