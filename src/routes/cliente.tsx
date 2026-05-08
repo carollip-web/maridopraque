@@ -531,6 +531,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
   const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
 
