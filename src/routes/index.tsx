@@ -262,16 +262,15 @@ function Index() {
           {services.map(({ categoryId, q, icon: Icon, title, desc }) => (
             <Link
               key={title}
-              to="/servicos/$categoria"
-              params={{ categoria: categoryId }}
-              search={{ q }}
+              to="/orcamentos"
+              search={{ new: 1, categoria: categoryId, serviceName: q }}
               className="group bg-background p-7 transition hover:bg-cream"
             >
               <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
               <h3 className="mt-5 text-base font-semibold">{title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
               <div className="mt-4 flex items-center text-xs font-semibold text-brand opacity-0 transition group-hover:opacity-100">
-                Ver detalhes →
+                Pedir orçamento →
               </div>
             </Link>
           ))}
