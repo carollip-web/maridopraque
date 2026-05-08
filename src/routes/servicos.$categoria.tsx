@@ -100,6 +100,9 @@ function estimarTempo(min: number | null, max: number | null): string {
 }
 
 export const Route = createFileRoute("/servicos/$categoria")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    q: typeof s.q === "string" ? s.q : undefined,
+  }),
   beforeLoad: ({ params }) => {
     if (!categorias[params.categoria]) throw notFound();
   },
@@ -131,13 +134,19 @@ export const Route = createFileRoute("/servicos/$categoria")({
 
 function CategoriaPage() {
   const { categoria } = Route.useParams();
+  const search = Route.useSearch();
   const cat = categorias[categoria]!;
   const Icon = cat.icon;
   const [servicos, setServicos] = useState<Servico[] | null>(null);
   const [serviceMats, setServiceMats] = useState<ServiceMaterial[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(search.q ?? "");
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // Sincroniza quando o usuário navega entre cards da vitrine sem desmontar a página
+  useEffect(() => {
+    if (search.q !== undefined) setQuery(search.q);
+  }, [search.q]);
 
   useEffect(() => {
     Promise.all([
@@ -172,7 +181,7 @@ function CategoriaPage() {
     if (!term) return list;
     return list.filter((s) => {
       const hay = `${s.nome} ${s.descricao ?? ""}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return term.split(/\s+/).every((t) => hay.includes(t));
+      return term.split(/\s+/).every((t: string) => hay.includes(t));
     });
   }, [servicos, query]);
 
