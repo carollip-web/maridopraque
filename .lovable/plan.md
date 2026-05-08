@@ -1,81 +1,48 @@
-## Esquema de aprovação automatizada de orçamentos
+## Orçamento tabelado + materiais opcionais
 
-Sistema híbrido com login de profissional, auto-aprovação inteligente e notificações multi-canal.
+### O que muda
 
-### 1. Banco de dados (migrations)
+1. **Remover WhatsApp como canal de orçamento** — tirar campo/menção de WhatsApp dos fluxos de solicitação, notificação e do card do orçamento. WhatsApp continua só como contato no perfil (não como canal de envio de orçamento).
+2. **Orçamento tabelado** — todo serviço passa a ter `preco_min` e `preco_max` no catálogo. Cliente vê o range antes de solicitar (ex: "R$ 80–150"). Não há mais "customizado pendente sem valor": o profissional ajusta o valor *dentro* do range para fechar.
+3. **Taxa opcional de material** — cada serviço tem uma lista pré-definida de materiais sugeridos. No momento da solicitação, o cliente marca quais quer incluir; o sistema soma o preço de cada material e adiciona como `taxa_material` no orçamento, discriminada item a item.
+4. **Fonte de preço de material híbrida** — tabela interna como base; botão "Atualizar via marketplace" no painel admin (e opcionalmente no card do material) consulta um marketplace de materiais e atualiza `preco_atual` + `preco_fonte` + `preco_atualizado_em`.
 
-**Tabelas novas:**
+### Banco (migration)
 
-- `profiles` — dados do cliente/profissional (id → auth.users, nome, whatsapp, email, total_servicos)
-- `user_roles` — papéis (cliente, profissional, admin) em tabela separada com `has_role()` SECURITY DEFINER
-- `services_catalog` — catálogo de serviços com preço fixo (nome, categoria, preco_fixo, is_fixed_price)
-- `orcamentos` — solicitações e orçamentos:
-  - cliente_id, profissional_id (nullable até atribuição)
-  - service_id (nullable se customizado), descricao
-  - valor, tipo: `fixo_auto` | `customizado_pendente` | `enviado` | `aprovado` | `recusado` | `pago`
-  - auto_aprovado (bool), data_aprovacao, observacoes
-- `notificacoes` — fila de notificações (user_id, tipo, canal: email/whatsapp/in-app, payload, enviado_em)
+- `services_catalog`: adicionar `preco_min numeric`, `preco_max numeric`. Remover/depreciar `preco_fixo` (manter coluna mas não usar mais). `is_fixed_price` vira irrelevante.
+- `materiais`: nova tabela — `id`, `nome`, `unidade` (un/m/kg), `preco_base numeric` (manual), `preco_atual numeric` (último valor), `preco_fonte text` (`tabela` | `marketplace`), `preco_atualizado_em timestamptz`, `marketplace_url text`, `ativo bool`.
+- `service_materiais`: junção — `service_id`, `material_id`, `quantidade_sugerida numeric`. Define a lista pré-definida por serviço.
+- `orcamentos`: adicionar `taxa_material numeric default 0`, `valor_servico numeric` (valor da mão de obra, dentro do range). `valor` permanece como total (`valor_servico + taxa_material`).
+- `orcamento_materiais`: itens escolhidos pelo cliente — `orcamento_id`, `material_id`, `quantidade`, `preco_unitario` (snapshot no momento da solicitação), `subtotal`.
+- Trigger `process_new_orcamento` atualizado: define `valor_servico` = média do range como sugestão inicial e soma `taxa_material` a partir dos itens em `orcamento_materiais`. Status inicial `customizado_pendente` (profissional confirma valor dentro do range).
+- RLS: `materiais` e `service_materiais` leitura pública; admin gerencia. `orcamento_materiais` segue RLS do orçamento pai.
 
-**Regras (RLS):**
-- Cliente vê e cria seus próprios orçamentos
-- Profissional vê orçamentos atribuídos a ele e pode atualizar valor/status
-- Admin vê tudo
-- Catálogo de serviços é leitura pública
+### Server functions (`src/lib/`)
 
-**Trigger automático:**
-- Ao inserir orçamento, se `service_id` tem `preco_fixo` → marca `tipo='fixo_auto'`, gera valor automaticamente
-- Se cliente tem ≥3 serviços pagos E valor ≤ R$200 → marca `auto_aprovado=true` direto
-- Caso contrário, fica `customizado_pendente` para profissional revisar
+- `solicitarOrcamento` — passa a aceitar `materiais: { materialId, quantidade }[]`. Insere o orçamento e os itens em `orcamento_materiais` em uma transação (RPC).
+- `enviarOrcamento` — valida que `valor_servico` está dentro de `[preco_min, preco_max]` do serviço.
+- Nova `atualizarPrecoMaterialMarketplace` — admin only; chama o marketplace, grava `preco_atual`/`preco_fonte`/`preco_atualizado_em`.
+- Nova `listarMateriaisDoServico` — leitura pública para o cliente montar a lista de checkboxes.
 
-### 2. Autenticação
+### Marketplace de materiais
 
-- Tela de login/cadastro com email+senha (já existe `/login`)
-- Cadastro define role automaticamente como `cliente`
-- Profissionais são promovidos manualmente pelo admin
-- Auto-confirm desativado (verificação por email)
+Como integração real depende de chave de API e de qual marketplace, esta versão entrega:
+- estrutura completa no banco e nos server fns,
+- botão "Atualizar via marketplace" que **chama um stub** retornando o preço base ± variação (placeholder claro). Quando você quiser conectar Mercado Livre / Leroy Merlin / outro, basta trocar a função `fetchMarketplacePrice` em `materiais.server.ts` — peço a chave/credencial nesse momento.
 
-### 3. Server functions (TanStack Start)
+### UI
 
-- `solicitarOrcamento` — cliente envia pedido; trigger DB faz a lógica
-- `enviarOrcamento` — profissional define valor para customizados → status `enviado` + dispara notificação
-- `aprovarOrcamento` / `recusarOrcamento` — cliente decide
-- `listarMeusOrcamentos` — para cliente e profissional (com RLS)
-- `enviarNotificacao` — server route que dispara email (Lovable Emails) + grava in-app
-
-### 4. Telas (rotas novas/alteradas)
-
-- `/cliente/orcamentos` — lista de orçamentos do cliente com status (pendente / aguardando aprovação / aprovado / pago) e botão Aprovar/Recusar/Pagar
-- `/profissional` — painel do profissional com fila de "Aguardando seu orçamento" e botão para enviar valor
-- `/admin` (já existe) — visão geral de todos os orçamentos
-- `/servicos` — botão "Solicitar" agora cria registro real em `orcamentos` (substitui o placeholder atual)
-- Sino de notificações no header passa a ler do banco em tempo real (Realtime)
-
-### 5. Notificações
-
-- **In-app**: tabela `notificacoes` + Supabase Realtime no sino
-- **Email**: Lovable Emails — template "Orçamento pronto" com link para aprovar
-- **WhatsApp**: por enquanto, link `wa.me` pré-preenchido (integração com API oficial fica para depois — exige conta business)
-
-### 6. Fluxo end-to-end
-
-```text
-Cliente clica "Solicitar"
-  ↓
-INSERT orcamentos (trigger decide tipo)
-  ↓
-┌─ fixo_auto + recorrente + ≤R$200 → auto_aprovado → vai pra pagamento
-├─ fixo_auto → status "enviado" → cliente aprova → pagamento
-└─ customizado_pendente → notifica profissional → ele envia valor
-                                → notifica cliente (email + in-app)
-                                → cliente aprova → pagamento (Stripe já configurado)
-```
+- `/orcamentos` (cliente): formulário "Nova solicitação" passa a:
+  - mostrar dropdown de serviços do catálogo com range "R$ X–Y";
+  - listar materiais sugeridos com checkbox + quantidade + preço unitário atual;
+  - mostrar **subtotal serviço (range)** + **subtotal materiais** + **total estimado**.
+  - Card do orçamento mostra discriminação: "Mão de obra: R$ X · Materiais: R$ Y" com lista expandível dos itens.
+- `/profissional`: ao revisar/enviar, input de valor com helper "Range permitido R$ X–Y" e bloqueio se fora do range. Materiais aparecem só para leitura.
+- `/admin`: nova aba **Materiais** com CRUD, coluna `preco_atual`, `fonte`, botão "Atualizar via marketplace" por linha.
+- Remover qualquer link `wa.me`/menção a "enviar por WhatsApp" dos cards de orçamento.
 
 ### Detalhes técnicos
 
-- **Auto-aprovação**: função SQL `should_auto_approve(cliente_id, valor)` chamada no trigger
-- **Cliente recorrente**: `COUNT(*) ≥ 3` em `orcamentos WHERE status='pago'`
-- **Realtime**: `ALTER PUBLICATION supabase_realtime ADD TABLE notificacoes, orcamentos`
-- **Substituir mock atual**: `useAuth.ts` e `useNotifications.ts` viram wrappers do Supabase (mantendo a API)
-- **Stripe**: o checkout existente é reutilizado, recebendo `orcamento_id` e marcando `status='pago'` no webhook
-
-Posso começar pela migration do banco assim que você aprovar.
+- Migration única com as 2 novas tabelas, alterações em `services_catalog` e `orcamentos`, RLS, e seed de ~10 materiais comuns (bucha, parafuso, fita isolante, silicone, etc.) ligados aos serviços já existentes do catálogo.
+- O total do orçamento é **sempre** recalculado server-side (trigger `BEFORE INSERT/UPDATE` em `orcamento_materiais` recomputa `taxa_material` e `valor` no orçamento pai) — cliente nunca define total.
+- Tipos do Supabase regeneram após a migration.

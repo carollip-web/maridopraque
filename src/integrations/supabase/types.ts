@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      materiais: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          marketplace_url: string | null
+          nome: string
+          preco_atual: number
+          preco_atualizado_em: string
+          preco_base: number
+          preco_fonte: string
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          marketplace_url?: string | null
+          nome: string
+          preco_atual?: number
+          preco_atualizado_em?: string
+          preco_base?: number
+          preco_fonte?: string
+          unidade?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          marketplace_url?: string | null
+          nome?: string
+          preco_atual?: number
+          preco_atualizado_em?: string
+          preco_base?: number
+          preco_fonte?: string
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
@@ -55,6 +97,42 @@ export type Database = {
           },
         ]
       }
+      orcamento_materiais: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          nome_snapshot: string
+          orcamento_id: string
+          preco_unitario: number
+          quantidade: number
+          subtotal: number | null
+          unidade_snapshot: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          nome_snapshot: string
+          orcamento_id: string
+          preco_unitario?: number
+          quantidade?: number
+          subtotal?: number | null
+          unidade_snapshot?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          nome_snapshot?: string
+          orcamento_id?: string
+          preco_unitario?: number
+          quantidade?: number
+          subtotal?: number | null
+          unidade_snapshot?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           auto_aprovado: boolean
@@ -69,8 +147,10 @@ export type Database = {
           service_id: string | null
           service_name: string
           status: Database["public"]["Enums"]["orcamento_status"]
+          taxa_material: number
           updated_at: string
           valor: number | null
+          valor_servico: number | null
         }
         Insert: {
           auto_aprovado?: boolean
@@ -85,8 +165,10 @@ export type Database = {
           service_id?: string | null
           service_name: string
           status?: Database["public"]["Enums"]["orcamento_status"]
+          taxa_material?: number
           updated_at?: string
           valor?: number | null
+          valor_servico?: number | null
         }
         Update: {
           auto_aprovado?: boolean
@@ -101,8 +183,10 @@ export type Database = {
           service_id?: string | null
           service_name?: string
           status?: Database["public"]["Enums"]["orcamento_status"]
+          taxa_material?: number
           updated_at?: string
           valor?: number | null
+          valor_servico?: number | null
         }
         Relationships: [
           {
@@ -144,6 +228,30 @@ export type Database = {
         }
         Relationships: []
       }
+      service_materiais: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          quantidade_sugerida: number
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          quantidade_sugerida?: number
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          quantidade_sugerida?: number
+          service_id?: string
+        }
+        Relationships: []
+      }
       services_catalog: {
         Row: {
           ativo: boolean
@@ -154,6 +262,8 @@ export type Database = {
           is_fixed_price: boolean
           nome: string
           preco_fixo: number | null
+          preco_max: number | null
+          preco_min: number | null
         }
         Insert: {
           ativo?: boolean
@@ -164,6 +274,8 @@ export type Database = {
           is_fixed_price?: boolean
           nome: string
           preco_fixo?: number | null
+          preco_max?: number | null
+          preco_min?: number | null
         }
         Update: {
           ativo?: boolean
@@ -174,6 +286,8 @@ export type Database = {
           is_fixed_price?: boolean
           nome?: string
           preco_fixo?: number | null
+          preco_max?: number | null
+          preco_min?: number | null
         }
         Relationships: []
       }

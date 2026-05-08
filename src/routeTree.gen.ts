@@ -15,6 +15,7 @@ import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as OrcamentosRouteImport } from './routes/orcamentos'
+import { Route as MateriaisAdminRouteImport } from './routes/materiais-admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
@@ -51,6 +52,11 @@ const PagamentoRoute = PagamentoRouteImport.update({
 const OrcamentosRoute = OrcamentosRouteImport.update({
   id: '/orcamentos',
   path: '/orcamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MateriaisAdminRoute = MateriaisAdminRouteImport.update({
+  id: '/materiais-admin',
+  path: '/materiais-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRoute
+  '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
   '/porque': typeof PorqueRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
     | '/porque'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
     | '/porque'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/cliente'
     | '/contato'
     | '/login'
+    | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
     | '/porque'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
   LoginRoute: typeof LoginRoute
+  MateriaisAdminRoute: typeof MateriaisAdminRoute
   OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
   PorqueRoute: typeof PorqueRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/orcamentos'
       fullPath: '/orcamentos'
       preLoaderRoute: typeof OrcamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/materiais-admin': {
+      id: '/materiais-admin'
+      path: '/materiais-admin'
+      fullPath: '/materiais-admin'
+      preLoaderRoute: typeof MateriaisAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -303,6 +323,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
   LoginRoute: LoginRoute,
+  MateriaisAdminRoute: MateriaisAdminRoute,
   OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
   PorqueRoute: PorqueRoute,

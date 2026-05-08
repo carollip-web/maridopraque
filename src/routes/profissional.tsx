@@ -18,7 +18,7 @@ import {
   XCircle,
   CreditCard,
   User,
-  MessageSquare,
+  Package,
 } from "lucide-react";
 
 export const Route = createFileRoute("/profissional")({
@@ -27,9 +27,12 @@ export const Route = createFileRoute("/profissional")({
 
 type Orcamento = {
   id: string;
+  service_id: string | null;
   service_name: string;
   descricao: string | null;
   valor: number | null;
+  valor_servico: number | null;
+  taxa_material: number;
   status:
     | "fixo_auto"
     | "customizado_pendente"
@@ -47,6 +50,9 @@ type Orcamento = {
   data_pagamento: string | null;
   auto_aprovado: boolean;
 };
+
+type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
+type OrcMat = { orcamento_id: string; nome_snapshot: string; unidade_snapshot: string; quantidade: number; subtotal: number };
 
 type Profile = { id: string; nome: string; whatsapp: string | null; email: string | null };
 
@@ -72,6 +78,9 @@ function ProfissionalArea() {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user]);
 
+  const [catalog, setCatalog] = useState<Record<string, ServicoCat>>({});
+  const [orcMats, setOrcMats] = useState<Record<string, OrcMat[]>>({});
+
   const refresh = async () => {
     const { data, error } = await supabase
       .from("orcamentos")
@@ -95,6 +104,31 @@ function ProfissionalArea() {
       (profs ?? []).forEach((p: any) => (map[p.id] = p));
       setProfiles(map);
     }
+
+    const serviceIds = Array.from(new Set(list.map((o) => o.service_id).filter(Boolean) as string[]));
+    if (serviceIds.length) {
+      const { data: cats } = await supabase
+        .from("services_catalog")
+        .select("id, preco_min, preco_max")
+        .in("id", serviceIds);
+      const cmap: Record<string, ServicoCat> = {};
+      (cats ?? []).forEach((c: any) => (cmap[c.id] = c));
+      setCatalog(cmap);
+    }
+
+    const orcIds = list.map((o) => o.id);
+    if (orcIds.length) {
+      const { data: oms } = await supabase
+        .from("orcamento_materiais")
+        .select("orcamento_id, nome_snapshot, unidade_snapshot, quantidade, subtotal")
+        .in("orcamento_id", orcIds);
+      const grouped: Record<string, OrcMat[]> = {};
+      (oms ?? []).forEach((m: any) => {
+        (grouped[m.orcamento_id] ||= []).push(m as OrcMat);
+      });
+      setOrcMats(grouped);
+    }
+
     setLoadingList(false);
   };
 
@@ -198,40 +232,16 @@ function ProfissionalArea() {
             </TabsList>
 
             <TabsContent value="pendentes" className="mt-6">
-              <Grid
-                items={filterBy(["customizado_pendente"])}
-                profiles={profiles}
-                mode="enviar"
-                enviar={enviar}
-                emptyMsg="Nenhuma solicitação aguardando."
-              />
+              <Grid items={filterBy(["customizado_pendente"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Nenhuma solicitação aguardando." />
             </TabsContent>
             <TabsContent value="enviados" className="mt-6">
-              <Grid
-                items={filterBy(["enviado"])}
-                profiles={profiles}
-                mode="revisar"
-                enviar={enviar}
-                emptyMsg="Nenhum orçamento aguardando aprovação do cliente."
-              />
+              <Grid items={filterBy(["enviado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento aguardando aprovação do cliente." />
             </TabsContent>
             <TabsContent value="ativos" className="mt-6">
-              <Grid
-                items={filterBy(["aprovado", "pago"])}
-                profiles={profiles}
-                mode="info"
-                enviar={enviar}
-                emptyMsg="Nenhum serviço em andamento."
-              />
+              <Grid items={filterBy(["aprovado", "pago"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum serviço em andamento." />
             </TabsContent>
             <TabsContent value="finalizados" className="mt-6">
-              <Grid
-                items={filterBy(["recusado", "cancelado"])}
-                profiles={profiles}
-                mode="info"
-                enviar={enviar}
-                emptyMsg="Sem orçamentos encerrados."
-              />
+              <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Sem orçamentos encerrados." />
             </TabsContent>
           </Tabs>
         )}
@@ -267,12 +277,16 @@ function Stat({
 function Grid({
   items,
   profiles,
+  catalog,
+  orcMats,
   mode,
   enviar,
   emptyMsg,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
+  catalog: Record<string, ServicoCat>;
+  orcMats: Record<string, OrcMat[]>;
   mode: "enviar" | "revisar" | "info";
   enviar: any;
   emptyMsg: string;
@@ -291,6 +305,8 @@ function Grid({
           key={o.id}
           o={o}
           cliente={profiles[o.cliente_id]}
+          range={o.service_id ? catalog[o.service_id] : undefined}
+          materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}
         />
@@ -302,20 +318,27 @@ function Grid({
 function OrcamentoCard({
   o,
   cliente,
+  range,
+  materiais,
   mode,
   enviar,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
+  range: ServicoCat | undefined;
+  materiais: OrcMat[];
   mode: "enviar" | "revisar" | "info";
   enviar: any;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
-  const [valor, setValor] = useState(o.valor != null ? String(o.valor).replace(".", ",") : "");
+  const initialValor = o.valor_servico ?? o.valor ?? null;
+  const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
 
   const meta = STATUS_META[o.status];
+  const min = range?.preco_min != null ? Number(range.preco_min) : null;
+  const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
@@ -323,9 +346,13 @@ function OrcamentoCard({
       toast.error("Informe um valor válido");
       return;
     }
+    if (min != null && max != null && (v < min || v > max)) {
+      toast.error(`Valor fora do range tabelado (R$ ${min.toFixed(2)} – R$ ${max.toFixed(2)})`);
+      return;
+    }
     setSaving(true);
     try {
-      await enviar({ data: { orcamentoId: o.id, valor: v, observacoes: obs || undefined } });
+      await enviar({ data: { orcamentoId: o.id, valorServico: v, observacoes: obs || undefined } });
       toast.success(mode === "revisar" ? "Orçamento atualizado" : "Orçamento enviado ao cliente");
       if (mode === "revisar") setEditing(false);
     } catch (e: any) {
@@ -334,12 +361,6 @@ function OrcamentoCard({
       setSaving(false);
     }
   };
-
-  const whatsappLink =
-    cliente?.whatsapp &&
-    `https://wa.me/${cliente.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
-      `Olá ${cliente.nome || ""}, sobre o seu orçamento de "${o.service_name}"...`,
-    )}`;
 
   return (
     <div className="bg-white rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-4">
@@ -363,16 +384,6 @@ function OrcamentoCard({
         <div className="flex items-center gap-2 text-muted-foreground">
           <User className="h-4 w-4 shrink-0" />
           <span className="truncate">{cliente?.nome || "Cliente"}</span>
-          {whatsappLink && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="ml-auto inline-flex items-center gap-1 text-emerald-700 hover:underline"
-            >
-              <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
-            </a>
-          )}
         </div>
         {o.descricao && (
           <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">
@@ -380,9 +391,33 @@ function OrcamentoCard({
           </p>
         )}
         {o.valor != null && !editing && (
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Valor</span>
-            <span className="text-lg font-bold">R$ {Number(o.valor).toFixed(2)}</span>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">Total</span>
+              <span className="text-lg font-bold">R$ {Number(o.valor).toFixed(2)}</span>
+            </div>
+            {(Number(o.valor_servico ?? 0) > 0 || Number(o.taxa_material) > 0) && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Mão de obra R$ {Number(o.valor_servico ?? 0).toFixed(2)} · Materiais R$ {Number(o.taxa_material).toFixed(2)}
+              </p>
+            )}
+          </div>
+        )}
+        {materiais.length > 0 && (
+          <div className="rounded-xl bg-slate-50 p-3 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase">
+              <Package className="h-3 w-3" /> Materiais ({materiais.length})
+            </div>
+            <ul className="text-xs space-y-0.5">
+              {materiais.map((m, i) => (
+                <li key={i} className="flex justify-between">
+                  <span>
+                    {m.nome_snapshot} <span className="text-muted-foreground">× {Number(m.quantidade)} {m.unidade_snapshot}</span>
+                  </span>
+                  <span className="tabular-nums font-medium">R$ {Number(m.subtotal).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {o.observacoes_profissional && !editing && (
@@ -399,7 +434,7 @@ function OrcamentoCard({
       {(mode === "enviar" || (mode === "revisar" && editing)) && (
         <div className="space-y-3 pt-3 border-t border-border">
           <div>
-            <label className="text-xs uppercase font-bold text-muted-foreground">Valor (R$)</label>
+            <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
             <input
               value={valor}
               onChange={(e) => setValor(e.target.value)}
@@ -407,6 +442,16 @@ function OrcamentoCard({
               inputMode="decimal"
               className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
+            {min != null && max != null && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
+              </p>
+            )}
+            {Number(o.taxa_material) > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Materiais: R$ {Number(o.taxa_material).toFixed(2)} (já cotados pelo cliente)
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>

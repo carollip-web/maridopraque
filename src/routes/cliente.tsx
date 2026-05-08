@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useNotifications, notificationsStore } from "@/hooks/useNotifications";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/cliente")({
@@ -512,9 +512,9 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     setApprovalStep("processing");
     setTimeout(() => {
       // Update status in local store
-      setPedidoStatuses(prev => ({ ...prev, [selectedPedido!.id]: "Agendado" }));
-      // Add success notification
-      notificationsStore.markAllAsRead(); // just to trigger listener; real backend would add
+      if (selectedPedido) {
+        setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
+      }
       setApprovalStep("success");
     }, 2200);
   };
@@ -657,7 +657,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                   <div className="h-16 w-16 rounded-full bg-slate-100 mx-auto mb-4 flex items-center justify-center">
                      <User className="h-8 w-8 text-slate-400" />
                   </div>
-                  <h3 className="text-xl font-bold">Falar com {selectedPedido.prof}</h3>
+                  <h3 className="text-xl font-bold">Falar com {selectedPedido?.prof}</h3>
                   <p className="text-sm text-muted-foreground mt-1">Como você prefere conversar?</p>
                </div>
                <div className="p-4 space-y-2">
