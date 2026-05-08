@@ -108,7 +108,7 @@ function AdminArea() {
         </header>
 
         <div className="p-8 max-w-7xl mx-auto w-full">
-           {activeTab === "dashboard" && <AdminDashboard />}
+           {activeTab === "dashboard" && <AdminMetrics />}
            {activeTab === "pedidos" && <AdminPedidos />}
            {activeTab === "profissionais" && <AdminProfissionais />}
            {activeTab === "clientes" && <AdminClientes />}
