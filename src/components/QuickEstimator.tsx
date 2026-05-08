@@ -139,13 +139,13 @@ export function QuickEstimator() {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="flex-1">
-              <Link
-                to="/servicos"
-                search={selected ? { picks: `${selected.categoria}:${selected.id}` } : {}}
-                hash={selected?.categoria}
-              >
-                Ver catálogo completo
-              </Link>
+              {selected ? (
+                <Link to="/servicos/$categoria" params={{ categoria: selected.categoria }}>
+                  Ver catálogo completo
+                </Link>
+              ) : (
+                <Link to="/servicos">Ver catálogo completo</Link>
+              )}
             </Button>
           </div>
         </div>
