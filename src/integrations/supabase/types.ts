@@ -44,6 +44,54 @@ export type Database = {
         }
         Relationships: []
       }
+      cliente_enderecos: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string
+          id: string
+          is_padrao: boolean
+          logradouro: string
+          numero: string | null
+          rotulo: string
+          uf: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          id?: string
+          is_padrao?: boolean
+          logradouro: string
+          numero?: string | null
+          rotulo?: string
+          uf?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          id?: string
+          is_padrao?: boolean
+          logradouro?: string
+          numero?: string | null
+          rotulo?: string
+          uf?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       indicacoes: {
         Row: {
           codigo: string
