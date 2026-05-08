@@ -148,6 +148,9 @@ function Index() {
         </div>
       </section>
 
+      {/* Estimador rápido */}
+      <QuickEstimator />
+
       {/* Por que nós (Diferenciais no topo) */}
       <section id="porque" className="border-y border-border bg-brand-soft/30 py-24">
         <div className="mx-auto max-w-6xl px-4">
