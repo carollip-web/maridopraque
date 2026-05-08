@@ -42,9 +42,10 @@ export function Footer() {
         target="_blank"
         rel="noreferrer"
         aria-label="Falar no WhatsApp"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-soft transition hover:scale-105"
+        className="group fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-brand-foreground shadow-brand transition-all duration-300 hover:scale-110 hover:shadow-[0_24px_60px_-20px_oklch(0.5_0.13_30/0.6)] active:scale-95"
       >
-        <MessageCircle className="h-5 w-5" />
+        <span className="absolute inset-0 rounded-full bg-brand/40 animate-ping opacity-60 group-hover:opacity-0" />
+        <MessageCircle className="relative h-6 w-6" />
       </a>
     </>
   );
