@@ -319,34 +319,6 @@ function Index() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section id="contato" className="px-4 pb-24">
-        <div className="mx-auto max-w-5xl rounded-3xl bg-foreground p-10 text-background md:p-16">
-          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
-            <div>
-              <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-                Peça seu orçamento online agora.
-              </h2>
-              <p className="mt-4 max-w-md text-background/70">
-                Escolha o serviço, marque os materiais opcionais e receba o orçamento dentro do range de preço — tudo direto na plataforma.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Button asChild variant="brand" size="xl">
-                <Link to="/orcamentos">
-                  <FileText className="mr-1 h-4 w-4" /> Solicitar orçamento
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background hover:border-background/40">
-                <a href="tel:+5521999999999">
-                  <Phone className="mr-1 h-4 w-4" /> (21) 99999-9999
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }
