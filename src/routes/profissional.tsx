@@ -384,16 +384,6 @@ function OrcamentoCard({
         <div className="flex items-center gap-2 text-muted-foreground">
           <User className="h-4 w-4 shrink-0" />
           <span className="truncate">{cliente?.nome || "Cliente"}</span>
-          {whatsappLink && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="ml-auto inline-flex items-center gap-1 text-emerald-700 hover:underline"
-            >
-              <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
-            </a>
-          )}
         </div>
         {o.descricao && (
           <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">
@@ -401,9 +391,33 @@ function OrcamentoCard({
           </p>
         )}
         {o.valor != null && !editing && (
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Valor</span>
-            <span className="text-lg font-bold">R$ {Number(o.valor).toFixed(2)}</span>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">Total</span>
+              <span className="text-lg font-bold">R$ {Number(o.valor).toFixed(2)}</span>
+            </div>
+            {(Number(o.valor_servico ?? 0) > 0 || Number(o.taxa_material) > 0) && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Mão de obra R$ {Number(o.valor_servico ?? 0).toFixed(2)} · Materiais R$ {Number(o.taxa_material).toFixed(2)}
+              </p>
+            )}
+          </div>
+        )}
+        {materiais.length > 0 && (
+          <div className="rounded-xl bg-slate-50 p-3 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase">
+              <Package className="h-3 w-3" /> Materiais ({materiais.length})
+            </div>
+            <ul className="text-xs space-y-0.5">
+              {materiais.map((m, i) => (
+                <li key={i} className="flex justify-between">
+                  <span>
+                    {m.nome_snapshot} <span className="text-muted-foreground">× {Number(m.quantidade)} {m.unidade_snapshot}</span>
+                  </span>
+                  <span className="tabular-nums font-medium">R$ {Number(m.subtotal).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
         {o.observacoes_profissional && !editing && (
