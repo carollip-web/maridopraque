@@ -812,9 +812,18 @@ function MeusOrcamentos() {
                   </Button>
                 )}
                 {o.status === "customizado_pendente" && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-4 w-4" /> Um profissional vai analisar e enviar o valor.
-                  </p>
+                  <>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2 flex-1">
+                      <Clock className="h-4 w-4" /> Um profissional vai analisar e enviar o valor.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => startEdit(o)}
+                      className="rounded-full gap-2"
+                    >
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
