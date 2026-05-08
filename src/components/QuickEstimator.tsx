@@ -127,12 +127,25 @@ export function QuickEstimator() {
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Button asChild variant="brand" size="lg" className="flex-1">
-              <Link to="/orcamentos">
+              <Link
+                to="/orcamentos"
+                search={
+                  selected
+                    ? { new: 1, serviceId: selected.id, categoria: selected.categoria }
+                    : { new: 1 }
+                }
+              >
                 Pedir orçamento <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="flex-1">
-              <Link to="/servicos">Ver catálogo completo</Link>
+              <Link
+                to="/servicos"
+                search={selected ? { picks: `${selected.categoria}:${selected.id}` } : {}}
+                hash={selected?.categoria}
+              >
+                Ver catálogo completo
+              </Link>
             </Button>
           </div>
         </div>
