@@ -434,7 +434,7 @@ function OrcamentoCard({
       {(mode === "enviar" || (mode === "revisar" && editing)) && (
         <div className="space-y-3 pt-3 border-t border-border">
           <div>
-            <label className="text-xs uppercase font-bold text-muted-foreground">Valor (R$)</label>
+            <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
             <input
               value={valor}
               onChange={(e) => setValor(e.target.value)}
@@ -442,6 +442,16 @@ function OrcamentoCard({
               inputMode="decimal"
               className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
             />
+            {min != null && max != null && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
+              </p>
+            )}
+            {Number(o.taxa_material) > 0 && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Materiais: R$ {Number(o.taxa_material).toFixed(2)} (já cotados pelo cliente)
+              </p>
+            )}
           </div>
           <div>
             <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>
