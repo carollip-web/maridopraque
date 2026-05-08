@@ -531,6 +531,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
   const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
 
@@ -546,14 +547,22 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
       
       const list = data || [];
       // Normalize statuses for the UI filters
-      return list.map(o => ({
-        ...o,
-        title: o.service_name,
-        uiStatus: o.status === "customizado_pendente" ? "Em Análise" :
+      return list.map(o => {
+        const uiStatus = o.status === "customizado_pendente" ? "Em Análise" :
                  o.status === "enviado" ? "Aguardando Aprovação" :
-                 o.status === "aprovado" ? "Agendado" : o.status,
-        displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir"
-      }));
+                 o.status === "aprovado" ? "Agendado" : o.status;
+        return {
+          ...o,
+          title: o.service_name,
+          description: o.descricao ?? "",
+          uiStatus,
+          status: uiStatus as string,
+          date: new Date(o.created_at).toLocaleDateString(),
+          prof: "-",
+          price: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
+          displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
+        };
+      });
     },
     enabled: !!user,
   });
@@ -1054,6 +1063,7 @@ function ServicosTab() {
       .single();
     setRepetindo(null);
     if (error || !data) {
+      const { toast } = await import("sonner");
       toast.error("Não foi possível repetir o pedido");
       return;
     }
@@ -1279,7 +1289,7 @@ function DadosTab() {
     }
   }, [profile, reset]);
 
-  const [enderecos, setEnderecos] = useState<Endereco[]>([]);
+  
   const [editingAddr, setEditingAddr] = useState<Endereco | null>(null);
   const [addrForm, setAddrForm] = useState({ rotulo: "Casa", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" });
 
@@ -1607,7 +1617,7 @@ function DadosTab() {
             <p className="text-sm text-muted-foreground text-center py-6">Você ainda não cadastrou endereços.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {!loadingEnderecos && enderecos.map((addr) => (
+              {!loadingEnderecos && enderecos.map((addr: Endereco) => (
                 <div key={addr.id} className={`p-6 rounded-[1.5rem] border transition-all ${addr.is_padrao ? "border-brand/20 bg-brand-soft/30 ring-1 ring-brand/10" : "border-border bg-slate-50 hover:bg-white hover:shadow-md"}`}>
                   <div className="flex justify-between items-start mb-4">
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${addr.is_padrao ? "bg-brand text-white" : "bg-white text-muted-foreground"}`}>
