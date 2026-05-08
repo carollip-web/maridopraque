@@ -27,6 +27,14 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
+  head: () => ({
+    meta: [
+      { title: "Meus Orçamentos — Solicitar online | Marido pra Quê?" },
+      { name: "description", content: "Solicite orçamento online em 3 etapas: escolha o serviço, marque os materiais opcionais e envie. Resposta rápida do profissional." },
+      { property: "og:title", content: "Orçamento online — Marido pra Quê?" },
+      { property: "og:description", content: "Preço tabelado, materiais opcionais e acompanhamento em tempo real." },
+    ],
+  }),
   component: MeusOrcamentos,
 });
 
