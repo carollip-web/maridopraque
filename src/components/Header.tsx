@@ -1,4 +1,4 @@
-import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut } from "lucide-react";
+import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut, ShieldCheck, Briefcase, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -11,7 +11,7 @@ export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
-  const { isLoggedIn, logout, profilePhoto } = useAuth();
+  const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
