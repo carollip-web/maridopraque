@@ -76,6 +76,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { Toaster } from "@/components/ui/sonner";
 
 function RootComponent() {
   return (
@@ -85,6 +86,7 @@ function RootComponent() {
         <Outlet />
       </main>
       <Footer />
+      <Toaster richColors position="top-right" />
     </div>
   );
 }
