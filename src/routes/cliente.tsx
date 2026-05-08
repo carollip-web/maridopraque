@@ -1617,7 +1617,7 @@ function DadosTab() {
             <p className="text-sm text-muted-foreground text-center py-6">Você ainda não cadastrou endereços.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {!loadingEnderecos && enderecos.map((addr) => (
+              {!loadingEnderecos && enderecos.map((addr: Endereco) => (
                 <div key={addr.id} className={`p-6 rounded-[1.5rem] border transition-all ${addr.is_padrao ? "border-brand/20 bg-brand-soft/30 ring-1 ring-brand/10" : "border-border bg-slate-50 hover:bg-white hover:shadow-md"}`}>
                   <div className="flex justify-between items-start mb-4">
                     <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${addr.is_padrao ? "bg-brand text-white" : "bg-white text-muted-foreground"}`}>
