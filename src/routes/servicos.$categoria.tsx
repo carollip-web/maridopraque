@@ -181,7 +181,7 @@ function CategoriaPage() {
     if (!term) return list;
     return list.filter((s) => {
       const hay = `${s.nome} ${s.descricao ?? ""}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return term.split(/\s+/).every((t) => hay.includes(t));
+      return term.split(/\s+/).every((t: string) => hay.includes(t));
     });
   }, [servicos, query]);
 
