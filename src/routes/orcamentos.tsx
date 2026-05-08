@@ -105,8 +105,14 @@ function MeusOrcamentos() {
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  const draftKey = user ? `orc-draft-${user.id}` : null;
 
   const solicitar = useServerFn(solicitarOrcamento);
+  const editar = useServerFn(editarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
 
   useEffect(() => {
