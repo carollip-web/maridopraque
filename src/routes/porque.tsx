@@ -111,17 +111,15 @@ function PorqueNos() {
       <div className="mt-32 rounded-[3rem] bg-brand p-12 text-center text-brand-foreground md:p-24">
         <h2 className="text-4xl font-bold md:text-5xl">Pronto para ter sua casa em ordem?</h2>
         <p className="mt-6 text-lg opacity-90 max-w-xl mx-auto">
-          Junte-se a mais de 2.500 clientes satisfeitos no Rio de Janeiro. Agende seu serviço agora mesmo pelo WhatsApp.
+          Junte-se a mais de 2.500 clientes satisfeitos no Rio de Janeiro. Solicite seu orçamento direto na plataforma.
         </p>
         <div className="mt-10 flex justify-center">
-          <a 
-            href="https://wa.me/5521999999999?text=Olá!%20Vim%20pelo%20site%20e%20quero%20um%20orçamento."
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            to="/orcamentos"
             className="rounded-full bg-background px-10 py-4 font-bold text-foreground transition hover:scale-105 shadow-xl"
           >
-            Falar com a equipe no WhatsApp
-          </a>
+            Solicitar orçamento
+          </Link>
         </div>
       </div>
     </div>
