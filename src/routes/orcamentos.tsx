@@ -69,6 +69,7 @@ type OrcamentoRow = {
 type OrcMaterial = {
   id: string;
   orcamento_id: string;
+  material_id: string;
   nome_snapshot: string;
   unidade_snapshot: string;
   quantidade: number;
