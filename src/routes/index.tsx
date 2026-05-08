@@ -325,18 +325,17 @@ function Index() {
           <div className="grid gap-10 md:grid-cols-[1.5fr_1fr] md:items-center">
             <div>
               <h2 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-                Peça seu orçamento pelo WhatsApp agora.
+                Peça seu orçamento online agora.
               </h2>
               <p className="mt-4 max-w-md text-background/70">
-                Mande uma foto ou descreva o serviço. Te respondemos em minutos com orçamento
-                e a opção de profissional escolhida por você.
+                Escolha o serviço, marque os materiais opcionais e receba o orçamento dentro do range de preço — tudo direto na plataforma.
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90">
-                <a href={WHATSAPP} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Solicitar Orçamento
-                </a>
+                <Link to="/orcamentos">
+                  <FileText className="mr-2 h-4 w-4" /> Solicitar Orçamento
+                </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background">
                 <a href="tel:+5521999999999">
