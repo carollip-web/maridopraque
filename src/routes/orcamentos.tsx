@@ -222,9 +222,21 @@ function MeusOrcamentos() {
     if (!matched && search.serviceName) {
       const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
       const target = norm(search.serviceName);
+      const targetTokens = target.split(/\s+/).filter((t) => t.length >= 3);
+      // Restringe ao escopo da categoria quando informada
+      const pool = search.categoria
+        ? servicos.filter((x) => norm(x.categoria) === norm(search.categoria!))
+        : servicos;
       matched =
-        servicos.find((x) => norm(x.nome) === target) ||
-        servicos.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
+        pool.find((x) => norm(x.nome) === target) ||
+        pool.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome))) ||
+        // Fallback por tokens: serviço cujo nome contém qualquer token relevante
+        (targetTokens.length
+          ? pool.find((x) => {
+              const n = norm(x.nome);
+              return targetTokens.some((t) => n.includes(t));
+            })
+          : undefined);
     }
 
     if (matched) {
