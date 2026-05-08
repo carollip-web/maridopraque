@@ -52,7 +52,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
             preco_unitario: Number(mat.preco_atual),
           };
         })
-        .filter(Boolean) as Array<Record<string, unknown>>;
+        .filter((x): x is NonNullable<typeof x> => x !== null);
 
       if (items.length > 0) {
         const { error: e3 } = await supabase.from("orcamento_materiais").insert(items);
