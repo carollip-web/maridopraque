@@ -120,13 +120,13 @@ function Index() {
               Você escolhe o profissional — inclusive a opção com acompanhante feminina.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
-                <Link to="/servicos">
-                  Conhecer nossos serviços <ArrowRight className="ml-2 h-4 w-4" />
+              <Button asChild variant="brand" size="xl">
+                <Link to="/orcamentos">
+                  Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-full">
-                <Link to="/porque">Por que nos escolher?</Link>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/servicos">Ver serviços</Link>
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -332,14 +332,14 @@ function Index() {
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground hover:bg-brand/90">
+              <Button asChild variant="brand" size="xl">
                 <Link to="/orcamentos">
-                  <FileText className="mr-2 h-4 w-4" /> Solicitar Orçamento
+                  <FileText className="mr-1 h-4 w-4" /> Solicitar orçamento
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background">
+              <Button asChild size="lg" variant="outline" className="border-background/20 bg-transparent text-background hover:bg-background/10 hover:text-background hover:border-background/40">
                 <a href="tel:+5521999999999">
-                  <Phone className="mr-2 h-4 w-4" /> (21) 99999-9999
+                  <Phone className="mr-1 h-4 w-4" /> (21) 99999-9999
                 </a>
               </Button>
             </div>
