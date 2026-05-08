@@ -186,25 +186,61 @@ function MeusOrcamentos() {
     });
   };
 
+  const novoSchema = z.object({
+    serviceId: z.string().uuid({ message: "Selecione um serviço válido." }),
+    descricao: z.string().trim().max(2000, "Descrição muito longa.").optional(),
+    materiais: z
+      .array(z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }))
+      .max(50, "Máximo de 50 itens de material."),
+  });
+
+  const resetForm = () => {
+    setSelServiceId("");
+    setDescricao("");
+    setPicked({});
+    setStep(1);
+    setShowNew(false);
+  };
+
+  const goToStep2 = () => {
+    if (!selServico) {
+      toast.error("Selecione um serviço para continuar.");
+      return;
+    }
+    if (selServico.preco_min == null || selServico.preco_max == null) {
+      toast.error("Este serviço ainda não tem preço tabelado. Escolha outro.");
+      return;
+    }
+    if (Number(selServico.preco_min) > Number(selServico.preco_max)) {
+      toast.error("Range de preço inválido para este serviço.");
+      return;
+    }
+    setStep(2);
+  };
+
   const handleNew = async () => {
     if (!selServico) return;
+    const payload = {
+      serviceId: selServico.id,
+      serviceName: selServico.nome,
+      descricao: descricao.trim() || undefined,
+      materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
+        materialId,
+        quantidade,
+      })),
+    };
+    const parsed = novoSchema.safeParse(payload);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+      return;
+    }
     setSaving(true);
     try {
-      await solicitar({
-        data: {
-          serviceId: selServico.id,
-          serviceName: selServico.nome,
-          descricao: descricao.trim() || undefined,
-          materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
-            materialId,
-            quantidade,
-          })),
-        },
-      });
-      setSelServiceId("");
-      setDescricao("");
-      setPicked({});
-      setShowNew(false);
+      await solicitar({ data: payload });
+      toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
+      resetForm();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível enviar a solicitação.");
     } finally {
       setSaving(false);
     }
