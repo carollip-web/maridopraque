@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import {
@@ -362,6 +363,8 @@ function OrcamentoCard({
     }
   };
 
+  const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
+
   return (
     <div className="bg-white rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
@@ -375,9 +378,12 @@ function OrcamentoCard({
             })}
           </p>
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.className}`}>
-          {meta.label}
-        </span>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.className}`}>
+            {meta.label}
+          </span>
+          {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
+        </div>
       </div>
 
       <div className="text-sm space-y-2">

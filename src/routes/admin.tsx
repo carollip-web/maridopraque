@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AdminMetrics } from "@/components/AdminMetrics";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
@@ -107,7 +108,7 @@ function AdminArea() {
         </header>
 
         <div className="p-8 max-w-7xl mx-auto w-full">
-           {activeTab === "dashboard" && <AdminDashboard />}
+           {activeTab === "dashboard" && <AdminMetrics />}
            {activeTab === "pedidos" && <AdminPedidos />}
            {activeTab === "profissionais" && <AdminProfissionais />}
            {activeTab === "clientes" && <AdminClientes />}
