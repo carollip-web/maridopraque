@@ -610,8 +610,10 @@ function MeusOrcamentos() {
                 <select
                   value={selServiceId}
                   onChange={(e) => {
-                    setSelServiceId(e.target.value);
-                    setPicked({});
+                    const next = e.target.value;
+                    if (next === selServiceId) return;
+                    setSelServiceId(next);
+                    setPicked({}); // materiais sugeridos mudam ao trocar de serviço
                   }}
                   className="w-full mt-1 h-12 px-3 rounded-xl border border-border bg-slate-50"
                 >
