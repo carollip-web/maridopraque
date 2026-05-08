@@ -24,6 +24,7 @@ import {
   HardHat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QuickEstimator } from "@/components/QuickEstimator";
 import heroImage from "@/assets/hero-tools.jpg";
 
 export const Route = createFileRoute("/")({
