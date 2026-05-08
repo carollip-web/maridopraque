@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Hammer, Drill, Lightbulb, ShowerHead, PaintRoller, Wrench, Scale, FileText, HardHat } from "lucide-react";
+import { Hammer, Wrench, Scale, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/servicos")({
   head: () => ({
@@ -14,116 +16,70 @@ export const Route = createFileRoute("/servicos")({
   component: Servicos,
 });
 
-const serviceCategories = [
-  {
-    id: "montagem",
-    title: "Montagem e Instalação",
+type Servico = {
+  id: string;
+  nome: string;
+  categoria: string;
+  preco_min: number | null;
+  preco_max: number | null;
+  descricao: string | null;
+};
+
+const categoriaMeta: Record<string, { titulo: string; description: string; icon: typeof Hammer }> = {
+  montagem: {
+    titulo: "Montagem e Instalação",
+    description: "Móveis, suportes, prateleiras, cortinas — tudo no lugar com nivelamento profissional.",
     icon: Hammer,
-    description: "Serviços especializados em colocar sua casa em ordem com precisão e segurança.",
-    items: [
-      {
-        name: "Montagem de Móveis",
-        details: "Montamos móveis novos de todas as lojas e marcas, além de desmontagem e remontagem para mudanças.",
-        pricing: [
-          { label: "Cama solteiro / casal", value: "R$ 120" },
-          { label: "Guarda-roupa (por porta)", value: "R$ 60" },
-          { label: "Painel de TV / Estante", value: "A partir de R$ 150" },
-          { label: "Cozinha completa (mão de obra)", value: "Sob consulta" }
-        ]
-      },
-      {
-        name: "Furos e Fixação",
-        details: "Instalação de suportes, quadros, prateleiras e acessórios em qualquer tipo de parede.",
-        pricing: [
-          { label: "Kit fixação (até 5 furos)", value: "R$ 80" },
-          { label: "Suporte de TV articulado", value: "R$ 130" },
-          { label: "Varal de teto ou parede", value: "R$ 100" },
-          { label: "Cortinas e persianas (par)", value: "R$ 90" }
-        ]
-      }
-    ]
   },
-  {
-    id: "reparos",
-    title: "Reparos e Manutenção",
+  reparos: {
+    titulo: "Reparos e Manutenção",
+    description: "Pequenos reparos resolvidos com técnica e segurança: elétrica, hidráulica, pintura.",
     icon: Wrench,
-    description: "Soluções rápidas para os problemas do dia a dia que exigem técnica e ferramentas certas.",
-    items: [
-      {
-        name: "Elétrica Básica",
-        details: "Troca de resistências, luminárias, tomadas e interruptores seguindo as normas de segurança.",
-        pricing: [
-          { label: "Troca de resistência chuveiro", value: "R$ 80" },
-          { label: "Instalação de ventilador teto", value: "R$ 150" },
-          { label: "Troca de tomada/interruptor", value: "R$ 40/un" },
-          { label: "Instalação de lustre/pendente", value: "A partir de R$ 90" }
-        ]
-      },
-      {
-        name: "Hidráulica",
-        details: "Reparo de vazamentos em torneiras, válvulas de descarga, caixas acopladas e sifões.",
-        pricing: [
-          { label: "Conserto de vazamento torneira", value: "R$ 70" },
-          { label: "Reparo de descarga (mão de obra)", value: "R$ 110" },
-          { label: "Troca de reparo de chuveiro", value: "R$ 90" },
-          { label: "Instalação de purificador", value: "R$ 80" }
-        ]
-      },
-      {
-        name: "Pintura e Acabamento",
-        details: "Retoques rápidos em paredes, pintura de portas e janelas, reparos em gesso e massa corrida.",
-        pricing: [
-          { label: "Pintura de porta (mão de obra)", value: "R$ 150" },
-          { label: "Reparo gesso (furo até 10cm)", value: "R$ 80" },
-          { label: "Massa corrida + lixamento (m²)", value: "R$ 45" },
-          { label: "Pintura teto banheiro (anti-mofo)", value: "R$ 120" }
-        ]
-      }
-    ]
   },
-  {
-    id: "engenharia",
-    title: "Engenharia e Legalização",
+  engenharia: {
+    titulo: "Engenharia e Legalização",
+    description: "Aprovação de projetos, alvarás, laudos e segurança do trabalho com responsável técnico.",
     icon: Scale,
-    description: "Suporte técnico e burocrático para garantir que sua obra ou projeto esteja 100% legalizado.",
-    items: [
-      {
-        name: "Legalização de Projetos",
-        details: "Aprovação de projetos arquitetônicos na prefeitura e regularização de plantas.",
-        pricing: [
-          { label: "Consulta técnica inicial", value: "R$ 250" },
-          { label: "Levantamento métrico (m²)", value: "A partir de R$ 15" },
-          { label: "Entrada em processo prefeitura", value: "R$ 850" },
-          { label: "Retificações de área", value: "Sob consulta" }
-        ]
-      },
-      {
-        name: "Regularização de Obras",
-        details: "Obtenção de Alvará de Construção, Habite-se, CND do INSS e averbação em matrícula.",
-        pricing: [
-          { label: "Emissão de Habite-se", value: "Sob consulta" },
-          { label: "Alvará de reforma", value: "A partir de R$ 600" },
-          { label: "Certidão Negativa (CND)", value: "R$ 400" },
-          { label: "Averbação de construção", value: "Sob consulta" }
-        ]
-      },
-      {
-        name: "Segurança do Trabalho",
-        details: "Elaboração de PGR, PCMAT, laudos de periculosidade e treinamentos de NRs.",
-        pricing: [
-          { label: "Laudo técnico (unidade)", value: "A partir de R$ 450" },
-          { label: "Treinamento NR-35 (por pessoa)", value: "R$ 180" },
-          { label: "Plano de Gerenciamento (PGR)", value: "Sob consulta" },
-          { label: "Vistoria de segurança", value: "R$ 350" }
-        ]
-      }
-    ]
-  }
-];
+  },
+};
+
+const fallbackMeta = { titulo: "Outros serviços", description: "Mais serviços do nosso catálogo.", icon: Package };
 
 const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
 
+const brl = (v: number) => `R$ ${Math.round(v)}`;
+
 function Servicos() {
+  const [servicos, setServicos] = useState<Servico[] | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("services_catalog")
+      .select("id, nome, categoria, preco_min, preco_max, descricao")
+      .eq("ativo", true)
+      .order("categoria")
+      .order("nome")
+      .then(({ data }) => setServicos((data ?? []) as Servico[]));
+  }, []);
+
+  const grupos = useMemo(() => {
+    if (!servicos) return [];
+    const map = new Map<string, Servico[]>();
+    servicos.forEach((s) => {
+      const key = (s.categoria || "outros").toLowerCase();
+      (map.get(key) ?? map.set(key, []).get(key)!).push(s);
+    });
+    // ordem preferida
+    const order = ["montagem", "reparos", "engenharia"];
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      const ia = order.indexOf(a); const ib = order.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  }, [servicos]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="mb-20">
@@ -132,75 +88,79 @@ function Servicos() {
           Nossos Serviços Especializados.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Desde o pequeno parafuso até a documentação da sua obra, cuidamos de tudo com o mesmo nível de excelência e profissionalismo.
+          Preços tabelados e atualizados em tempo real. Materiais opcionais discriminados no orçamento.
         </p>
       </div>
 
+      {!servicos && (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando catálogo...
+        </div>
+      )}
+
+      {servicos && servicos.length === 0 && (
+        <div className="rounded-3xl border border-dashed border-border p-12 text-center text-muted-foreground">
+          Nenhum serviço cadastrado ainda. Volte em breve ou{" "}
+          <Link to="/orcamentos" search={{ new: 1 }} className="font-bold text-brand hover:underline">peça um orçamento personalizado</Link>.
+        </div>
+      )}
+
       <div className="space-y-32">
-        {serviceCategories.map((category) => (
-          <section id={category.id} key={category.title} className="relative scroll-mt-32">
-            <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
-              <div className="sticky top-24 self-start">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand mb-6">
-                  <category.icon className="h-8 w-8" />
-                </div>
-                <h2 className="text-3xl font-bold tracking-tight">{category.title}</h2>
-                <p className="mt-4 text-muted-foreground leading-relaxed">
-                  {category.description}
-                </p>
-              </div>
-
-              <div className="grid gap-6">
-                {category.items.map((item) => (
-                  <div key={item.name} className="group rounded-3xl border border-border bg-card p-8 transition hover:shadow-soft">
-                    <div className="flex items-center justify-between gap-4">
-                      <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
-                        <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-                        {item.name}
-                      </h3>
-                    </div>
-                    <p className="mt-4 text-muted-foreground leading-relaxed">
-                      {item.details}
-                    </p>
-
-                    {/* Tabela de Preços */}
-                    {item.pricing && (
-                      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background/50">
-                        <table className="w-full text-left text-sm">
-                          <thead className="bg-muted/50 text-muted-foreground">
-                            <tr>
-                              <th className="px-4 py-2.5 font-semibold">Serviço / Item</th>
-                              <th className="px-4 py-2.5 font-semibold text-right">Valor Mão de Obra</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {item.pricing.map((price) => (
-                              <tr key={price.label} className="transition hover:bg-muted/30">
-                                <td className="px-4 py-2.5 text-muted-foreground">{price.label}</td>
-                                <td className="px-4 py-2.5 text-right font-bold text-foreground">{price.value}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                        * Materiais não inclusos • Sem compromisso até você aprovar
-                      </p>
-                      <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
-                        <Link to="/orcamentos" search={{ new: 1, serviceName: item.name }}>
-                          Solicitar Orçamento →
-                        </Link>
-                      </Button>
-                    </div>
+        {grupos.map(([categoria, items]) => {
+          const meta = categoriaMeta[categoria] ?? { ...fallbackMeta, titulo: categoria.charAt(0).toUpperCase() + categoria.slice(1) };
+          const Icon = meta.icon;
+          return (
+            <section id={categoria} key={categoria} className="relative scroll-mt-32">
+              <div className="grid gap-12 lg:grid-cols-[1fr_2fr]">
+                <div className="sticky top-24 self-start">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand mb-6">
+                    <Icon className="h-8 w-8" />
                   </div>
-                ))}
+                  <h2 className="text-3xl font-bold tracking-tight">{meta.titulo}</h2>
+                  <p className="mt-4 text-muted-foreground leading-relaxed">{meta.description}</p>
+                </div>
+
+                <div className="grid gap-6">
+                  {items.map((item) => {
+                    const min = item.preco_min != null ? Number(item.preco_min) : null;
+                    const max = item.preco_max != null ? Number(item.preco_max) : null;
+                    const priceLabel =
+                      min != null && max != null
+                        ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+                        : "Sob consulta";
+                    return (
+                      <div key={item.id} className="group rounded-3xl border border-border bg-card p-8 transition hover:shadow-soft">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
+                            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                            {item.nome}
+                          </h3>
+                          <span className="rounded-full bg-brand-soft px-4 py-1.5 text-sm font-bold text-brand whitespace-nowrap">
+                            {priceLabel}
+                          </span>
+                        </div>
+                        {item.descricao && (
+                          <p className="mt-4 text-muted-foreground leading-relaxed">{item.descricao}</p>
+                        )}
+
+                        <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            * Materiais opcionais à parte • Sem compromisso até você aprovar
+                          </p>
+                          <Button asChild size="sm" className="rounded-full bg-brand text-brand-foreground shadow-brand hover:scale-105">
+                            <Link to="/orcamentos" search={{ new: 1, serviceId: item.id }}>
+                              Solicitar Orçamento →
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
 
       <div className="mt-32 rounded-3xl bg-foreground p-12 text-center text-background md:p-20">
@@ -209,7 +169,7 @@ function Servicos() {
           Nossa equipe técnica está pronta para analisar seu caso específico e propor a melhor solução.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <a 
+          <a
             href={WHATSAPP}
             target="_blank"
             rel="noreferrer"
@@ -217,7 +177,7 @@ function Servicos() {
           >
             Chamar no WhatsApp
           </a>
-          <Link 
+          <Link
             to="/ajuda"
             className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10"
           >
