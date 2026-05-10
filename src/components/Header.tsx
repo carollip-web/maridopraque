@@ -1,4 +1,4 @@
-import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut, ShieldCheck, Briefcase, FileText } from "lucide-react";
+import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut, ShieldCheck, Briefcase, FileText, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -166,20 +166,36 @@ export function Header() {
                              <Briefcase className="h-4 w-4" /> Painel Profissional
                            </Link>
                          )}
-                         <Link
-                           to="/cliente"
-                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
-                           onClick={() => setShowProfileMenu(false)}
-                         >
-                           <User className="h-4 w-4" /> Minha Conta
-                         </Link>
-                         <Link
-                           to="/orcamentos"
-                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
-                           onClick={() => setShowProfileMenu(false)}
-                         >
-                           <FileText className="h-4 w-4" /> Meus pedidos (Cliente)
-                         </Link>
+                         
+                         {/* Se for Admin ou Profissional, o foco é o trabalho. Para configurações, usamos um link direto sem a palavra "Cliente" */}
+                         {(isAdmin || isProfissional) ? (
+                           <Link
+                             to="/cliente"
+                             search={{ tab: "dados" } as any}
+                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                             onClick={() => setShowProfileMenu(false)}
+                           >
+                             <Settings className="h-4 w-4" /> Configurações do Perfil
+                           </Link>
+                         ) : (
+                           /* Se for apenas um cliente normal, mostramos as opções de cliente */
+                           <>
+                             <Link
+                               to="/cliente"
+                               className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                               onClick={() => setShowProfileMenu(false)}
+                             >
+                               <User className="h-4 w-4" /> Minha Conta
+                             </Link>
+                             <Link
+                               to="/orcamentos"
+                               className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
+                               onClick={() => setShowProfileMenu(false)}
+                             >
+                               <FileText className="h-4 w-4" /> Meus pedidos
+                             </Link>
+                           </>
+                         )}
                       </div>
                       <div className="p-2 border-t border-border">
                          <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
