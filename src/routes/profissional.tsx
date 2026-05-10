@@ -387,6 +387,7 @@ function ProfissionalArea() {
           </Tabs>
         )}
       </div>
+        )}
     </div>
   );
 }
