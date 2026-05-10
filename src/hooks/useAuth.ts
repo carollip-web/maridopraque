@@ -72,7 +72,9 @@ export function useAuth() {
 
       const roleList = (roles ?? []).map((r) => r.role as Role);
       const adminRow = (roles ?? []).find((r) => r.role === "admin");
-      const adminLevel = (adminRow?.admin_level ?? null) as AdminLevel;
+      // Fallback: if column doesn't exist yet (migration pending), treat admin as super_admin
+      const rawLevel = adminRow?.admin_level ?? null;
+      const adminLevel = (roleList.includes("admin") && !rawLevel ? "super_admin" : rawLevel) as AdminLevel;
 
       setState((s) => ({
         ...s,
