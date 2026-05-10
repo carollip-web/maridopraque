@@ -179,8 +179,6 @@ function AdminArea() {
   );
 }
 
-import { useQuery } from "@tanstack/react-query";
-
 /* ============== PEDIDOS ============== */
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
