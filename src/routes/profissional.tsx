@@ -85,6 +85,7 @@ function ProfissionalArea() {
   const [ganhosTotais, setGanhosTotais] = useState(0);
   const [aReceber, setAReceber] = useState(0);
   const [ticketMedio, setTicketMedio] = useState(0);
+  const [especialidades, setEspecialidades] = useState<string[]>([]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -122,10 +123,13 @@ function ProfissionalArea() {
     // Fetch Profile Status & Ratings
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
-        supabase.from("profissional_perfil").select("ativo").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profissional_perfil").select("ativo, especialidades").eq("user_id", user.id).maybeSingle(),
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id),
       ]);
-      if (perfil) setAtivo(perfil.ativo);
+      if (perfil) {
+        setAtivo(perfil.ativo);
+        setEspecialidades(perfil.especialidades || []);
+      }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }
@@ -185,14 +189,27 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
+  const filterBy = (statuses: Orcamento["status"][]) =>
+    orcamentos.filter((o) => {
+      if (!statuses.includes(o.status)) return false;
+      // Para pedidos pendentes, mostrar apenas os que correspondem às especialidades do profissional
+      if (o.status === "customizado_pendente") {
+        if (especialidades.length === 0) return false; // Se não tem especialidade configurada, não vê nenhum
+        return especialidades.includes(o.service_name);
+      }
+      // Outros status (enviados, em andamento, etc) já estão filtrados pelo profissional_id no refresh,
+      // então podemos mostrar todos que caírem aqui
+      return o.profissional_id === user?.id || o.status === "customizado_pendente";
+    });
+
   const counts = useMemo(() => {
     return {
-      pendentes: orcamentos.filter((o) => o.status === "customizado_pendente").length,
-      enviados: orcamentos.filter((o) => o.status === "enviado").length,
-      ativos: orcamentos.filter((o) => o.status === "aprovado" || o.status === "pago").length,
-      finalizados: orcamentos.filter((o) => o.status === "recusado" || o.status === "cancelado").length,
+      pendentes: filterBy(["customizado_pendente"]).length,
+      enviados: filterBy(["enviado"]).length,
+      ativos: filterBy(["aprovado", "pago"]).length,
+      finalizados: filterBy(["recusado", "cancelado"]).length,
     };
-  }, [orcamentos]);
+  }, [orcamentos, especialidades, user?.id]);
 
   if (loading) {
     return (
@@ -216,8 +233,7 @@ function ProfissionalArea() {
     );
   }
 
-  const filterBy = (statuses: Orcamento["status"][]) =>
-    orcamentos.filter((o) => statuses.includes(o.status));
+  // filterBy was moved up to be used in counts
 
   const handleToggleAtivo = async (checked: boolean) => {
     if (!user) return;
