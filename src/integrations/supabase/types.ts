@@ -440,18 +440,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          admin_level: Database["public"]["Enums"]["admin_level"] | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          admin_level?: Database["public"]["Enums"]["admin_level"] | null
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          admin_level?: Database["public"]["Enums"]["admin_level"] | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
@@ -473,6 +476,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_level: "super_admin" | "admin" | "financeiro" | "suporte"
       app_role: "cliente" | "profissional" | "admin"
       orcamento_status:
         | "fixo_auto"
@@ -609,6 +613,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_level: ["super_admin", "admin", "financeiro", "suporte"],
       app_role: ["cliente", "profissional", "admin"],
       orcamento_status: [
         "fixo_auto",
