@@ -55,7 +55,7 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const { tab: activeTab } = Route.useSearch();
-  const { logout } = useAuth();
+  const { logout, userData, isProfissional, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const setActiveTab = (newTab: Tab) => {
@@ -77,14 +77,23 @@ function ClienteArea() {
     { id: "pagamentos", label: "Pagamentos", icon: CreditCard },
     { id: "notificacoes", label: "Notificações", icon: Bell },
     { id: "dados", label: "Meus Dados", icon: User },
-  ];
+  ].filter(item => {
+    // Se for profissional, limitamos a visão da "Minha Conta" para não confundir com o Painel Profissional
+    // Mantemos apenas Notificações e Meus Dados por padrão, a menos que eles explicitamente usem as outras abas.
+    if ((isProfissional || isAdmin) && ["inicio", "pedidos", "servicos", "pagamentos"].includes(item.id)) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
       {/* Sidebar */}
       <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-border shrink-0 z-20">
         <div className="p-8 hidden md:block">
-           <span className="text-xs font-bold uppercase tracking-widest text-brand">Área do Cliente</span>
+           <span className="text-xs font-bold uppercase tracking-widest text-brand">
+             {(isProfissional || isAdmin) ? "Sua Conta" : "Área do Cliente"}
+           </span>
         </div>
         
         <nav className="p-4 space-y-1">
@@ -127,9 +136,9 @@ function ClienteArea() {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pt-4 pb-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-border/50">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {sidebarItems.find(i => i.id === activeTab)?.label}
+              {sidebarItems.find(i => i.id === activeTab)?.label || "Minha Conta"}
             </h1>
-            <p className="text-muted-foreground mt-1">Bem-vinda de volta, Carolina!</p>
+            <p className="text-muted-foreground mt-1">Bem-vindo(a) de volta, {userData?.name?.split(" ")[0] || "Usuário"}!</p>
           </div>
         </header>
 
