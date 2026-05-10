@@ -203,9 +203,8 @@ function ProfissionalArea() {
         if (especialidades.length === 0) return false; // Se não tem especialidade configurada, não vê nenhum
         return especialidades.includes(o.service_name);
       }
-      // Outros status (enviados, em andamento, etc) já estão filtrados pelo profissional_id no refresh,
-      // então podemos mostrar todos que caírem aqui
-      return o.profissional_id === user?.id || o.status === "customizado_pendente";
+      // Outros status pertencem apenas ao profissional logado.
+      return o.profissional_id === user?.id;
     });
 
   const counts = useMemo(() => {

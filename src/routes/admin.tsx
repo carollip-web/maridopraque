@@ -1260,11 +1260,11 @@ function AdminConfig() {
 
                   toast.loading("Criando dezenas de pedidos e métricas...", { id: "sim" });
                   const orcs = [
-                    { cliente_id: c1, profissional_id: p1, service_name: "Troca de Chuveiro", status: "pago", valor: 180, valor_servico: 180, created_at: new Date(Date.now() - 86400000*2).toISOString(), data_pagamento: new Date().toISOString() },
-                    { cliente_id: c1, profissional_id: p2, service_name: "Vazamento na Pia", status: "aprovado", valor: 120, valor_servico: 120, created_at: new Date(Date.now() - 86400000).toISOString() },
-                    { cliente_id: c1, service_name: "Instalação de Tomadas", status: "customizado_pendente", created_at: new Date().toISOString() },
-                    { cliente_id: c1, profissional_id: p1, service_name: "Pintura Parede", status: "recusado", created_at: new Date(Date.now() - 86400000*5).toISOString() },
-                    { cliente_id: c1, profissional_id: p2, service_name: "Desentupimento", status: "pago", valor: 300, valor_servico: 300, created_at: new Date(Date.now() - 86400000*10).toISOString(), data_pagamento: new Date(Date.now() - 86400000*8).toISOString() }
+                    { cliente_id: c1, profissional_id: p1, service_name: "Troca de Chuveiro", status: "pago" as const, valor: 180, valor_servico: 180, created_at: new Date(Date.now() - 86400000*2).toISOString(), data_pagamento: new Date().toISOString() },
+                    { cliente_id: c1, profissional_id: p2, service_name: "Vazamento na Pia", status: "aprovado" as const, valor: 120, valor_servico: 120, created_at: new Date(Date.now() - 86400000).toISOString() },
+                    { cliente_id: c1, service_name: "Instalação de Tomadas", status: "customizado_pendente" as const, created_at: new Date().toISOString() },
+                    { cliente_id: c1, profissional_id: p1, service_name: "Pintura Parede", status: "recusado" as const, created_at: new Date(Date.now() - 86400000*5).toISOString() },
+                    { cliente_id: c1, profissional_id: p2, service_name: "Desentupimento", status: "pago" as const, valor: 300, valor_servico: 300, created_at: new Date(Date.now() - 86400000*10).toISOString(), data_pagamento: new Date(Date.now() - 86400000*8).toISOString() }
                   ];
                   await supabase.from("orcamentos").insert(orcs);
 
