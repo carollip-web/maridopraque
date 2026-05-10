@@ -503,7 +503,7 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                 <h3 className="text-xl font-bold mb-2">Novo Serviço?</h3>
                 <p className="text-sm text-white/70 mb-6">Solicite um novo orçamento agora pela plataforma.</p>
                 <Button 
-                  onClick={() => navigate({ to: "/orcamentos" })}
+                  onClick={() => navigate({ to: "/servicos" })}
                   className="w-full rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold"
                 >
                    Solicitar Agora
@@ -1096,7 +1096,7 @@ function ServicosTab() {
         <p className="font-bold text-lg">Você ainda não tem serviços concluídos</p>
         <p className="text-sm text-muted-foreground mt-2 mb-6">Quando um serviço for pago e finalizado, ele aparece aqui.</p>
         <Button asChild className="rounded-full bg-brand text-brand-foreground font-bold h-11 px-6">
-          <Link to="/orcamentos">Pedir um orçamento</Link>
+          <Link to="/servicos">Pedir um orçamento</Link>
         </Button>
       </div>
     );
