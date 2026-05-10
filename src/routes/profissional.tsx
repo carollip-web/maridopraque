@@ -741,10 +741,8 @@ function OrcamentoCard({
                   )}
                 </Button>
               </div>
-            </>
-          )}
         </div>
-      )}
+      ) : null}
 
       {mode === "revisar" && !editing && (
         <Button
