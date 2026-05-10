@@ -528,8 +528,11 @@ function AdminProfissionais() {
     setTogglingId(pro.id);
     const { error } = await supabase
       .from("profissional_perfil")
-      .update({ ativo: !pro.ativo })
-      .eq("user_id", pro.id);
+      .upsert({ 
+        user_id: pro.id, 
+        ativo: !pro.ativo,
+        updated_at: new Date().toISOString()
+      });
     setTogglingId(null);
     if (error) { toast.error("Erro ao atualizar status"); return; }
     toast.success(pro.ativo ? "Profissional desativado" : "Profissional ativado");
@@ -542,8 +545,11 @@ function AdminProfissionais() {
     setSavingEsp(true);
     const { error } = await supabase
       .from("profissional_perfil")
-      .update({ especialidades: espSelected })
-      .eq("user_id", selected.id);
+      .upsert({ 
+        user_id: selected.id, 
+        especialidades: espSelected,
+        updated_at: new Date().toISOString()
+      });
     setSavingEsp(false);
     if (error) { toast.error("Erro ao salvar especialidades"); return; }
     toast.success("Especialidades atualizadas");
