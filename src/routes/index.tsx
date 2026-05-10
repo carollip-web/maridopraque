@@ -122,7 +122,7 @@ function Index() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="brand" size="xl">
-                <Link to="/orcamentos" search={{ new: 1 }}>
+                <Link to="/servicos">
                   Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
@@ -262,8 +262,8 @@ function Index() {
           {services.map(({ categoryId, q, icon: Icon, title, desc }) => (
             <Link
               key={title}
-              to="/orcamentos"
-              search={{ new: 1, categoria: categoryId, serviceName: q }}
+              to="/servicos"
+              search={{ categoria: categoryId }}
               className="group bg-background p-7 transition hover:bg-cream"
             >
               <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />

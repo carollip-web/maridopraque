@@ -122,7 +122,7 @@ function PerfilProfissional() {
             )}
           </div>
           <Button asChild className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold">
-            <Link to="/orcamentos">Pedir orçamento</Link>
+            <Link to="/servicos">Pedir orçamento</Link>
           </Button>
         </div>
 

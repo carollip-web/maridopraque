@@ -123,7 +123,7 @@ function PorqueNos() {
         </p>
         <div className="mt-10 flex justify-center">
           <Link
-            to="/orcamentos"
+            to="/servicos"
             className="rounded-full bg-background px-10 py-4 font-bold text-foreground transition hover:scale-105 shadow-xl"
           >
             Solicitar orçamento
