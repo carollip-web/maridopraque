@@ -663,18 +663,16 @@ function OrcamentoCard({
         )}
       </div>
 
-      {(mode === "enviar" || (mode === "revisar" && editing)) && (
+      {mode === "pegar" ? (
+        <Button
+          onClick={handlePegar}
+          disabled={saving}
+          className="w-full bg-brand text-brand-foreground rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"
+        >
+          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Pegar para mim"}
+        </Button>
+      ) : (mode === "enviar" || (mode === "revisar" && editing)) ? (
         <div className="space-y-3 pt-3 border-t border-border">
-          {mode === "pegar" ? (
-            <Button
-              onClick={handlePegar}
-              disabled={saving}
-              className="w-full bg-purple-600 text-white rounded-full font-bold h-12 hover:bg-purple-700 shadow-md transition-all hover:scale-[1.02]"
-            >
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "🖐️ Pegar para mim"}
-            </Button>
-          ) : (
-            <>
               <div>
                 <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
                 <input

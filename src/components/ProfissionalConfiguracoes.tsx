@@ -23,6 +23,17 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
+type ProfissionalPerfilData = {
+  bio: string | null;
+  cidade: string | null;
+  especialidades: string[] | null;
+  chave_pix?: string | null;
+  anos_experiencia?: number | null;
+  raio_atendimento_km?: number | null;
+  atende_emergencias?: boolean | null;
+  veiculo_proprio?: boolean | null;
+};
+
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +49,7 @@ export function ProfissionalConfiguracoes() {
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-      return data;
+      return data as unknown as ProfissionalPerfilData | null;
     },
     enabled: !!user,
   });
@@ -90,7 +101,7 @@ export function ProfissionalConfiguracoes() {
       raio_atendimento_km: values.raio_atendimento_km,
       atende_emergencias: values.atende_emergencias,
       veiculo_proprio: values.veiculo_proprio
-    }).eq("user_id", user.id);
+    } as any).eq("user_id", user.id);
     
     const [res1, res2] = await Promise.all([p1, p2]);
     
