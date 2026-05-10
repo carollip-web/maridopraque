@@ -740,37 +740,8 @@ const configSchema = z.object({
 type ConfigValues = z.infer<typeof configSchema>;
 
 function AdminConfig() {
-  const { profile, user } = useAuth();
-  const [saving, setSaving] = useState(false);
-
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ConfigValues>({
-    resolver: zodResolver(configSchema),
-    defaultValues: {
-      nome: profile?.nome || "",
-      whatsapp: profile?.whatsapp || "",
-    },
-  });
-
-  useEffect(() => {
-    if (profile) {
-      reset({
-        nome: profile.nome || "",
-        whatsapp: profile.whatsapp || "",
-      });
-    }
-  }, [profile, reset]);
-
-  const onSubmit = async (values: ConfigValues) => {
-    if (!user) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ nome: values.nome, whatsapp: values.whatsapp })
-      .eq("id", user.id);
-    setSaving(false);
-    if (error) toast.error("Erro ao salvar", { description: error.message });
-    else toast.success("Perfil atualizado");
-  };
+  const { profile, user, adminLevel } = useAuth();
+  const navigate = useNavigate();
 
   const trocarSenha = async () => {
     if (!user?.email) return;
@@ -781,57 +752,51 @@ function AdminConfig() {
     else toast.success("E-mail de redefinição enviado", { description: user.email });
   };
 
+  const levelMeta = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
+  const initials = (profile?.nome || user?.email || "AD")
+    .split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+
   return (
-    <div className="max-w-3xl space-y-6 animate-in fade-in duration-500">
+    <div className="max-w-2xl space-y-6 animate-in fade-in duration-500">
       <h2 className="text-2xl font-bold">Configurações da conta</h2>
 
+      {/* Profile card */}
       <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h3 className="font-bold mb-6 text-slate-900 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-brand" /> Perfil do administrador</h3>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-2">
-            <label className="text-xs font-bold uppercase text-slate-500">Nome</label>
-            <input
-              {...register("nome")}
-              className={`p-3 rounded-lg border text-sm focus:ring-2 focus:ring-brand outline-none ${errors.nome ? "border-red-500 ring-red-100" : "border-slate-200"}`}
-            />
-            {errors.nome && <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>}
+        <div className="flex items-center gap-5">
+          <div className="h-16 w-16 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-xl font-bold shrink-0">
+            {initials}
           </div>
-          <div className="grid gap-2">
-            <label className="text-xs font-bold uppercase text-slate-500">E-mail</label>
-            <input
-              value={user?.email || ""}
-              disabled
-              className="p-3 rounded-lg border border-slate-200 text-sm bg-slate-50 text-slate-500"
-            />
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold truncate">{profile?.nome || "—"}</p>
+            <p className="text-sm text-slate-500 truncate">{user?.email}</p>
+            {profile?.whatsapp && <p className="text-sm text-slate-500">{profile.whatsapp}</p>}
+            {levelMeta && (
+              <span className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${levelMeta.color}`}>
+                <levelMeta.icon className="h-3 w-3" />
+                {levelMeta.label}
+              </span>
+            )}
           </div>
-          <div className="grid gap-2">
-            <label className="text-xs font-bold uppercase text-slate-500">WhatsApp</label>
-            <input
-              {...register("whatsapp")}
-              placeholder="+55 (21) 99999-9999"
-              className={`p-3 rounded-lg border text-sm focus:ring-2 focus:ring-brand outline-none ${errors.whatsapp ? "border-red-500 ring-red-100" : "border-slate-200"}`}
-            />
-            {errors.whatsapp && <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>}
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="submit" disabled={saving} className="bg-brand text-white rounded-lg">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar alterações"}
-            </Button>
-          </div>
-        </form>
+          <Button
+            variant="outline"
+            className="rounded-xl font-bold shrink-0 flex items-center gap-2"
+            onClick={() => navigate({ to: "/cliente", search: { tab: "dados" } as any })}
+          >
+            <ArrowUpRight className="h-4 w-4" />
+            Editar perfil
+          </Button>
+        </div>
+        <p className="mt-6 text-xs text-slate-400 flex items-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Para editar nome, WhatsApp e foto, acesse a área do cliente — os dados são compartilhados entre os dois painéis.
+        </p>
       </section>
 
+      {/* Security */}
       <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold mb-2 text-slate-900">Segurança</h3>
-        <p className="text-sm text-slate-500 mb-4">Enviaremos um link para o seu e-mail para você definir uma nova senha.</p>
+        <p className="text-sm text-slate-500 mb-4">Enviaremos um link para <strong>{user?.email}</strong> para você definir uma nova senha.</p>
         <Button variant="outline" className="rounded-lg" onClick={trocarSenha}>Enviar link de redefinição de senha</Button>
-      </section>
-
-      <section className="bg-amber-50 border border-amber-200 p-6 rounded-2xl flex items-start gap-3">
-        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-900">
-          Configurações globais (comissão da plataforma, e-mail de notificações) ainda não têm tabela dedicada. Posso criar uma tabela <code>app_settings</code> para persistir esses valores se quiser.
-        </div>
       </section>
     </div>
   );
