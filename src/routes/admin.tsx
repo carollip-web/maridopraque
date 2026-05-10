@@ -342,13 +342,53 @@ function AdminPedidos() {
 
 /* ============== PROFISSIONAIS ============== */
 
+const ESPECIALIDADES_OPCOES = [
+  {
+    categoria: "Montagem",
+    icon: Wrench,
+    opcoes: [
+      "Montagem de Móveis",
+      "Furos e Fixação",
+      "Instalação de Prateleiras",
+      "Suporte de TV",
+      "Instalação de Cortinas",
+      "Instalação de Ar-Condicionado",
+    ],
+  },
+  {
+    categoria: "Reparos",
+    icon: Settings,
+    opcoes: [
+      "Elétrica Básica",
+      "Hidráulica",
+      "Resistência de Chuveiro",
+      "Reparos Gerais",
+      "Pintura",
+      "Gesso e Drywall",
+      "Fechaduras e Dobradiças",
+    ],
+  },
+  {
+    categoria: "Engenharia",
+    icon: ShieldCheck,
+    opcoes: [
+      "Legalização de Projetos",
+      "Regularização de Obras",
+      "Laudos Técnicos",
+      "Segurança do Trabalho",
+      "Habite-se e Alvarás",
+      "Projetos Arquitetônicos",
+    ],
+  },
+];
+
 function AdminProfissionais() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"todos" | "ativo" | "inativo">("todos");
   const [selected, setSelected] = useState<any | null>(null);
   const [editingEsp, setEditingEsp] = useState(false);
-  const [espInput, setEspInput] = useState("");
+  const [espSelected, setEspSelected] = useState<string[]>([]);
   const [savingEsp, setSavingEsp] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -433,17 +473,16 @@ function AdminProfissionais() {
   const handleSaveEsp = async () => {
     if (!selected) return;
     setSavingEsp(true);
-    const novas = espInput.split(",").map((e) => e.trim()).filter(Boolean);
     const { error } = await supabase
       .from("profissional_perfil")
-      .update({ especialidades: novas })
+      .update({ especialidades: espSelected })
       .eq("user_id", selected.id);
     setSavingEsp(false);
     if (error) { toast.error("Erro ao salvar especialidades"); return; }
     toast.success("Especialidades atualizadas");
     setEditingEsp(false);
     qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
-    setSelected({ ...selected, especialidades: novas });
+    setSelected({ ...selected, especialidades: espSelected });
   };
 
   return (
@@ -626,24 +665,49 @@ function AdminProfissionais() {
 
                 {/* Especialidades */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-3">
                     <p className="text-xs font-bold text-slate-400 uppercase">Especialidades</p>
                     <button
-                      onClick={() => { setEditingEsp(!editingEsp); setEspInput(selected.especialidades.join(", ")); }}
+                      onClick={() => { setEditingEsp(!editingEsp); setEspSelected([...selected.especialidades]); }}
                       className="text-[10px] font-bold text-brand hover:underline"
                     >
                       {editingEsp ? "Cancelar" : "Editar"}
                     </button>
                   </div>
                   {editingEsp ? (
-                    <div className="space-y-2">
-                      <input
-                        value={espInput}
-                        onChange={(e) => setEspInput(e.target.value)}
-                        placeholder="Ex: Elétrica, Hidráulica, Pintura"
-                        className="w-full p-2.5 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none"
-                      />
-                      <p className="text-[10px] text-slate-400">Separe as especialidades por vírgula</p>
+                    <div className="space-y-4">
+                      {ESPECIALIDADES_OPCOES.map((cat) => (
+                        <div key={cat.categoria}>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+                            <cat.icon className="h-3 w-3" /> {cat.categoria}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {cat.opcoes.map((esp) => {
+                              const checked = espSelected.includes(esp);
+                              return (
+                                <button
+                                  key={esp}
+                                  type="button"
+                                  onClick={() => setEspSelected(checked
+                                    ? espSelected.filter((e) => e !== esp)
+                                    : [...espSelected, esp]
+                                  )}
+                                  className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
+                                    checked
+                                      ? "bg-brand text-white border-brand"
+                                      : "bg-white text-slate-600 border-slate-200 hover:border-brand/50"
+                                  }`}
+                                >
+                                  {esp}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      {espSelected.length > 0 && (
+                        <p className="text-[10px] text-slate-400">{espSelected.length} selecionada{espSelected.length !== 1 ? "s" : ""}</p>
+                      )}
                       <Button onClick={handleSaveEsp} disabled={savingEsp} size="sm" className="w-full bg-brand text-white rounded-lg">
                         {savingEsp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Salvar especialidades"}
                       </Button>
