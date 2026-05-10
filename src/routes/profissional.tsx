@@ -195,24 +195,36 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
-  const filterBy = (statuses: Orcamento["status"][]) =>
-    orcamentos.filter((o) => {
-      if (!statuses.includes(o.status)) return false;
-      // Para pedidos pendentes, mostrar apenas os que correspondem às especialidades do profissional
-      if (o.status === "customizado_pendente") {
-        if (especialidades.length === 0) return false; // Se não tem especialidade configurada, não vê nenhum
-        return especialidades.includes(o.service_name);
+  const filterBy = (type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados") => {
+    return orcamentos.filter((o) => {
+      if (type === "oportunidades") {
+        return o.status === "customizado_pendente" && 
+               o.profissional_id === null && 
+               especialidades.includes(o.service_name);
       }
-      // Outros status pertencem apenas ao profissional logado.
-      return o.profissional_id === user?.id;
+      if (type === "elaboracao") {
+        return o.status === "customizado_pendente" && o.profissional_id === user?.id;
+      }
+      if (type === "enviados") {
+        return o.status === "enviado" && o.profissional_id === user?.id;
+      }
+      if (type === "ativos") {
+        return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
+      }
+      if (type === "finalizados") {
+        return ["recusado", "cancelado"].includes(o.status) && o.profissional_id === user?.id;
+      }
+      return false;
     });
+  };
 
   const counts = useMemo(() => {
     return {
-      pendentes: filterBy(["customizado_pendente"]).length,
-      enviados: filterBy(["enviado"]).length,
-      ativos: filterBy(["aprovado", "pago"]).length,
-      finalizados: filterBy(["recusado", "cancelado"]).length,
+      oportunidades: filterBy("oportunidades").length,
+      elaboracao: filterBy("elaboracao").length,
+      enviados: filterBy("enviados").length,
+      ativos: filterBy("ativos").length,
+      finalizados: filterBy("finalizados").length,
     };
   }, [orcamentos, especialidades, user?.id]);
 
@@ -352,36 +364,42 @@ function ProfissionalArea() {
             <p className="text-sm text-muted-foreground font-medium">Sincronizando orçamentos...</p>
           </div>
         ) : (
-          <Tabs defaultValue="pendentes" className="w-full animate-in fade-in duration-700">
+          <Tabs defaultValue="oportunidades" className="w-full animate-in fade-in duration-700">
             <div className="flex items-center justify-between mb-6">
-               <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden sm:block">Meus Serviços</h2>
-               <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full sm:w-auto">
-                 <TabsTrigger value="pendentes" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 data-[state=active]:shadow-none transition-all">
-                   Pendentes <span className="ml-1.5 opacity-60">({counts.pendentes})</span>
+               <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Painel de Demandas</h2>
+               <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
+                 <TabsTrigger value="oportunidades" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900 data-[state=active]:shadow-none transition-all font-medium">
+                   Oportunidades (Radar) <span className="ml-1.5 opacity-60">({counts.oportunidades})</span>
                  </TabsTrigger>
-                 <TabsTrigger value="enviados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none transition-all">
-                   Aguardando <span className="ml-1.5 opacity-60">({counts.enviados})</span>
+                 <TabsTrigger value="elaboracao" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 data-[state=active]:shadow-none transition-all font-medium">
+                   Em Elaboração <span className="ml-1.5 opacity-60">({counts.elaboracao})</span>
                  </TabsTrigger>
-                 <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all">
+                 <TabsTrigger value="enviados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none transition-all font-medium">
+                   Aguardando Cliente <span className="ml-1.5 opacity-60">({counts.enviados})</span>
+                 </TabsTrigger>
+                 <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all font-medium hidden sm:flex">
                    Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
                  </TabsTrigger>
-                 <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all">
-                   Encerrados <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
+                 <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all font-medium hidden sm:flex">
+                   Histórico <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
                  </TabsTrigger>
                </TabsList>
             </div>
 
-            <TabsContent value="pendentes" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy(["customizado_pendente"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Oba! Tudo em dia. Nenhuma solicitação aguardando seu orçamento." emptyIcon={Clock} />
+            <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} emptyMsg="Radar limpo! Nenhuma oportunidade nova na sua região no momento." emptyIcon={CheckCircle2} />
+            </TabsContent>
+            <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Você não pegou nenhum pedido para orçar." emptyIcon={Clock} />
             </TabsContent>
             <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy(["enviado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento enviado aguardando aprovação do cliente no momento." emptyIcon={Send} />
+              <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento enviado aguardando aprovação do cliente no momento." emptyIcon={Send} />
             </TabsContent>
             <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy(["aprovado", "pago"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
+              <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
             </TabsContent>
             <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
+              <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
             </TabsContent>
           </Tabs>
           )}
@@ -431,7 +449,7 @@ function Grid({
   profiles: Record<string, Profile>;
   catalog: Record<string, ServicoCat>;
   orcMats: Record<string, OrcMat[]>;
-  mode: "enviar" | "revisar" | "info";
+  mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
   emptyMsg: string;
   emptyIcon: any;
@@ -475,7 +493,7 @@ function OrcamentoCard({
   cliente: Profile | undefined;
   range: ServicoCat | undefined;
   materiais: OrcMat[];
-  mode: "enviar" | "revisar" | "info";
+  mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
@@ -511,14 +529,38 @@ function OrcamentoCard({
   };
 
   const handleRecusar = async () => {
-    if (!confirm("Tem certeza que deseja recusar este serviço?")) return;
+    if (!confirm("Tem certeza que deseja devolver este pedido para a fila? Ele ficará visível para outros profissionais novamente.")) return;
     setSaving(true);
     const { error } = await supabase
       .from("orcamentos")
-      .update({ status: "recusado" })
+      .update({ profissional_id: null })
       .eq("id", o.id);
-    if (error) toast.error("Erro ao recusar", { description: error.message });
-    else toast.success("Serviço recusado.");
+    if (error) toast.error("Erro ao devolver", { description: error.message });
+    else toast.success("Pedido devolvido ao mural de oportunidades.");
+    setSaving(false);
+  };
+
+  const handlePegar = async () => {
+    setSaving(true);
+    // Verificação dupla no banco
+    const { data } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+    if (data?.profissional_id) {
+      toast.error("Poxa! Outro profissional pegou esse pedido 1 segundo antes de você.");
+      setSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ profissional_id: (await supabase.auth.getUser()).data.user?.id })
+      .eq("id", o.id)
+      .is("profissional_id", null);
+
+    if (error) {
+      toast.error("Erro ao pegar pedido", { description: error.message });
+    } else {
+      toast.success("Boa! Pedido reservado para você. Agora elabore o orçamento.");
+    }
     setSaving(false);
   };
 
@@ -609,74 +651,86 @@ function OrcamentoCard({
 
       {(mode === "enviar" || (mode === "revisar" && editing)) && (
         <div className="space-y-3 pt-3 border-t border-border">
-          <div>
-            <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
-            <input
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="ex: 180,00"
-              inputMode="decimal"
-              className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
-            />
-            {min != null && max != null && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
-              </p>
-            )}
-            {Number(o.taxa_material) > 0 && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Materiais: R$ {Number(o.taxa_material).toFixed(2)} (já cotados pelo cliente)
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>
-            <textarea
-              value={obs}
-              onChange={(e) => setObs(e.target.value)}
-              maxLength={500}
-              placeholder="Detalhes sobre o serviço, prazo, materiais inclusos…"
-              className="w-full mt-1 px-3 py-2 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
-              rows={2}
-            />
-          </div>
-          <div className="flex gap-2">
-            {mode === "revisar" && (
-              <Button
-                variant="outline"
-                onClick={() => setEditing(false)}
-                disabled={saving}
-                className="rounded-full flex-1"
-              >
-                Cancelar
-              </Button>
-            )}
-            {mode === "enviar" && (
-               <Button
-                 variant="outline"
-                 onClick={handleRecusar}
-                 disabled={saving}
-                 className="rounded-full flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
-               >
-                 <XCircle className="h-4 w-4 mr-1.5" /> Recusar
-               </Button>
-            )}
+          {mode === "pegar" ? (
             <Button
-              onClick={handleEnviar}
+              onClick={handlePegar}
               disabled={saving}
-              className="flex-1 bg-brand text-brand-foreground rounded-full font-bold"
+              className="w-full bg-purple-600 text-white rounded-full font-bold h-12 hover:bg-purple-700 shadow-md transition-all hover:scale-[1.02]"
             >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : mode === "revisar" ? (
-                "Salvar proposta"
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-1.5" /> Enviar Cotação
-                </>
-              )}
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "🖐️ Pegar para mim"}
             </Button>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
+                <input
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  placeholder="ex: 180,00"
+                  inputMode="decimal"
+                  className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                />
+                {min != null && max != null && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
+                  </p>
+                )}
+                {Number(o.taxa_material) > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Materiais: R$ {Number(o.taxa_material).toFixed(2)} (já cotados pelo cliente)
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>
+                <textarea
+                  value={obs}
+                  onChange={(e) => setObs(e.target.value)}
+                  maxLength={500}
+                  placeholder="Detalhes sobre o serviço, prazo, materiais inclusos…"
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-2 mt-4">
+                {mode === "revisar" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditing(false)}
+                    disabled={saving}
+                    className="rounded-full flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                )}
+                {mode === "enviar" && (
+                   <Button
+                     variant="outline"
+                     onClick={handleRecusar}
+                     disabled={saving}
+                     className="rounded-full flex-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-border"
+                   >
+                     <XCircle className="h-4 w-4 mr-1.5" /> Devolver p/ Fila
+                   </Button>
+                )}
+                <Button
+                  onClick={handleEnviar}
+                  disabled={saving}
+                  className="flex-[1.5] bg-brand text-brand-foreground rounded-full font-bold"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : mode === "revisar" ? (
+                    "Salvar proposta"
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-1.5" /> Enviar Cotação
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
