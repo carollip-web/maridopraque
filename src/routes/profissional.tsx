@@ -270,76 +270,77 @@ function ProfissionalArea() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         
         {/* Resumo Financeiro */}
-        <section className="grid gap-4 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <DollarSign className="h-6 w-6" />
+        <section className="grid gap-5 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-3xl border border-emerald-100/50 shadow-sm flex items-start gap-5 relative overflow-hidden group">
+            <div className="h-14 w-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10">
+              <DollarSign className="h-7 w-7" />
             </div>
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ganhos Totais</p>
-              <p className="text-3xl font-black text-slate-900 leading-none">R$ {ganhosTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <div className="z-10">
+              <p className="text-[11px] font-extrabold text-emerald-700/70 uppercase tracking-widest mb-1">Ganhos Totais</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {ganhosTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
+            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-emerald-200/20 rounded-full blur-2xl transition-transform group-hover:scale-150" />
           </div>
           
-          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-              <Clock className="h-6 w-6" />
+          <div className="bg-gradient-to-br from-sky-50 to-white p-6 rounded-3xl border border-sky-100/50 shadow-sm flex items-start gap-5 relative overflow-hidden group">
+            <div className="h-14 w-14 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 z-10">
+              <Clock className="h-7 w-7" />
             </div>
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">A Receber</p>
-              <p className="text-3xl font-black text-slate-900 leading-none">R$ {aReceber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <div className="z-10">
+              <p className="text-[11px] font-extrabold text-sky-700/70 uppercase tracking-widest mb-1">A Receber</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {aReceber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
+            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-sky-200/20 rounded-full blur-2xl transition-transform group-hover:scale-150" />
           </div>
 
-          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
-              <TrendingUp className="h-6 w-6" />
+          <div className="bg-gradient-to-br from-brand-soft/50 to-white p-6 rounded-3xl border border-brand/10 shadow-sm flex items-start gap-5 relative overflow-hidden group">
+            <div className="h-14 w-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center shrink-0 z-10">
+              <TrendingUp className="h-7 w-7" />
             </div>
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ticket Médio</p>
-              <p className="text-3xl font-black text-slate-900 leading-none">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <div className="z-10">
+              <p className="text-[11px] font-extrabold text-brand/70 uppercase tracking-widest mb-1">Ticket Médio</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
+            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-brand/10 rounded-full blur-2xl transition-transform group-hover:scale-150" />
           </div>
         </section>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Stat icon={Clock} label="Pendentes" value={counts.pendentes} accent="bg-amber-100 text-amber-800" />
-          <Stat icon={Send} label="Enviados" value={counts.enviados} accent="bg-sky-100 text-sky-800" />
-          <Stat icon={CheckCircle2} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-800" />
-          <Stat icon={XCircle} label="Encerrados" value={counts.finalizados} accent="bg-slate-100 text-slate-700" />
-        </div>
 
         {loadingList ? (
-          <div className="p-12 text-center">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+          <div className="p-20 text-center flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+            <p className="text-sm text-muted-foreground font-medium">Sincronizando orçamentos...</p>
           </div>
         ) : (
-          <Tabs defaultValue="pendentes" className="w-full">
-            <TabsList className="bg-white border border-border rounded-full h-auto p-1 flex-wrap">
-              <TabsTrigger value="pendentes" className="rounded-full">
-                Pendentes ({counts.pendentes})
-              </TabsTrigger>
-              <TabsTrigger value="enviados" className="rounded-full">
-                Aguardando cliente ({counts.enviados})
-              </TabsTrigger>
-              <TabsTrigger value="ativos" className="rounded-full">
-                Em andamento ({counts.ativos})
-              </TabsTrigger>
-              <TabsTrigger value="finalizados" className="rounded-full">
-                Encerrados ({counts.finalizados})
-              </TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="pendentes" className="w-full animate-in fade-in duration-700">
+            <div className="flex items-center justify-between mb-6">
+               <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden sm:block">Meus Serviços</h2>
+               <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full sm:w-auto">
+                 <TabsTrigger value="pendentes" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 data-[state=active]:shadow-none transition-all">
+                   Pendentes <span className="ml-1.5 opacity-60">({counts.pendentes})</span>
+                 </TabsTrigger>
+                 <TabsTrigger value="enviados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none transition-all">
+                   Aguardando <span className="ml-1.5 opacity-60">({counts.enviados})</span>
+                 </TabsTrigger>
+                 <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all">
+                   Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
+                 </TabsTrigger>
+                 <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all">
+                   Encerrados <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
+                 </TabsTrigger>
+               </TabsList>
+            </div>
 
-            <TabsContent value="pendentes" className="mt-6">
-              <Grid items={filterBy(["customizado_pendente"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Nenhuma solicitação aguardando." />
+            <TabsContent value="pendentes" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy(["customizado_pendente"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Oba! Tudo em dia. Nenhuma solicitação aguardando seu orçamento." emptyIcon={Clock} />
             </TabsContent>
-            <TabsContent value="enviados" className="mt-6">
-              <Grid items={filterBy(["enviado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento aguardando aprovação do cliente." />
+            <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy(["enviado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento enviado aguardando aprovação do cliente no momento." emptyIcon={Send} />
             </TabsContent>
-            <TabsContent value="ativos" className="mt-6">
-              <Grid items={filterBy(["aprovado", "pago"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum serviço em andamento." />
+            <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy(["aprovado", "pago"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
             </TabsContent>
-            <TabsContent value="finalizados" className="mt-6">
-              <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Sem orçamentos encerrados." />
+            <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
+              <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
             </TabsContent>
           </Tabs>
         )}
@@ -347,6 +348,7 @@ function ProfissionalArea() {
     </div>
   );
 }
+
 
 function Stat({
   icon: Icon,
@@ -380,6 +382,7 @@ function Grid({
   mode,
   enviar,
   emptyMsg,
+  emptyIcon: EmptyIcon
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -388,11 +391,15 @@ function Grid({
   mode: "enviar" | "revisar" | "info";
   enviar: any;
   emptyMsg: string;
+  emptyIcon: any;
 }) {
   if (items.length === 0) {
     return (
-      <div className="p-10 text-center text-muted-foreground bg-white rounded-2xl border border-border">
-        {emptyMsg}
+      <div className="py-24 px-6 text-center bg-white rounded-3xl border border-dashed border-slate-300 flex flex-col items-center justify-center">
+        <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
+           <EmptyIcon className="h-8 w-8 text-slate-300" />
+        </div>
+        <p className="text-slate-500 font-medium text-sm max-w-sm">{emptyMsg}</p>
       </div>
     );
   }
