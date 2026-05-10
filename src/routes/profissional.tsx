@@ -260,9 +260,28 @@ function ProfissionalArea() {
       .upsert({ user_id: user.id, ativo: checked, updated_at: new Date().toISOString() });
     if (error) {
       setAtivo(!checked);
-      toast.error("Erro ao alterar status");
+      toast.error("Erro ao alterar status", { description: error.message });
     } else {
-      toast.success(checked ? "Você está online e visível!" : "Você está offline.");
+      toast.success(checked ? "Você está Online e visível" : "Você está Offline");
+    }
+  };
+
+  const handleGenerateTestOrder = async () => {
+    if (!user) return;
+    const testServiceName = especialidades.length > 0 ? especialidades[0] : "Serviço Genérico";
+    
+    toast.loading("Gerando pedido de teste...", { id: "test-order" });
+    const { error } = await supabase.from("orcamentos").insert({
+      cliente_id: user.id, // O próprio usuário atua como cliente para passar na RLS
+      service_name: testServiceName,
+      status: "customizado_pendente",
+      descricao: "⚠️ Pedido de teste gerado pelo sistema para demonstrar o Radar de Oportunidades.",
+    });
+
+    if (error) {
+      toast.error("Erro ao gerar teste", { id: "test-order", description: error.message });
+    } else {
+      toast.success(`Novo pedido de "${testServiceName}" gerado no Radar!`, { id: "test-order" });
     }
   };
 
@@ -366,7 +385,12 @@ function ProfissionalArea() {
         ) : (
           <Tabs defaultValue="oportunidades" className="w-full animate-in fade-in duration-700">
             <div className="flex items-center justify-between mb-6">
-               <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Painel de Demandas</h2>
+               <div className="flex items-center gap-4">
+                 <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Painel de Demandas</h2>
+                 <Button onClick={handleGenerateTestOrder} variant="outline" size="sm" className="hidden lg:flex border-dashed border-brand text-brand hover:bg-brand/5">
+                   + Gerar Pedido Teste
+                 </Button>
+               </div>
                <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
                  <TabsTrigger value="oportunidades" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900 data-[state=active]:shadow-none transition-all font-medium">
                    Oportunidades (Radar) <span className="ml-1.5 opacity-60">({counts.oportunidades})</span>
