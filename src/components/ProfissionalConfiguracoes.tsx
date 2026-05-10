@@ -14,6 +14,11 @@ const profileSchema = z.object({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   bio: z.string().optional(),
   cidade: z.string().optional(),
+  chave_pix: z.string().optional(),
+  anos_experiencia: z.coerce.number().min(0).optional(),
+  raio_atendimento_km: z.coerce.number().min(0).optional(),
+  atende_emergencias: z.boolean().optional(),
+  veiculo_proprio: z.boolean().optional(),
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
@@ -45,6 +50,11 @@ export function ProfissionalConfiguracoes() {
       whatsapp: profile?.whatsapp ?? "",
       bio: "",
       cidade: "",
+      chave_pix: "",
+      anos_experiencia: 0,
+      raio_atendimento_km: 0,
+      atende_emergencias: false,
+      veiculo_proprio: false,
     }
   });
 
@@ -55,6 +65,11 @@ export function ProfissionalConfiguracoes() {
         whatsapp: profile.whatsapp ?? "",
         bio: profissionalPerfil.bio ?? "",
         cidade: profissionalPerfil.cidade ?? "",
+        chave_pix: profissionalPerfil.chave_pix ?? "",
+        anos_experiencia: profissionalPerfil.anos_experiencia ?? 0,
+        raio_atendimento_km: profissionalPerfil.raio_atendimento_km ?? 0,
+        atende_emergencias: profissionalPerfil.atende_emergencias ?? false,
+        veiculo_proprio: profissionalPerfil.veiculo_proprio ?? false,
       });
     }
   }, [profile, profissionalPerfil, reset]);
@@ -67,7 +82,15 @@ export function ProfissionalConfiguracoes() {
     const p1 = supabase.from("profiles").update({ nome: values.nome, whatsapp: values.whatsapp }).eq("id", user.id);
     
     // Update profissional_perfil table
-    const p2 = supabase.from("profissional_perfil").update({ bio: values.bio, cidade: values.cidade }).eq("user_id", user.id);
+    const p2 = supabase.from("profissional_perfil").update({ 
+      bio: values.bio, 
+      cidade: values.cidade,
+      chave_pix: values.chave_pix,
+      anos_experiencia: values.anos_experiencia,
+      raio_atendimento_km: values.raio_atendimento_km,
+      atende_emergencias: values.atende_emergencias,
+      veiculo_proprio: values.veiculo_proprio
+    }).eq("user_id", user.id);
     
     const [res1, res2] = await Promise.all([p1, p2]);
     
@@ -184,6 +207,55 @@ export function ProfissionalConfiguracoes() {
                 className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
                 placeholder="Ex: São Paulo - SP"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Chave PIX (Para Repasses)</label>
+              <input
+                {...register("chave_pix")}
+                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                placeholder="CPF, CNPJ, E-mail ou Celular"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Anos de Experiência</label>
+              <input
+                type="number"
+                {...register("anos_experiencia")}
+                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                placeholder="Ex: 5"
+                min="0"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Raio de Atendimento (KM)</label>
+              <input
+                type="number"
+                {...register("raio_atendimento_km")}
+                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                placeholder="Ex: 15"
+                min="0"
+              />
+            </div>
+
+            {/* Configurações Operacionais Avançadas */}
+            <div className="sm:col-span-2 grid gap-6 sm:grid-cols-2 mt-2 pt-6 border-t border-border/50">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
+                <div>
+                  <p className="text-sm font-bold text-slate-800">Atendimento 24h / Urgência</p>
+                  <p className="text-xs text-muted-foreground">Aceita chamados de madrugada e finais de semana.</p>
+                </div>
+                <input type="checkbox" {...register("atende_emergencias")} className="h-5 w-5 accent-brand cursor-pointer" />
+              </div>
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
+                <div>
+                  <p className="text-sm font-bold text-slate-800">Veículo Próprio</p>
+                  <p className="text-xs text-muted-foreground">Utilizado para carregar materiais volumosos.</p>
+                </div>
+                <input type="checkbox" {...register("veiculo_proprio")} className="h-5 w-5 accent-brand cursor-pointer" />
+              </div>
             </div>
 
             <div className="sm:col-span-2 mt-4 flex justify-end">
