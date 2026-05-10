@@ -140,7 +140,7 @@ export function useAuth() {
     ...state,
     loading: !isReady,
     isLoggedIn: !!state.session,
-    isProfissional: state.roles.includes("profissional") || isAdmin,
+    isProfissional: state.roles.includes("profissional"),
     isAdmin,
     isSuperAdmin,
     adminLevel,
