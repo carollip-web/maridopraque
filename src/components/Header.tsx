@@ -170,8 +170,8 @@ export function Header() {
                          {/* Se for Admin ou Profissional, o foco é o trabalho. Para configurações, usamos um link direto sem a palavra "Cliente" */}
                          {(isAdmin || isProfissional) ? (
                            <Link
-                             to="/cliente"
-                             search={{ tab: "dados" } as any}
+                             to={isProfissional ? "/profissional" : "/cliente"}
+                             search={isProfissional ? ({ tab: "configuracoes" } as any) : ({ tab: "dados" } as any)}
                              className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                              onClick={() => setShowProfileMenu(false)}
                            >

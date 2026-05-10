@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
+import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +30,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/profissional")({
+  validateSearch: z.object({
+    tab: z.enum(["pedidos", "configuracoes"]).optional().catch("pedidos"),
+  }),
   component: ProfissionalArea,
 });
 
@@ -73,6 +78,7 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
 };
 
 function ProfissionalArea() {
+  const { tab = "pedidos" } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
@@ -283,9 +289,29 @@ function ProfissionalArea() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         
-        {/* Resumo Financeiro */}
+        {/* Top-Level Tabs Navigation */}
+        <div className="flex items-center gap-6 border-b border-border mb-8 overflow-x-auto">
+          <button 
+            onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
+            className={`pb-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${tab === 'pedidos' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            Gestão de Pedidos
+          </button>
+          <button 
+            onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
+            className={`pb-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${tab === 'configuracoes' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            Configurações do Perfil
+          </button>
+        </div>
+
+        {tab === "configuracoes" ? (
+          <ProfissionalConfiguracoes />
+        ) : (
+          <div className="space-y-8">
+            {/* Resumo Financeiro */}
         <section className="grid gap-5 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-3xl border border-emerald-100/50 shadow-sm flex items-start gap-5 relative overflow-hidden group">
             <div className="h-14 w-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10">
@@ -662,6 +688,8 @@ function OrcamentoCard({
           <Pencil className="h-4 w-4 mr-1.5" /> Revisar orçamento
         </Button>
       )}
+          </div>
+        )}
     </div>
   );
 }
