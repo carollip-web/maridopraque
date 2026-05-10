@@ -3,9 +3,9 @@ import { DollarSign, ShoppingBag, Users, Star, Clock, ArrowUpRight, AlertTriangl
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
-type Metric = { label: string; value: string; icon: any; color: string; bg: string };
+type Metric = { label: string; value: string; icon: any; color: string; bg: string; targetTab: any };
 
-export function AdminMetrics() {
+export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void }) {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [recentes, setRecentes] = useState<any[]>([]);
   const [pendentes, setPendentes] = useState<number>(0);
@@ -28,10 +28,10 @@ export function AdminMetrics() {
         : "—";
 
       setMetrics([
-        { label: "Receita (pagos)", value: `R$ ${receita.toFixed(2)}`, icon: DollarSign, color: "text-blue-600", bg: "bg-blue-50" },
-        { label: "Pedidos Ativos", value: String(ativos), icon: ShoppingBag, color: "text-brand", bg: "bg-brand-soft" },
-        { label: "Clientes", value: String(clientesCount ?? 0), icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
-        { label: "Avaliação Média", value: `${mediaNota}${avs && avs.length ? "/5" : ""}`, icon: Star, color: "text-amber-600", bg: "bg-amber-50" },
+        { label: "Receita (pagos)", value: `R$ ${receita.toFixed(2)}`, icon: DollarSign, color: "text-blue-600", bg: "bg-blue-50", targetTab: "financeiro" },
+        { label: "Pedidos Ativos", value: String(ativos), icon: ShoppingBag, color: "text-brand", bg: "bg-brand-soft", targetTab: "pedidos" },
+        { label: "Clientes", value: String(clientesCount ?? 0), icon: Users, color: "text-purple-600", bg: "bg-purple-50", targetTab: "clientes" },
+        { label: "Avaliação Média", value: `${mediaNota}${avs && avs.length ? "/5" : ""}`, icon: Star, color: "text-amber-600", bg: "bg-amber-50", targetTab: "profissionais" },
       ]);
       setRecentes(list.slice(0, 6));
       setPendentes(pendingNow);
@@ -61,13 +61,24 @@ export function AdminMetrics() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((stat) => (
-          <div key={stat.label} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-4 ${stat.bg} ${stat.color}`}>
+          <button
+            key={stat.label}
+            onClick={() => onTabChange(stat.targetTab)}
+            className="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-brand/30 transition-all text-left relative overflow-hidden"
+          >
+            <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${stat.bg} ${stat.color}`}>
               <stat.icon className="h-5 w-5" />
             </div>
             <p className="text-sm font-medium text-slate-500">{stat.label}</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
-          </div>
+            
+            <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-brand opacity-0 group-hover:opacity-100 transition-opacity">
+              Ver detalhes <ArrowUpRight className="h-3 w-3" />
+            </div>
+
+            {/* Subtle background glow on hover */}
+            <div className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity blur-2xl ${stat.bg}`} />
+          </button>
         ))}
       </div>
 

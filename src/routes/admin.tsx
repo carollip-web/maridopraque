@@ -166,7 +166,7 @@ function AdminArea() {
         </header>
 
         <div className="p-8 max-w-7xl mx-auto w-full">
-          {activeTab === "dashboard"     && canAccess("dashboard")     && <AdminMetrics />}
+          {activeTab === "dashboard"     && canAccess("dashboard")     && <AdminMetrics onTabChange={setActiveTab} />}
           {activeTab === "pedidos"        && canAccess("pedidos")        && <AdminPedidos />}
           {activeTab === "profissionais"  && canAccess("profissionais")  && <AdminProfissionais />}
           {activeTab === "clientes"       && canAccess("clientes")       && <AdminClientes />}
