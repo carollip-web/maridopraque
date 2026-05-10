@@ -1230,7 +1230,7 @@ function AdminConfig() {
                   const signUpAndGetId = async (email: string, nome: string) => {
                     const { data, error } = await tempClient.auth.signUp({
                       email,
-                      password: "password123",
+                      password: "Simulador@2026!",
                       options: { data: { nome } }
                     });
                     if (error) throw error;
@@ -1281,7 +1281,7 @@ function AdminConfig() {
                     if (avs.length) await supabase.from("avaliacoes").insert(avs);
                   }
 
-                  toast.success(`Simulador concluído! Logins de teste criados com senha: password123\ncliente${s}@teste.com`, { id: "sim" });
+                  toast.success(`Simulador concluído! Logins de teste criados com senha: Simulador@2026!\ncliente${s}@teste.com`, { id: "sim" });
                 } catch (err: any) {
                   toast.error("Erro na simulação", { id: "sim", description: err?.message });
                 } finally {
