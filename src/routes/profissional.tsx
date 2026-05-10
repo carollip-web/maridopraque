@@ -460,23 +460,46 @@ function OrcamentoCard({
     }
   };
 
+  const handleRecusar = async () => {
+    if (!confirm("Tem certeza que deseja recusar este serviço?")) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ status: "recusado" })
+      .eq("id", o.id);
+    if (error) toast.error("Erro ao recusar", { description: error.message });
+    else toast.success("Serviço recusado.");
+    setSaving(false);
+  };
+
   const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
+  
+  // Calculate urgency
+  let isUrgent = false;
+  if (o.status === "customizado_pendente") {
+    const hoursSinceCreated = (new Date().getTime() - new Date(o.created_at).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceCreated >= 2) isUrgent = true; // Urgent if more than half of the SLA has passed
+  }
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-5 shadow-sm flex flex-col gap-4">
+    <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
+      {isUrgent && (
+        <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-bold truncate">{o.service_name}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {new Date(o.created_at).toLocaleDateString("pt-BR", {
+          <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
+          <p className={`text-xs mt-0.5 font-medium ${isUrgent ? 'text-red-500' : 'text-muted-foreground'}`}>
+            Solicitado em {new Date(o.created_at).toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "short",
-              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
             })}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${meta.className}`}>
+          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${meta.className}`}>
             {meta.label}
           </span>
           {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
@@ -573,10 +596,20 @@ function OrcamentoCard({
                 variant="outline"
                 onClick={() => setEditing(false)}
                 disabled={saving}
-                className="rounded-full"
+                className="rounded-full flex-1"
               >
                 Cancelar
               </Button>
+            )}
+            {mode === "enviar" && (
+               <Button
+                 variant="outline"
+                 onClick={handleRecusar}
+                 disabled={saving}
+                 className="rounded-full flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+               >
+                 <XCircle className="h-4 w-4 mr-1.5" /> Recusar
+               </Button>
             )}
             <Button
               onClick={handleEnviar}
@@ -586,10 +619,10 @@ function OrcamentoCard({
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : mode === "revisar" ? (
-                "Salvar nova proposta"
+                "Salvar proposta"
               ) : (
                 <>
-                  <Send className="h-4 w-4 mr-1.5" /> Enviar ao cliente
+                  <Send className="h-4 w-4 mr-1.5" /> Enviar Cotação
                 </>
               )}
             </Button>
