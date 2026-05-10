@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { DollarSign, ShoppingBag, Users, Star, Clock, ArrowUpRight, AlertTriangle, TrendingUp, TrendingDown, Calendar, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
