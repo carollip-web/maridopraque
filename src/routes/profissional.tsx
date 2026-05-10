@@ -385,8 +385,10 @@ function ProfissionalArea() {
               <Grid items={filterBy(["recusado", "cancelado"])} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
             </TabsContent>
           </Tabs>
-      </div>
+          )}
+        </div>
         )}
+      </div>
     </div>
   );
 }
