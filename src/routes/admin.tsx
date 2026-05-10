@@ -26,7 +26,9 @@ import {
   UserPlus,
   Crown,
   X,
+  Database
 } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AdminMetrics } from "@/components/AdminMetrics";
@@ -1148,6 +1150,7 @@ type ConfigValues = z.infer<typeof configSchema>;
 function AdminConfig() {
   const { profile, user, adminLevel } = useAuth();
   const navigate = useNavigate();
+  const [simulando, setSimulando] = useState(false);
 
   const trocarSenha = async () => {
     if (!user?.email) return;
@@ -1203,6 +1206,96 @@ function AdminConfig() {
         <h3 className="font-bold mb-2 text-slate-900">Segurança</h3>
         <p className="text-sm text-slate-500 mb-4">Enviaremos um link para <strong>{user?.email}</strong> para você definir uma nova senha.</p>
         <Button variant="outline" className="rounded-lg" onClick={trocarSenha}>Enviar link de redefinição de senha</Button>
+      </section>
+
+      {/* Simulator */}
+      <section className="bg-amber-50 p-8 rounded-2xl border border-amber-200 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+              <Database className="h-5 w-5" /> Simulador de Plataforma
+            </h3>
+            <p className="text-sm text-amber-800/80 mb-6 max-w-lg">
+              Clique para gerar clientes, profissionais e dezenas de pedidos falsos (orçamentos pendentes, pagos, recusados) para visualizar como os painéis (Admin e Profissional) se comportam com dados reais. Use emails de teste criados para testar o login deles.
+            </p>
+            <Button
+              onClick={async () => {
+                setSimulando(true);
+                try {
+                  const tempClient = createClient(
+                    import.meta.env.VITE_SUPABASE_URL,
+                    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                    { auth: { persistSession: false, autoRefreshToken: false } }
+                  );
+                  const signUpAndGetId = async (email: string, nome: string) => {
+                    const { data, error } = await tempClient.auth.signUp({
+                      email,
+                      password: "password123",
+                      options: { data: { nome } }
+                    });
+                    if (error) throw error;
+                    return data.user?.id;
+                  };
+                  
+                  const s = Math.floor(Math.random() * 10000);
+                  toast.loading("Criando usuários falsos...", { id: "sim" });
+                  
+                  const c1 = await signUpAndGetId(`cliente${s}@teste.com`, `Cliente Teste ${s}`);
+                  const p1 = await signUpAndGetId(`joao${s}@eletrica.com`, `João Eletricista ${s}`);
+                  const p2 = await signUpAndGetId(`maria${s}@hidraulica.com`, `Maria Encanadora ${s}`);
+                  
+                  if (!c1 || !p1 || !p2) throw new Error("Falha ao gerar IDs");
+
+                  await new Promise(r => setTimeout(r, 1500)); // wait for profile triggers
+
+                  toast.loading("Atribuindo perfis profissionais...", { id: "sim" });
+                  await supabase.from("user_roles").insert([
+                    { user_id: p1, role: "profissional" },
+                    { user_id: p2, role: "profissional" }
+                  ]);
+                  await supabase.from("profissional_perfil").insert([
+                    { user_id: p1, ativo: true },
+                    { user_id: p2, ativo: true }
+                  ]);
+
+                  toast.loading("Criando dezenas de pedidos e métricas...", { id: "sim" });
+                  const orcs = [
+                    { cliente_id: c1, profissional_id: p1, service_name: "Troca de Chuveiro", status: "pago", valor: 180, valor_servico: 180, created_at: new Date(Date.now() - 86400000*2).toISOString(), data_pagamento: new Date().toISOString() },
+                    { cliente_id: c1, profissional_id: p2, service_name: "Vazamento na Pia", status: "aprovado", valor: 120, valor_servico: 120, created_at: new Date(Date.now() - 86400000).toISOString() },
+                    { cliente_id: c1, service_name: "Instalação de Tomadas", status: "customizado_pendente", created_at: new Date().toISOString() },
+                    { cliente_id: c1, profissional_id: p1, service_name: "Pintura Parede", status: "recusado", created_at: new Date(Date.now() - 86400000*5).toISOString() },
+                    { cliente_id: c1, profissional_id: p2, service_name: "Desentupimento", status: "pago", valor: 300, valor_servico: 300, created_at: new Date(Date.now() - 86400000*10).toISOString(), data_pagamento: new Date(Date.now() - 86400000*8).toISOString() }
+                  ];
+                  await supabase.from("orcamentos").insert(orcs);
+
+                  // Create some ratings
+                  const { data: insertedOrcs } = await supabase.from("orcamentos").select("id, profissional_id").eq("cliente_id", c1).eq("status", "pago");
+                  if (insertedOrcs) {
+                    const avs = insertedOrcs.map(o => ({
+                      orcamento_id: o.id,
+                      cliente_id: c1,
+                      profissional_id: o.profissional_id,
+                      nota: 5,
+                      comentario: "Excelente profissional!"
+                    }));
+                    if (avs.length) await supabase.from("avaliacoes").insert(avs);
+                  }
+
+                  toast.success(`Simulador concluído! Logins de teste criados com senha: password123\ncliente${s}@teste.com`, { id: "sim" });
+                } catch (err: any) {
+                  toast.error("Erro na simulação", { id: "sim", description: err?.message });
+                } finally {
+                  setSimulando(false);
+                }
+              }}
+              disabled={simulando}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl"
+            >
+              {simulando ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {simulando ? "Injetando dados no banco..." : "Gerar Dados de Teste"}
+            </Button>
+          </div>
+        </div>
       </section>
     </div>
   );
