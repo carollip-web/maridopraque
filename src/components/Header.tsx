@@ -86,7 +86,7 @@ export function Header() {
               }}
               className={`h-11 w-11 rounded-full border flex items-center justify-center font-bold text-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand/20 overflow-hidden ${isLoggedIn && !profilePhoto ? "bg-brand/10 border-brand/20 text-brand hover:bg-brand/20" : "bg-white border-border text-muted-foreground hover:bg-slate-50"}`}
             >
-              {isLoggedIn ? (profilePhoto ? <img src={profilePhoto} className="h-full w-full object-cover" alt="Perfil" /> : "C") : <User className="h-5 w-5" />}
+              {isLoggedIn ? (profilePhoto ? <img src={profilePhoto} className="h-full w-full object-cover" alt="Perfil" /> : (userData?.name?.charAt(0).toUpperCase() || "U")) : <User className="h-5 w-5" />}
             </button>
 
             {/* Notification Dropdown */}
@@ -148,6 +148,24 @@ export function Header() {
                          <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
                       </div>
                       <div className="p-2">
+                         {isAdmin && (
+                           <Link
+                             to="/admin"
+                             className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex items-center gap-2 mb-1"
+                             onClick={() => setShowProfileMenu(false)}
+                           >
+                             <ShieldCheck className="h-4 w-4 text-slate-600" /> Painel Administrativo
+                           </Link>
+                         )}
+                         {isProfissional && (
+                           <Link
+                             to="/profissional"
+                             className="w-full text-left px-4 py-2.5 text-sm font-bold text-brand bg-brand/5 hover:bg-brand/10 rounded-xl transition-colors flex items-center gap-2 mb-1"
+                             onClick={() => setShowProfileMenu(false)}
+                           >
+                             <Briefcase className="h-4 w-4" /> Painel Profissional
+                           </Link>
+                         )}
                          <Link
                            to="/cliente"
                            className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
@@ -160,26 +178,8 @@ export function Header() {
                            className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                            onClick={() => setShowProfileMenu(false)}
                          >
-                           <FileText className="h-4 w-4" /> Meus orçamentos
+                           <FileText className="h-4 w-4" /> Meus pedidos (Cliente)
                          </Link>
-                         {isProfissional && (
-                           <Link
-                             to="/profissional"
-                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
-                             onClick={() => setShowProfileMenu(false)}
-                           >
-                             <Briefcase className="h-4 w-4" /> Painel Profissional
-                           </Link>
-                         )}
-                         {isAdmin && (
-                           <Link
-                             to="/admin"
-                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
-                             onClick={() => setShowProfileMenu(false)}
-                           >
-                             <ShieldCheck className="h-4 w-4" /> Painel Admin
-                           </Link>
-                         )}
                       </div>
                       <div className="p-2 border-t border-border">
                          <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2">
