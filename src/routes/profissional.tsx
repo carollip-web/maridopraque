@@ -286,41 +286,32 @@ function ProfissionalArea() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-foreground text-background">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 bg-brand rounded-xl flex items-center justify-center">
-              <Wrench className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-background/50">Painel Operacional</p>
-              <h1 className="font-bold text-lg leading-tight">{user?.user_metadata?.nome || "Profissional"}</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden sm:flex items-center gap-2 bg-background/10 px-3 py-1.5 rounded-full">
-              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-              <span className="text-sm font-bold">{mediaAvaliacoes}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background/10 px-3 py-1.5 rounded-full">
-              <span className="text-xs font-bold text-background/80 hidden sm:inline-block">
-                {ativo ? "Online" : "Offline"}
-              </span>
-              <Switch checked={ativo} onCheckedChange={handleToggleAtivo} className="data-[state=checked]:bg-emerald-500" />
-            </div>
-            <button
-              onClick={logout}
-              className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-background/70 hover:text-red-400 transition-colors"
-            >
-              <Power className="h-4 w-4" /> Sair
-            </button>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 shrink-0 space-y-6">
+            
+            {/* Status Card */}
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm flex flex-col items-center text-center">
+              <div className="h-16 w-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mb-4">
+                <Wrench className="h-7 w-7" />
+              </div>
+              <div className="mb-6">
+                <h3 className="font-bold text-slate-900 leading-tight">{user?.user_metadata?.nome || "Profissional"}</h3>
+                <div className="flex items-center justify-center gap-1.5 mt-1.5 text-amber-500 font-medium text-xs">
+                  <Star className="h-3.5 w-3.5 fill-amber-500" />
+                  <span>{mediaAvaliacoes} Avaliações</span>
+                </div>
+              </div>
+              
+              <div className="w-full pt-4 border-t border-border flex items-center justify-between">
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${ativo ? "text-emerald-600" : "text-slate-400"}`}>
+                  {ativo ? "Online" : "Offline"}
+                </span>
+                <Switch checked={ativo} onCheckedChange={handleToggleAtivo} className="data-[state=checked]:bg-emerald-500" />
+              </div>
+            </div>
+
             <nav className="flex flex-col gap-2">
               <button 
                 onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
