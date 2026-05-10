@@ -21,25 +21,46 @@ import {
   Star,
   Mail,
   Trash2,
+  UserCog,
+  Lock,
+  UserPlus,
+  Crown,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AdminMetrics } from "@/components/AdminMetrics";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
   head: () => ({ meta: [{ title: "Admin · Marido pra Quê?" }] }),
 });
 
-type AdminTab = "dashboard" | "pedidos" | "profissionais" | "servicos" | "clientes" | "financeiro" | "config";
+const ADMIN_LEVEL_LABELS: Record<NonNullable<AdminLevel>, { label: string; color: string; icon: React.ElementType }> = {
+  super_admin: { label: "Super Admin",  color: "text-red-600 bg-red-50",    icon: Crown },
+  admin:       { label: "Admin",        color: "text-orange-600 bg-orange-50", icon: ShieldCheck },
+  financeiro:  { label: "Financeiro",   color: "text-yellow-600 bg-yellow-50", icon: DollarSign },
+  suporte:     { label: "Suporte",      color: "text-blue-600 bg-blue-50",   icon: Users },
+};
+
+const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementType }[] = [
+  { id: "dashboard",     label: "Dashboard",         icon: BarChart3 },
+  { id: "pedidos",       label: "Gestão de Pedidos", icon: ShoppingBag },
+  { id: "profissionais", label: "Profissionais",      icon: Wrench },
+  { id: "clientes",      label: "Clientes",           icon: Users },
+  { id: "servicos",      label: "Serviços",           icon: FileText },
+  { id: "financeiro",    label: "Financeiro",         icon: DollarSign },
+  { id: "config",        label: "Configurações",      icon: Settings },
+  { id: "equipe",        label: "Equipe Admin",       icon: UserCog },
+];
 
 function AdminArea() {
-  const { isLoggedIn, isAdmin, loading, profile, user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  const { isLoggedIn, isAdmin, isSuperAdmin, adminLevel, loading, profile, user, logout, canAccess, allowedTabs } = useAuth();
+  const [activeTab, setActiveTab] = useState<AdminSection>("dashboard");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +73,13 @@ function AdminArea() {
     }
   }, [loading, isLoggedIn, isAdmin, navigate]);
 
+  // When tabs load, set to first allowed tab if current isn't allowed
+  useEffect(() => {
+    if (!loading && allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
+      setActiveTab(allowedTabs[0]);
+    }
+  }, [loading, allowedTabs, activeTab]);
+
   if (loading || !isLoggedIn || !isAdmin) {
     return (
       <div className="min-h-screen grid place-items-center bg-slate-50">
@@ -60,15 +88,8 @@ function AdminArea() {
     );
   }
 
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "pedidos", label: "Gestão de Pedidos", icon: ShoppingBag },
-    { id: "profissionais", label: "Profissionais", icon: Wrench },
-    { id: "clientes", label: "Clientes", icon: Users },
-    { id: "servicos", label: "Serviços", icon: FileText },
-    { id: "financeiro", label: "Financeiro", icon: DollarSign },
-    { id: "config", label: "Configurações", icon: Settings },
-  ];
+  const sidebarItems = ALL_SIDEBAR_ITEMS.filter((item) => canAccess(item.id));
+  const levelMeta = adminLevel ? ADMIN_LEVEL_LABELS[adminLevel] : null;
 
   const adminEmail = profile?.email ?? user?.email ?? "";
   const initials = (profile?.nome || adminEmail || "AD")
@@ -111,6 +132,12 @@ function AdminArea() {
             <div className="flex-1 overflow-hidden">
               <p className="text-xs font-bold truncate">{profile?.nome || "Administrador"}</p>
               <p className="text-[10px] text-slate-500 truncate">{adminEmail}</p>
+              {levelMeta && (
+                <span className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${levelMeta.color}`}>
+                  <levelMeta.icon className="h-2.5 w-2.5" />
+                  {levelMeta.label}
+                </span>
+              )}
             </div>
           </div>
           <button
@@ -138,13 +165,14 @@ function AdminArea() {
         </header>
 
         <div className="p-8 max-w-7xl mx-auto w-full">
-          {activeTab === "dashboard" && <AdminMetrics />}
-          {activeTab === "pedidos" && <AdminPedidos />}
-          {activeTab === "profissionais" && <AdminProfissionais />}
-          {activeTab === "clientes" && <AdminClientes />}
-          {activeTab === "servicos" && <AdminServicos />}
-          {activeTab === "financeiro" && <AdminFinanceiro />}
-          {activeTab === "config" && <AdminConfig />}
+          {activeTab === "dashboard"     && canAccess("dashboard")     && <AdminMetrics />}
+          {activeTab === "pedidos"        && canAccess("pedidos")        && <AdminPedidos />}
+          {activeTab === "profissionais"  && canAccess("profissionais")  && <AdminProfissionais />}
+          {activeTab === "clientes"       && canAccess("clientes")       && <AdminClientes />}
+          {activeTab === "servicos"       && canAccess("servicos")       && <AdminServicos />}
+          {activeTab === "financeiro"     && canAccess("financeiro")     && <AdminFinanceiro />}
+          {activeTab === "config"         && canAccess("config")         && <AdminConfig />}
+          {activeTab === "equipe"         && isSuperAdmin                && <AdminEquipe />}
         </div>
       </main>
     </div>
@@ -814,3 +842,248 @@ function AdminConfig() {
 // remove unused import warnings stubs
 void ChevronRight;
 void Trash2;
+
+/* ============== EQUIPE ADMIN ============== */
+
+function AdminEquipe() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLevel, setInviteLevel] = useState<NonNullable<AdminLevel>>("suporte");
+  const [inviting, setInviting] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [changingLevel, setChangingLevel] = useState<string | null>(null);
+
+  const { data: team = [], isLoading } = useQuery({
+    queryKey: ["admin", "equipe"],
+    queryFn: async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, admin_level")
+        .eq("role", "admin");
+      if (!roles?.length) return [];
+      const ids = roles.map((r: any) => r.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, nome, email")
+        .in("id", ids);
+      return (profiles || []).map((p: any) => ({
+        ...p,
+        admin_level: roles.find((r: any) => r.user_id === p.id)?.admin_level ?? null,
+      }));
+    },
+  });
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      // 1. Look up user by email in profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", inviteEmail.trim())
+        .maybeSingle();
+
+      if (!profile) {
+        toast.error("Usuário não encontrado", { description: "O e-mail precisa ter uma conta no sistema." });
+        return;
+      }
+
+      // 2. Check if already admin
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (existing) {
+        toast.error("Este usuário já é administrador.");
+        return;
+      }
+
+      // 3. Upsert role
+      const { error } = await supabase.from("user_roles").insert({
+        user_id: profile.id,
+        role: "admin",
+        admin_level: inviteLevel,
+      });
+
+      if (error) throw error;
+      toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
+      setInviteEmail("");
+      qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
+    } catch (e: any) {
+      toast.error("Erro ao convidar", { description: e.message });
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemove = async (memberId: string, memberEmail: string) => {
+    if (memberId === user?.id) { toast.error("Você não pode remover a si mesmo."); return; }
+    if (!confirm(`Remover acesso de admin de ${memberEmail}?`)) return;
+    setRemoving(memberId);
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", memberId)
+      .eq("role", "admin");
+    setRemoving(null);
+    if (error) { toast.error("Erro ao remover", { description: error.message }); return; }
+    toast.success("Acesso removido.");
+    qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
+  };
+
+  const handleChangeLevel = async (memberId: string, newLevel: NonNullable<AdminLevel>) => {
+    if (memberId === user?.id) { toast.error("Altere seu próprio nível através das configurações."); return; }
+    setChangingLevel(memberId);
+    const { error } = await supabase
+      .from("user_roles")
+      .update({ admin_level: newLevel })
+      .eq("user_id", memberId)
+      .eq("role", "admin");
+    setChangingLevel(null);
+    if (error) { toast.error("Erro ao atualizar nível", { description: error.message }); return; }
+    toast.success("Nível atualizado com sucesso.");
+    qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
+  };
+
+  return (
+    <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
+      <div>
+        <h2 className="text-2xl font-bold">Equipe Administrativa</h2>
+        <p className="text-sm text-slate-500 mt-1">Gerencie quem tem acesso ao painel e com quais permissões.</p>
+      </div>
+
+      {/* Permission levels legend */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {(Object.entries(ADMIN_LEVEL_LABELS) as [NonNullable<AdminLevel>, typeof ADMIN_LEVEL_LABELS[keyof typeof ADMIN_LEVEL_LABELS]][]).map(([level, meta]) => (
+          <div key={level} className={`p-4 rounded-xl border flex items-start gap-3 ${meta.color.replace("text-", "border-").split(" ")[0]}/20 bg-white`}>
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${meta.color}`}>
+              <meta.icon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">{meta.label}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                {level === "super_admin" && "Acesso total ao painel"}
+                {level === "admin" && "Gestão operacional"}
+                {level === "financeiro" && "Dashboard e financeiro"}
+                {level === "suporte" && "Pedidos e clientes (leitura)"}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Invite new admin */}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <h3 className="font-bold mb-1 flex items-center gap-2">
+          <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
+        </h3>
+        <p className="text-sm text-slate-500 mb-6">O usuário já precisa ter uma conta no sistema.</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="email@exemplo.com"
+            className="flex-1 p-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none"
+          />
+          <select
+            value={inviteLevel}
+            onChange={(e) => setInviteLevel(e.target.value as NonNullable<AdminLevel>)}
+            className="p-3 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-brand/20 outline-none"
+          >
+            <option value="suporte">Suporte</option>
+            <option value="financeiro">Financeiro</option>
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+          <Button
+            onClick={handleInvite}
+            disabled={inviting || !inviteEmail}
+            className="bg-brand text-white rounded-lg px-6 font-bold"
+          >
+            {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}
+          </Button>
+        </div>
+      </section>
+
+      {/* Team list */}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold">{team.length} administradores</h3>
+          <Lock className="h-4 w-4 text-slate-400" />
+        </div>
+        <div className="divide-y divide-slate-100">
+          {isLoading && (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="px-8 py-5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-24 rounded-lg" />
+              </div>
+            ))
+          )}
+          {!isLoading && team.map((member: any) => {
+            const meta = member.admin_level ? ADMIN_LEVEL_LABELS[member.admin_level as NonNullable<AdminLevel>] : null;
+            const isSelf = member.id === user?.id;
+            return (
+              <div key={member.id} className={`px-8 py-5 flex items-center justify-between gap-4 ${isSelf ? "bg-brand/5" : "hover:bg-slate-50"} transition-colors`}>
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {(member.nome || member.email || "?")[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-sm truncate">{member.nome || member.email}</p>
+                      {isSelf && <span className="text-[9px] font-bold uppercase text-brand bg-brand/10 px-1.5 py-0.5 rounded">Você</span>}
+                    </div>
+                    <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                    {meta && (
+                      <span className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${meta.color}`}>
+                        <meta.icon className="h-2.5 w-2.5" />
+                        {meta.label}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!isSelf && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <select
+                      value={member.admin_level ?? ""}
+                      disabled={changingLevel === member.id}
+                      onChange={(e) => handleChangeLevel(member.id, e.target.value as NonNullable<AdminLevel>)}
+                      className="text-xs p-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-brand/20 outline-none"
+                    >
+                      <option value="suporte">Suporte</option>
+                      <option value="financeiro">Financeiro</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </select>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={removing === member.id}
+                      onClick={() => handleRemove(member.id, member.email)}
+                      className="text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg px-3"
+                    >
+                      {removing === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}

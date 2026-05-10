@@ -3,6 +3,33 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
 export type Role = "cliente" | "profissional" | "admin";
+export type AdminLevel = "super_admin" | "admin" | "financeiro" | "suporte" | null;
+
+export type AdminSection =
+  | "dashboard"
+  | "pedidos"
+  | "profissionais"
+  | "clientes"
+  | "servicos"
+  | "financeiro"
+  | "config"
+  | "equipe";
+
+// Permission matrix per admin level
+const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
+  super_admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "financeiro", "config", "equipe"],
+  admin:       ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
+  financeiro:  ["dashboard", "financeiro"],
+  suporte:     ["pedidos", "clientes"],
+};
+
+// Sections where a level has read-only access (no mutations)
+export const READ_ONLY_SECTIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
+  super_admin: [],
+  admin:       [],
+  financeiro:  ["dashboard"],
+  suporte:     ["pedidos", "clientes"],
+};
 
 interface UserProfile {
   id: string;
@@ -16,6 +43,7 @@ interface AuthState {
   user: User | null;
   profile: UserProfile | null;
   roles: Role[];
+  adminLevel: AdminLevel;
   loading: boolean;
   rolesLoaded: boolean;
 }
@@ -26,6 +54,7 @@ export function useAuth() {
     user: null,
     profile: null,
     roles: [],
+    adminLevel: null,
     loading: true,
     rolesLoaded: false,
   });
@@ -36,16 +65,22 @@ export function useAuth() {
     const loadProfile = async (userId: string) => {
       const [{ data: profile }, { data: roles, error: rolesError }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
+        supabase.from("user_roles").select("role, admin_level").eq("user_id", userId),
       ]);
       if (!mounted) return;
       if (rolesError) console.error("[useAuth] roles query error:", rolesError);
+
+      const roleList = (roles ?? []).map((r) => r.role as Role);
+      const adminRow = (roles ?? []).find((r) => r.role === "admin");
+      const adminLevel = (adminRow?.admin_level ?? null) as AdminLevel;
+
       setState((s) => ({
         ...s,
         profile: profile
           ? { id: profile.id, nome: profile.nome, email: profile.email, whatsapp: profile.whatsapp }
           : null,
-        roles: (roles ?? []).map((r) => r.role as Role),
+        roles: roleList,
+        adminLevel,
         rolesLoaded: true,
       }));
     };
@@ -61,7 +96,7 @@ export function useAuth() {
       if (session?.user) {
         setTimeout(() => loadProfile(session.user.id), 0);
       } else {
-        setState((s) => ({ ...s, profile: null, roles: [], rolesLoaded: true }));
+        setState((s) => ({ ...s, profile: null, roles: [], adminLevel: null, rolesLoaded: true }));
       }
     });
 
@@ -83,14 +118,33 @@ export function useAuth() {
   }, []);
 
   const isReady = !state.loading && (state.user ? state.rolesLoaded : true);
+  const isAdmin = state.roles.includes("admin");
+  const isSuperAdmin = state.adminLevel === "super_admin";
+  const adminLevel = state.adminLevel;
+
+  const canAccess = (section: AdminSection): boolean => {
+    if (!isAdmin || !adminLevel) return false;
+    return PERMISSIONS[adminLevel]?.includes(section) ?? false;
+  };
+
+  const isReadOnly = (section: AdminSection): boolean => {
+    if (!isAdmin || !adminLevel) return true;
+    return READ_ONLY_SECTIONS[adminLevel]?.includes(section) ?? false;
+  };
+
+  const allowedTabs = isAdmin && adminLevel ? PERMISSIONS[adminLevel] : [];
 
   return {
     ...state,
-    // `loading` now stays true until session + roles are both resolved
     loading: !isReady,
     isLoggedIn: !!state.session,
-    isProfissional: state.roles.includes("profissional") || state.roles.includes("admin"),
-    isAdmin: state.roles.includes("admin"),
+    isProfissional: state.roles.includes("profissional") || isAdmin,
+    isAdmin,
+    isSuperAdmin,
+    adminLevel,
+    canAccess,
+    isReadOnly,
+    allowedTabs,
     // legacy compatibility
     profilePhoto: null as string | null,
     userData: {
