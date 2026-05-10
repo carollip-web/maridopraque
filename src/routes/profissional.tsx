@@ -20,7 +20,12 @@ import {
   CreditCard,
   User,
   Package,
+  DollarSign,
+  TrendingUp,
+  Star,
+  Power
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/profissional")({
   component: ProfissionalArea,
@@ -75,6 +80,12 @@ function ProfissionalArea() {
   const [loadingList, setLoadingList] = useState(true);
   const enviar = useServerFn(enviarOrcamento);
 
+  const [ativo, setAtivo] = useState(false);
+  const [mediaAvaliacoes, setMediaAvaliacoes] = useState<string>("—");
+  const [ganhosTotais, setGanhosTotais] = useState(0);
+  const [aReceber, setAReceber] = useState(0);
+  const [ticketMedio, setTicketMedio] = useState(0);
+
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user]);
@@ -94,6 +105,31 @@ function ProfissionalArea() {
     }
     const list = (data ?? []) as Orcamento[];
     setOrcamentos(list);
+
+    // Filter only those that belong to the current user for financial metrics
+    const meus = list.filter((o) => o.profissional_id === user?.id);
+    const pagos = meus.filter((o) => o.status === "pago");
+    const pendentesPgto = meus.filter((o) => o.status === "aprovado");
+    
+    const ganhos = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    const receber = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    const ticket = pagos.length > 0 ? ganhos / pagos.length : 0;
+
+    setGanhosTotais(ganhos);
+    setAReceber(receber);
+    setTicketMedio(ticket);
+
+    // Fetch Profile Status & Ratings
+    if (user) {
+      const [{ data: perfil }, { data: avs }] = await Promise.all([
+        supabase.from("profissional_perfil").select("ativo").eq("user_id", user.id).maybeSingle(),
+        supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id),
+      ]);
+      if (perfil) setAtivo(perfil.ativo);
+      if (avs && avs.length > 0) {
+        setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
+      }
+    }
 
     const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
     if (ids.length) {
@@ -183,27 +219,88 @@ function ProfissionalArea() {
   const filterBy = (statuses: Orcamento["status"][]) =>
     orcamentos.filter((o) => statuses.includes(o.status));
 
+  const handleToggleAtivo = async (checked: boolean) => {
+    if (!user) return;
+    setAtivo(checked);
+    const { error } = await supabase
+      .from("profissional_perfil")
+      .upsert({ user_id: user.id, ativo: checked, updated_at: new Date().toISOString() });
+    if (error) {
+      setAtivo(!checked);
+      toast.error("Erro ao alterar status");
+    } else {
+      toast.success(checked ? "Você está online e visível!" : "Você está offline.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-foreground text-background">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Wrench className="h-6 w-6 text-brand" />
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 bg-brand rounded-xl flex items-center justify-center">
+              <Wrench className="h-5 w-5 text-white" />
+            </div>
             <div>
-              <p className="text-xs uppercase tracking-widest text-background/60">Painel</p>
-              <h1 className="font-bold text-lg">Profissional</h1>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-background/50">Painel Operacional</p>
+              <h1 className="font-bold text-lg leading-tight">{user?.user_metadata?.nome || "Profissional"}</h1>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="text-sm flex items-center gap-2 text-background/70 hover:text-background"
-          >
-            <LogOut className="h-4 w-4" /> Sair
-          </button>
+          <div className="flex items-center gap-6">
+            <div className="hidden sm:flex items-center gap-2 bg-background/10 px-3 py-1.5 rounded-full">
+              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+              <span className="text-sm font-bold">{mediaAvaliacoes}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background/10 px-3 py-1.5 rounded-full">
+              <span className="text-xs font-bold text-background/80 hidden sm:inline-block">
+                {ativo ? "Online" : "Offline"}
+              </span>
+              <Switch checked={ativo} onCheckedChange={handleToggleAtivo} className="data-[state=checked]:bg-emerald-500" />
+            </div>
+            <button
+              onClick={logout}
+              className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-background/70 hover:text-red-400 transition-colors"
+            >
+              <Power className="h-4 w-4" /> Sair
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        
+        {/* Resumo Financeiro */}
+        <section className="grid gap-4 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <DollarSign className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ganhos Totais</p>
+              <p className="text-3xl font-black text-slate-900 leading-none">R$ {ganhosTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+              <Clock className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">A Receber</p>
+              <p className="text-3xl font-black text-slate-900 leading-none">R$ {aReceber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-border shadow-sm flex items-start gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ticket Médio</p>
+              <p className="text-3xl font-black text-slate-900 leading-none">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+        </section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Stat icon={Clock} label="Pendentes" value={counts.pendentes} accent="bg-amber-100 text-amber-800" />
           <Stat icon={Send} label="Enviados" value={counts.enviados} accent="bg-sky-100 text-sky-800" />
