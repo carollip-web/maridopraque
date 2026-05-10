@@ -20,18 +20,21 @@ import {
   Pencil,
   XCircle,
   CreditCard,
-  User,
-  Package,
   DollarSign,
   TrendingUp,
   Star,
-  Power
+  Power,
+  User,
+  Package,
+  Settings,
+  Briefcase,
+  LayoutGrid
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "servicos", "configuracoes"]).optional().catch("pedidos"),
   }),
   component: ProfissionalArea,
 });
@@ -113,7 +116,6 @@ function ProfissionalArea() {
     const list = (data ?? []) as Orcamento[];
     setOrcamentos(list);
 
-    // Filter only those that belong to the current user for financial metrics
     const meus = list.filter((o) => o.profissional_id === user?.id);
     const pagos = meus.filter((o) => o.status === "pago");
     const pendentesPgto = meus.filter((o) => o.status === "aprovado");
@@ -126,7 +128,6 @@ function ProfissionalArea() {
     setAReceber(receber);
     setTicketMedio(ticket);
 
-    // Fetch Profile Status & Ratings
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
         supabase.from("profissional_perfil").select("ativo, especialidades").eq("user_id", user.id).maybeSingle(),
@@ -250,8 +251,6 @@ function ProfissionalArea() {
     );
   }
 
-  // filterBy was moved up to be used in counts
-
   const handleToggleAtivo = async (checked: boolean) => {
     if (!user) return;
     setAtivo(checked);
@@ -272,7 +271,7 @@ function ProfissionalArea() {
     
     toast.loading("Gerando pedido de teste...", { id: "test-order" });
     const { error } = await supabase.from("orcamentos").insert({
-      cliente_id: user.id, // O próprio usuário atua como cliente para passar na RLS
+      cliente_id: user.id,
       service_name: testServiceName,
       status: "customizado_pendente",
       descricao: "⚠️ Pedido de teste gerado pelo sistema para demonstrar o Radar de Oportunidades.",
@@ -319,120 +318,61 @@ function ProfissionalArea() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        
-        {/* Top-Level Tabs Navigation */}
-        <div className="flex items-center gap-6 border-b border-border mb-8 overflow-x-auto">
-          <button 
-            onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
-            className={`pb-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${tab === 'pedidos' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          >
-            Gestão de Pedidos
-          </button>
-          <button 
-            onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
-            className={`pb-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${tab === 'configuracoes' ? 'border-brand text-brand' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          >
-            Configurações do Perfil
-          </button>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          <aside className="lg:w-64 shrink-0 space-y-6">
+            <nav className="flex flex-col gap-2">
+              <button 
+                onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'pedidos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <LayoutGrid className="h-4 w-4" /> Gestão de Pedidos
+              </button>
+              
+              <button 
+                onClick={() => navigate({ to: "/profissional", search: { tab: "servicos" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'servicos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Briefcase className="h-4 w-4" /> Meus Serviços
+              </button>
 
-        {tab === "configuracoes" ? (
-          <ProfissionalConfiguracoes />
-        ) : (
-          <div className="space-y-8">
-            {/* Resumo Financeiro */}
-        <section className="grid gap-5 sm:grid-cols-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-3xl border border-emerald-100/50 shadow-sm flex items-start gap-5 relative overflow-hidden group">
-            <div className="h-14 w-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10">
-              <DollarSign className="h-7 w-7" />
-            </div>
-            <div className="z-10">
-              <p className="text-[11px] font-extrabold text-emerald-700/70 uppercase tracking-widest mb-1">Ganhos Totais</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {ganhosTotais.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-            </div>
-            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-emerald-200/20 rounded-full blur-2xl transition-transform group-hover:scale-150" />
-          </div>
-          
-          <div className="bg-gradient-to-br from-sky-50 to-white p-6 rounded-3xl border border-sky-100/50 shadow-sm flex items-start gap-5 relative overflow-hidden group">
-            <div className="h-14 w-14 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0 z-10">
-              <Clock className="h-7 w-7" />
-            </div>
-            <div className="z-10">
-              <p className="text-[11px] font-extrabold text-sky-700/70 uppercase tracking-widest mb-1">A Receber</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {aReceber.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-            </div>
-            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-sky-200/20 rounded-full blur-2xl transition-transform group-hover:scale-150" />
-          </div>
+              <button 
+                onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'configuracoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Settings className="h-4 w-4" /> Configurações do Perfil
+              </button>
+            </nav>
+          </aside>
 
-          <div className="bg-gradient-to-br from-brand-soft/50 to-white p-6 rounded-3xl border border-brand/10 shadow-sm flex items-start gap-5 relative overflow-hidden group">
-            <div className="h-14 w-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center shrink-0 z-10">
-              <TrendingUp className="h-7 w-7" />
-            </div>
-            <div className="z-10">
-              <p className="text-[11px] font-extrabold text-brand/70 uppercase tracking-widest mb-1">Ticket Médio</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
-            </div>
-            <div className="absolute -right-8 -bottom-8 h-32 w-32 bg-brand/10 rounded-full blur-2xl transition-transform group-hover:scale-150" />
-          </div>
-        </section>
+          <main className="flex-1 min-w-0">
+            {tab === "configuracoes" ? (
+              <ProfissionalConfiguracoes />
+            ) : tab === "servicos" ? (
+              <div className="space-y-8">
+                <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">
+                  <div className="flex items-center justify-between mb-6">
+                     <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Meus Serviços em Andamento</h2>
+                     <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
+                       <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all font-medium">
+                         Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
+                       </TabsTrigger>
+                       <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all font-medium">
+                         Histórico <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
+                       </TabsTrigger>
+                     </TabsList>
+                  </div>
 
-        {loadingList ? (
-          <div className="p-20 text-center flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
-            <p className="text-sm text-muted-foreground font-medium">Sincronizando orçamentos...</p>
-          </div>
-        ) : (
-          <Tabs defaultValue="oportunidades" className="w-full animate-in fade-in duration-700">
-            <div className="flex items-center justify-between mb-6">
-               <div className="flex items-center gap-4">
-                 <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Painel de Demandas</h2>
-                 <Button onClick={handleGenerateTestOrder} variant="outline" size="sm" className="hidden lg:flex border-dashed border-brand text-brand hover:bg-brand/5">
-                   + Gerar Pedido Teste
-                 </Button>
-               </div>
-               <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
-                 <TabsTrigger value="oportunidades" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-purple-100 data-[state=active]:text-purple-900 data-[state=active]:shadow-none transition-all font-medium">
-                   Oportunidades (Radar) <span className="ml-1.5 opacity-60">({counts.oportunidades})</span>
-                 </TabsTrigger>
-                 <TabsTrigger value="elaboracao" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 data-[state=active]:shadow-none transition-all font-medium">
-                   Em Elaboração <span className="ml-1.5 opacity-60">({counts.elaboracao})</span>
-                 </TabsTrigger>
-                 <TabsTrigger value="enviados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-none transition-all font-medium">
-                   Aguardando Cliente <span className="ml-1.5 opacity-60">({counts.enviados})</span>
-                 </TabsTrigger>
-                 <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all font-medium hidden sm:flex">
-                   Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
-                 </TabsTrigger>
-                 <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all font-medium hidden sm:flex">
-                   Histórico <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
-                 </TabsTrigger>
-               </TabsList>
-            </div>
-
-            <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} emptyMsg="Radar limpo! Nenhuma oportunidade nova na sua região no momento." emptyIcon={CheckCircle2} />
-            </TabsContent>
-            <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Você não pegou nenhum pedido para orçar." emptyIcon={Clock} />
-            </TabsContent>
-            <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhum orçamento enviado aguardando aprovação do cliente no momento." emptyIcon={Send} />
-            </TabsContent>
-            <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
-            </TabsContent>
-            <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
-              <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
-            </TabsContent>
-          </Tabs>
-          )}
-        </div>
-        )}
-      </div>
-    </div>
-  );
-}
+                  <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
+                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
+                  </TabsContent>
+                  <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
+                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            ) : (
+              <div className="space-y-8">
 
 
 function Stat({
