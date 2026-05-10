@@ -1053,30 +1053,30 @@ function AdminEquipe() {
                     )}
                   </div>
                 </div>
-                {!isSelf && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <select
-                      value={member.admin_level ?? ""}
-                      disabled={changingLevel === member.id}
-                      onChange={(e) => handleChangeLevel(member.id, e.target.value as NonNullable<AdminLevel>)}
-                      className="text-xs p-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-brand/20 outline-none"
-                    >
-                      <option value="suporte">Suporte</option>
-                      <option value="financeiro">Financeiro</option>
-                      <option value="admin">Admin</option>
-                      <option value="super_admin">Super Admin</option>
-                    </select>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={removing === member.id}
-                      onClick={() => handleRemove(member.id, member.email)}
-                      className="text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg px-3"
-                    >
-                      {removing === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                    </Button>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={member.admin_level ?? ""}
+                    disabled={changingLevel === member.id}
+                    onChange={(e) => handleChangeLevel(member.id, e.target.value as NonNullable<AdminLevel>)}
+                    className="text-xs p-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-brand/20 outline-none"
+                  >
+                    <option value="suporte">Suporte</option>
+                    <option value="financeiro">Financeiro</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={removing === member.id || isSelf}
+                    onClick={() => handleRemove(member.id, member.email)}
+                    className={`rounded-lg px-3 ${isSelf ? "text-slate-300 cursor-not-allowed" : "text-red-500 hover:bg-red-50 hover:text-red-600"}`}
+                    title={isSelf ? "Você não pode remover a si mesmo" : "Remover acesso"}
+                  >
+                    {removing === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+
               </div>
             );
           })}
