@@ -754,42 +754,75 @@ function AdminProfissionais() {
                     </button>
                   </div>
                   {editingEsp ? (
-                    <div className="space-y-4">
-                      {ESPECIALIDADES_OPCOES.map((cat) => (
-                        <div key={cat.categoria}>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
-                            <cat.icon className="h-3 w-3" /> {cat.categoria}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {cat.opcoes.map((esp) => {
-                              const checked = espSelected.includes(esp);
-                              return (
-                                <button
-                                  key={esp}
-                                  type="button"
-                                  onClick={() => setEspSelected(checked
-                                    ? espSelected.filter((e) => e !== esp)
-                                    : [...espSelected, esp]
-                                  )}
-                                  className={`text-xs px-2.5 py-1 rounded-full font-medium border transition-all ${
-                                    checked
-                                      ? "bg-brand text-white border-brand"
-                                      : "bg-white text-slate-600 border-slate-200 hover:border-brand/50"
-                                  }`}
-                                >
-                                  {esp}
-                                </button>
-                              );
-                            })}
+                    <div className="space-y-6">
+                      {ESPECIALIDADES_OPCOES.map((cat) => {
+                        const allSelected = cat.opcoes.every(opt => espSelected.includes(opt));
+                        
+                        return (
+                          <div key={cat.categoria} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
+                                <cat.icon className="h-3.5 w-3.5" /> {cat.categoria}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (allSelected) {
+                                    setEspSelected(espSelected.filter(e => !cat.opcoes.includes(e)));
+                                  } else {
+                                    const others = espSelected.filter(e => !cat.opcoes.includes(e));
+                                    setEspSelected([...others, ...cat.opcoes]);
+                                  }
+                                }}
+                                className="text-[10px] font-bold text-brand hover:bg-brand/10 px-2 py-1 rounded-md transition-colors"
+                              >
+                                {allSelected ? "Remover todos" : "Selecionar todos"}
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {cat.opcoes.map((esp) => {
+                                const checked = espSelected.includes(esp);
+                                return (
+                                  <button
+                                    key={esp}
+                                    type="button"
+                                    onClick={() => setEspSelected(checked
+                                      ? espSelected.filter((e) => e !== esp)
+                                      : [...espSelected, esp]
+                                    )}
+                                    className={`text-[11px] px-3 py-1.5 rounded-xl font-semibold border transition-all ${
+                                      checked
+                                        ? "bg-brand text-white border-brand shadow-sm shadow-brand/20"
+                                        : "bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand"
+                                    }`}
+                                  >
+                                    {esp}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
+                        );
+                      })}
+                      <div className="pt-2">
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="text-[11px] font-bold text-slate-400">
+                            {espSelected.length} selecionada{espSelected.length !== 1 ? "s" : ""}
+                          </p>
+                          {espSelected.length > 0 && (
+                            <button 
+                              type="button" 
+                              onClick={() => setEspSelected([])}
+                              className="text-[10px] font-bold text-red-500 hover:underline"
+                            >
+                              Limpar tudo
+                            </button>
+                          )}
                         </div>
-                      ))}
-                      {espSelected.length > 0 && (
-                        <p className="text-[10px] text-slate-400">{espSelected.length} selecionada{espSelected.length !== 1 ? "s" : ""}</p>
-                      )}
-                      <Button onClick={handleSaveEsp} disabled={savingEsp} size="sm" className="w-full bg-brand text-white rounded-lg">
-                        {savingEsp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Salvar especialidades"}
-                      </Button>
+                        <Button onClick={handleSaveEsp} disabled={savingEsp} size="lg" className="w-full bg-brand text-white rounded-2xl h-12 font-bold shadow-lg shadow-brand/20">
+                          {savingEsp ? <Loader2 className="h-5 w-5 animate-spin" /> : "Salvar especialidades"}
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
