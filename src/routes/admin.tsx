@@ -900,7 +900,6 @@ function AdminEquipe() {
   };
 
   const handleChangeLevel = async (memberId: string, newLevel: NonNullable<AdminLevel>) => {
-    if (memberId === user?.id) { toast.error("Altere seu próprio nível através das configurações."); return; }
     setChangingLevel(memberId);
     const { error } = await supabase
       .from("user_roles")
