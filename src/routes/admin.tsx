@@ -342,6 +342,72 @@ function AdminPedidos() {
 
 /* ============== PROFISSIONAIS ============== */
 
+function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servicos" | "nota" }) {
+  const { data: details, isLoading } = useQuery({
+    queryKey: ["admin", "pro-details", proId, view],
+    queryFn: async () => {
+      if (view === "ganhos" || view === "servicos") {
+        const query = supabase
+          .from("orcamentos")
+          .select("id, created_at, valor, status, service_name, profiles(nome)")
+          .eq("profissional_id", proId);
+        
+        if (view === "ganhos") query.eq("status", "pago");
+        const { data } = await query.order("created_at", { ascending: false });
+        return data || [];
+      } else {
+        const { data } = await supabase
+          .from("avaliacoes")
+          .select("id, nota, comentario, created_at, cliente_id")
+          .eq("profissional_id", proId)
+          .order("created_at", { ascending: false });
+        return data || [];
+      }
+    }
+  });
+
+  if (isLoading) return <div className="mt-4 p-4 bg-white/5 rounded-xl animate-pulse text-white/50 text-xs">Carregando detalhes...</div>;
+
+  return (
+    <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10 space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
+      {details?.length === 0 && <p className="text-xs text-white/40 text-center py-4">Nenhum registro encontrado.</p>}
+      
+      {view === "nota" ? (
+        (details as any[]).map((av) => (
+          <div key={av.id} className="text-left border-b border-white/5 pb-2 last:border-0">
+            <div className="flex justify-between items-center mb-1">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`h-2.5 w-2.5 ${i < av.nota ? "fill-amber-400 text-amber-400" : "text-white/20"}`} />
+                ))}
+              </div>
+              <span className="text-[10px] text-white/30">{new Date(av.created_at).toLocaleDateString()}</span>
+            </div>
+            {av.comentario && <p className="text-xs text-white/70 italic line-clamp-2">"{av.comentario}"</p>}
+          </div>
+        ))
+      ) : (
+        (details as any[]).map((orc) => (
+          <div key={orc.id} className="flex justify-between items-center text-left border-b border-white/5 pb-2 last:border-0">
+            <div className="min-w-0">
+              <p className="text-xs font-bold truncate text-white/90">{orc.service_name || "Serviço sem nome"}</p>
+              <p className="text-[10px] text-white/40">{new Date(orc.created_at).toLocaleDateString()}</p>
+            </div>
+            <div className="text-right shrink-0 ml-3">
+              <p className="text-xs font-bold text-white">R$ {orc.valor || 0}</p>
+              <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                orc.status === "pago" ? "bg-green-500/20 text-green-400" : "bg-white/10 text-white/40"
+              }`}>
+                {orc.status}
+              </span>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 const ESPECIALIDADES_OPCOES = [
   {
     categoria: "Montagem",
@@ -391,6 +457,7 @@ function AdminProfissionais() {
   const [espSelected, setEspSelected] = useState<string[]>([]);
   const [savingEsp, setSavingEsp] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [detailView, setDetailView] = useState<"ganhos" | "servicos" | "nota" | null>(null);
 
   const { data: pros = [], isLoading } = useQuery({
     queryKey: ["admin", "profissionais"],
@@ -550,7 +617,7 @@ function AdminProfissionais() {
               {filtered.map((pro) => (
                 <button
                   key={pro.id}
-                  onClick={() => { setSelected(pro); setEditingEsp(false); setEspInput(pro.especialidades.join(", ")); }}
+                  onClick={() => { setSelected(pro); setEditingEsp(false); setDetailView(null); setEspSelected([...pro.especialidades]); }}
                   className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
                     selected?.id === pro.id ? "border-brand ring-2 ring-brand/20" : "border-slate-200"
                   }`}
@@ -607,23 +674,35 @@ function AdminProfissionais() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                {/* Stats */}
+                {/* Stats — clickable cards */}
                 <div className="grid grid-cols-3 gap-3 mt-5">
-                  <div className="bg-white/10 rounded-xl p-3 text-center">
-                    <p className="text-xs text-white/60">Ganhos</p>
-                    <p className="font-bold text-sm">R$ {selected.ganhos.toFixed(0)}</p>
-                  </div>
-                  <div className="bg-white/10 rounded-xl p-3 text-center">
-                    <p className="text-xs text-white/60">Serviços</p>
-                    <p className="font-bold text-sm">{selected.servicos}</p>
-                  </div>
-                  <div className="bg-white/10 rounded-xl p-3 text-center">
-                    <p className="text-xs text-white/60">Nota</p>
-                    <p className="font-bold text-sm flex items-center justify-center gap-0.5">
-                      {selected.rating != null ? <>{selected.rating.toFixed(1)} <Star className="h-3 w-3 text-amber-400" fill="currentColor" /></> : "—"}
-                    </p>
-                  </div>
+                  {[
+                    { key: "ganhos" as const, label: "Ganhos", value: `R$ ${selected.ganhos.toFixed(0)}` },
+                    { key: "servicos" as const, label: "Serviços", value: String(selected.servicos) },
+                    { key: "nota" as const, label: "Nota", value: selected.rating != null ? `${selected.rating.toFixed(1)} ★` : "—" },
+                  ].map(({ key, label, value }) => (
+                    <button
+                      key={key}
+                      onClick={() => setDetailView(detailView === key ? null : key)}
+                      className={`rounded-xl p-3 text-center transition-all ${
+                        detailView === key
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "bg-white/10 hover:bg-white/20 text-white"
+                      }`}
+                    >
+                      <p className={`text-xs ${detailView === key ? "text-slate-500" : "text-white/60"}`}>{label}</p>
+                      <p className="font-bold text-sm">{value}</p>
+                      <p className={`text-[9px] mt-0.5 ${detailView === key ? "text-brand" : "text-white/40"}`}>
+                        {detailView === key ? "fechar ▲" : "ver ▼"}
+                      </p>
+                    </button>
+                  ))}
                 </div>
+
+                {/* Inline detail view */}
+                {detailView && (
+                  <ProDetailView proId={selected.id} view={detailView} />
+                )}
               </div>
 
               {/* Body */}
