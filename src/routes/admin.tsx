@@ -25,6 +25,7 @@ import {
   Lock,
   UserPlus,
   Crown,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -342,6 +343,15 @@ function AdminPedidos() {
 /* ============== PROFISSIONAIS ============== */
 
 function AdminProfissionais() {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [selected, setSelected] = useState<any | null>(null);
+  const [editingEsp, setEditingEsp] = useState(false);
+  const [espInput, setEspInput] = useState("");
+  const [savingEsp, setSavingEsp] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
   const { data: pros = [], isLoading } = useQuery({
     queryKey: ["admin", "profissionais"],
     queryFn: async () => {
@@ -350,7 +360,7 @@ function AdminProfissionais() {
       if (ids.length === 0) return [];
 
       const [{ data: profs }, { data: perfis }, { data: orcs }, { data: avs }] = await Promise.all([
-        supabase.from("profiles").select("id, nome, email").in("id", ids),
+        supabase.from("profiles").select("id, nome, email, whatsapp").in("id", ids),
         supabase.from("profissional_perfil").select("*").in("user_id", ids),
         supabase.from("orcamentos").select("profissional_id, status, valor").in("profissional_id", ids),
         supabase.from("avaliacoes").select("profissional_id, nota").in("profissional_id", ids),
@@ -380,90 +390,304 @@ function AdminProfissionais() {
           id: p.id,
           nome: p.nome || p.email,
           email: p.email,
+          whatsapp: p.whatsapp,
           ativo: perfil?.ativo ?? true,
           especialidades: perfil?.especialidades || [],
+          cidade: perfil?.cidade || null,
+          bio: perfil?.bio || null,
+          slug: perfil?.slug || null,
           ganhos: s.ganhos,
           servicos: s.servicos,
           rating: s.n > 0 ? (s.nota / s.n) : null,
+          avaliacoes: s.n,
         };
       });
     }
   });
 
+  const filtered = pros.filter((p) => {
+    const matchSearch = !search ||
+      p.nome?.toLowerCase().includes(search.toLowerCase()) ||
+      p.email?.toLowerCase().includes(search.toLowerCase()) ||
+      p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
+    const matchStatus =
+      filterStatus === "todos" ||
+      (filterStatus === "ativo" && p.ativo) ||
+      (filterStatus === "inativo" && !p.ativo);
+    return matchSearch && matchStatus;
+  });
+
+  const handleToggleAtivo = async (pro: any) => {
+    setTogglingId(pro.id);
+    const { error } = await supabase
+      .from("profissional_perfil")
+      .update({ ativo: !pro.ativo })
+      .eq("user_id", pro.id);
+    setTogglingId(null);
+    if (error) { toast.error("Erro ao atualizar status"); return; }
+    toast.success(pro.ativo ? "Profissional desativado" : "Profissional ativado");
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    if (selected?.id === pro.id) setSelected({ ...selected, ativo: !pro.ativo });
+  };
+
+  const handleSaveEsp = async () => {
+    if (!selected) return;
+    setSavingEsp(true);
+    const novas = espInput.split(",").map((e) => e.trim()).filter(Boolean);
+    const { error } = await supabase
+      .from("profissional_perfil")
+      .update({ especialidades: novas })
+      .eq("user_id", selected.id);
+    setSavingEsp(false);
+    if (error) { toast.error("Erro ao salvar especialidades"); return; }
+    toast.success("Especialidades atualizadas");
+    setEditingEsp(false);
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    setSelected({ ...selected, especialidades: novas });
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Profissionais cadastrados</h2>
-        <p className="text-sm text-slate-500">{pros.length} no total</p>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Profissionais</h2>
+          <p className="text-sm text-slate-500">{pros.length} cadastrados · {pros.filter(p => p.ativo).length} ativos</p>
+        </div>
       </div>
 
-      {isLoading && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <div className="flex justify-between">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <Skeleton className="h-2 w-2 rounded-full" />
-              </div>
-              <Skeleton className="h-5 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
-              <div className="pt-4 border-t flex gap-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            </div>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, e-mail ou especialidade…"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
+          />
+        </div>
+        <div className="flex gap-2">
+          {(["todos", "ativo", "inativo"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${
+                filterStatus === s
+                  ? "bg-slate-900 text-white"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {s}
+            </button>
           ))}
         </div>
-      )}
-      {!isLoading && pros.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
-          Nenhum profissional cadastrado ainda.
-        </div>
-      )}
+      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {!isLoading && pros.map((pro) => (
-          <div key={pro.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-start justify-between mb-4">
-              <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold">
-                {pro.nome?.[0]?.toUpperCase() || "?"}
-              </div>
-              <div className={`h-2 w-2 rounded-full ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`} />
+      <div className="flex gap-6">
+        {/* List */}
+        <div className={`flex-1 min-w-0 ${selected ? "hidden lg:block" : ""}`}>
+          {isLoading && (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4">
+                  <Skeleton className="h-11 w-11 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              ))}
             </div>
-            <h3 className="font-bold text-slate-900 truncate">{pro.nome}</h3>
-            <p className="text-xs text-slate-500 truncate inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {pro.email}</p>
-            {pro.especialidades.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-3">
-                {pro.especialidades.slice(0, 3).map((e: string) => (
-                  <span key={e} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">{e}</span>
-                ))}
+          )}
+          {!isLoading && filtered.length === 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
+              Nenhum profissional encontrado.
+            </div>
+          )}
+          {!isLoading && (
+            <div className="space-y-3">
+              {filtered.map((pro) => (
+                <button
+                  key={pro.id}
+                  onClick={() => { setSelected(pro); setEditingEsp(false); setEspInput(pro.especialidades.join(", ")); }}
+                  className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
+                    selected?.id === pro.id ? "border-brand ring-2 ring-brand/20" : "border-slate-200"
+                  }`}
+                >
+                  <div className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}>
+                    {pro.nome?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-sm truncate">{pro.nome}</p>
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`} />
+                    </div>
+                    <p className="text-xs text-slate-500 truncate">{pro.email}</p>
+                    {pro.especialidades.length > 0 && (
+                      <div className="flex gap-1 mt-1.5 flex-wrap">
+                        {pro.especialidades.slice(0, 3).map((e: string) => (
+                          <span key={e} className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">{e}</span>
+                        ))}
+                        {pro.especialidades.length > 3 && <span className="text-[9px] text-slate-400">+{pro.especialidades.length - 3}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right hidden sm:block">
+                    {pro.rating != null && (
+                      <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
+                        {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-400">{pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Detail panel */}
+        {selected && (
+          <div className="w-full lg:w-96 shrink-0">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm sticky top-20 overflow-hidden">
+              {/* Header */}
+              <div className="bg-slate-900 p-6 text-white">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-lg">
+                      {selected.nome?.[0]?.toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold">{selected.nome}</p>
+                      <p className="text-xs text-white/60">{selected.email}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 mt-5">
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-xs text-white/60">Ganhos</p>
+                    <p className="font-bold text-sm">R$ {selected.ganhos.toFixed(0)}</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-xs text-white/60">Serviços</p>
+                    <p className="font-bold text-sm">{selected.servicos}</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-xs text-white/60">Nota</p>
+                    <p className="font-bold text-sm flex items-center justify-center gap-0.5">
+                      {selected.rating != null ? <>{selected.rating.toFixed(1)} <Star className="h-3 w-3 text-amber-400" fill="currentColor" /></> : "—"}
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Ganhos</p>
-                <p className="text-sm font-bold">R$ {pro.ganhos.toFixed(0)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Serviços</p>
-                <p className="text-sm font-bold">{pro.servicos}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">Nota</p>
-                <p className="text-sm font-bold inline-flex items-center gap-0.5">
-                  {pro.rating != null ? <>{pro.rating.toFixed(1)} <Star className="h-3 w-3 text-amber-500" fill="currentColor" /></> : "—"}
-                </p>
+
+              {/* Body */}
+              <div className="p-6 space-y-5">
+                {/* Status toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold">Status</p>
+                    <p className="text-xs text-slate-400">{selected.ativo ? "Ativo na plataforma" : "Desativado"}</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggleAtivo(selected)}
+                    disabled={togglingId === selected.id}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${selected.ativo ? "bg-green-500" : "bg-slate-200"}`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${selected.ativo ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
+                </div>
+
+                {/* Info */}
+                {selected.cidade && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Cidade</p>
+                    <p className="text-sm">{selected.cidade}</p>
+                  </div>
+                )}
+                {selected.whatsapp && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">WhatsApp</p>
+                    <p className="text-sm">{selected.whatsapp}</p>
+                  </div>
+                )}
+                {selected.bio && (
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Bio</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{selected.bio}</p>
+                  </div>
+                )}
+
+                {/* Especialidades */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase">Especialidades</p>
+                    <button
+                      onClick={() => { setEditingEsp(!editingEsp); setEspInput(selected.especialidades.join(", ")); }}
+                      className="text-[10px] font-bold text-brand hover:underline"
+                    >
+                      {editingEsp ? "Cancelar" : "Editar"}
+                    </button>
+                  </div>
+                  {editingEsp ? (
+                    <div className="space-y-2">
+                      <input
+                        value={espInput}
+                        onChange={(e) => setEspInput(e.target.value)}
+                        placeholder="Ex: Elétrica, Hidráulica, Pintura"
+                        className="w-full p-2.5 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none"
+                      />
+                      <p className="text-[10px] text-slate-400">Separe as especialidades por vírgula</p>
+                      <Button onClick={handleSaveEsp} disabled={savingEsp} size="sm" className="w-full bg-brand text-white rounded-lg">
+                        {savingEsp ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Salvar especialidades"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {selected.especialidades.length > 0
+                        ? selected.especialidades.map((e: string) => (
+                          <span key={e} className="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-medium">{e}</span>
+                        ))
+                        : <p className="text-sm text-slate-400">Nenhuma especialidade cadastrada</p>
+                      }
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                  {selected.slug && (
+                    <Button asChild variant="outline" size="sm" className="w-full rounded-xl justify-start gap-2">
+                      <Link to="/profissionais/perfil/$slug" params={{ slug: selected.slug }}>
+                        <ArrowUpRight className="h-4 w-4" /> Ver perfil público
+                      </Link>
+                    </Button>
+                  )}
+                  {selected.whatsapp && (
+                    <Button asChild variant="outline" size="sm" className="w-full rounded-xl justify-start gap-2 text-green-600 border-green-200 hover:bg-green-50">
+                      <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
+                        <Mail className="h-4 w-4" /> Contato via WhatsApp
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
 }
 
 /* ============== CLIENTES ============== */
+
 
 function AdminClientes() {
   const [q, setQ] = useState("");
