@@ -690,8 +690,6 @@ function OrcamentoCard({
           <Pencil className="h-4 w-4 mr-1.5" /> Revisar orçamento
         </Button>
       )}
-          </div>
-        )}
     </div>
   );
 }
