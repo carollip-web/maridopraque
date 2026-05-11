@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
+import { Route as ParaProfissionaisRouteImport } from './routes/para-profissionais'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as OrcamentosRouteImport } from './routes/orcamentos'
 import { Route as MateriaisAdminRouteImport } from './routes/materiais-admin'
@@ -57,6 +58,11 @@ const ProfissionaisRoute = ProfissionaisRouteImport.update({
 const PorqueRoute = PorqueRouteImport.update({
   id: '/porque',
   path: '/porque',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParaProfissionaisRoute = ParaProfissionaisRouteImport.update({
+  id: '/para-profissionais',
+  path: '/para-profissionais',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PagamentoRoute = PagamentoRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
+  '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
+  '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
+  '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
+    | '/para-profissionais'
     | '/porque'
     | '/profissionais'
     | '/profissional'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
+    | '/para-profissionais'
     | '/porque'
     | '/profissionais'
     | '/profissional'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/materiais-admin'
     | '/orcamentos'
     | '/pagamento'
+    | '/para-profissionais'
     | '/porque'
     | '/profissionais'
     | '/profissional'
@@ -266,6 +278,7 @@ export interface RootRouteChildren {
   MateriaisAdminRoute: typeof MateriaisAdminRoute
   OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
+  ParaProfissionaisRoute: typeof ParaProfissionaisRoute
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRouteWithChildren
   ProfissionalRoute: typeof ProfissionalRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/porque'
       fullPath: '/porque'
       preLoaderRoute: typeof PorqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/para-profissionais': {
+      id: '/para-profissionais'
+      path: '/para-profissionais'
+      fullPath: '/para-profissionais'
+      preLoaderRoute: typeof ParaProfissionaisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pagamento': {
@@ -457,6 +477,7 @@ const rootRouteChildren: RootRouteChildren = {
   MateriaisAdminRoute: MateriaisAdminRoute,
   OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
+  ParaProfissionaisRoute: ParaProfissionaisRoute,
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRouteWithChildren,
   ProfissionalRoute: ProfissionalRoute,
