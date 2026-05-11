@@ -427,6 +427,10 @@ function ProfissionalArea() {
           <main className="flex-1 min-w-0">
             {tab === "configuracoes" ? (
               <ProfissionalConfiguracoes />
+            ) : tab === "financeiro" ? (
+              <ProfissionalFinanceiro />
+            ) : tab === "avaliacoes" ? (
+              <ProfissionalAvaliacoes />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
                 <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">
