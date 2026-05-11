@@ -27,8 +27,10 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SlotPicker } from "@/components/SlotPicker";
+import { toast } from "sonner";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -542,7 +544,9 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
-  const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
+  const [approvalStep, setApprovalStep] = useState<null | "schedule" | "confirm" | "processing" | "success">(null);
+  const [dataAgendada, setDataAgendada] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["cliente", "pedidos", user?.id],
@@ -585,15 +589,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const getPedidoStatus = (id: string, defaultStatus: string) =>
     pedidoStatuses[id] ?? defaultStatus;
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
+    if (!selectedPedido) return;
     setApprovalStep("processing");
-    setTimeout(() => {
-      // Update status in local store
-      if (selectedPedido) {
-        setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
-      }
-      setApprovalStep("success");
-    }, 2200);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({
+        status: "aprovado",
+        data_aprovacao: new Date().toISOString(),
+        data_agendada: dataAgendada ? dataAgendada.toISOString() : null,
+      })
+      .eq("id", selectedPedido.id);
+    if (error) {
+      toast.error("Erro ao aprovar", { description: error.message });
+      setApprovalStep("confirm");
+      return;
+    }
+    setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
+    queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+    setApprovalStep("success");
   };
 
   const selectedPedido = pedidoId ? pedidos.find(p => p.id === pedidoId) : null;
@@ -708,7 +722,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     {sp.status === "Aguardando Aprovação" && (
                        <Button 
                          className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
-                         onClick={() => setApprovalStep("confirm")}
+                         onClick={() => { setDataAgendada(null); setApprovalStep(sp.profissional_id ? "schedule" : "confirm"); }}
                        >
                          Aprovar Orçamento
                        </Button>
@@ -791,10 +805,34 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         {/* Approval Modal */}
         {approvalStep && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => approvalStep === "confirm" ? setApprovalStep(null) : undefined} />
-            <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => (approvalStep === "confirm" || approvalStep === "schedule") ? setApprovalStep(null) : undefined} />
+            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
 
-              {/* Step 1: Confirm */}
+              {/* Step 0: Schedule */}
+              {approvalStep === "schedule" && selectedPedido?.profissional_id && (
+                <div className="p-8 md:p-10">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold">Escolha o horário</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">Selecione data e hora disponíveis na agenda do profissional.</p>
+                  </div>
+                  <SlotPicker
+                    profissionalId={selectedPedido.profissional_id}
+                    value={dataAgendada}
+                    onChange={setDataAgendada}
+                  />
+                  <div className="flex gap-3 mt-8">
+                    <Button variant="outline" onClick={() => setApprovalStep(null)} className="flex-1 rounded-full h-12 font-bold">Cancelar</Button>
+                    <Button
+                      disabled={!dataAgendada}
+                      onClick={() => setApprovalStep("confirm")}
+                      className="flex-1 bg-brand text-white rounded-full h-12 font-bold shadow-lg disabled:opacity-50"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {approvalStep === "confirm" && (
                 <div className="p-8 md:p-10">
                   <div className="text-center mb-8">
@@ -822,6 +860,12 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       <span className="text-muted-foreground">Taxa de visita</span>
                       <span className="font-bold">R$ 30,00</span>
                     </div>
+                    {dataAgendada && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Agendado para</span>
+                        <span className="font-bold">{dataAgendada.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+                      </div>
+                    )}
                     <div className="pt-3 border-t border-slate-200 flex justify-between">
                       <span className="font-bold text-brand">Total</span>
                       <span className="font-bold text-brand text-lg">{sp.price}</span>
