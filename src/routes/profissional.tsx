@@ -285,6 +285,23 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
+  // Auto-scroll & ensure correct tab when arriving from a notification with ?orcamentoId=...
+  useEffect(() => {
+    if (!orcamentoId || orcamentos.length === 0) return;
+    const o = orcamentos.find((x) => x.id === orcamentoId);
+    if (!o) return;
+    // Ensure we're on the pedidos tab so the card is rendered
+    if (tab !== "pedidos") {
+      navigate({ to: "/profissional", search: { tab: "pedidos", orcamentoId } as any });
+      return;
+    }
+    const t = setTimeout(() => {
+      const el = document.getElementById(`orc-${orcamentoId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [orcamentoId, orcamentos.length, tab, navigate]);
+
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
     const g = clienteGeo[clienteId];
