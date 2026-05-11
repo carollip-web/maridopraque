@@ -109,12 +109,16 @@ export function Header() {
                          <div 
                            key={n.id} 
                            className={`p-4 border-b border-border transition-colors cursor-pointer group ${n.read ? "bg-white opacity-60 hover:opacity-100" : "bg-brand/5 hover:bg-brand/10"}`}
-                           onClick={() => {
-                             markAsRead(n.id);
-                             setShowNotifications(false);
-                             const dest = isProfissional ? "/profissional" : isAdmin ? "/admin" : "/cliente";
-                             navigate({ to: dest, search: { tab: "notificacoes", id: String(n.id) } as any });
-                           }}
+                            onClick={() => {
+                              markAsRead(n.id);
+                              setShowNotifications(false);
+                              if (n.link) {
+                                window.location.href = n.link;
+                              } else {
+                                const dest = isProfissional ? "/profissional" : isAdmin ? "/admin" : "/cliente";
+                                navigate({ to: dest, search: { tab: "notificacoes", id: String(n.id) } as any });
+                              }
+                            }}
                          >
                             <div className="flex justify-between items-start mb-1">
                                <p className={`text-sm font-bold group-hover:text-brand transition-colors ${!n.read ? "text-brand" : "text-foreground"}`}>{n.title}</p>
