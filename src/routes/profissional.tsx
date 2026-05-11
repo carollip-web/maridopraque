@@ -118,6 +118,8 @@ function ProfissionalArea() {
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [minhasPropostas, setMinhasPropostas] = useState<any[]>([]);
+  const [materiaisCat, setMateriaisCat] = useState<any[]>([]);
+  const [propostasMateriais, setPropostasMateriais] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [loadingList, setLoadingList] = useState(true);
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
@@ -954,7 +956,9 @@ function Grid({
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
   disableChat?: boolean;
-  minhasPropostas?: any[];
+  minhaProposta?: any;
+  materiaisCat?: any[];
+  propostaMateriais?: any[];
 }) {
   if (items.length === 0) {
     return (
@@ -989,6 +993,8 @@ function Grid({
           userId={userId}
           onRecusar={onRecusar}
           minhaProposta={minhasPropostas?.find(p => p.orcamento_id === o.id)}
+          materiaisCat={materiaisCat}
+          propostaMateriais={propostasMateriais?.filter(pm => pm.proposta_id === minhasPropostas?.find(p => p.orcamento_id === o.id)?.id)}
         />
       ))}
     </div>
@@ -1021,7 +1027,9 @@ function OrcamentoCard({
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
   disableChat?: boolean;
-  minhasPropostas?: any[];
+  minhaProposta?: any;
+  materiaisCat?: any[];
+  propostaMateriais?: any[];
 }) {
   const isOportunidade = !minhaProposta && mode === "pegar";
   const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
@@ -1031,6 +1039,18 @@ function OrcamentoCard({
   const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(minhaProposta?.observacoes ?? o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
+  const [picked, setPicked] = useState<Record<string, number>>(() => {
+    if (propostaMateriais && propostaMateriais.length > 0) {
+      const init: Record<string, number> = {};
+      propostaMateriais.forEach(pm => init[pm.material_id] = pm.quantidade);
+      return init;
+    } else if (materiais && materiais.length > 0 && !minhaProposta) {
+      const init: Record<string, number> = {};
+      materiais.forEach(m => init[m.material_id!] = m.quantidade);
+      return init;
+    }
+    return {};
+  });
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
   const [termoOpen, setTermoOpen] = useState(false);
 
@@ -1235,7 +1255,7 @@ function OrcamentoCard({
             )}
           </div>
         )}
-        {materiais.length > 0 && (
+        {materiais.length > 0 && !editing && (
           <div className="rounded-xl bg-slate-50 p-3 space-y-1">
             <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase">
               <Package className="h-3 w-3" /> Materiais ({materiais.length})
@@ -1327,11 +1347,53 @@ function OrcamentoCard({
                     Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
                   </p>
                 )}
-                {Number(o.taxa_material) > 0 && (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Materiais: R$ {Number(o.taxa_material).toFixed(2)} (já cotados pelo cliente)
-                  </p>
-                )}
+              </div>
+              <div className="pt-2">
+                <label className="text-xs uppercase font-bold text-muted-foreground mb-2 block">Materiais Inclusos</label>
+                <div className="space-y-2">
+                  {Object.entries(picked).map(([id, qtd]) => {
+                    const mat = materiaisCat?.find((m) => m.id === id);
+                    if (!mat) return null;
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <div className="flex-1 text-sm">{mat.nome}</div>
+                        <div className="flex items-center border border-border rounded-lg overflow-hidden h-9">
+                          <button
+                            type="button"
+                            className="px-3 hover:bg-slate-100 font-bold"
+                            onClick={() => setPicked(p => { const np = {...p}; np[id] -= 1; if (np[id] <= 0) delete np[id]; return np; })}
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center text-sm">{qtd}</span>
+                          <button
+                            type="button"
+                            className="px-3 hover:bg-slate-100 font-bold"
+                            onClick={() => setPicked(p => ({...p, [id]: p[id] + 1}))}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <select 
+                    className="w-full mt-2 h-10 px-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 text-sm"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val) {
+                        setPicked(p => ({...p, [val]: (p[val] || 0) + 1}));
+                        e.target.value = "";
+                      }
+                    }}
+                    value=""
+                  >
+                    <option value="" disabled>+ Adicionar material do catálogo...</option>
+                    {materiaisCat?.filter(m => !picked[m.id]).map(m => (
+                      <option key={m.id} value={m.id}>{m.nome} (R$ {m.preco_atual}/{m.unidade})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>

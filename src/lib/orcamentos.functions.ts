@@ -67,6 +67,7 @@ const enviarSchema = z.object({
   orcamentoId: z.string().uuid(),
   valorServico: z.number().positive().max(100000),
   observacoes: z.string().trim().max(2000).optional(),
+  materiais: z.array(materialItemSchema).max(30).optional(),
 });
 
 export const enviarOrcamento = createServerFn({ method: "POST" })
@@ -109,7 +110,35 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     
-    // Also mark the orcamento_materiais if any existed
+    // Process proposal materials if provided
+    if (data.materiais && data.materiais.length > 0) {
+      const ids = data.materiais.map((m) => m.materialId);
+      const { data: mats, error: e2 } = await supabase
+        .from("materiais")
+        .select("id, nome, unidade, preco_atual")
+        .in("id", ids);
+      if (e2) throw new Error(e2.message);
+
+      const items = data.materiais
+        .map((m) => {
+          const mat = mats?.find((x) => x.id === m.materialId);
+          if (!mat) return null;
+          return {
+            proposta_id: row.id,
+            material_id: mat.id,
+            nome_snapshot: mat.nome,
+            unidade_snapshot: mat.unidade,
+            quantidade: m.quantidade,
+            preco_unitario: Number(mat.preco_atual),
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (items.length > 0) {
+        const { error: e3 } = await (supabase as any).from("proposta_materiais").insert(items);
+        if (e3) throw new Error(e3.message);
+      }
+    }
     
     return { proposta: row };
   });
@@ -162,7 +191,26 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     if (e1) throw new Error(e1.message);
 
     // Reject other proposals
+    // Reject other proposals
     await (supabase as any).from("propostas").update({ status: 'recusada' }).eq("orcamento_id", data.orcamentoId).neq("id", data.propostaId);
+
+    // Copy materials from proposta_materiais to orcamento_materiais
+    const { data: pMats } = await (supabase as any).from("proposta_materiais").select("*").eq("proposta_id", prop.id);
+    if (pMats && pMats.length > 0) {
+      // First clear existing orcamento_materiais if any
+      await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+      // Insert new ones
+      await supabase.from("orcamento_materiais").insert(
+        pMats.map((m: any) => ({
+          orcamento_id: data.orcamentoId,
+          material_id: m.material_id,
+          nome_snapshot: m.nome_snapshot,
+          unidade_snapshot: m.unidade_snapshot,
+          quantidade: m.quantidade,
+          preco_unitario: m.preco_unitario,
+        }))
+      );
+    }
 
     // Update orcamento
     const { data: row, error } = await supabase
