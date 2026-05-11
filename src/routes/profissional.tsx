@@ -692,14 +692,29 @@ function OrcamentoCard({
       </div>
 
       <div className="text-sm space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
           <User className="h-4 w-4 shrink-0" />
           <span className="truncate">{cliente?.nome || "Cliente"}</span>
+          {(clienteCidade || distKm != null) && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              {clienteCidade}{distKm != null && ` · ${distKm.toFixed(1)} km`}
+            </span>
+          )}
         </div>
         {o.descricao && (
           <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">
             {o.descricao}
           </p>
+        )}
+        {o.fotos_problema && o.fotos_problema.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {o.fotos_problema.map((u) => (
+              <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                <img src={u} alt="Foto do problema" className="h-16 w-16 rounded-lg object-cover border border-border hover:opacity-90 transition" />
+              </a>
+            ))}
+          </div>
         )}
         {o.valor != null && !editing && (
           <div>
