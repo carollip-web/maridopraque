@@ -440,6 +440,8 @@ function ProfissionalArea() {
               <ProfissionalFinanceiro />
             ) : tab === "avaliacoes" ? (
               <ProfissionalAvaliacoes />
+            ) : tab === "agenda" ? (
+              <ProfissionalAgenda />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
                 <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">
