@@ -53,6 +53,8 @@ export type Database = {
           created_at: string
           id: string
           is_padrao: boolean
+          lat: number | null
+          lng: number | null
           logradouro: string
           numero: string | null
           rotulo: string
@@ -68,6 +70,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_padrao?: boolean
+          lat?: number | null
+          lng?: number | null
           logradouro: string
           numero?: string | null
           rotulo?: string
@@ -83,6 +87,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_padrao?: boolean
+          lat?: number | null
+          lng?: number | null
           logradouro?: string
           numero?: string | null
           rotulo?: string
@@ -247,6 +253,8 @@ export type Database = {
           data_aprovacao: string | null
           data_pagamento: string | null
           descricao: string | null
+          fotos_concluido: string[]
+          fotos_problema: string[]
           id: string
           observacoes_profissional: string | null
           profissional_id: string | null
@@ -267,6 +275,8 @@ export type Database = {
           data_aprovacao?: string | null
           data_pagamento?: string | null
           descricao?: string | null
+          fotos_concluido?: string[]
+          fotos_problema?: string[]
           id?: string
           observacoes_profissional?: string | null
           profissional_id?: string | null
@@ -287,6 +297,8 @@ export type Database = {
           data_aprovacao?: string | null
           data_pagamento?: string | null
           descricao?: string | null
+          fotos_concluido?: string[]
+          fotos_problema?: string[]
           id?: string
           observacoes_profissional?: string | null
           profissional_id?: string | null
@@ -347,6 +359,9 @@ export type Database = {
           created_at: string
           especialidades: string[] | null
           foto_url: string | null
+          lat: number | null
+          lng: number | null
+          raio_atendimento_km: number
           slug: string | null
           updated_at: string
           user_id: string
@@ -358,6 +373,9 @@ export type Database = {
           created_at?: string
           especialidades?: string[] | null
           foto_url?: string | null
+          lat?: number | null
+          lng?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           updated_at?: string
           user_id: string
@@ -369,6 +387,9 @@ export type Database = {
           created_at?: string
           especialidades?: string[] | null
           foto_url?: string | null
+          lat?: number | null
+          lng?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           updated_at?: string
           user_id?: string
