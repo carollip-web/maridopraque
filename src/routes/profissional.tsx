@@ -456,6 +456,7 @@ function Grid({
   orcMats,
   mode,
   enviar,
+  refresh,
   emptyMsg,
   emptyIcon: EmptyIcon
 }: {
