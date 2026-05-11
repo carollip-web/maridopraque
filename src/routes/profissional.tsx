@@ -430,6 +430,8 @@ function ProfissionalArea() {
               </div>
             ) : (
               <div className="space-y-8">
+                <NotificationPermissionBanner />
+                <ProfileCompletenessCard />
                 <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
                     <div>
