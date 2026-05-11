@@ -220,7 +220,7 @@ function ProfissionalArea() {
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
         supabase.from("profissional_perfil").select("ativo, especialidades, lat, lng, raio_atendimento_km").eq("user_id", user.id).maybeSingle(),
-        supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id),
+        supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!),
       ]);
       if (perfil) {
         setAtivo(perfil.ativo);
@@ -233,7 +233,7 @@ function ProfissionalArea() {
       const { data: recs } = await supabase
         .from("orcamento_recusas")
         .select("orcamento_id")
-        .eq("profissional_id", user.id);
+        .eq("profissional_id", user.id!);
       setRecusados(new Set((recs ?? []).map((r: any) => r.orcamento_id)));
     }
 
@@ -271,7 +271,7 @@ function ProfissionalArea() {
       const { data: propsData } = await (supabase as any)
         .from("propostas")
         .select("*")
-        .eq("profissional_id", user.id)
+        .eq("profissional_id", user?.id!)
         .in("orcamento_id", orcIds);
       setMinhasPropostas(propsData || []);
 
@@ -959,9 +959,9 @@ function Grid({
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
   disableChat?: boolean;
-  minhaProposta?: any;
+  minhasPropostas?: any[];
   materiaisCat?: any[];
-  propostaMateriais?: any[];
+  propostasMateriais?: any[];
 }) {
   if (items.length === 0) {
     return (
@@ -995,9 +995,9 @@ function Grid({
           refresh={refresh}
           userId={userId}
           onRecusar={onRecusar}
-          minhaProposta={minhasPropostas?.find(p => p.orcamento_id === o.id)}
+          minhaProposta={minhasPropostas?.find((p: any) => p.orcamento_id === o.id)}
           materiaisCat={materiaisCat}
-          propostaMateriais={propostasMateriais?.filter(pm => pm.proposta_id === minhasPropostas?.find(p => p.orcamento_id === o.id)?.id)}
+          propostaMateriais={propostasMateriais?.filter((pm: any) => pm.proposta_id === minhasPropostas?.find((p: any) => p.orcamento_id === o.id)?.id)}
         />
       ))}
     </div>
@@ -1052,7 +1052,7 @@ function OrcamentoCard({
       return init;
     } else if (materiais && materiais.length > 0 && !minhaProposta) {
       const init: Record<string, number> = {};
-      materiais.forEach(m => init[m.material_id!] = m.quantidade);
+      materiais.forEach((m: any) => init[m.material_id!] = m.quantidade);
       return init;
     }
     return {};

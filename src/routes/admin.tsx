@@ -72,7 +72,7 @@ function AdminArea() {
       navigate({ to: "/login" });
     } else if (!isAdmin) {
       toast.error("Acesso restrito a administradores.");
-      navigate({ to: "/cliente" });
+      navigate({ to: "/cliente", search: { tab: "inicio", id: undefined, pedidoId: undefined, chat: undefined, details: false } as any });
     }
   }, [loading, isLoggedIn, isAdmin, navigate]);
 
@@ -158,7 +158,7 @@ function AdminArea() {
             Painel administrativo · {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/cliente" className="text-xs font-bold text-slate-500 hover:text-brand">
+            <Link to="/cliente" search={{ tab: "inicio" } as any} className="text-xs font-bold text-slate-500 hover:text-brand">
               Ver app como cliente
             </Link>
             <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">

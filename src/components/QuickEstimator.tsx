@@ -131,8 +131,8 @@ export function QuickEstimator() {
                 to="/orcamentos"
                 search={
                   selected
-                    ? { new: 1, serviceId: selected.id, categoria: selected.categoria }
-                    : { new: 1 }
+                    ? { new: 1, serviceId: selected.id, categoria: selected.categoria, serviceName: selected.nome }
+                    : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
                 }
               >
                 Pedir orçamento <ArrowRight className="ml-1 h-4 w-4" />
@@ -143,12 +143,12 @@ export function QuickEstimator() {
                 <Link
                   to="/servicos/$categoria"
                   params={{ categoria: selected.categoria }}
-                  search={{ service: selected.id }}
+                  search={{ service: selected.id, q: undefined } as any}
                 >
                   Ver catálogo completo
                 </Link>
               ) : (
-                <Link to="/servicos">Ver catálogo completo</Link>
+                <Link to="/servicos" search={{ q: undefined } as any}>Ver catálogo completo</Link>
               )}
             </Button>
           </div>

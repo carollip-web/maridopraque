@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosAdminRouteImport } from './routes/servicos-admin'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ProfissionalCadastroRouteImport } from './routes/profissional-cadastro'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
 import { Route as PorqueRouteImport } from './routes/porque'
@@ -24,6 +25,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AjudaRouteImport } from './routes/ajuda'
+import { Route as AdminValidacaoRouteImport } from './routes/admin-validacao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
@@ -43,6 +45,11 @@ const ServicosRoute = ServicosRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfissionalCadastroRoute = ProfissionalCadastroRouteImport.update({
+  id: '/profissional-cadastro',
+  path: '/profissional-cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfissionalRoute = ProfissionalRouteImport.update({
@@ -105,6 +112,11 @@ const AjudaRoute = AjudaRouteImport.update({
   path: '/ajuda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminValidacaoRoute = AdminValidacaoRouteImport.update({
+  id: '/admin-validacao',
+  path: '/admin-validacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -134,6 +146,7 @@ const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
@@ -146,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
@@ -156,6 +170,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
@@ -168,6 +183,7 @@ export interface FileRoutesByTo {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
@@ -179,6 +195,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
@@ -191,6 +208,7 @@ export interface FileRoutesById {
   '/porque': typeof PorqueRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
+  '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
@@ -203,6 +221,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
     | '/cliente'
@@ -215,6 +234,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
@@ -225,6 +245,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
     | '/cliente'
@@ -237,6 +258,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
@@ -247,6 +269,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
     | '/cliente'
@@ -259,6 +282,7 @@ export interface FileRouteTypes {
     | '/porque'
     | '/profissionais'
     | '/profissional'
+    | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
@@ -270,6 +294,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
   CheckoutRoute: typeof CheckoutRoute
   ClienteRoute: typeof ClienteRoute
@@ -282,6 +307,7 @@ export interface RootRouteChildren {
   PorqueRoute: typeof PorqueRoute
   ProfissionaisRoute: typeof ProfissionaisRouteWithChildren
   ProfissionalRoute: typeof ProfissionalRoute
+  ProfissionalCadastroRoute: typeof ProfissionalCadastroRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
@@ -308,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profissional-cadastro': {
+      id: '/profissional-cadastro'
+      path: '/profissional-cadastro'
+      fullPath: '/profissional-cadastro'
+      preLoaderRoute: typeof ProfissionalCadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profissional': {
@@ -394,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AjudaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-validacao': {
+      id: '/admin-validacao'
+      path: '/admin-validacao'
+      fullPath: '/admin-validacao'
+      preLoaderRoute: typeof AdminValidacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -469,6 +509,7 @@ const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,
   CheckoutRoute: CheckoutRoute,
   ClienteRoute: ClienteRoute,
@@ -481,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   PorqueRoute: PorqueRoute,
   ProfissionaisRoute: ProfissionaisRouteWithChildren,
   ProfissionalRoute: ProfissionalRoute,
+  ProfissionalCadastroRoute: ProfissionalCadastroRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
@@ -488,3 +530,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

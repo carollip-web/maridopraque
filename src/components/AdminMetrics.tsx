@@ -279,7 +279,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-bold text-slate-900">Últimos Pedidos</h3>
-          <Link to="/orcamentos" className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
+          <Link to="/orcamentos" search={{ new: 0 } as any} className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1">
             Ver todos <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>

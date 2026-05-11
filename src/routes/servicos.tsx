@@ -333,8 +333,8 @@ function CategoriaSection({
                 to="/orcamentos"
                 search={
                   selected
-                    ? { new: 1, serviceId: selected.id, categoria: cat.nome }
-                    : { new: 1 }
+                    ? { new: 1, serviceId: selected.id, categoria: cat.nome, serviceName: selected.nome }
+                    : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
                 }
               >
                 Solicitar Orçamento <ArrowRight className="ml-1 h-4 w-4" />

@@ -65,10 +65,10 @@ function ClienteArea() {
   const navigate = useNavigate();
 
   const setActiveTab = (newTab: Tab) => {
-    navigate({ 
-      to: "/cliente", 
-      search: (prev: any) => ({ tab: newTab, id: undefined, pedidoId: undefined, details: undefined })
-    });
+      navigate({ 
+        to: "/cliente", 
+        search: (prev: any) => ({ tab: newTab, id: undefined, pedidoId: undefined, chat: undefined, details: false })
+      });
   };
 
   const handleLogout = () => {
@@ -324,7 +324,7 @@ function NotificacoesTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void })
             <Button 
               onClick={() => {
                 if (selectedNotification.pedidoId) {
-                  navigate({ to: "/cliente", search: () => ({ tab: "pedidos" as Tab, pedidoId: selectedNotification.pedidoId, id: undefined, details: undefined }) });
+                  navigate({ to: "/cliente", search: () => ({ tab: "pedidos" as Tab, pedidoId: selectedNotification.pedidoId, id: undefined, chat: undefined, details: false }) });
                 } else {
                   setActiveTab("pedidos");
                 }
@@ -558,11 +558,14 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     queryKey: ["cliente", "pedidos", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
         .select("*")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
+      
+      if (error) console.error("Error fetching orcamentos:", error);
+      console.log("Fetched orcamentos for user", user.id, ":", data);
       
       const list = data || [];
       

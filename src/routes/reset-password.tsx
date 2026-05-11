@@ -40,7 +40,7 @@ function ResetPasswordPage() {
     setLoading(false);
     if (error) return setError(error.message);
     setInfo("Senha alterada com sucesso! Redirecionando...");
-    setTimeout(() => navigate({ to: "/cliente" }), 1500);
+    setTimeout(() => navigate({ to: "/cliente", search: { tab: "inicio", id: undefined, pedidoId: undefined, chat: undefined, details: false } as any }), 1500);
   };
 
   return (

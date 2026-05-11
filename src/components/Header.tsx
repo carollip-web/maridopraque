@@ -252,6 +252,7 @@ export function Header() {
                            <>
                              <Link
                                to="/cliente"
+                               search={{ tab: "inicio" } as any}
                                className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                                onClick={() => setShowProfileMenu(false)}
                              >
@@ -259,6 +260,7 @@ export function Header() {
                              </Link>
                              <Link
                                to="/orcamentos"
+                               search={{ new: 0 } as any}
                                className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                                onClick={() => setShowProfileMenu(false)}
                              >

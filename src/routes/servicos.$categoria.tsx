@@ -398,7 +398,7 @@ function CategoriaPage() {
                   >
                     <Link
                       to="/orcamentos"
-                      search={{ new: 1, serviceId: s.id, categoria: cat.nome }}
+                      search={{ new: 1, serviceId: s.id, categoria: cat.nome, serviceName: s.nome } as any}
                     >
                       Pedir orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Link>
@@ -419,7 +419,7 @@ function CategoriaPage() {
         </p>
         <div className="mt-8 flex justify-center">
           <Button asChild variant="brand" size="xl">
-            <Link to="/orcamentos" search={{ new: 1 }}>
+            <Link to="/orcamentos" search={{ new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined } as any}>
               Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
