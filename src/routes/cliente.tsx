@@ -48,6 +48,7 @@ export const Route = createFileRoute("/cliente")({
       tab: (search.tab as Tab) || "inicio",
       id: search.id != null ? String(search.id) : undefined,
       pedidoId: search.pedidoId != null ? String(search.pedidoId) : undefined,
+      chat: search.chat != null ? String(search.chat) : undefined,
       details: search.details === "true" || search.details === true,
     };
   },
@@ -538,7 +539,7 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 }
 
 function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
-  const { pedidoId } = Route.useSearch();
+  const { pedidoId, chat } = Route.useSearch();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -616,12 +617,23 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     ? { ...selectedPedido, status: getPedidoStatus(selectedPedido.id, selectedPedido.status) }
     : null;
 
+  useEffect(() => {
+    if (chat === "1" && selectedPedido?.profissional_id) {
+      setShowConversar(true);
+    }
+  }, [chat, selectedPedido?.id, selectedPedido?.profissional_id]);
+
   const openPedido = (id: string) => {
     navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: id }) });
   };
 
   const closePedido = () => {
-    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: undefined }) });
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: undefined, chat: undefined }) });
+  };
+
+  const closeConversar = () => {
+    setShowConversar(false);
+    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, chat: undefined }) });
   };
 
   const filteredPedidos = pedidos.filter(p => {
