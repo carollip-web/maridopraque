@@ -26,8 +26,13 @@ function isMessageNotification(notification: AppNotification) {
 export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications: allNotifications, markAsRead, markAllAsRead } = useNotifications();
   const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData } = useAuth();
+  // Filter notifications by user context: professionals only see professional notifications
+  const notifications = isProfissional
+    ? allNotifications.filter(n => !n.link || n.link.startsWith("/profissional"))
+    : allNotifications.filter(n => !n.link || !n.link.startsWith("/profissional"));
+  const unreadCount = notifications.filter(n => !n.read).length;
   const navigate = useNavigate();
 
   const handleLogout = () => {
