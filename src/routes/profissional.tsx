@@ -38,8 +38,12 @@ import {
   LayoutGrid,
   MapPin,
   Camera,
+  Wallet,
+  MessageSquare,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
+import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
