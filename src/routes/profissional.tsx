@@ -56,6 +56,7 @@ export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
     tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
     orcamentoId: z.string().optional(),
+    chat: z.string().optional(),
   }),
   component: ProfissionalArea,
 });
@@ -109,7 +110,7 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
 };
 
 function ProfissionalArea() {
-  const { tab = "pedidos", orcamentoId } = Route.useSearch();
+  const { tab = "pedidos", orcamentoId, chat } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
@@ -295,11 +296,11 @@ function ProfissionalArea() {
 
     // Decide which top tab + sub-tab the orçamento lives in
     const isMine = o.profissional_id === user?.id;
-    const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
+    const inServicos = isMine && !chat && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
     const targetTab = inServicos ? "servicos" : "orcamentos";
 
     if (tab !== targetTab) {
-      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId } as any });
+      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId, chat } as any });
       return;
     }
 
@@ -318,7 +319,7 @@ function ProfissionalArea() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 350);
     return () => clearTimeout(t);
-  }, [orcamentoId, orcamentos, tab, user?.id, navigate]);
+  }, [orcamentoId, chat, orcamentos, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
