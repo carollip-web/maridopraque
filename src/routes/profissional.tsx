@@ -1304,7 +1304,7 @@ function OrcamentoCard({
       )}
 
       {o.profissional_id === userId && (
-        <details className="pt-3 border-t border-border" open={shouldOpenChat || undefined}>
+        <details className="pt-3 border-t border-border" defaultOpen={shouldOpenChat}>
           <summary className="cursor-pointer text-xs font-bold text-brand flex items-center gap-1.5 select-none">
             <MessageSquare className="h-3.5 w-3.5" /> Conversar com o cliente
           </summary>
