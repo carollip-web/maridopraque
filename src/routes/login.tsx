@@ -205,6 +205,13 @@ function LoginPage() {
           </button>
         </p>
 
+        <p className="text-center mt-3 text-sm text-muted-foreground">
+          É profissional parceiro?{" "}
+          <Link to="/login/profissional" className="font-bold text-foreground hover:underline">
+            Entrar como profissional
+          </Link>
+        </p>
+
         <div className="mt-12 flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
           <ShieldCheck className="h-4 w-4" />
           Ambiente 100% Seguro e Criptografado
