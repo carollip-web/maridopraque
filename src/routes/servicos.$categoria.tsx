@@ -110,12 +110,38 @@ export const Route = createFileRoute("/servicos/$categoria")({
   head: ({ params }) => {
     const cat = categorias[params.categoria];
     if (!cat) return {};
+    const serviceLd = {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: cat.titulo,
+      description: cat.description,
+      provider: {
+        "@type": "LocalBusiness",
+        name: "Marido pra Quê?",
+        url: "https://maridopraque.lovable.app",
+      },
+      areaServed: { "@type": "Country", name: "Brasil" },
+      serviceType: cat.nome,
+    };
+    const faqLd = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: cat.observacoesPadrao.map((q, i) => ({
+        "@type": "Question",
+        name: i === 0 ? `O que preciso saber antes do serviço de ${cat.nome}?` : `Mais detalhes sobre ${cat.nome}`,
+        acceptedAnswer: { "@type": "Answer", text: q },
+      })),
+    };
     return {
       meta: [
         { title: `${cat.titulo} | Marido pra Quê?` },
         { name: "description", content: cat.description },
         { property: "og:title", content: cat.titulo },
         { property: "og:description", content: cat.subtitulo },
+      ],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(serviceLd) },
+        { type: "application/ld+json", children: JSON.stringify(faqLd) },
       ],
     };
   },
