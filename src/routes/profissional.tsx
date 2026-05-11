@@ -55,6 +55,7 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
     tab: z.enum(["pedidos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
+    orcamentoId: z.string().optional(),
   }),
   component: ProfissionalArea,
 });
