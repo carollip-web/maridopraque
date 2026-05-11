@@ -86,6 +86,8 @@ type Orcamento = {
   auto_aprovado: boolean;
   fotos_problema: string[] | null;
   fotos_concluido: string[] | null;
+  checkin_em?: string | null;
+  checkout_em?: string | null;
 };
 
 type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
