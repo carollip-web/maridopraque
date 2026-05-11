@@ -139,16 +139,34 @@ function ProfissionalArea() {
 
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
-        supabase.from("profissional_perfil").select("ativo, especialidades").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profissional_perfil").select("ativo, especialidades, lat, lng, raio_atendimento_km").eq("user_id", user.id).maybeSingle(),
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id),
       ]);
       if (perfil) {
         setAtivo(perfil.ativo);
         setEspecialidades(perfil.especialidades || []);
+        setProfGeo({ lat: perfil.lat ?? null, lng: perfil.lng ?? null, raio: perfil.raio_atendimento_km ?? 15 });
       }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }
+    }
+
+    const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
+    if (ids.length) {
+      const [{ data: profs }, { data: ends }] = await Promise.all([
+        supabase.from("profiles").select("id, nome, whatsapp, email").in("id", ids),
+        supabase.from("cliente_enderecos").select("user_id, lat, lng, cidade, is_padrao").in("user_id", ids),
+      ]);
+      const map: Record<string, Profile> = {};
+      (profs ?? []).forEach((p: any) => (map[p.id] = p));
+      setProfiles(map);
+      const gmap: Record<string, ClienteGeo> = {};
+      (ends ?? []).forEach((e: any) => {
+        const cur = gmap[e.user_id];
+        if (!cur || e.is_padrao) gmap[e.user_id] = { lat: e.lat, lng: e.lng, cidade: e.cidade };
+      });
+      setClienteGeo(gmap);
     }
 
     const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
