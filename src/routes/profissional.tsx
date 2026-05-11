@@ -115,6 +115,8 @@ function ProfissionalArea() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [loadingList, setLoadingList] = useState(true);
+  const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
+  const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
 
   const [ativo, setAtivo] = useState(false);
