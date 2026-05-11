@@ -684,6 +684,7 @@ function OrcamentoCard({
   enviar,
   refresh,
   userId,
+  onRecusar,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
@@ -695,6 +696,7 @@ function OrcamentoCard({
   enviar: any;
   refresh?: () => void;
   userId: string;
+  onRecusar?: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const initialValor = o.valor_servico ?? o.valor ?? null;
