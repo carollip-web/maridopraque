@@ -357,12 +357,67 @@ export type Database = {
         }
         Relationships: []
       }
+      profissional_bloqueios: {
+        Row: {
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          id: string
+          motivo: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          id?: string
+          motivo?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          motivo?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profissional_disponibilidade: {
+        Row: {
+          created_at: string
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dia_semana?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profissional_perfil: {
         Row: {
           ativo: boolean
           bio: string | null
           cidade: string | null
           created_at: string
+          duracao_padrao_min: number
           especialidades: string[] | null
           foto_url: string | null
           lat: number | null
@@ -380,6 +435,7 @@ export type Database = {
           bio?: string | null
           cidade?: string | null
           created_at?: string
+          duracao_padrao_min?: number
           especialidades?: string[] | null
           foto_url?: string | null
           lat?: number | null
@@ -397,6 +453,7 @@ export type Database = {
           bio?: string | null
           cidade?: string | null
           created_at?: string
+          duracao_padrao_min?: number
           especialidades?: string[] | null
           foto_url?: string | null
           lat?: number | null
