@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.notify_nova_mensagem() FROM PUBLIC, anon, authenticated;
