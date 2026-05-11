@@ -258,9 +258,9 @@ export function Header() {
                              >
                                <User className="h-4 w-4" /> Minha Conta
                              </Link>
-                             <Link
-                               to="/orcamentos"
-                               search={{ new: 0 } as any}
+                              <Link
+                                to="/cliente"
+                                search={{ tab: "pedidos" } as any}
                                className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                                onClick={() => setShowProfileMenu(false)}
                              >
