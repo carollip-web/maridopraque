@@ -639,6 +639,24 @@ function OrcamentoCard({
     setSaving(false);
   };
 
+  const handleConcluir = async () => {
+    if (fotosConcluido.length === 0) {
+      if (!confirm("Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.")) return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ status: "concluido" as any, fotos_concluido: fotosConcluido })
+      .eq("id", o.id);
+    if (error) {
+      toast.error("Erro ao concluir", { description: error.message });
+    } else {
+      toast.success("Serviço concluído! O cliente receberá pedido de avaliação.");
+      refresh?.();
+    }
+    setSaving(false);
+  };
+
   const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
   
   // Calculate urgency
