@@ -166,6 +166,19 @@ function PerfilProfissional() {
                 <p className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground font-bold">
                   {new Date(a.created_at).toLocaleDateString("pt-BR")}
                 </p>
+                {a.resposta_profissional && (
+                  <div className="mt-4 p-3 rounded-xl bg-muted/40 border-l-4 border-brand">
+                    <p className="text-[10px] uppercase tracking-widest text-brand font-bold mb-1">
+                      Resposta de {nome}
+                    </p>
+                    <p className="text-sm text-foreground/90 leading-relaxed">{a.resposta_profissional}</p>
+                    {a.resposta_em && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {new Date(a.resposta_em).toLocaleDateString("pt-BR")}
+                      </p>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>
