@@ -287,22 +287,38 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
-  // Auto-scroll & ensure correct tab when arriving from a notification with ?orcamentoId=...
+  // Auto-navigate when arriving via notification (?orcamentoId=...)
   useEffect(() => {
     if (!orcamentoId || orcamentos.length === 0) return;
     const o = orcamentos.find((x) => x.id === orcamentoId);
     if (!o) return;
-    // Ensure we're on the pedidos tab so the card is rendered
-    if (tab !== "pedidos") {
-      navigate({ to: "/profissional", search: { tab: "pedidos", orcamentoId } as any });
+
+    // Decide which top tab + sub-tab the orçamento lives in
+    const isMine = o.profissional_id === user?.id;
+    const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
+    const targetTab = inServicos ? "servicos" : "pedidos";
+
+    if (tab !== targetTab) {
+      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId } as any });
       return;
     }
+
+    if (inServicos) {
+      setServicosSubTab(o.status === "aprovado" || o.status === "pago" ? "ativos" : "finalizados");
+    } else if (o.status === "customizado_pendente" && o.profissional_id === null) {
+      setPedidosSubTab("oportunidades");
+    } else if (o.status === "customizado_pendente" && o.profissional_id === user?.id) {
+      setPedidosSubTab("elaboracao");
+    } else if (o.status === "enviado") {
+      setPedidosSubTab("enviados");
+    }
+
     const t = setTimeout(() => {
       const el = document.getElementById(`orc-${orcamentoId}`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
+    }, 350);
     return () => clearTimeout(t);
-  }, [orcamentoId, orcamentos.length, tab, navigate]);
+  }, [orcamentoId, orcamentos, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
