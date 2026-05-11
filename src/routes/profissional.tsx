@@ -106,6 +106,10 @@ function ProfissionalArea() {
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [profGeo, setProfGeo] = useState<{ lat: number | null; lng: number | null; raio: number }>({ lat: null, lng: null, raio: 15 });
   const [clienteGeo, setClienteGeo] = useState<Record<string, ClienteGeo>>({});
+  const [ganhosMes, setGanhosMes] = useState(0);
+  const [taxaAceitacao, setTaxaAceitacao] = useState<string>("—");
+  const [slaMedioH, setSlaMedioH] = useState<string>("—");
+  const [totalConcluidos, setTotalConcluidos] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -128,13 +132,44 @@ function ProfissionalArea() {
     setOrcamentos(list);
 
     const meus = list.filter((o) => o.profissional_id === user?.id);
-    const pagos = meus.filter((o) => o.status === "pago");
+    const pagos = meus.filter((o) => o.status === "pago" || o.status === "concluido");
     const pendentesPgto = meus.filter((o) => o.status === "aprovado");
-    
+
     const ganhos = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
     const receber = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
     const ticket = pagos.length > 0 ? ganhos / pagos.length : 0;
 
+    // Métricas mensais e operacionais
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+    const ganhosM = pagos
+      .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
+      .reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    setGanhosMes(ganhosM);
+
+    // Taxa de aceitação: enviados / (enviados + recusados) — propostas enviadas pelo profissional
+    const enviadasOuFinalizadas = meus.filter((o) =>
+      ["enviado", "aprovado", "pago", "concluido", "recusado"].includes(o.status),
+    );
+    const aceitas = enviadasOuFinalizadas.filter((o) => o.status !== "recusado");
+    setTaxaAceitacao(
+      enviadasOuFinalizadas.length > 0
+        ? `${Math.round((aceitas.length / enviadasOuFinalizadas.length) * 100)}%`
+        : "—",
+    );
+
+    // SLA médio: horas entre criação e envio do orçamento (apenas onde houve envio)
+    const enviados = meus.filter((o) =>
+      ["enviado", "aprovado", "pago", "concluido"].includes(o.status),
+    );
+    if (enviados.length > 0) {
+      const horas = enviados.reduce((acc, o) => {
+        const t = (new Date(o.updated_at).getTime() - new Date(o.created_at).getTime()) / 36e5;
+        return acc + Math.max(0, t);
+      }, 0) / enviados.length;
+      setSlaMedioH(horas < 1 ? `${Math.round(horas * 60)} min` : `${horas.toFixed(1)} h`);
+    }
+
+    setTotalConcluidos(meus.filter((o) => o.status === "concluido").length);
     setGanhosTotais(ganhos);
     setAReceber(receber);
     setTicketMedio(ticket);
@@ -392,6 +427,22 @@ function ProfissionalArea() {
               </div>
             ) : (
               <div className="space-y-8">
+                <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-white/70">Performance</p>
+                      <h2 className="text-lg font-bold">Seu mês até aqui</h2>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-white/60" />
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <DashStat label="Ganhos do mês" value={`R$ ${ganhosMes.toFixed(2)}`} />
+                    <DashStat label="Taxa de aceitação" value={taxaAceitacao} />
+                    <DashStat label="SLA médio" value={slaMedioH} />
+                    <DashStat label="Concluídos" value={String(totalConcluidos)} />
+                  </div>
+                </section>
+
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
                   <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
@@ -449,6 +500,15 @@ function ProfissionalArea() {
           </main>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DashStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/10 backdrop-blur p-3">
+      <p className="text-[11px] uppercase tracking-wider text-white/70">{label}</p>
+      <p className="mt-1 text-xl font-bold tracking-tight">{value}</p>
     </div>
   );
 }
