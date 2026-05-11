@@ -214,6 +214,11 @@ function ProfissionalArea() {
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }
+      const { data: recs } = await supabase
+        .from("orcamento_recusas")
+        .select("orcamento_id")
+        .eq("profissional_id", user.id);
+      setRecusados(new Set((recs ?? []).map((r: any) => r.orcamento_id)));
     }
 
     const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
