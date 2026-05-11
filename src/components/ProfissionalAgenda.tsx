@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Calendar, Clock, Ban } from "lucide-react";
 import { DIAS_SEMANA, type Janela } from "@/lib/agenda";
+import { AgendaCalendar } from "@/components/AgendaCalendar";
 
 type Bloqueio = { id: string; data_inicio: string; data_fim: string; motivo: string | null };
 type JanelaRow = Janela & { id: string };
