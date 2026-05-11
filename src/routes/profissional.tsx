@@ -132,13 +132,44 @@ function ProfissionalArea() {
     setOrcamentos(list);
 
     const meus = list.filter((o) => o.profissional_id === user?.id);
-    const pagos = meus.filter((o) => o.status === "pago");
+    const pagos = meus.filter((o) => o.status === "pago" || o.status === "concluido");
     const pendentesPgto = meus.filter((o) => o.status === "aprovado");
-    
+
     const ganhos = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
     const receber = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
     const ticket = pagos.length > 0 ? ganhos / pagos.length : 0;
 
+    // Métricas mensais e operacionais
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+    const ganhosM = pagos
+      .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
+      .reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    setGanhosMes(ganhosM);
+
+    // Taxa de aceitação: enviados / (enviados + recusados) — propostas enviadas pelo profissional
+    const enviadasOuFinalizadas = meus.filter((o) =>
+      ["enviado", "aprovado", "pago", "concluido", "recusado"].includes(o.status),
+    );
+    const aceitas = enviadasOuFinalizadas.filter((o) => o.status !== "recusado");
+    setTaxaAceitacao(
+      enviadasOuFinalizadas.length > 0
+        ? `${Math.round((aceitas.length / enviadasOuFinalizadas.length) * 100)}%`
+        : "—",
+    );
+
+    // SLA médio: horas entre criação e envio do orçamento (apenas onde houve envio)
+    const enviados = meus.filter((o) =>
+      ["enviado", "aprovado", "pago", "concluido"].includes(o.status),
+    );
+    if (enviados.length > 0) {
+      const horas = enviados.reduce((acc, o) => {
+        const t = (new Date(o.updated_at).getTime() - new Date(o.created_at).getTime()) / 36e5;
+        return acc + Math.max(0, t);
+      }, 0) / enviados.length;
+      setSlaMedioH(horas < 1 ? `${Math.round(horas * 60)} min` : `${horas.toFixed(1)} h`);
+    }
+
+    setTotalConcluidos(meus.filter((o) => o.status === "concluido").length);
     setGanhosTotais(ganhos);
     setAReceber(receber);
     setTicketMedio(ticket);
