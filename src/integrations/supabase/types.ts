@@ -280,9 +280,39 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_recusas: {
+        Row: {
+          created_at: string
+          id: string
+          motivo: string | null
+          orcamento_id: string
+          profissional_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          orcamento_id: string
+          profissional_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          orcamento_id?: string
+          profissional_id?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           auto_aprovado: boolean
+          checkin_em: string | null
+          checkin_lat: number | null
+          checkin_lng: number | null
+          checkout_em: string | null
+          checkout_lat: number | null
+          checkout_lng: number | null
           cliente_id: string
           created_at: string
           data_agendada: string | null
@@ -305,6 +335,12 @@ export type Database = {
         }
         Insert: {
           auto_aprovado?: boolean
+          checkin_em?: string | null
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkout_em?: string | null
+          checkout_lat?: number | null
+          checkout_lng?: number | null
           cliente_id: string
           created_at?: string
           data_agendada?: string | null
@@ -327,6 +363,12 @@ export type Database = {
         }
         Update: {
           auto_aprovado?: boolean
+          checkin_em?: string | null
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkout_em?: string | null
+          checkout_lat?: number | null
+          checkout_lng?: number | null
           cliente_id?: string
           created_at?: string
           data_agendada?: string | null
@@ -356,6 +398,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      panico_eventos: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          observacao: string | null
+          orcamento_id: string | null
+          resolvido: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          observacao?: string | null
+          orcamento_id?: string | null
+          resolvido?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          observacao?: string | null
+          orcamento_id?: string | null
+          resolvido?: boolean
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
