@@ -504,6 +504,15 @@ function ProfissionalArea() {
   );
 }
 
+function DashStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/10 backdrop-blur p-3">
+      <p className="text-[11px] uppercase tracking-wider text-white/70">{label}</p>
+      <p className="mt-1 text-xl font-bold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
 function Stat({
   icon: Icon,
   label,
