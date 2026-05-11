@@ -213,12 +213,21 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
+  const distanciaCliente = (clienteId: string): number | null => {
+    if (profGeo.lat == null || profGeo.lng == null) return null;
+    const g = clienteGeo[clienteId];
+    if (!g || g.lat == null || g.lng == null) return null;
+    return distanceKm({ lat: profGeo.lat, lng: profGeo.lng }, { lat: g.lat, lng: g.lng });
+  };
+
   const filterBy = (type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados") => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        return o.status === "customizado_pendente" && 
-               o.profissional_id === null && 
-               especialidades.includes(o.service_name);
+        if (!(o.status === "customizado_pendente" && o.profissional_id === null && especialidades.includes(o.service_name))) return false;
+        // Filtro por raio: só aplica se ambos os lados tiverem geo
+        const d = distanciaCliente(o.cliente_id);
+        if (d != null && d > profGeo.raio) return false;
+        return true;
       }
       if (type === "elaboracao") {
         return o.status === "customizado_pendente" && o.profissional_id === user?.id;
@@ -230,7 +239,7 @@ function ProfissionalArea() {
         return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
       }
       if (type === "finalizados") {
-        return ["recusado", "cancelado"].includes(o.status) && o.profissional_id === user?.id;
+        return ["recusado", "cancelado", "concluido"].includes(o.status) && o.profissional_id === user?.id;
       }
       return false;
     });
