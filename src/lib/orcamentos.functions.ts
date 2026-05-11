@@ -19,6 +19,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => solicitarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    console.log("[solicitarOrcamento] Creating for userId:", userId);
     const { data: row, error } = await supabase
       .from("orcamentos")
       .insert({
@@ -29,7 +30,11 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
       })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[solicitarOrcamento] error:", error);
+      throw new Error(error.message);
+    }
+    console.log("[solicitarOrcamento] Created row:", row);
 
     if (data.materiais && data.materiais.length > 0) {
       const ids = data.materiais.map((m) => m.materialId);

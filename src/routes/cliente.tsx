@@ -61,7 +61,8 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const { tab: activeTab } = Route.useSearch();
-  const { logout, userData, isProfissional, isAdmin } = useAuth();
+  const { logout, userData, isProfissional, isAdmin, user } = useAuth();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const setActiveTab = (newTab: Tab) => {
@@ -91,6 +92,45 @@ function ClienteArea() {
     }
     return true;
   });
+
+  useEffect(() => {
+    if (!user) return;
+
+    console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
+    const channel = supabase
+      .channel(`cliente-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orcamentos",
+          filter: `cliente_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log("Realtime update: orcamentos changed", payload);
+          queryClient.invalidateQueries({ queryKey: ["cliente"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "propostas",
+        },
+        (payload) => {
+          console.log("Realtime update: propostas changed", payload);
+          queryClient.invalidateQueries({ queryKey: ["cliente"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("[ClienteArea] Unsubscribing from realtime");
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
