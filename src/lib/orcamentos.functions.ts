@@ -97,19 +97,21 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: row, error } = await supabase
-      .from("orcamentos")
-      .update({
-        valor_servico: data.valorServico,
-        observacoes_profissional: data.observacoes ?? null,
+    // Instead of updating the order and claiming it, we submit a proposal
+    const { data: row, error } = await (supabase as any).from("propostas")
+      .insert({
+        orcamento_id: data.orcamentoId,
         profissional_id: userId,
-        status: "enviado",
+        valor_servico: data.valorServico,
+        observacoes: data.observacoes ?? null,
       })
-      .eq("id", data.orcamentoId)
       .select()
       .single();
     if (error) throw new Error(error.message);
-    return { orcamento: row };
+    
+    // Also mark the orcamento_materiais if any existed
+    
+    return { proposta: row };
   });
 
 const decisaoSchema = z.object({
@@ -132,6 +134,51 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    return { orcamento: row };
+  });
+
+const aceitarPropostaSchema = z.object({
+  orcamentoId: z.string().uuid(),
+  propostaId: z.string().uuid(),
+});
+
+export const aceitarProposta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => aceitarPropostaSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    
+    // First verify if the orcamento belongs to the user and is still open
+    const { data: orc } = await supabase.from("orcamentos").select("cliente_id, status").eq("id", data.orcamentoId).single();
+    if (!orc || orc.cliente_id !== userId) throw new Error("Sem permissão");
+    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") throw new Error("Pedido não está mais aberto para propostas.");
+
+    // Update the specific proposta to aceita
+    const { data: prop, error: e1 } = await (supabase as any).from("propostas")
+      .update({ status: 'aceita' })
+      .eq("id", data.propostaId)
+      .select()
+      .single();
+    if (e1) throw new Error(e1.message);
+
+    // Reject other proposals
+    await (supabase as any).from("propostas").update({ status: 'recusada' }).eq("orcamento_id", data.orcamentoId).neq("id", data.propostaId);
+
+    // Update orcamento
+    const { data: row, error } = await supabase
+      .from("orcamentos")
+      .update({
+        profissional_id: prop.profissional_id,
+        valor_servico: prop.valor_servico,
+        observacoes_profissional: prop.observacoes,
+        status: "aprovado",
+        data_aprovacao: new Date().toISOString(),
+      })
+      .eq("id", data.orcamentoId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    
     return { orcamento: row };
   });
 

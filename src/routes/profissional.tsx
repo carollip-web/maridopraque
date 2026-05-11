@@ -117,6 +117,7 @@ function ProfissionalArea() {
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [minhasPropostas, setMinhasPropostas] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [loadingList, setLoadingList] = useState(true);
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
@@ -265,6 +266,13 @@ function ProfissionalArea() {
 
     const orcIds = list.map((o) => o.id);
     if (orcIds.length) {
+      const { data: propsData } = await supabase
+        (supabase as any).from("propostas")
+        .select("*")
+        .eq("profissional_id", user.id)
+        .in("orcamento_id", orcIds);
+      setMinhasPropostas(propsData || []);
+
       const { data: oms } = await supabase
         .from("orcamento_materiais")
         .select("orcamento_id, nome_snapshot, unidade_snapshot, quantidade, subtotal")
@@ -335,7 +343,7 @@ function ProfissionalArea() {
   const filterBy = (type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados") => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        if (!(o.status === "customizado_pendente" && o.profissional_id === null && especialidades.includes(o.service_name))) return false;
+        if (!(o.status === "customizado_pendente" && !minhasPropostas.some(p => p.orcamento_id === o.id) && especialidades.includes(o.service_name))) return false;
         if (recusados.has(o.id)) return false;
         // Filtro por raio: só aplica se ambos os lados tiverem geo
         const d = distanciaCliente(o.cliente_id);
@@ -343,10 +351,10 @@ function ProfissionalArea() {
         return true;
       }
       if (type === "elaboracao") {
-        return o.status === "customizado_pendente" && o.profissional_id === user?.id;
+        return false;
       }
       if (type === "enviados") {
-        return o.status === "enviado" && o.profissional_id === user?.id;
+        return (o.status === "customizado_pendente" || o.status === "enviado") && minhasPropostas.some(p => p.orcamento_id === o.id && p.status === "pendente");
       }
       if (type === "ativos") {
         return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
@@ -946,6 +954,7 @@ function Grid({
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
   disableChat?: boolean;
+  minhasPropostas?: any[];
 }) {
   if (items.length === 0) {
     return (
@@ -979,6 +988,7 @@ function Grid({
           refresh={refresh}
           userId={userId}
           onRecusar={onRecusar}
+          minhaProposta={minhasPropostas?.find(p => p.orcamento_id === o.id)}
         />
       ))}
     </div>
@@ -1011,12 +1021,15 @@ function OrcamentoCard({
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
   disableChat?: boolean;
+  minhasPropostas?: any[];
 }) {
-  const [editing, setEditing] = useState(mode === "enviar");
+  const isOportunidade = !minhaProposta && mode === "pegar";
+  const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
+  const [editing, setEditing] = useState(isOportunidade);
   const shouldOpenChat = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1";
-  const initialValor = o.valor_servico ?? o.valor ?? null;
+  const initialValor = minhaProposta?.valor_servico ?? o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
-  const [obs, setObs] = useState(o.observacoes_profissional ?? "");
+  const [obs, setObs] = useState(minhaProposta?.observacoes ?? o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
   const [termoOpen, setTermoOpen] = useState(false);
@@ -1049,7 +1062,7 @@ function OrcamentoCard({
         })
         .eq("id", o.id);
       if (error) throw error;
-      toast.success(mode === "revisar" ? "Orçamento atualizado" : "Orçamento enviado ao cliente");
+      toast.success("Proposta enviada ao cliente!");
       if (mode === "revisar") setEditing(false);
       refresh?.();
     } catch (e: any) {
@@ -1298,57 +1311,7 @@ function OrcamentoCard({
         </div>
       )}
 
-      {mode === "pegar" ? (
-        <div className="space-y-2">
-          <TermoAdesaoDialog
-            open={termoOpen}
-            onOpenChange={setTermoOpen}
-            userId={userId}
-            onAccepted={() => doAceitar()}
-          />
-          {o.valor_servico != null && (
-            <Button
-              onClick={async () => {
-                setSaving(true);
-                // checa termo aceito
-                const { data: perf } = await supabase
-                  .from("profissional_perfil")
-                  .select("termo_aceito_em")
-                  .eq("user_id", userId)
-                  .maybeSingle();
-                if (!perf?.termo_aceito_em) {
-                  setSaving(false);
-                  setTermoOpen(true);
-                  return;
-                }
-                await doAceitar();
-              }}
-              disabled={saving}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"
-            >
-              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Aceitar por R$ {Number(o.valor_servico).toFixed(2)}</>}
-            </Button>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={handlePegar}
-              disabled={saving}
-              variant="outline"
-              className="rounded-full font-bold h-11"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Elaborar depois"}
-            </Button>
-            <Button
-              onClick={async () => { if (onRecusar) await onRecusar(o.id); }}
-              disabled={saving || !onRecusar}
-              variant="ghost"
-              className="rounded-full font-bold h-11 text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              <XCircle className="h-4 w-4 mr-1.5" /> Recusar
-            </Button>
-          </div>
-        </div>
-      ) : (mode === "enviar" || (mode === "revisar" && editing)) ? (
+      {(isOportunidade || editing) ? (
         <div className="space-y-3 pt-3 border-t border-border">
               <div>
                 <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>

@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { aceitarProposta } from "@/lib/orcamentos.functions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { toast } from "sonner";
@@ -549,6 +551,8 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [approvalStep, setApprovalStep] = useState<null | "schedule" | "confirm" | "processing" | "success">(null);
   const [dataAgendada, setDataAgendada] = useState<Date | null>(null);
   const queryClient = useQueryClient();
+  const aceitarPropostaFn = useServerFn(aceitarProposta);
+  const [selectedProposta, setSelectedProposta] = useState<any>(null);
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["cliente", "pedidos", user?.id],
@@ -561,12 +565,29 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         .order("created_at", { ascending: false });
       
       const list = data || [];
+      
+      const orcIds = list.map(o => o.id);
+      let propostas: any[] = [];
+      let profsMap: Record<string, string> = {};
+      if (orcIds.length > 0) {
+        const { data: pData } = await (supabase as any).from("propostas").select("*").in("orcamento_id", orcIds);
+        propostas = pData || [];
+        const profIds = Array.from(new Set(propostas.map(p => p.profissional_id)));
+        if (profIds.length > 0) {
+           const { data: prData } = await supabase.from("profiles").select("id, nome").in("id", profIds);
+           (prData || []).forEach(p => profsMap[p.id] = p.nome);
+        }
+      }
+
       // Normalize statuses for the UI filters
       return list.map(o => {
-        const uiStatus = o.status === "customizado_pendente" ? "Em Análise" :
+        const propsForOrc = propostas.filter(p => p.orcamento_id === o.id).map(p => ({...p, profNome: profsMap[p.profissional_id] || "Profissional"}));
+        const uiStatus = (o.status === "customizado_pendente" && propsForOrc.length > 0) ? "Aguardando Aprovação" :
+                 o.status === "customizado_pendente" ? "Em Análise" :
                  o.status === "enviado" ? "Aguardando Aprovação" :
                  o.status === "aprovado" ? "Agendado" : o.status;
         return {
+          propostas: propsForOrc,
           ...o,
           title: o.service_name,
           description: o.descricao ?? "",
@@ -594,19 +615,29 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const handleApprove = async () => {
     if (!selectedPedido) return;
     setApprovalStep("processing");
-    const { error } = await supabase
-      .from("orcamentos")
-      .update({
-        status: "aprovado",
-        data_aprovacao: new Date().toISOString(),
-        data_agendada: dataAgendada ? dataAgendada.toISOString() : null,
-      })
-      .eq("id", selectedPedido.id);
-    if (error) {
-      toast.error("Erro ao aprovar", { description: error.message });
+    try {
+      if (selectedProposta) {
+        await aceitarPropostaFn({ data: { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id } });
+        if (dataAgendada) {
+          await supabase.from("orcamentos").update({ data_agendada: dataAgendada.toISOString() }).eq("id", selectedPedido.id);
+        }
+      } else {
+        const { error } = await supabase
+          .from("orcamentos")
+          .update({
+            status: "aprovado",
+            data_aprovacao: new Date().toISOString(),
+            data_agendada: dataAgendada ? dataAgendada.toISOString() : null,
+          })
+          .eq("id", selectedPedido.id);
+        if (error) throw error;
+      }
+    } catch (e: any) {
+      toast.error("Erro ao aprovar", { description: e.message });
       setApprovalStep("confirm");
       return;
     }
+
     setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
     setApprovalStep("success");
@@ -817,7 +848,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                   <div className="flex gap-3 mt-8">
                     <Button variant="outline" onClick={() => setApprovalStep(null)} className="flex-1 rounded-full h-12 font-bold">Cancelar</Button>
                     <Button
-                      disabled={!dataAgendada}
+                      
                       onClick={() => setApprovalStep("confirm")}
                       className="flex-1 bg-brand text-white rounded-full h-12 font-bold shadow-lg disabled:opacity-50"
                     >
