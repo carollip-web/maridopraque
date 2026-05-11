@@ -31,6 +31,8 @@ type Avaliacao = {
   nota: number;
   comentario: string | null;
   created_at: string;
+  resposta_profissional: string | null;
+  resposta_em: string | null;
 };
 
 function PerfilProfissional() {
