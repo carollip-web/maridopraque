@@ -26,6 +26,7 @@ import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
+import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
@@ -113,6 +114,11 @@ const ServicosCategoriaRoute = ServicosCategoriaRouteImport.update({
   path: '/$categoria',
   getParentRoute: () => ServicosRoute,
 } as any)
+const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
+  getParentRoute: () => LoginRoute,
+} as any)
 const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
   id: '/perfil/$slug',
   path: '/perfil/$slug',
@@ -126,7 +132,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -146,7 +153,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -167,7 +175,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   id:
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesById: FileRoutesById
@@ -250,7 +262,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
-  LoginRoute: typeof LoginRoute
+  LoginRoute: typeof LoginRouteWithChildren
   MateriaisAdminRoute: typeof MateriaisAdminRoute
   OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
@@ -383,6 +395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicosCategoriaRouteImport
       parentRoute: typeof ServicosRoute
     }
+    '/login/profissional': {
+      id: '/login/profissional'
+      path: '/profissional'
+      fullPath: '/login/profissional'
+      preLoaderRoute: typeof LoginProfissionalRouteImport
+      parentRoute: typeof LoginRoute
+    }
     '/profissionais/perfil/$slug': {
       id: '/profissionais/perfil/$slug'
       path: '/perfil/$slug'
@@ -392,6 +411,16 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface LoginRouteChildren {
+  LoginProfissionalRoute: typeof LoginProfissionalRoute
+}
+
+const LoginRouteChildren: LoginRouteChildren = {
+  LoginProfissionalRoute: LoginProfissionalRoute,
+}
+
+const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
 
 interface ProfissionaisRouteChildren {
   ProfissionaisPerfilSlugRoute: typeof ProfissionaisPerfilSlugRoute
@@ -424,7 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
-  LoginRoute: LoginRoute,
+  LoginRoute: LoginRouteWithChildren,
   MateriaisAdminRoute: MateriaisAdminRoute,
   OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
