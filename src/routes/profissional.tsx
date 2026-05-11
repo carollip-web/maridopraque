@@ -1063,6 +1063,17 @@ function OrcamentoCard({
           <Pencil className="h-4 w-4 mr-1.5" /> Revisar orçamento
         </Button>
       )}
+
+      {o.profissional_id === userId && (
+        <details className="pt-3 border-t border-border">
+          <summary className="cursor-pointer text-xs font-bold text-brand flex items-center gap-1.5 select-none">
+            <MessageSquare className="h-3.5 w-3.5" /> Conversar com o cliente
+          </summary>
+          <div className="mt-3">
+            <Chat orcamentoId={o.id} contraparteId={o.cliente_id} contraparteNome={cliente?.nome} />
+          </div>
+        </details>
+      )}
     </div>
   );
 }
