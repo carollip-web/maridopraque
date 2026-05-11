@@ -59,9 +59,11 @@ export function Header() {
         </nav>
         
         <div className="flex items-center gap-4">
-          <Button onClick={() => navigate({ to: "/servicos" })} size="sm" className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md">
-            Orçamento
-          </Button>
+          {!isProfissional && (
+            <Button onClick={() => navigate({ to: "/servicos" })} size="sm" className="rounded-full bg-brand text-white hover:bg-brand/90 hidden lg:flex font-bold px-8 h-10 shadow-md">
+              Orçamento
+            </Button>
+          )}
 
           <div id="header-menu-container" className="flex items-center gap-4 relative">
             {isLoggedIn && (
