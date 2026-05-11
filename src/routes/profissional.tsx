@@ -56,6 +56,7 @@ export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
     tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
     orcamentoId: z.string().optional(),
+    chat: z.string().optional(),
   }),
   component: ProfissionalArea,
 });
@@ -109,7 +110,7 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
 };
 
 function ProfissionalArea() {
-  const { tab = "pedidos", orcamentoId } = Route.useSearch();
+  const { tab = "pedidos", orcamentoId, chat } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
@@ -299,7 +300,7 @@ function ProfissionalArea() {
     const targetTab = inServicos ? "servicos" : "orcamentos";
 
     if (tab !== targetTab) {
-      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId } as any });
+      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId, chat } as any });
       return;
     }
 
@@ -318,7 +319,7 @@ function ProfissionalArea() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 350);
     return () => clearTimeout(t);
-  }, [orcamentoId, orcamentos, tab, user?.id, navigate]);
+  }, [orcamentoId, chat, orcamentos, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
@@ -884,6 +885,7 @@ function OrcamentoCard({
   onRecusar?: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
+  const shouldOpenChat = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1";
   const initialValor = o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
@@ -1302,7 +1304,7 @@ function OrcamentoCard({
       )}
 
       {o.profissional_id === userId && (
-        <details className="pt-3 border-t border-border">
+        <details className="pt-3 border-t border-border" open={shouldOpenChat || undefined}>
           <summary className="cursor-pointer text-xs font-bold text-brand flex items-center gap-1.5 select-none">
             <MessageSquare className="h-3.5 w-3.5" /> Conversar com o cliente
           </summary>

@@ -45,6 +45,17 @@ function showBrowserNotification(title: string, body: string, link?: string) {
   }
 }
 
+function normalizeNotificationLink(link?: string | null, orcamentoId?: string | null, title?: string | null) {
+  const isMessage = (title ?? "").toLowerCase().includes("mensagem");
+  if (orcamentoId && link?.startsWith("/profissional")) {
+    return `/profissional?tab=orcamentos&orcamentoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;
+  }
+  if (orcamentoId && link?.startsWith("/cliente")) {
+    return `/cliente?tab=pedidos&pedidoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;
+  }
+  return link ?? undefined;
+}
+
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const knownIds = useRef<Set<string>>(new Set());
@@ -60,15 +71,18 @@ export function useNotifications() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
-      const list = (data ?? []).map((n) => ({
-        id: n.id,
-        title: n.titulo,
-        desc: n.mensagem,
-        time: timeAgo(n.created_at),
-        read: n.lida,
-        pedidoId: n.orcamento_id ?? undefined,
-        link: n.link ?? undefined,
-      }));
+      const list = (data ?? []).map((n) => {
+        const pedidoId = n.orcamento_id ?? undefined;
+        return {
+          id: n.id,
+          title: n.titulo,
+          desc: n.mensagem,
+          time: timeAgo(n.created_at),
+          read: n.lida,
+          pedidoId,
+          link: normalizeNotificationLink(n.link, pedidoId, n.titulo),
+        };
+      });
 
       // Detect new unread items (skip on first load) and trigger native notification
       if (!firstLoad.current) {
