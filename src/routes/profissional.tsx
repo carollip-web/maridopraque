@@ -55,6 +55,7 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
     tab: z.enum(["pedidos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
+    orcamentoId: z.string().optional(),
   }),
   component: ProfissionalArea,
 });
@@ -108,7 +109,7 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
 };
 
 function ProfissionalArea() {
-  const { tab = "pedidos" } = Route.useSearch();
+  const { tab = "pedidos", orcamentoId } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
@@ -283,6 +284,23 @@ function ProfissionalArea() {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
+  // Auto-scroll & ensure correct tab when arriving from a notification with ?orcamentoId=...
+  useEffect(() => {
+    if (!orcamentoId || orcamentos.length === 0) return;
+    const o = orcamentos.find((x) => x.id === orcamentoId);
+    if (!o) return;
+    // Ensure we're on the pedidos tab so the card is rendered
+    if (tab !== "pedidos") {
+      navigate({ to: "/profissional", search: { tab: "pedidos", orcamentoId } as any });
+      return;
+    }
+    const t = setTimeout(() => {
+      const el = document.getElementById(`orc-${orcamentoId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+    return () => clearTimeout(t);
+  }, [orcamentoId, orcamentos.length, tab, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
@@ -847,8 +865,10 @@ function OrcamentoCard({
     if (hoursSinceCreated >= 2) isUrgent = true; // Urgent if more than half of the SLA has passed
   }
 
+  const isHighlighted = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
+
   return (
-    <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
+    <div id={`orc-${o.id}`} className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? 'border-brand ring-2 ring-brand/30 shadow-lg' : isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
       {isUrgent && (
         <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />
       )}
