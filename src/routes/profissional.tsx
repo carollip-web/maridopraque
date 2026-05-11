@@ -115,6 +115,8 @@ function ProfissionalArea() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [loadingList, setLoadingList] = useState(true);
+  const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
+  const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
 
   const [ativo, setAtivo] = useState(false);
@@ -285,22 +287,38 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
-  // Auto-scroll & ensure correct tab when arriving from a notification with ?orcamentoId=...
+  // Auto-navigate when arriving via notification (?orcamentoId=...)
   useEffect(() => {
     if (!orcamentoId || orcamentos.length === 0) return;
     const o = orcamentos.find((x) => x.id === orcamentoId);
     if (!o) return;
-    // Ensure we're on the pedidos tab so the card is rendered
-    if (tab !== "pedidos") {
-      navigate({ to: "/profissional", search: { tab: "pedidos", orcamentoId } as any });
+
+    // Decide which top tab + sub-tab the orçamento lives in
+    const isMine = o.profissional_id === user?.id;
+    const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
+    const targetTab = inServicos ? "servicos" : "pedidos";
+
+    if (tab !== targetTab) {
+      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId } as any });
       return;
     }
+
+    if (inServicos) {
+      setServicosSubTab(o.status === "aprovado" || o.status === "pago" ? "ativos" : "finalizados");
+    } else if (o.status === "customizado_pendente" && o.profissional_id === null) {
+      setPedidosSubTab("oportunidades");
+    } else if (o.status === "customizado_pendente" && o.profissional_id === user?.id) {
+      setPedidosSubTab("elaboracao");
+    } else if (o.status === "enviado") {
+      setPedidosSubTab("enviados");
+    }
+
     const t = setTimeout(() => {
       const el = document.getElementById(`orc-${orcamentoId}`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 200);
+    }, 350);
     return () => clearTimeout(t);
-  }, [orcamentoId, orcamentos.length, tab, navigate]);
+  }, [orcamentoId, orcamentos, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
@@ -487,7 +505,7 @@ function ProfissionalArea() {
               <ProfissionalAgenda />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
-                <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">
+                <Tabs value={servicosSubTab} onValueChange={setServicosSubTab} className="w-full animate-in fade-in duration-700">
                   <div className="flex items-center justify-between mb-6">
                      <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Meus Serviços em Andamento</h2>
                      <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
@@ -542,7 +560,7 @@ function ProfissionalArea() {
                   <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
                 </section>
 
-                <Tabs defaultValue="oportunidades" className="w-full animate-in fade-in duration-700">
+                <Tabs value={pedidosSubTab} onValueChange={setPedidosSubTab} className="w-full animate-in fade-in duration-700">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <h2 className="text-2xl font-bold tracking-tight text-foreground">Pedidos e orçamentos</h2>
