@@ -30,7 +30,9 @@ import {
   Package,
   Settings,
   Briefcase,
-  LayoutGrid
+  LayoutGrid,
+  MapPin,
+  Camera,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
