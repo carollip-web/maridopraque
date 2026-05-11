@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { PhotoUploader } from "@/components/PhotoUploader";
 import {
   Loader2,
   CheckCircle2,
@@ -119,6 +120,7 @@ function MeusOrcamentos() {
   const [selServiceId, setSelServiceId] = useState<string>("");
   const [descricao, setDescricao] = useState("");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
+  const [fotos, setFotos] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -307,6 +309,7 @@ function MeusOrcamentos() {
     setSelServiceId("");
     setDescricao("");
     setPicked({});
+    setFotos([]);
     setStep(1);
     setShowNew(false);
     setEditingId(null);
@@ -386,6 +389,7 @@ function MeusOrcamentos() {
       if (m.material_id) p[m.material_id] = Number(m.quantidade);
     });
     setPicked(p);
+    setFotos((((o as any).fotos_problema as string[]) ?? []));
     setStep(1);
     setShowNew(true);
   };
@@ -432,9 +436,14 @@ function MeusOrcamentos() {
             materiais: payload.materiais,
           },
         });
+        await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
-        await solicitar({ data: payload });
+        const res = await solicitar({ data: payload });
+        const novoId = (res as any)?.orcamento?.id;
+        if (novoId && fotos.length > 0) {
+          await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", novoId);
+        }
         toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
         // limpa rascunho após envio bem-sucedido
         if (draftKey && typeof window !== "undefined") {
@@ -731,6 +740,24 @@ function MeusOrcamentos() {
               ) : (
                 <div className="rounded-2xl bg-slate-50 border border-border p-6 text-center text-sm text-muted-foreground">
                   Nenhum material sugerido para este serviço. Você pode seguir para a confirmação.
+                </div>
+              )}
+
+              {user && (
+                <div className="rounded-2xl bg-slate-50 border border-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Package className="h-4 w-4 text-brand" />
+                    <h4 className="font-bold text-sm">Fotos do problema</h4>
+                    <span className="text-xs text-muted-foreground">(opcional, ajuda o profissional)</span>
+                  </div>
+                  <PhotoUploader
+                    userId={user.id}
+                    pathPrefix="problema"
+                    value={fotos}
+                    onChange={setFotos}
+                    max={5}
+                    label="tirar ou anexar"
+                  />
                 </div>
               )}
 

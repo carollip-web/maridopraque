@@ -1388,20 +1388,25 @@ function DadosTab() {
   const handleSaveAddr = async () => {
     if (!user) return;
     if (!addrForm.logradouro.trim()) { toastError("Endereço", "Informe o logradouro"); return; }
+    // Geocodifica em paralelo (best-effort, não bloqueia o save em caso de falha)
+    const { geocodeAddress } = await import("@/lib/geo");
+    const geo = await geocodeAddress({
+      logradouro: addrForm.logradouro, numero: addrForm.numero, bairro: addrForm.bairro,
+      cidade: addrForm.cidade, uf: addrForm.uf, cep: addrForm.cep,
+    });
+    const base = {
+      rotulo: addrForm.rotulo, cep: addrForm.cep || null, logradouro: addrForm.logradouro,
+      numero: addrForm.numero || null, complemento: addrForm.complemento || null,
+      bairro: addrForm.bairro || null, cidade: addrForm.cidade || null, uf: addrForm.uf || null,
+      lat: geo?.lat ?? null, lng: geo?.lng ?? null,
+    };
     if (editingAddr) {
-      const { error } = await supabase.from("cliente_enderecos").update({
-        rotulo: addrForm.rotulo, cep: addrForm.cep || null, logradouro: addrForm.logradouro,
-        numero: addrForm.numero || null, complemento: addrForm.complemento || null,
-        bairro: addrForm.bairro || null, cidade: addrForm.cidade || null, uf: addrForm.uf || null,
-      }).eq("id", editingAddr.id);
+      const { error } = await supabase.from("cliente_enderecos").update(base).eq("id", editingAddr.id);
       if (error) { toastError("Erro", error.message); return; }
     } else {
       const isPadrao = enderecos.length === 0;
       const { error } = await supabase.from("cliente_enderecos").insert({
-        user_id: user.id, rotulo: addrForm.rotulo, cep: addrForm.cep || null,
-        logradouro: addrForm.logradouro, numero: addrForm.numero || null,
-        complemento: addrForm.complemento || null, bairro: addrForm.bairro || null,
-        cidade: addrForm.cidade || null, uf: addrForm.uf || null, is_padrao: isPadrao,
+        ...base, user_id: user.id, is_padrao: isPadrao,
       });
       if (error) { toastError("Erro", error.message); return; }
     }
