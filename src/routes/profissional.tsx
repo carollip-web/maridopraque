@@ -404,13 +404,13 @@ function ProfissionalArea() {
                     ) : (
                       <>
                         <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
+                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
                         </TabsContent>
                         <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
+                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
                         </TabsContent>
                         <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
+                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
                         </TabsContent>
                       </>
                     )}
@@ -465,6 +465,7 @@ function Grid({
   orcMats: Record<string, OrcMat[]>;
   mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
+  refresh?: () => void;
   emptyMsg: string;
   emptyIcon: any;
 }) {
@@ -489,6 +490,7 @@ function Grid({
           materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}
+          refresh={refresh}
         />
       ))}
     </div>
@@ -502,6 +504,7 @@ function OrcamentoCard({
   materiais,
   mode,
   enviar,
+  refresh,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
@@ -509,6 +512,7 @@ function OrcamentoCard({
   materiais: OrcMat[];
   mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
+  refresh?: () => void;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const initialValor = o.valor_servico ?? o.valor ?? null;
@@ -522,7 +526,7 @@ function OrcamentoCard({
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
-    if (!v || v <= 0) {
+    if (isNaN(v) || v < 0) {
       toast.error("Informe um valor válido");
       return;
     }
@@ -535,6 +539,7 @@ function OrcamentoCard({
       await enviar({ data: { orcamentoId: o.id, valorServico: v, observacoes: obs || undefined } });
       toast.success(mode === "revisar" ? "Orçamento atualizado" : "Orçamento enviado ao cliente");
       if (mode === "revisar") setEditing(false);
+      refresh?.();
     } catch (e: any) {
       toast.error("Falha ao salvar", { description: e?.message });
     } finally {
@@ -549,8 +554,12 @@ function OrcamentoCard({
       .from("orcamentos")
       .update({ profissional_id: null })
       .eq("id", o.id);
-    if (error) toast.error("Erro ao devolver", { description: error.message });
-    else toast.success("Pedido devolvido ao mural de oportunidades.");
+    if (error) {
+      toast.error("Erro ao devolver", { description: error.message });
+    } else {
+      toast.success("Pedido devolvido ao mural de oportunidades.");
+      refresh?.();
+    }
     setSaving(false);
   };
 
@@ -574,6 +583,7 @@ function OrcamentoCard({
       toast.error("Erro ao pegar pedido", { description: error.message });
     } else {
       toast.success("Boa! Pedido reservado para você. Agora elabore o orçamento.");
+      refresh?.();
     }
     setSaving(false);
   };
