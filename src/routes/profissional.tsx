@@ -438,7 +438,7 @@ function ProfissionalArea() {
 
       {/* Detail Sheet — opens when arriving via notification */}
       <Sheet open={!!sheetOrc} onOpenChange={(open) => { if (!open) { setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}}>
-        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0" aria-describedby={undefined}>
           <SheetHeader className="px-6 pt-6 pb-4 border-b border-border bg-slate-50">
             <SheetTitle className="text-lg font-bold">{sheetOrc?.service_name ?? "Pedido"}</SheetTitle>
           </SheetHeader>
@@ -457,6 +457,7 @@ function ProfissionalArea() {
                 refresh={() => { refresh(); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
                 userId={user?.id ?? ""}
                 onRecusar={async (id) => { await recusarOrcamento(id); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
+                disableChat
               />
             )}
           </div>
@@ -929,6 +930,7 @@ function Grid({
   profGeo,
   userId,
   onRecusar,
+  disableChat = false,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -943,6 +945,7 @@ function Grid({
   profGeo: { lat: number | null; lng: number | null; raio: number };
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
+  disableChat?: boolean;
 }) {
   if (items.length === 0) {
     return (
@@ -1426,7 +1429,7 @@ function OrcamentoCard({
         </Button>
       )}
 
-      {o.profissional_id === userId && (
+      {o.profissional_id === userId && !disableChat && (
         <details className="pt-3 border-t border-border" open={shouldOpenChat || undefined}>
           <summary className="cursor-pointer text-xs font-bold text-brand flex items-center gap-1.5 select-none">
             <MessageSquare className="h-3.5 w-3.5" /> Conversar com o cliente

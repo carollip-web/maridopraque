@@ -105,8 +105,10 @@ export function useNotifications() {
       userId = data.user?.id;
       if (!userId) return;
       fetchAll();
+      // Use a unique channel name per hook instance to avoid duplicate subscription errors
+      const instanceId = Math.random().toString(36).slice(2, 8);
       channel = supabase
-        .channel("notif-" + userId)
+        .channel("notif-" + userId + "-" + instanceId)
         .on("postgres_changes", { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${userId}` }, () => fetchAll())
         .subscribe();
     });
