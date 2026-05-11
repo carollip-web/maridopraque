@@ -751,53 +751,34 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
            </div>
         </section>
 
-        {/* Modal Conversar */}
-        {showConversar && (
+        {/* Modal Conversar — chat in-app */}
+        {showConversar && selectedPedido && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowConversar(false)} />
-            <div className="relative w-full max-w-sm bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-               <div className="p-8 text-center border-b border-border">
-                  <div className="h-16 w-16 rounded-full bg-slate-100 mx-auto mb-4 flex items-center justify-center">
-                     <User className="h-8 w-8 text-slate-400" />
+            <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              {selectedPedido.profissional_id ? (
+                <div className="p-4">
+                  <Chat
+                    orcamentoId={selectedPedido.id}
+                    contraparteId={selectedPedido.profissional_id}
+                    contraparteNome={selectedPedido.prof}
+                  />
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <Button variant="outline" onClick={() => window.open(WHATSAPP, "_blank")} className="rounded-full text-xs">
+                      <MessageCircle className="h-3 w-3 mr-1" /> WhatsApp
+                    </Button>
+                    <Button variant="outline" onClick={() => (window.location.href = "tel:21999999999")} className="rounded-full text-xs">
+                      <Phone className="h-3 w-3 mr-1" /> Ligar
+                    </Button>
                   </div>
-                  <h3 className="text-xl font-bold">Falar com {selectedPedido?.prof}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Como você prefere conversar?</p>
-               </div>
-               <div className="p-4 space-y-2">
-                  <button 
-                    onClick={() => window.open(WHATSAPP, "_blank")}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-green-50 transition-colors group"
-                  >
-                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                           <MessageCircle className="h-5 w-5" />
-                        </div>
-                        <div className="text-left">
-                           <p className="font-bold text-sm">WhatsApp</p>
-                           <p className="text-[10px] text-muted-foreground">Conversar por texto agora</p>
-                        </div>
-                     </div>
-                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-green-500 transition-colors" />
-                  </button>
-                  <button 
-                    onClick={() => window.location.href = "tel:21999999999"}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl hover:bg-blue-50 transition-colors group"
-                  >
-                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                           <Phone className="h-5 w-5" />
-                        </div>
-                        <div className="text-left">
-                           <p className="font-bold text-sm">Ligação Direta</p>
-                           <p className="text-[10px] text-muted-foreground">Falar por voz com o profissional</p>
-                        </div>
-                     </div>
-                     <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500 transition-colors" />
-                  </button>
-               </div>
-               <div className="p-4 bg-slate-50">
-                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full font-bold text-xs uppercase tracking-widest">Cancelar</Button>
-               </div>
+                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full mt-2 text-xs uppercase tracking-widest font-bold">Fechar</Button>
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-sm text-muted-foreground mb-4">Aguardando profissional aceitar para iniciar a conversa.</p>
+                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full font-bold text-xs uppercase tracking-widest">Fechar</Button>
+                </div>
+              )}
             </div>
           </div>
         )}
