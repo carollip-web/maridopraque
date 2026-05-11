@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
+import { PhotoUploader } from "@/components/PhotoUploader";
+import { distanceKm } from "@/lib/geo";
 import {
   Wrench,
   Clock,
