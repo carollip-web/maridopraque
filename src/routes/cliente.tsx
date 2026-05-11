@@ -544,7 +544,9 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [showConversar, setShowConversar] = useState(false);
-  const [approvalStep, setApprovalStep] = useState<null | "confirm" | "processing" | "success">(null);
+  const [approvalStep, setApprovalStep] = useState<null | "schedule" | "confirm" | "processing" | "success">(null);
+  const [dataAgendada, setDataAgendada] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["cliente", "pedidos", user?.id],
