@@ -590,7 +590,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         const propsForOrc = propostas.filter(p => p.orcamento_id === o.id).map(p => ({...p, profNome: profsMap[p.profissional_id] || "Profissional"}));
         const uiStatus = (o.status === "customizado_pendente" && propsForOrc.length > 0) ? "Aguardando Aprovação" :
                  o.status === "customizado_pendente" ? "Em Análise" :
-                 o.status === "enviado" ? "Aguardando Aprovação" :
+                 (o.status === "enviado" || o.status === "fixo_auto") ? "Aguardando Aprovação" :
                  o.status === "aprovado" ? "Agendado" : o.status;
         return {
           propostas: propsForOrc,
