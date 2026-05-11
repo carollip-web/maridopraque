@@ -4,6 +4,8 @@ import { z } from "zod";
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
 import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { TermoAdesaoDialog } from "@/components/TermoAdesaoDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -352,6 +354,7 @@ function ProfissionalArea() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OnboardingWizard />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -638,6 +641,7 @@ function OrcamentoCard({
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
+  const [termoOpen, setTermoOpen] = useState(false);
 
   const meta = STATUS_META[o.status];
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
@@ -713,6 +717,36 @@ function OrcamentoCard({
       toast.error("Erro ao pegar pedido", { description: error.message });
     } else {
       toast.success("Boa! Pedido reservado para você. Agora elabore o orçamento.");
+      refresh?.();
+    }
+    setSaving(false);
+  };
+
+  const doAceitar = async () => {
+    if (o.valor_servico == null) return;
+    setSaving(true);
+    const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+    if (check?.profissional_id) {
+      toast.error("Outro profissional pegou esse pedido antes de você.");
+      setSaving(false);
+      refresh?.();
+      return;
+    }
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({
+        profissional_id: userId,
+        valor_servico: o.valor_servico,
+        valor: Number(o.valor_servico) + Number(o.taxa_material ?? 0),
+        status: "enviado",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", o.id)
+      .is("profissional_id", null);
+    if (error) {
+      toast.error("Erro ao aceitar", { description: error.message });
+    } else {
+      toast.success(`Cotação enviada por R$ ${Number(o.valor_servico).toFixed(2)}!`);
       refresh?.();
     }
     setSaving(false);
@@ -875,35 +909,28 @@ function OrcamentoCard({
 
       {mode === "pegar" ? (
         <div className="space-y-2">
+          <TermoAdesaoDialog
+            open={termoOpen}
+            onOpenChange={setTermoOpen}
+            userId={userId}
+            onAccepted={() => doAceitar()}
+          />
           {o.valor_servico != null && (
             <Button
               onClick={async () => {
                 setSaving(true);
-                const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
-                if (check?.profissional_id) {
-                  toast.error("Outro profissional pegou esse pedido antes de você.");
+                // checa termo aceito
+                const { data: perf } = await supabase
+                  .from("profissional_perfil")
+                  .select("termo_aceito_em")
+                  .eq("user_id", userId)
+                  .maybeSingle();
+                if (!perf?.termo_aceito_em) {
                   setSaving(false);
-                  refresh?.();
+                  setTermoOpen(true);
                   return;
                 }
-                const { error } = await supabase
-                  .from("orcamentos")
-                  .update({
-                    profissional_id: userId,
-                    valor_servico: o.valor_servico,
-                    valor: Number(o.valor_servico) + Number(o.taxa_material ?? 0),
-                    status: "enviado",
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq("id", o.id)
-                  .is("profissional_id", null);
-                if (error) {
-                  toast.error("Erro ao aceitar", { description: error.message });
-                } else {
-                  toast.success(`Cotação enviada por R$ ${Number(o.valor_servico).toFixed(2)}!`);
-                  refresh?.();
-                }
-                setSaving(false);
+                await doAceitar();
               }}
               disabled={saving}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"

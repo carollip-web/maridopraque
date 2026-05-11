@@ -361,8 +361,11 @@ export type Database = {
           foto_url: string | null
           lat: number | null
           lng: number | null
+          onboarding_completo: boolean
           raio_atendimento_km: number
           slug: string | null
+          termo_aceito_em: string | null
+          termo_versao: string | null
           updated_at: string
           user_id: string
         }
@@ -375,8 +378,11 @@ export type Database = {
           foto_url?: string | null
           lat?: number | null
           lng?: number | null
+          onboarding_completo?: boolean
           raio_atendimento_km?: number
           slug?: string | null
+          termo_aceito_em?: string | null
+          termo_versao?: string | null
           updated_at?: string
           user_id: string
         }
@@ -389,8 +395,11 @@ export type Database = {
           foto_url?: string | null
           lat?: number | null
           lng?: number | null
+          onboarding_completo?: boolean
           raio_atendimento_km?: number
           slug?: string | null
+          termo_aceito_em?: string | null
+          termo_versao?: string | null
           updated_at?: string
           user_id?: string
         }
