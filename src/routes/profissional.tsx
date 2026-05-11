@@ -296,7 +296,7 @@ function ProfissionalArea() {
 
     // Decide which top tab + sub-tab the orçamento lives in
     const isMine = o.profissional_id === user?.id;
-    const inServicos = isMine && !chat && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
+    const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
     const targetTab = inServicos ? "servicos" : "orcamentos";
 
     if (tab !== targetTab) {
