@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
+import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
