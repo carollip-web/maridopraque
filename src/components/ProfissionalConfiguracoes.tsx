@@ -92,6 +92,13 @@ export function ProfissionalConfiguracoes() {
     // Update profiles table
     const p1 = supabase.from("profiles").update({ nome: values.nome, whatsapp: values.whatsapp }).eq("id", user.id);
     
+    // Geocodifica a cidade (best-effort) para habilitar filtro por raio
+    let geo: { lat: number; lng: number } | null = null;
+    if (values.cidade?.trim()) {
+      const { geocodeCidade } = await import("@/lib/geo");
+      geo = await geocodeCidade(values.cidade);
+    }
+
     // Update profissional_perfil table
     const p2 = supabase.from("profissional_perfil").update({ 
       bio: values.bio, 
@@ -100,7 +107,9 @@ export function ProfissionalConfiguracoes() {
       anos_experiencia: values.anos_experiencia,
       raio_atendimento_km: values.raio_atendimento_km,
       atende_emergencias: values.atende_emergencias,
-      veiculo_proprio: values.veiculo_proprio
+      veiculo_proprio: values.veiculo_proprio,
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
     } as any).eq("user_id", user.id);
     
     const [res1, res2] = await Promise.all([p1, p2]);
