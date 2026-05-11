@@ -165,6 +165,7 @@ function ProfissionalArea() {
     const { data, error } = await supabase
       .from("orcamentos")
       .select("*")
+      .or(`profissional_id.is.null,profissional_id.eq.${user?.id}`)
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("Erro ao carregar orçamentos", { description: error.message });
