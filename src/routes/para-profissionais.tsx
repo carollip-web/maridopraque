@@ -114,7 +114,7 @@ function ParaProfissionaisPage() {
               ) : (
                 <>
                   <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8">
-                    <Link to="/login/profissional">
+                    <Link to="/profissional-cadastro">
                       Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>

@@ -568,6 +568,9 @@ function AdminProfissionais() {
           <h2 className="text-2xl font-bold">Profissionais</h2>
           <p className="text-sm text-slate-500">{pros.length} cadastrados · {pros.filter(p => p.ativo).length} ativos</p>
         </div>
+        <a href="/admin-validacao" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-white text-sm font-bold hover:bg-brand/90 transition-colors shrink-0">
+          🛡️ Validação de cadastros
+        </a>
       </div>
 
       {/* Filters */}

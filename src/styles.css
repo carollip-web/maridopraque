@@ -176,3 +176,7 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
 }
+
+.input-field {
+  @apply w-full h-11 px-4 rounded-xl border border-border bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30;
+}
