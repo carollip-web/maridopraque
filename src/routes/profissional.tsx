@@ -722,6 +722,36 @@ function OrcamentoCard({
     setSaving(false);
   };
 
+  const doAceitar = async () => {
+    if (o.valor_servico == null) return;
+    setSaving(true);
+    const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+    if (check?.profissional_id) {
+      toast.error("Outro profissional pegou esse pedido antes de você.");
+      setSaving(false);
+      refresh?.();
+      return;
+    }
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({
+        profissional_id: userId,
+        valor_servico: o.valor_servico,
+        valor: Number(o.valor_servico) + Number(o.taxa_material ?? 0),
+        status: "enviado",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", o.id)
+      .is("profissional_id", null);
+    if (error) {
+      toast.error("Erro ao aceitar", { description: error.message });
+    } else {
+      toast.success(`Cotação enviada por R$ ${Number(o.valor_servico).toFixed(2)}!`);
+      refresh?.();
+    }
+    setSaving(false);
+  };
+
   const handleConcluir = async () => {
     if (fotosConcluido.length === 0) {
       if (!confirm("Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.")) return;
