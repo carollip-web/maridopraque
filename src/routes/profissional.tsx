@@ -43,7 +43,7 @@ import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "servicos", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "servicos", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
   }),
   component: ProfissionalArea,
 });
