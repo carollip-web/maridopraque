@@ -403,6 +403,13 @@ function ProfissionalArea() {
               </button>
 
               <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "agenda" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'agenda' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <CalendarClock className="h-4 w-4" /> Agenda
+              </button>
+
+              <button
                 onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'financeiro' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
               >
