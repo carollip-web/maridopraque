@@ -7,6 +7,10 @@ import { NotificationPermissionBanner } from "@/components/NotificationPermissio
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { TermoAdesaoDialog } from "@/components/TermoAdesaoDialog";
 import { Chat } from "@/components/Chat";
+import { NivelBadge } from "@/components/NivelBadge";
+import { PanicButton } from "@/components/PanicButton";
+import { CheckInOut } from "@/components/CheckInOut";
+import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +86,8 @@ type Orcamento = {
   auto_aprovado: boolean;
   fotos_problema: string[] | null;
   fotos_concluido: string[] | null;
+  checkin_em?: string | null;
+  checkout_em?: string | null;
 };
 
 type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
@@ -122,6 +128,17 @@ function ProfissionalArea() {
   const [taxaAceitacao, setTaxaAceitacao] = useState<string>("—");
   const [slaMedioH, setSlaMedioH] = useState<string>("—");
   const [totalConcluidos, setTotalConcluidos] = useState(0);
+  const [recusados, setRecusados] = useState<Set<string>>(new Set());
+
+  const recusarOrcamento = async (orcamentoId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("orcamento_recusas")
+      .insert({ orcamento_id: orcamentoId, profissional_id: user.id });
+    if (error) { toast.error("Não foi possível recusar agora."); return; }
+    setRecusados((s) => new Set(s).add(orcamentoId));
+    toast.success("Pedido recusado e removido do seu radar.");
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -199,6 +216,11 @@ function ProfissionalArea() {
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }
+      const { data: recs } = await supabase
+        .from("orcamento_recusas")
+        .select("orcamento_id")
+        .eq("profissional_id", user.id);
+      setRecusados(new Set((recs ?? []).map((r: any) => r.orcamento_id)));
     }
 
     const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
@@ -273,6 +295,7 @@ function ProfissionalArea() {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
         if (!(o.status === "customizado_pendente" && o.profissional_id === null && especialidades.includes(o.service_name))) return false;
+        if (recusados.has(o.id)) return false;
         // Filtro por raio: só aplica se ambos os lados tiverem geo
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
@@ -362,6 +385,7 @@ function ProfissionalArea() {
   return (
     <div className="min-h-screen bg-slate-50">
       <OnboardingWizard />
+      <PanicButton />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -470,6 +494,10 @@ function ProfissionalArea() {
               <div className="space-y-8">
                 <NotificationPermissionBanner />
                 <ProfileCompletenessCard />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
+                  <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
+                </div>
                 <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -529,7 +557,7 @@ function ProfissionalArea() {
                     ) : (
                       <>
                         <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
+                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="pegar" enviar={enviar} refresh={refresh} onRecusar={recusarOrcamento} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
                         </TabsContent>
                         <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
                           <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
@@ -596,6 +624,7 @@ function Grid({
   clienteGeo,
   profGeo,
   userId,
+  onRecusar,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -609,6 +638,7 @@ function Grid({
   clienteGeo: Record<string, ClienteGeo>;
   profGeo: { lat: number | null; lng: number | null; raio: number };
   userId: string;
+  onRecusar?: (id: string) => Promise<void>;
 }) {
   if (items.length === 0) {
     return (
@@ -641,6 +671,7 @@ function Grid({
           enviar={enviar}
           refresh={refresh}
           userId={userId}
+          onRecusar={onRecusar}
         />
       ))}
     </div>
@@ -658,6 +689,7 @@ function OrcamentoCard({
   enviar,
   refresh,
   userId,
+  onRecusar,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
@@ -669,6 +701,7 @@ function OrcamentoCard({
   enviar: any;
   refresh?: () => void;
   userId: string;
+  onRecusar?: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const initialValor = o.valor_servico ?? o.valor ?? null;
@@ -917,6 +950,17 @@ function OrcamentoCard({
         )}
       </div>
 
+      {(o.profissional_id === userId && (o.status === "aprovado" || o.status === "pago")) && (
+        <div className="pt-3 border-t border-border">
+          <CheckInOut
+            orcamentoId={o.id}
+            checkinEm={o.checkin_em ?? null}
+            checkoutEm={o.checkout_em ?? null}
+            onChange={refresh}
+          />
+        </div>
+      )}
+
       {mode === "info" && o.status === "pago" && (
         <div className="space-y-3 pt-3 border-t border-border">
           <div>
@@ -973,14 +1017,24 @@ function OrcamentoCard({
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Aceitar por R$ {Number(o.valor_servico).toFixed(2)}</>}
             </Button>
           )}
-          <Button
-            onClick={handlePegar}
-            disabled={saving}
-            variant="outline"
-            className="w-full rounded-full font-bold h-11"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pegar para elaborar depois"}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handlePegar}
+              disabled={saving}
+              variant="outline"
+              className="rounded-full font-bold h-11"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Elaborar depois"}
+            </Button>
+            <Button
+              onClick={async () => { if (onRecusar) await onRecusar(o.id); }}
+              disabled={saving || !onRecusar}
+              variant="ghost"
+              className="rounded-full font-bold h-11 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <XCircle className="h-4 w-4 mr-1.5" /> Recusar
+            </Button>
+          </div>
         </div>
       ) : (mode === "enviar" || (mode === "revisar" && editing)) ? (
         <div className="space-y-3 pt-3 border-t border-border">
