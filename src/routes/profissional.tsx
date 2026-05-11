@@ -40,14 +40,16 @@ import {
   Camera,
   Wallet,
   MessageSquare,
+  CalendarClock,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
 import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
+import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "servicos", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
   }),
   component: ProfissionalArea,
 });
