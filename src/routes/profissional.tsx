@@ -11,6 +11,7 @@ import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { distanceKm } from "@/lib/geo";
 import {
   Wrench,
