@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,6 +109,7 @@ function MeusOrcamentos() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const search = Route.useSearch();
+  const queryClient = useQueryClient();
   const [list, setList] = useState<OrcamentoRow[]>([]);
   const [orcMats, setOrcMats] = useState<Record<string, OrcMaterial[]>>({});
   const [showNew, setShowNew] = useState(false);
@@ -445,6 +447,7 @@ function MeusOrcamentos() {
           await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", novoId);
         }
         toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
+        queryClient.invalidateQueries({ queryKey: ["cliente"] });
         // limpa rascunho após envio bem-sucedido
         if (draftKey && typeof window !== "undefined") {
           try {
