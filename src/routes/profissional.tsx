@@ -381,10 +381,10 @@ function ProfissionalArea() {
                   </div>
 
                   <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
+                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
                   </TabsContent>
                   <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
+                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
                   </TabsContent>
                 </Tabs>
               </div>
@@ -430,13 +430,13 @@ function ProfissionalArea() {
                     ) : (
                       <>
                         <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
+                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
                         </TabsContent>
                         <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
+                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
                         </TabsContent>
                         <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
+                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
                         </TabsContent>
                       </>
                     )}
