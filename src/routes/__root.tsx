@@ -51,6 +51,7 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: "Marido pra Quê? — Reparos e Montagens" },
       { name: "twitter:description", content: "Profissionais verificados, orçamento online e opção com acompanhante feminina." },
       { name: "theme-color", content: "#FF6B35" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Marido pra Quê" },

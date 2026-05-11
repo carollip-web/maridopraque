@@ -997,6 +997,7 @@ function OrcamentoCard({
   refresh,
   userId,
   onRecusar,
+  disableChat = false,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
@@ -1009,6 +1010,7 @@ function OrcamentoCard({
   refresh?: () => void;
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
+  disableChat?: boolean;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const shouldOpenChat = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1";
