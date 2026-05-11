@@ -169,16 +169,6 @@ function ProfissionalArea() {
       setClienteGeo(gmap);
     }
 
-    const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
-    if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, nome, whatsapp, email")
-        .in("id", ids);
-      const map: Record<string, Profile> = {};
-      (profs ?? []).forEach((p: any) => (map[p.id] = p));
-      setProfiles(map);
-    }
 
     const serviceIds = Array.from(new Set(list.map((o) => o.service_id).filter(Boolean) as string[]));
     if (serviceIds.length) {
