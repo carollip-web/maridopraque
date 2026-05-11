@@ -45,10 +45,8 @@ export function Header() {
     const link = notification.link ?? "";
 
     if (orcamentoId) {
-      const goesToProfissional = link.startsWith("/profissional") || (isProfissional && !link.startsWith("/cliente"));
-
-      if (goesToProfissional) {
-        // Determine the right sub-tab based on notification context
+      // Professionals always go to their own panel regardless of the stored link
+      if (isProfissional) {
         const titleLower = notification.title.toLowerCase();
         const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
         navigate({
@@ -62,6 +60,7 @@ export function Header() {
         return;
       }
 
+      // Clients go to client area
       navigate({
         to: "/cliente",
         search: { tab: "pedidos", pedidoId: orcamentoId, chat: isMessage ? "1" : undefined } as any,
