@@ -74,7 +74,11 @@ export function Header() {
       return;
     }
 
-    navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(notification.id) } as any });
+    if (isProfissional) {
+      navigate({ to: "/profissional", search: { tab: "notificacoes" } as any });
+    } else {
+      navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(notification.id) } as any });
+    }
   };
 
   useEffect(() => {
@@ -187,6 +191,8 @@ export function Header() {
                           setShowNotifications(false);
                           if (isAdmin && !isProfissional) {
                             navigate({ to: "/admin" });
+                          } else if (isProfissional) {
+                            navigate({ to: "/profissional", search: { tab: "notificacoes" } as any });
                           } else {
                             navigate({ to: "/cliente", search: { tab: "notificacoes" } as any });
                           }

@@ -15,6 +15,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -46,6 +47,7 @@ import {
   Wallet,
   MessageSquare,
   CalendarClock,
+  Bell,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
@@ -54,7 +56,7 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes", "notificacoes"]).optional().catch("pedidos"),
     orcamentoId: z.string().optional(),
     chat: z.string().optional(),
   }),
@@ -119,6 +121,7 @@ function ProfissionalArea() {
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
   const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
+  const { notifications: profNotifications, unreadCount: unreadNotifications, markAsRead: markNotifAsRead, markAllAsRead: markAllNotifAsRead } = useNotifications();
 
   const [ativo, setAtivo] = useState(false);
   const [mediaAvaliacoes, setMediaAvaliacoes] = useState<string>("—");
@@ -504,11 +507,73 @@ function ProfissionalArea() {
               >
                 <Settings className="h-4 w-4" /> Configurações do Perfil
               </button>
+
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "notificacoes" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'notificacoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Bell className="h-4 w-4" /> Notificações
+                {unreadNotifications > 0 && (
+                  <span className="ml-auto text-[10px] bg-brand/15 text-brand px-2 py-0.5 rounded-full">{unreadNotifications}</span>
+                )}
+              </button>
             </nav>
           </aside>
 
           <main className="flex-1 min-w-0">
-            {tab === "configuracoes" ? (
+            {tab === "notificacoes" ? (
+              <div className="space-y-4 animate-in fade-in duration-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Notificações</h2>
+                    <p className="text-sm text-muted-foreground">Atualizações sobre seus pedidos e serviços.</p>
+                  </div>
+                  {unreadNotifications > 0 && (
+                    <button
+                      onClick={markAllNotifAsRead}
+                      className="text-xs font-bold text-brand hover:underline uppercase"
+                    >
+                      Marcar todas como lidas
+                    </button>
+                  )}
+                </div>
+                {profNotifications.length === 0 ? (
+                  <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                    <Bell className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500 font-medium text-sm">Nenhuma notificação por enquanto.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {profNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          markNotifAsRead(n.id);
+                          if (n.pedidoId) {
+                            const titleLower = n.title.toLowerCase();
+                            const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
+                            navigate({ to: "/profissional", search: { tab: isServicos ? "servicos" : "orcamentos", orcamentoId: n.pedidoId } as any });
+                          }
+                        }}
+                        className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-sm ${n.read ? "bg-white border-border opacity-70 hover:opacity-100" : "bg-brand/5 border-brand/20"}`}
+                      >
+                        <div className={`mt-0.5 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${n.read ? "bg-slate-100" : "bg-brand/15"}`}>
+                          <Bell className={`h-4 w-4 ${n.read ? "text-slate-400" : "text-brand"}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className={`text-sm font-bold ${n.read ? "text-foreground" : "text-brand"}`}>{n.title}</p>
+                            {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5 shrink-0" />}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.desc}</p>
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-2">{n.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : tab === "configuracoes" ? (
               <ProfissionalConfiguracoes />
             ) : tab === "financeiro" ? (
               <ProfissionalFinanceiro />
