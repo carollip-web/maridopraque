@@ -874,13 +874,52 @@ function OrcamentoCard({
       )}
 
       {mode === "pegar" ? (
-        <Button
-          onClick={handlePegar}
-          disabled={saving}
-          className="w-full bg-brand text-brand-foreground rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"
-        >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Pegar para mim"}
-        </Button>
+        <div className="space-y-2">
+          {o.valor_servico != null && (
+            <Button
+              onClick={async () => {
+                setSaving(true);
+                const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+                if (check?.profissional_id) {
+                  toast.error("Outro profissional pegou esse pedido antes de você.");
+                  setSaving(false);
+                  refresh?.();
+                  return;
+                }
+                const { error } = await supabase
+                  .from("orcamentos")
+                  .update({
+                    profissional_id: userId,
+                    valor_servico: o.valor_servico,
+                    valor: Number(o.valor_servico) + Number(o.taxa_material ?? 0),
+                    status: "enviado",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", o.id)
+                  .is("profissional_id", null);
+                if (error) {
+                  toast.error("Erro ao aceitar", { description: error.message });
+                } else {
+                  toast.success(`Cotação enviada por R$ ${Number(o.valor_servico).toFixed(2)}!`);
+                  refresh?.();
+                }
+                setSaving(false);
+              }}
+              disabled={saving}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"
+            >
+              {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Aceitar por R$ {Number(o.valor_servico).toFixed(2)}</>}
+            </Button>
+          )}
+          <Button
+            onClick={handlePegar}
+            disabled={saving}
+            variant="outline"
+            className="w-full rounded-full font-bold h-11"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pegar para elaborar depois"}
+          </Button>
+        </div>
       ) : (mode === "enviar" || (mode === "revisar" && editing)) ? (
         <div className="space-y-3 pt-3 border-t border-border">
               <div>
