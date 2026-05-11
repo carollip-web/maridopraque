@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Notification = {
@@ -8,6 +8,7 @@ export type Notification = {
   time: string;
   read: boolean;
   pedidoId?: string;
+  link?: string;
 };
 
 function timeAgo(iso: string) {
@@ -20,8 +21,34 @@ function timeAgo(iso: string) {
   return `Há ${Math.floor(h / 24)}d`;
 }
 
+function showBrowserNotification(title: string, body: string, link?: string) {
+  if (typeof window === "undefined") return;
+  if (!("Notification" in window)) return;
+  if (window.Notification.permission !== "granted") return;
+  if (typeof document !== "undefined" && document.visibilityState === "visible") return;
+  try {
+    const n = new window.Notification(title, {
+      body,
+      icon: "/favicon.ico",
+      badge: "/favicon.ico",
+      tag: link ?? title,
+    });
+    if (link) {
+      n.onclick = () => {
+        window.focus();
+        window.location.href = link;
+        n.close();
+      };
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const knownIds = useRef<Set<string>>(new Set());
+  const firstLoad = useRef(true);
 
   useEffect(() => {
     let userId: string | undefined;
@@ -33,16 +60,27 @@ export function useNotifications() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
-      setNotifications(
-        (data ?? []).map((n) => ({
-          id: n.id,
-          title: n.titulo,
-          desc: n.mensagem,
-          time: timeAgo(n.created_at),
-          read: n.lida,
-          pedidoId: n.orcamento_id ?? undefined,
-        }))
-      );
+      const list = (data ?? []).map((n) => ({
+        id: n.id,
+        title: n.titulo,
+        desc: n.mensagem,
+        time: timeAgo(n.created_at),
+        read: n.lida,
+        pedidoId: n.orcamento_id ?? undefined,
+        link: n.link ?? undefined,
+      }));
+
+      // Detect new unread items (skip on first load) and trigger native notification
+      if (!firstLoad.current) {
+        for (const n of list) {
+          if (!knownIds.current.has(n.id) && !n.read) {
+            showBrowserNotification(n.title, n.desc, n.link);
+          }
+        }
+      }
+      knownIds.current = new Set(list.map((n) => n.id));
+      firstLoad.current = false;
+      setNotifications(list);
     };
 
     supabase.auth.getUser().then(({ data }) => {
@@ -70,10 +108,25 @@ export function useNotifications() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const requestBrowserPermission = async (): Promise<NotificationPermission> => {
+    if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+    if (window.Notification.permission === "granted" || window.Notification.permission === "denied") {
+      return window.Notification.permission;
+    }
+    return await window.Notification.requestPermission();
+  };
+
+  const browserPermission: NotificationPermission =
+    typeof window !== "undefined" && "Notification" in window
+      ? window.Notification.permission
+      : "denied";
+
   return {
     notifications,
     markAsRead,
     markAllAsRead,
     unreadCount: notifications.filter((n) => !n.read).length,
+    requestBrowserPermission,
+    browserPermission,
   };
 }
