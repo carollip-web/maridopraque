@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Calendar, Clock, Ban } from "lucide-react";
 import { DIAS_SEMANA, type Janela } from "@/lib/agenda";
+import { AgendaCalendar } from "@/components/AgendaCalendar";
 
 type Bloqueio = { id: string; data_inicio: string; data_fim: string; motivo: string | null };
 type JanelaRow = Janela & { id: string };
@@ -103,6 +104,8 @@ export function ProfissionalAgenda() {
         <h2 className="text-xl font-bold text-slate-900 tracking-tight">Agenda & disponibilidade</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Defina seus horários de atendimento e bloqueios. Clientes só conseguem agendar nos slots disponíveis.</p>
       </div>
+
+      <AgendaCalendar />
 
       <section className="rounded-3xl bg-white border border-border p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
