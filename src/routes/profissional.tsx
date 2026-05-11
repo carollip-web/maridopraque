@@ -493,6 +493,10 @@ function ProfissionalArea() {
               <div className="space-y-8">
                 <NotificationPermissionBanner />
                 <ProfileCompletenessCard />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
+                  <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
+                </div>
                 <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
                     <div>
