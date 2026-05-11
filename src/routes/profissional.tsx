@@ -54,7 +54,7 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
     orcamentoId: z.string().optional(),
   }),
   component: ProfissionalArea,
@@ -296,7 +296,7 @@ function ProfissionalArea() {
     // Decide which top tab + sub-tab the orçamento lives in
     const isMine = o.profissional_id === user?.id;
     const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
-    const targetTab = inServicos ? "servicos" : "pedidos";
+    const targetTab = inServicos ? "servicos" : "orcamentos";
 
     if (tab !== targetTab) {
       navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId } as any });
@@ -453,9 +453,21 @@ function ProfissionalArea() {
                 onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'pedidos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
               >
-                <LayoutGrid className="h-4 w-4" /> Gestão de Pedidos
+                <LayoutGrid className="h-4 w-4" /> Visão Geral
               </button>
-              
+
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'orcamentos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Send className="h-4 w-4" /> Pedidos e Orçamentos
+                {counts.oportunidades + counts.elaboracao > 0 && (
+                  <span className="ml-auto text-[10px] bg-brand/15 text-brand px-2 py-0.5 rounded-full">
+                    {counts.oportunidades + counts.elaboracao}
+                  </span>
+                )}
+              </button>
+
               <button 
                 onClick={() => navigate({ to: "/profissional", search: { tab: "servicos" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'servicos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
@@ -526,40 +538,8 @@ function ProfissionalArea() {
                   </TabsContent>
                 </Tabs>
               </div>
-            ) : (
-              <div className="space-y-8">
-                <NotificationPermissionBanner />
-                <ProfileCompletenessCard />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
-                  <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
-                </div>
-                <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-white/70">Performance</p>
-                      <h2 className="text-lg font-bold">Seu mês até aqui</h2>
-                    </div>
-                    <CheckCircle2 className="h-8 w-8 text-white/60" />
-                  </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <DashStat label="Ganhos do mês" value={`R$ ${ganhosMes.toFixed(2)}`} />
-                    <DashStat label="Taxa de aceitação" value={taxaAceitacao} />
-                    <DashStat label="SLA médio" value={slaMedioH} />
-                    <DashStat label="Concluídos" value={String(totalConcluidos)} />
-                  </div>
-                </section>
-
-                <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
-
-
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
-                  <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
-                  <Stat icon={TrendingUp} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-700" />
-                  <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
-                </section>
-
+            ) : tab === "orcamentos" ? (
+              <div className="space-y-6">
                 <Tabs value={pedidosSubTab} onValueChange={setPedidosSubTab} className="w-full animate-in fade-in duration-700">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -572,6 +552,13 @@ function ProfissionalArea() {
                       Gerar pedido teste
                     </Button>
                   </div>
+
+                  <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
+                    <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
+                    <Stat icon={TrendingUp} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-700" />
+                    <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
+                  </section>
 
                   <TabsList className="mt-6 h-auto w-full flex-wrap justify-start rounded-2xl border border-border bg-card p-1.5 shadow-sm lg:w-auto">
                     <TabsTrigger value="oportunidades" className="rounded-xl px-4 py-2 text-sm font-medium">
@@ -605,6 +592,49 @@ function ProfissionalArea() {
                     )}
                   </div>
                 </Tabs>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <NotificationPermissionBanner />
+                <ProfileCompletenessCard />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
+                  <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
+                </div>
+                <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-white/70">Performance</p>
+                      <h2 className="text-lg font-bold">Seu mês até aqui</h2>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-white/60" />
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <DashStat label="Ganhos do mês" value={`R$ ${ganhosMes.toFixed(2)}`} />
+                    <DashStat label="Taxa de aceitação" value={taxaAceitacao} />
+                    <DashStat label="SLA médio" value={slaMedioH} />
+                    <DashStat label="Concluídos" value={String(totalConcluidos)} />
+                  </div>
+                </section>
+
+                <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
+                  <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
+                  <Stat icon={TrendingUp} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-700" />
+                  <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
+                </section>
+
+                <div className="rounded-3xl bg-white border border-border p-6 flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-slate-900">Quer ver seus pedidos?</h3>
+                    <p className="text-sm text-muted-foreground">Acesse o radar de oportunidades e os orçamentos em elaboração.</p>
+                  </div>
+                  <Button onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})} className="rounded-full">
+                    Ir para Pedidos
+                  </Button>
+                </div>
               </div>
             )}
           </main>
