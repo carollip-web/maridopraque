@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { PhotoUploader } from "@/components/PhotoUploader";
 import {
   Loader2,
   CheckCircle2,
