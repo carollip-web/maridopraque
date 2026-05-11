@@ -755,7 +755,44 @@ function OrcamentoCard({
             Pago em {new Date(o.data_pagamento).toLocaleDateString("pt-BR")}
           </p>
         )}
+        {o.status === "concluido" && o.fotos_concluido && o.fotos_concluido.length > 0 && (
+          <div>
+            <p className="text-xs uppercase font-bold text-muted-foreground mb-1.5">Serviço concluído</p>
+            <div className="flex gap-2 flex-wrap">
+              {o.fotos_concluido.map((u) => (
+                <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                  <img src={u} alt="Serviço concluído" className="h-16 w-16 rounded-lg object-cover border border-border" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {mode === "info" && o.status === "pago" && (
+        <div className="space-y-3 pt-3 border-t border-border">
+          <div>
+            <label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-1.5 mb-2">
+              <Camera className="h-3.5 w-3.5" /> Fotos do serviço pronto
+            </label>
+            <PhotoUploader
+              userId={userId}
+              pathPrefix={`concluido/${o.id}`}
+              value={fotosConcluido}
+              onChange={setFotosConcluido}
+              max={5}
+              label="foto do trabalho finalizado"
+            />
+          </div>
+          <Button
+            onClick={handleConcluir}
+            disabled={saving}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md"
+          >
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Marcar como concluído</>}
+          </Button>
+        </div>
+      )}
 
       {mode === "pegar" ? (
         <Button
