@@ -848,8 +848,10 @@ function OrcamentoCard({
     if (hoursSinceCreated >= 2) isUrgent = true; // Urgent if more than half of the SLA has passed
   }
 
+  const isHighlighted = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
+
   return (
-    <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
+    <div id={`orc-${o.id}`} className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? 'border-brand ring-2 ring-brand/30 shadow-lg' : isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
       {isUrgent && (
         <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />
       )}
