@@ -722,7 +722,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     {sp.status === "Aguardando Aprovação" && (
                        <Button 
                          className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
-                         onClick={() => setApprovalStep("confirm")}
+                         onClick={() => { setDataAgendada(null); setApprovalStep(sp.profissional_id ? "schedule" : "confirm"); }}
                        >
                          Aprovar Orçamento
                        </Button>
