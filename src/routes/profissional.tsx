@@ -453,9 +453,21 @@ function ProfissionalArea() {
                 onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'pedidos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
               >
-                <LayoutGrid className="h-4 w-4" /> Gestão de Pedidos
+                <LayoutGrid className="h-4 w-4" /> Visão Geral
               </button>
-              
+
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'orcamentos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Send className="h-4 w-4" /> Pedidos e Orçamentos
+                {counts.oportunidades + counts.elaboracao > 0 && (
+                  <span className="ml-auto text-[10px] bg-brand/15 text-brand px-2 py-0.5 rounded-full">
+                    {counts.oportunidades + counts.elaboracao}
+                  </span>
+                )}
+              </button>
+
               <button 
                 onClick={() => navigate({ to: "/profissional", search: { tab: "servicos" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'servicos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
