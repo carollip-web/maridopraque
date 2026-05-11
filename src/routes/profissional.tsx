@@ -444,6 +444,9 @@ function ProfissionalArea() {
                   </div>
                 </section>
 
+                <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+
+
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
                   <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
