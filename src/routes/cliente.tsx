@@ -393,17 +393,19 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["cliente", "stats", user?.id],
     queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
         .select("status, valor, service_name, created_at")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
       
+      if (error) console.error("Error fetching stats orcamentos:", error);
+      console.log("Dashboard stats for user", user.id, ":", data);
+      
       const list = data || [];
       return {
         concluidos: list.filter(o => o.status === "pago").length,
-        ativos: list.filter(o => ["aprovado", "enviado"].includes(o.status)).length,
+        ativos: list.filter(o => ["aprovado", "enviado", "fixo_auto"].includes(o.status)).length,
         pendentes: list.filter(o => o.status === "customizado_pendente").length,
         total: list.filter(o => o.status === "pago").reduce((acc, o) => acc + (o.valor || 0), 0),
         recentes: list.slice(0, 3),
