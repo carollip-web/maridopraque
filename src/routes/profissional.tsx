@@ -400,6 +400,21 @@ function ProfissionalArea() {
                 <Briefcase className="h-4 w-4" /> Meus Serviços
               </button>
 
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'financeiro' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Wallet className="h-4 w-4" /> Financeiro
+              </button>
+
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'avaliacoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <MessageSquare className="h-4 w-4" /> Avaliações
+
+              </button>
+
               <button 
                 onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'configuracoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
