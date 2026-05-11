@@ -102,6 +102,8 @@ function ProfissionalArea() {
   const [aReceber, setAReceber] = useState(0);
   const [ticketMedio, setTicketMedio] = useState(0);
   const [especialidades, setEspecialidades] = useState<string[]>([]);
+  const [profGeo, setProfGeo] = useState<{ lat: number | null; lng: number | null; raio: number }>({ lat: null, lng: null, raio: 15 });
+  const [clienteGeo, setClienteGeo] = useState<Record<string, ClienteGeo>>({});
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
