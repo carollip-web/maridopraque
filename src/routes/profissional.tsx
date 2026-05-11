@@ -885,6 +885,7 @@ function OrcamentoCard({
   onRecusar?: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
+  const shouldOpenChat = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1";
   const initialValor = o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
@@ -1303,7 +1304,7 @@ function OrcamentoCard({
       )}
 
       {o.profissional_id === userId && (
-        <details className="pt-3 border-t border-border">
+        <details className="pt-3 border-t border-border" open={shouldOpenChat || undefined}>
           <summary className="cursor-pointer text-xs font-bold text-brand flex items-center gap-1.5 select-none">
             <MessageSquare className="h-3.5 w-3.5" /> Conversar com o cliente
           </summary>
