@@ -56,6 +56,7 @@ type Orcamento = {
     | "aprovado"
     | "recusado"
     | "pago"
+    | "concluido"
     | "cancelado";
   cliente_id: string;
   profissional_id: string | null;
@@ -65,10 +66,13 @@ type Orcamento = {
   data_aprovacao: string | null;
   data_pagamento: string | null;
   auto_aprovado: boolean;
+  fotos_problema: string[] | null;
+  fotos_concluido: string[] | null;
 };
 
 type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
 type OrcMat = { orcamento_id: string; nome_snapshot: string; unidade_snapshot: string; quantidade: number; subtotal: number };
+type ClienteGeo = { lat: number | null; lng: number | null; cidade: string | null };
 
 type Profile = { id: string; nome: string; whatsapp: string | null; email: string | null };
 
@@ -77,7 +81,8 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
   enviado: { label: "Enviado ao cliente", className: "bg-sky-100 text-sky-800" },
   fixo_auto: { label: "Preço fixo", className: "bg-slate-100 text-slate-700" },
   aprovado: { label: "Aprovado", className: "bg-emerald-100 text-emerald-800" },
-  pago: { label: "Pago", className: "bg-emerald-600 text-white" },
+  pago: { label: "Pago — em execução", className: "bg-emerald-600 text-white" },
+  concluido: { label: "Concluído", className: "bg-indigo-600 text-white" },
   recusado: { label: "Recusado", className: "bg-red-100 text-red-700" },
   cancelado: { label: "Cancelado", className: "bg-slate-200 text-slate-600" },
 };
