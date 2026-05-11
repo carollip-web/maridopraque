@@ -742,6 +742,24 @@ function MeusOrcamentos() {
                 </div>
               )}
 
+              {user && (
+                <div className="rounded-2xl bg-slate-50 border border-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Package className="h-4 w-4 text-brand" />
+                    <h4 className="font-bold text-sm">Fotos do problema</h4>
+                    <span className="text-xs text-muted-foreground">(opcional, ajuda o profissional)</span>
+                  </div>
+                  <PhotoUploader
+                    userId={user.id}
+                    pathPrefix="problema"
+                    value={fotos}
+                    onChange={setFotos}
+                    max={5}
+                    label="tirar ou anexar"
+                  />
+                </div>
+              )}
+
 
               <div className="flex justify-between gap-2">
                 <Button
