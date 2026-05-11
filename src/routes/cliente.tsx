@@ -805,10 +805,34 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         {/* Approval Modal */}
         {approvalStep && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => approvalStep === "confirm" ? setApprovalStep(null) : undefined} />
-            <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => (approvalStep === "confirm" || approvalStep === "schedule") ? setApprovalStep(null) : undefined} />
+            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
 
-              {/* Step 1: Confirm */}
+              {/* Step 0: Schedule */}
+              {approvalStep === "schedule" && selectedPedido?.profissional_id && (
+                <div className="p-8 md:p-10">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold">Escolha o horário</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">Selecione data e hora disponíveis na agenda do profissional.</p>
+                  </div>
+                  <SlotPicker
+                    profissionalId={selectedPedido.profissional_id}
+                    value={dataAgendada}
+                    onChange={setDataAgendada}
+                  />
+                  <div className="flex gap-3 mt-8">
+                    <Button variant="outline" onClick={() => setApprovalStep(null)} className="flex-1 rounded-full h-12 font-bold">Cancelar</Button>
+                    <Button
+                      disabled={!dataAgendada}
+                      onClick={() => setApprovalStep("confirm")}
+                      className="flex-1 bg-brand text-white rounded-full h-12 font-bold shadow-lg disabled:opacity-50"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {approvalStep === "confirm" && (
                 <div className="p-8 md:p-10">
                   <div className="text-center mb-8">
