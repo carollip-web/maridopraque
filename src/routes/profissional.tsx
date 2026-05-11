@@ -253,7 +253,7 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id]);
+  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo]);
 
   if (loading) {
     return (
