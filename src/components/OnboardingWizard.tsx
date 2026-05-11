@@ -122,8 +122,8 @@ export function OnboardingWizard() {
   const pct = Math.round(((step + 1) / STEPS.length) * 100);
 
   return (
-    <Dialog open={open} onOpenChange={() => { /* não permite fechar até finalizar */ }}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
         <div className="bg-gradient-to-br from-brand to-orange-500 p-6 text-white">
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
