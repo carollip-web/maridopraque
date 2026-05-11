@@ -126,6 +126,17 @@ function ProfissionalArea() {
   const [taxaAceitacao, setTaxaAceitacao] = useState<string>("—");
   const [slaMedioH, setSlaMedioH] = useState<string>("—");
   const [totalConcluidos, setTotalConcluidos] = useState(0);
+  const [recusados, setRecusados] = useState<Set<string>>(new Set());
+
+  const recusarOrcamento = async (orcamentoId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from("orcamento_recusas")
+      .insert({ orcamento_id: orcamentoId, profissional_id: user.id });
+    if (error) { toast.error("Não foi possível recusar agora."); return; }
+    setRecusados((s) => new Set(s).add(orcamentoId));
+    toast.success("Pedido recusado e removido do seu radar.");
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
