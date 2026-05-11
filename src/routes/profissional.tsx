@@ -7,6 +7,10 @@ import { NotificationPermissionBanner } from "@/components/NotificationPermissio
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import { TermoAdesaoDialog } from "@/components/TermoAdesaoDialog";
 import { Chat } from "@/components/Chat";
+import { NivelBadge } from "@/components/NivelBadge";
+import { PanicButton } from "@/components/PanicButton";
+import { CheckInOut } from "@/components/CheckInOut";
+import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
