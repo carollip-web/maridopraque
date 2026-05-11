@@ -594,47 +594,105 @@ function ProfissionalArea() {
                 </Tabs>
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <NotificationPermissionBanner />
-                <ProfileCompletenessCard />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
-                  <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
-                </div>
-                <section className="rounded-3xl bg-gradient-to-br from-brand to-orange-500 text-white p-6 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-white/70">Performance</p>
-                      <h2 className="text-lg font-bold">Seu mês até aqui</h2>
+
+                {/* Hero greeting */}
+                <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-orange-500 to-amber-500 text-white p-6 sm:p-8 shadow-xl">
+                  <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" aria-hidden />
+                  <div className="absolute -left-8 -bottom-16 h-40 w-40 rounded-full bg-white/10 blur-2xl" aria-hidden />
+                  <div className="relative flex flex-wrap items-start justify-between gap-6">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">
+                        {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                      </p>
+                      <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight">
+                        {greetingByHour()}, {(user?.user_metadata as any)?.nome?.split(" ")[0] || "profissional"}!
+                      </h2>
+                      <p className="mt-2 text-sm text-white/85 max-w-md">
+                        {counts.oportunidades > 0
+                          ? `Você tem ${counts.oportunidades} oportunidade${counts.oportunidades > 1 ? "s" : ""} esperando no radar.`
+                          : counts.elaboracao > 0
+                          ? `${counts.elaboracao} orçamento${counts.elaboracao > 1 ? "s" : ""} aguardando você enviar a proposta.`
+                          : "Tudo em dia por aqui. Continue acompanhando seus pedidos."}
+                      </p>
                     </div>
-                    <CheckCircle2 className="h-8 w-8 text-white/60" />
+                    <Button
+                      onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})}
+                      className="rounded-full bg-white text-brand hover:bg-white/90 shadow-md font-bold"
+                    >
+                      Ver pedidos
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="relative mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <DashStat label="Ganhos do mês" value={`R$ ${ganhosMes.toFixed(2)}`} />
-                    <DashStat label="Taxa de aceitação" value={taxaAceitacao} />
+                    <DashStat label="Aceitação" value={taxaAceitacao} />
                     <DashStat label="SLA médio" value={slaMedioH} />
                     <DashStat label="Concluídos" value={String(totalConcluidos)} />
                   </div>
                 </section>
 
-                <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+                <ProfileCompletenessCard />
 
+                {/* Pendências acionáveis */}
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
-                  <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
-                  <Stat icon={TrendingUp} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-700" />
-                  <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
+                  <ActionStat
+                    icon={Clock}
+                    label="Oportunidades no radar"
+                    value={counts.oportunidades}
+                    accent="from-amber-50 to-amber-100 text-amber-700 ring-amber-200"
+                    cta="Ver radar"
+                    onClick={() => { setPedidosSubTab("oportunidades"); navigate({ to: "/profissional", search: { tab: "orcamentos" }}); }}
+                  />
+                  <ActionStat
+                    icon={Pencil}
+                    label="Para elaborar"
+                    value={counts.elaboracao}
+                    accent="from-sky-50 to-sky-100 text-sky-700 ring-sky-200"
+                    cta="Elaborar agora"
+                    onClick={() => { setPedidosSubTab("elaboracao"); navigate({ to: "/profissional", search: { tab: "orcamentos" }}); }}
+                  />
+                  <ActionStat
+                    icon={TrendingUp}
+                    label="Em andamento"
+                    value={counts.ativos}
+                    accent="from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-200"
+                    cta="Ver serviços"
+                    onClick={() => { setServicosSubTab("ativos"); navigate({ to: "/profissional", search: { tab: "servicos" }}); }}
+                  />
+                  <ActionStat
+                    icon={DollarSign}
+                    label="A receber"
+                    value={aReceber}
+                    accent="from-orange-50 to-orange-100 text-brand ring-orange-200"
+                    cta="Financeiro"
+                    onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
+                  />
                 </section>
 
-                <div className="rounded-3xl bg-white border border-border p-6 flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-bold text-slate-900">Quer ver seus pedidos?</h3>
-                    <p className="text-sm text-muted-foreground">Acesse o radar de oportunidades e os orçamentos em elaboração.</p>
+                {/* Chart + side */}
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
                   </div>
-                  <Button onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})} className="rounded-full">
-                    Ir para Pedidos
-                  </Button>
+                  <div className="space-y-4">
+                    <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
+                    <div className="rounded-2xl border border-border bg-card p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Star className="h-4 w-4 text-amber-500" />
+                        <h3 className="text-sm font-bold text-foreground">Atalhos rápidos</h3>
+                      </div>
+                      <div className="grid gap-2">
+                        <QuickLink icon={CalendarClock} label="Minha agenda" onClick={() => navigate({ to: "/profissional", search: { tab: "agenda" }})} />
+                        <QuickLink icon={Star} label="Avaliações" onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" }})} />
+                        <QuickLink icon={Wallet} label="Financeiro" onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})} />
+                        <QuickLink icon={Settings} label="Perfil e configurações" onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
               </div>
             )}
           </main>
