@@ -589,15 +589,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const getPedidoStatus = (id: string, defaultStatus: string) =>
     pedidoStatuses[id] ?? defaultStatus;
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
+    if (!selectedPedido) return;
     setApprovalStep("processing");
-    setTimeout(() => {
-      // Update status in local store
-      if (selectedPedido) {
-        setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
-      }
-      setApprovalStep("success");
-    }, 2200);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({
+        status: "aprovado",
+        data_aprovacao: new Date().toISOString(),
+        data_agendada: dataAgendada ? dataAgendada.toISOString() : null,
+      })
+      .eq("id", selectedPedido.id);
+    if (error) {
+      toast.error("Erro ao aprovar", { description: error.message });
+      setApprovalStep("confirm");
+      return;
+    }
+    setPedidoStatuses(prev => ({ ...prev, [selectedPedido.id]: "Agendado" }));
+    queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+    setApprovalStep("success");
   };
 
   const selectedPedido = pedidoId ? pedidos.find(p => p.id === pedidoId) : null;
