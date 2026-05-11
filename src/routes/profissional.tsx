@@ -641,6 +641,7 @@ function OrcamentoCard({
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
+  const [termoOpen, setTermoOpen] = useState(false);
 
   const meta = STATUS_META[o.status];
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
