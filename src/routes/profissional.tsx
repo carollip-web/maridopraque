@@ -268,8 +268,8 @@ function ProfissionalArea() {
 
     const orcIds = list.map((o) => o.id);
     if (orcIds.length) {
-      const { data: propsData } = await supabase
-        (supabase as any).from("propostas")
+      const { data: propsData } = await (supabase as any)
+        .from("propostas")
         .select("*")
         .eq("profissional_id", user.id)
         .in("orcamento_id", orcIds);
@@ -941,6 +941,9 @@ function Grid({
   userId,
   onRecusar,
   disableChat = false,
+  minhasPropostas,
+  materiaisCat,
+  propostasMateriais,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -1014,6 +1017,9 @@ function OrcamentoCard({
   userId,
   onRecusar,
   disableChat = false,
+  minhaProposta,
+  materiaisCat,
+  propostaMateriais,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
