@@ -19,6 +19,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
@@ -119,6 +120,7 @@ function ProfissionalArea() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [loadingList, setLoadingList] = useState(true);
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
+  const [sheetOrcamentoId, setSheetOrcamentoId] = useState<string | null>(null);
   const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
   const { notifications: profNotificationsAll, markAsRead: markNotifAsRead, markAllAsRead: markAllNotifAsRead } = useNotifications();
@@ -293,11 +295,14 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
-  // Auto-navigate when arriving via notification (?orcamentoId=...)
+  // Auto-navigate + open sheet when arriving via notification (?orcamentoId=...)
   useEffect(() => {
     if (!orcamentoId || orcamentos.length === 0) return;
     const o = orcamentos.find((x) => x.id === orcamentoId);
     if (!o) return;
+
+    // Open the detail sheet immediately
+    setSheetOrcamentoId(orcamentoId);
 
     // Decide which top tab + sub-tab the orçamento lives in
     const isMine = o.profissional_id === user?.id;
@@ -318,12 +323,6 @@ function ProfissionalArea() {
     } else if (o.status === "enviado") {
       setPedidosSubTab("enviados");
     }
-
-    const t = setTimeout(() => {
-      const el = document.getElementById(`orc-${orcamentoId}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 350);
-    return () => clearTimeout(t);
   }, [orcamentoId, chat, orcamentos, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
@@ -424,10 +423,45 @@ function ProfissionalArea() {
     }
   };
 
+  // Find the orcamento for the sheet
+  const sheetOrc = sheetOrcamentoId ? orcamentos.find(o => o.id === sheetOrcamentoId) ?? null : null;
+  const sheetMode = sheetOrc
+    ? sheetOrc.profissional_id === user?.id
+      ? (sheetOrc.status === "enviado" ? "revisar" : sheetOrc.status === "customizado_pendente" ? "enviar" : "info")
+      : "pegar"
+    : "pegar";
+
   return (
     <div className="min-h-screen bg-slate-50">
       <OnboardingWizard />
       <PanicButton />
+
+      {/* Detail Sheet — opens when arriving via notification */}
+      <Sheet open={!!sheetOrc} onOpenChange={(open) => { if (!open) { setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b border-border bg-slate-50">
+            <SheetTitle className="text-lg font-bold">{sheetOrc?.service_name ?? "Pedido"}</SheetTitle>
+          </SheetHeader>
+          <div className="p-6">
+            {sheetOrc && (
+              <OrcamentoCard
+                key={sheetOrc.id + "-sheet"}
+                o={sheetOrc}
+                cliente={profiles[sheetOrc.cliente_id]}
+                clienteCidade={clienteGeo[sheetOrc.cliente_id]?.cidade ?? null}
+                distanciaKm={null}
+                range={sheetOrc.service_id ? catalog[sheetOrc.service_id] : undefined}
+                materiais={orcMats[sheetOrc.id] ?? []}
+                mode={sheetMode}
+                enviar={enviar}
+                refresh={() => { refresh(); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
+                userId={user?.id ?? ""}
+                onRecusar={async (id) => { await recusarOrcamento(id); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
