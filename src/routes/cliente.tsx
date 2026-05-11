@@ -767,7 +767,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         {/* Modal Conversar — chat in-app */}
         {showConversar && selectedPedido && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowConversar(false)} />
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeConversar} />
             <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
               {selectedPedido.profissional_id ? (
                 <div className="p-4">
@@ -784,12 +784,12 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       <Phone className="h-3 w-3 mr-1" /> Ligar
                     </Button>
                   </div>
-                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full mt-2 text-xs uppercase tracking-widest font-bold">Fechar</Button>
+                  <Button variant="ghost" onClick={closeConversar} className="w-full mt-2 text-xs uppercase tracking-widest font-bold">Fechar</Button>
                 </div>
               ) : (
                 <div className="p-8 text-center">
                   <p className="text-sm text-muted-foreground mb-4">Aguardando profissional aceitar para iniciar a conversa.</p>
-                  <Button variant="ghost" onClick={() => setShowConversar(false)} className="w-full font-bold text-xs uppercase tracking-widest">Fechar</Button>
+                  <Button variant="ghost" onClick={closeConversar} className="w-full font-bold text-xs uppercase tracking-widest">Fechar</Button>
                 </div>
               )}
             </div>
