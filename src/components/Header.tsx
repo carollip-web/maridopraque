@@ -109,7 +109,8 @@ export function Header() {
                            onClick={() => {
                              markAsRead(n.id);
                              setShowNotifications(false);
-                             navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(n.id) } as any });
+                             const dest = isProfissional ? "/profissional" : isAdmin ? "/admin" : "/cliente";
+                             navigate({ to: dest, search: { tab: "notificacoes", id: String(n.id) } as any });
                            }}
                          >
                             <div className="flex justify-between items-start mb-1">
