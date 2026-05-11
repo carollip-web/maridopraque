@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { AvaliacaoForm } from "@/components/AvaliacaoForm";
+import { Chat } from "@/components/Chat";
 import { IndicacaoCard } from "@/components/IndicacaoCard";
 
 export const Route = createFileRoute("/cliente")({
