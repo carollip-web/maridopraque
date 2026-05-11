@@ -879,35 +879,28 @@ function OrcamentoCard({
 
       {mode === "pegar" ? (
         <div className="space-y-2">
+          <TermoAdesaoDialog
+            open={termoOpen}
+            onOpenChange={setTermoOpen}
+            userId={userId}
+            onAccepted={() => doAceitar()}
+          />
           {o.valor_servico != null && (
             <Button
               onClick={async () => {
                 setSaving(true);
-                const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
-                if (check?.profissional_id) {
-                  toast.error("Outro profissional pegou esse pedido antes de você.");
+                // checa termo aceito
+                const { data: perf } = await supabase
+                  .from("profissional_perfil")
+                  .select("termo_aceito_em")
+                  .eq("user_id", userId)
+                  .maybeSingle();
+                if (!perf?.termo_aceito_em) {
                   setSaving(false);
-                  refresh?.();
+                  setTermoOpen(true);
                   return;
                 }
-                const { error } = await supabase
-                  .from("orcamentos")
-                  .update({
-                    profissional_id: userId,
-                    valor_servico: o.valor_servico,
-                    valor: Number(o.valor_servico) + Number(o.taxa_material ?? 0),
-                    status: "enviado",
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq("id", o.id)
-                  .is("profissional_id", null);
-                if (error) {
-                  toast.error("Erro ao aceitar", { description: error.message });
-                } else {
-                  toast.success(`Cotação enviada por R$ ${Number(o.valor_servico).toFixed(2)}!`);
-                  refresh?.();
-                }
-                setSaving(false);
+                await doAceitar();
               }}
               disabled={saving}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md transition-all hover:scale-[1.02]"
