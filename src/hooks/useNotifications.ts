@@ -48,7 +48,11 @@ function showBrowserNotification(title: string, body: string, link?: string) {
 function normalizeNotificationLink(link?: string | null, orcamentoId?: string | null, title?: string | null) {
   const isMessage = (title ?? "").toLowerCase().includes("mensagem");
   if (orcamentoId && link?.startsWith("/profissional")) {
-    return `/profissional?tab=orcamentos&orcamentoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;
+    // "aprovado" and "pago" orders live in the "servicos" tab; everything else in "orcamentos"
+    const titleLower = (title ?? "").toLowerCase();
+    const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
+    const profTab = isServicos ? "servicos" : "orcamentos";
+    return `/profissional?tab=${profTab}&orcamentoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;
   }
   if (orcamentoId && link?.startsWith("/cliente")) {
     return `/cliente?tab=pedidos&pedidoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;

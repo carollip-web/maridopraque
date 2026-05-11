@@ -45,10 +45,19 @@ export function Header() {
     const link = notification.link ?? "";
 
     if (orcamentoId) {
-      if (link.startsWith("/profissional") || (isProfissional && !link.startsWith("/cliente"))) {
+      const goesToProfissional = link.startsWith("/profissional") || (isProfissional && !link.startsWith("/cliente"));
+
+      if (goesToProfissional) {
+        // Determine the right sub-tab based on notification context
+        const titleLower = notification.title.toLowerCase();
+        const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
         navigate({
           to: "/profissional",
-          search: { tab: "orcamentos", orcamentoId, chat: isMessage ? "1" : undefined } as any,
+          search: {
+            tab: isServicos ? "servicos" : "orcamentos",
+            orcamentoId,
+            chat: isMessage ? "1" : undefined,
+          } as any,
         });
         return;
       }
@@ -65,8 +74,7 @@ export function Header() {
       return;
     }
 
-    const dest = isProfissional || isAdmin ? "/cliente" : "/cliente";
-    navigate({ to: dest, search: { tab: "notificacoes", id: String(notification.id) } as any });
+    navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(notification.id) } as any });
   };
 
   useEffect(() => {
