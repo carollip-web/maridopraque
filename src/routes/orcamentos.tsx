@@ -119,6 +119,7 @@ function MeusOrcamentos() {
   const [selServiceId, setSelServiceId] = useState<string>("");
   const [descricao, setDescricao] = useState("");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
+  const [fotos, setFotos] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -307,6 +308,7 @@ function MeusOrcamentos() {
     setSelServiceId("");
     setDescricao("");
     setPicked({});
+    setFotos([]);
     setStep(1);
     setShowNew(false);
     setEditingId(null);
