@@ -560,7 +560,7 @@ function ProfissionalArea() {
                   <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
                 </section>
 
-                <Tabs defaultValue="oportunidades" className="w-full animate-in fade-in duration-700">
+                <Tabs value={pedidosSubTab} onValueChange={setPedidosSubTab} className="w-full animate-in fade-in duration-700">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                       <h2 className="text-2xl font-bold tracking-tight text-foreground">Pedidos e orçamentos</h2>
