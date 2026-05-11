@@ -651,7 +651,18 @@ function OrcamentoCard({
     }
     setSaving(true);
     try {
-      await enviar({ data: { orcamentoId: o.id, valorServico: v, observacoes: obs || undefined } });
+      const { error } = await supabase
+        .from("orcamentos")
+        .update({
+          valor_servico: v,
+          valor: v,
+          observacoes_profissional: obs || null,
+          profissional_id: o.profissional_id ?? userId,
+          status: "enviado",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", o.id);
+      if (error) throw error;
       toast.success(mode === "revisar" ? "Orçamento atualizado" : "Orçamento enviado ao cliente");
       if (mode === "revisar") setEditing(false);
       refresh?.();
