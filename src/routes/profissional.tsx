@@ -505,7 +505,7 @@ function ProfissionalArea() {
               <ProfissionalAgenda />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
-                <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">
+                <Tabs value={servicosSubTab} onValueChange={setServicosSubTab} className="w-full animate-in fade-in duration-700">
                   <div className="flex items-center justify-between mb-6">
                      <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Meus Serviços em Andamento</h2>
                      <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
