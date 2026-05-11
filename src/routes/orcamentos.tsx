@@ -388,6 +388,7 @@ function MeusOrcamentos() {
       if (m.material_id) p[m.material_id] = Number(m.quantidade);
     });
     setPicked(p);
+    setFotos((((o as any).fotos_problema as string[]) ?? []));
     setStep(1);
     setShowNew(true);
   };
@@ -434,9 +435,14 @@ function MeusOrcamentos() {
             materiais: payload.materiais,
           },
         });
+        await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
-        await solicitar({ data: payload });
+        const res = await solicitar({ data: payload });
+        const novoId = (res as any)?.orcamento?.id;
+        if (novoId && fotos.length > 0) {
+          await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", novoId);
+        }
         toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
         // limpa rascunho após envio bem-sucedido
         if (draftKey && typeof window !== "undefined") {
