@@ -1001,14 +1001,24 @@ function OrcamentoCard({
               {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Aceitar por R$ {Number(o.valor_servico).toFixed(2)}</>}
             </Button>
           )}
-          <Button
-            onClick={handlePegar}
-            disabled={saving}
-            variant="outline"
-            className="w-full rounded-full font-bold h-11"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pegar para elaborar depois"}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handlePegar}
+              disabled={saving}
+              variant="outline"
+              className="rounded-full font-bold h-11"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Elaborar depois"}
+            </Button>
+            <Button
+              onClick={async () => { if (onRecusar) await onRecusar(o.id); }}
+              disabled={saving || !onRecusar}
+              variant="ghost"
+              className="rounded-full font-bold h-11 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <XCircle className="h-4 w-4 mr-1.5" /> Recusar
+            </Button>
+          </div>
         </div>
       ) : (mode === "enviar" || (mode === "revisar" && editing)) ? (
         <div className="space-y-3 pt-3 border-t border-border">
