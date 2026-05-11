@@ -458,6 +458,7 @@ function MeusOrcamentos() {
         }
       }
       resetForm();
+      navigate({ to: "/cliente", search: { tab: "pedidos" } });
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível salvar.");
     } finally {
