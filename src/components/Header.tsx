@@ -56,6 +56,7 @@ export function Header() {
           <Link to="/profissionais" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Profissionais</Link>
           <Link to="/porque" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Por que nós</Link>
           <Link to="/contato" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Contato</Link>
+          <Link to="/para-profissionais" className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">Trabalhe conosco</Link>
         </nav>
         
         <div className="flex items-center gap-4">
