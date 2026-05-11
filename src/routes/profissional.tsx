@@ -11,6 +11,7 @@ import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { distanceKm } from "@/lib/geo";
 import {
   Wrench,
@@ -442,6 +443,9 @@ function ProfissionalArea() {
                     <DashStat label="Concluídos" value={String(totalConcluidos)} />
                   </div>
                 </section>
+
+                <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+
 
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
