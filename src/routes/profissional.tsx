@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { SLABadge } from "@/components/SLABadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
+import { PhotoUploader } from "@/components/PhotoUploader";
+import { distanceKm } from "@/lib/geo";
 import {
   Wrench,
   Clock,
@@ -28,7 +30,9 @@ import {
   Package,
   Settings,
   Briefcase,
-  LayoutGrid
+  LayoutGrid,
+  MapPin,
+  Camera,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
@@ -54,6 +58,7 @@ type Orcamento = {
     | "aprovado"
     | "recusado"
     | "pago"
+    | "concluido"
     | "cancelado";
   cliente_id: string;
   profissional_id: string | null;
@@ -63,10 +68,13 @@ type Orcamento = {
   data_aprovacao: string | null;
   data_pagamento: string | null;
   auto_aprovado: boolean;
+  fotos_problema: string[] | null;
+  fotos_concluido: string[] | null;
 };
 
 type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
 type OrcMat = { orcamento_id: string; nome_snapshot: string; unidade_snapshot: string; quantidade: number; subtotal: number };
+type ClienteGeo = { lat: number | null; lng: number | null; cidade: string | null };
 
 type Profile = { id: string; nome: string; whatsapp: string | null; email: string | null };
 
@@ -75,7 +83,8 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
   enviado: { label: "Enviado ao cliente", className: "bg-sky-100 text-sky-800" },
   fixo_auto: { label: "Preço fixo", className: "bg-slate-100 text-slate-700" },
   aprovado: { label: "Aprovado", className: "bg-emerald-100 text-emerald-800" },
-  pago: { label: "Pago", className: "bg-emerald-600 text-white" },
+  pago: { label: "Pago — em execução", className: "bg-emerald-600 text-white" },
+  concluido: { label: "Concluído", className: "bg-indigo-600 text-white" },
   recusado: { label: "Recusado", className: "bg-red-100 text-red-700" },
   cancelado: { label: "Cancelado", className: "bg-slate-200 text-slate-600" },
 };
@@ -95,6 +104,8 @@ function ProfissionalArea() {
   const [aReceber, setAReceber] = useState(0);
   const [ticketMedio, setTicketMedio] = useState(0);
   const [especialidades, setEspecialidades] = useState<string[]>([]);
+  const [profGeo, setProfGeo] = useState<{ lat: number | null; lng: number | null; raio: number }>({ lat: null, lng: null, raio: 15 });
+  const [clienteGeo, setClienteGeo] = useState<Record<string, ClienteGeo>>({});
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -130,12 +141,13 @@ function ProfissionalArea() {
 
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
-        supabase.from("profissional_perfil").select("ativo, especialidades").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profissional_perfil").select("ativo, especialidades, lat, lng, raio_atendimento_km").eq("user_id", user.id).maybeSingle(),
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id),
       ]);
       if (perfil) {
         setAtivo(perfil.ativo);
         setEspecialidades(perfil.especialidades || []);
+        setProfGeo({ lat: perfil.lat ?? null, lng: perfil.lng ?? null, raio: perfil.raio_atendimento_km ?? 15 });
       }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
@@ -144,14 +156,21 @@ function ProfissionalArea() {
 
     const ids = Array.from(new Set(list.map((o) => o.cliente_id)));
     if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, nome, whatsapp, email")
-        .in("id", ids);
+      const [{ data: profs }, { data: ends }] = await Promise.all([
+        supabase.from("profiles").select("id, nome, whatsapp, email").in("id", ids),
+        supabase.from("cliente_enderecos").select("user_id, lat, lng, cidade, is_padrao").in("user_id", ids),
+      ]);
       const map: Record<string, Profile> = {};
       (profs ?? []).forEach((p: any) => (map[p.id] = p));
       setProfiles(map);
+      const gmap: Record<string, ClienteGeo> = {};
+      (ends ?? []).forEach((e: any) => {
+        const cur = gmap[e.user_id];
+        if (!cur || e.is_padrao) gmap[e.user_id] = { lat: e.lat, lng: e.lng, cidade: e.cidade };
+      });
+      setClienteGeo(gmap);
     }
+
 
     const serviceIds = Array.from(new Set(list.map((o) => o.service_id).filter(Boolean) as string[]));
     if (serviceIds.length) {
@@ -196,12 +215,21 @@ function ProfissionalArea() {
     };
   }, [user?.id]);
 
+  const distanciaCliente = (clienteId: string): number | null => {
+    if (profGeo.lat == null || profGeo.lng == null) return null;
+    const g = clienteGeo[clienteId];
+    if (!g || g.lat == null || g.lng == null) return null;
+    return distanceKm({ lat: profGeo.lat, lng: profGeo.lng }, { lat: g.lat, lng: g.lng });
+  };
+
   const filterBy = (type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados") => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        return o.status === "customizado_pendente" && 
-               o.profissional_id === null && 
-               especialidades.includes(o.service_name);
+        if (!(o.status === "customizado_pendente" && o.profissional_id === null && especialidades.includes(o.service_name))) return false;
+        // Filtro por raio: só aplica se ambos os lados tiverem geo
+        const d = distanciaCliente(o.cliente_id);
+        if (d != null && d > profGeo.raio) return false;
+        return true;
       }
       if (type === "elaboracao") {
         return o.status === "customizado_pendente" && o.profissional_id === user?.id;
@@ -213,7 +241,7 @@ function ProfissionalArea() {
         return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
       }
       if (type === "finalizados") {
-        return ["recusado", "cancelado"].includes(o.status) && o.profissional_id === user?.id;
+        return ["recusado", "cancelado", "concluido"].includes(o.status) && o.profissional_id === user?.id;
       }
       return false;
     });
@@ -227,7 +255,7 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id]);
+  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo]);
 
   if (loading) {
     return (
@@ -355,10 +383,10 @@ function ProfissionalArea() {
                   </div>
 
                   <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
+                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
                   </TabsContent>
                   <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
+                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
                   </TabsContent>
                 </Tabs>
               </div>
@@ -404,13 +432,13 @@ function ProfissionalArea() {
                     ) : (
                       <>
                         <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
+                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="pegar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
                         </TabsContent>
                         <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
+                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
                         </TabsContent>
                         <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
+                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
                         </TabsContent>
                       </>
                     )}
@@ -458,7 +486,10 @@ function Grid({
   enviar,
   refresh,
   emptyMsg,
-  emptyIcon: EmptyIcon
+  emptyIcon: EmptyIcon,
+  clienteGeo,
+  profGeo,
+  userId,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -469,6 +500,9 @@ function Grid({
   refresh?: () => void;
   emptyMsg: string;
   emptyIcon: any;
+  clienteGeo: Record<string, ClienteGeo>;
+  profGeo: { lat: number | null; lng: number | null; raio: number };
+  userId: string;
 }) {
   if (items.length === 0) {
     return (
@@ -480,6 +514,12 @@ function Grid({
       </div>
     );
   }
+  const distFor = (cid: string): number | null => {
+    if (profGeo.lat == null || profGeo.lng == null) return null;
+    const g = clienteGeo[cid];
+    if (!g || g.lat == null || g.lng == null) return null;
+    return distanceKm({ lat: profGeo.lat, lng: profGeo.lng }, { lat: g.lat, lng: g.lng });
+  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {items.map((o) => (
@@ -487,11 +527,14 @@ function Grid({
           key={o.id}
           o={o}
           cliente={profiles[o.cliente_id]}
+          clienteCidade={clienteGeo[o.cliente_id]?.cidade ?? null}
+          distanciaKm={distFor(o.cliente_id)}
           range={o.service_id ? catalog[o.service_id] : undefined}
           materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}
           refresh={refresh}
+          userId={userId}
         />
       ))}
     </div>
@@ -501,25 +544,32 @@ function Grid({
 function OrcamentoCard({
   o,
   cliente,
+  clienteCidade,
+  distanciaKm: distKm,
   range,
   materiais,
   mode,
   enviar,
   refresh,
+  userId,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
+  clienteCidade: string | null;
+  distanciaKm: number | null;
   range: ServicoCat | undefined;
   materiais: OrcMat[];
   mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
   refresh?: () => void;
+  userId: string;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const initialValor = o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
   const [obs, setObs] = useState(o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
+  const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
 
   const meta = STATUS_META[o.status];
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
@@ -589,6 +639,24 @@ function OrcamentoCard({
     setSaving(false);
   };
 
+  const handleConcluir = async () => {
+    if (fotosConcluido.length === 0) {
+      if (!confirm("Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.")) return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ status: "concluido" as any, fotos_concluido: fotosConcluido })
+      .eq("id", o.id);
+    if (error) {
+      toast.error("Erro ao concluir", { description: error.message });
+    } else {
+      toast.success("Serviço concluído! O cliente receberá pedido de avaliação.");
+      refresh?.();
+    }
+    setSaving(false);
+  };
+
   const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
   
   // Calculate urgency
@@ -624,14 +692,29 @@ function OrcamentoCard({
       </div>
 
       <div className="text-sm space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
           <User className="h-4 w-4 shrink-0" />
           <span className="truncate">{cliente?.nome || "Cliente"}</span>
+          {(clienteCidade || distKm != null) && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              {clienteCidade}{distKm != null && ` · ${distKm.toFixed(1)} km`}
+            </span>
+          )}
         </div>
         {o.descricao && (
           <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">
             {o.descricao}
           </p>
+        )}
+        {o.fotos_problema && o.fotos_problema.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {o.fotos_problema.map((u) => (
+              <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                <img src={u} alt="Foto do problema" className="h-16 w-16 rounded-lg object-cover border border-border hover:opacity-90 transition" />
+              </a>
+            ))}
+          </div>
         )}
         {o.valor != null && !editing && (
           <div>
@@ -672,7 +755,44 @@ function OrcamentoCard({
             Pago em {new Date(o.data_pagamento).toLocaleDateString("pt-BR")}
           </p>
         )}
+        {o.status === "concluido" && o.fotos_concluido && o.fotos_concluido.length > 0 && (
+          <div>
+            <p className="text-xs uppercase font-bold text-muted-foreground mb-1.5">Serviço concluído</p>
+            <div className="flex gap-2 flex-wrap">
+              {o.fotos_concluido.map((u) => (
+                <a key={u} href={u} target="_blank" rel="noopener noreferrer">
+                  <img src={u} alt="Serviço concluído" className="h-16 w-16 rounded-lg object-cover border border-border" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {mode === "info" && o.status === "pago" && (
+        <div className="space-y-3 pt-3 border-t border-border">
+          <div>
+            <label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-1.5 mb-2">
+              <Camera className="h-3.5 w-3.5" /> Fotos do serviço pronto
+            </label>
+            <PhotoUploader
+              userId={userId}
+              pathPrefix={`concluido/${o.id}`}
+              value={fotosConcluido}
+              onChange={setFotosConcluido}
+              max={5}
+              label="foto do trabalho finalizado"
+            />
+          </div>
+          <Button
+            onClick={handleConcluir}
+            disabled={saving}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md"
+          >
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Marcar como concluído</>}
+          </Button>
+        </div>
+      )}
 
       {mode === "pegar" ? (
         <Button
