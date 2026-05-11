@@ -173,6 +173,36 @@ export type Database = {
         }
         Relationships: []
       }
+      mensagens: {
+        Row: {
+          created_at: string
+          destinatario_id: string
+          id: string
+          lida: boolean
+          orcamento_id: string
+          remetente_id: string
+          texto: string
+        }
+        Insert: {
+          created_at?: string
+          destinatario_id: string
+          id?: string
+          lida?: boolean
+          orcamento_id: string
+          remetente_id: string
+          texto: string
+        }
+        Update: {
+          created_at?: string
+          destinatario_id?: string
+          id?: string
+          lida?: boolean
+          orcamento_id?: string
+          remetente_id?: string
+          texto?: string
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
