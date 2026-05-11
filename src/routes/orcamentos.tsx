@@ -143,6 +143,7 @@ function MeusOrcamentos() {
     const { data } = await supabase
       .from("orcamentos")
       .select("*")
+      .eq("cliente_id", user?.id)
       .order("created_at", { ascending: false });
     const rows = (data ?? []) as OrcamentoRow[];
     setList(rows);

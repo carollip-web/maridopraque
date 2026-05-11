@@ -440,7 +440,7 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
         .order("created_at", { ascending: false });
       
       if (error) console.error("Error fetching stats orcamentos:", error);
-      console.log("Dashboard stats for user", user.id, ":", data);
+        console.log("Dashboard stats for user", user.id, ":", data);
       
       const list = data || [];
       return {
