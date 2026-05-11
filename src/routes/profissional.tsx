@@ -945,6 +945,17 @@ function OrcamentoCard({
         )}
       </div>
 
+      {(o.profissional_id === userId && (o.status === "aprovado" || o.status === "pago")) && (
+        <div className="pt-3 border-t border-border">
+          <CheckInOut
+            orcamentoId={o.id}
+            checkinEm={o.checkin_em ?? null}
+            checkoutEm={o.checkout_em ?? null}
+            onChange={refresh}
+          />
+        </div>
+      )}
+
       {mode === "info" && o.status === "pago" && (
         <div className="space-y-3 pt-3 border-t border-border">
           <div>
