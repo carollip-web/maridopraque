@@ -4,6 +4,8 @@ import { z } from "zod";
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
 import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
+import { TermoAdesaoDialog } from "@/components/TermoAdesaoDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
