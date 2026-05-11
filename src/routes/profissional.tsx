@@ -109,7 +109,7 @@ const STATUS_META: Record<Orcamento["status"], { label: string; className: strin
 };
 
 function ProfissionalArea() {
-  const { tab = "pedidos" } = Route.useSearch();
+  const { tab = "pedidos", orcamentoId } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
