@@ -619,6 +619,7 @@ function Grid({
   clienteGeo,
   profGeo,
   userId,
+  onRecusar,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -632,6 +633,7 @@ function Grid({
   clienteGeo: Record<string, ClienteGeo>;
   profGeo: { lat: number | null; lng: number | null; raio: number };
   userId: string;
+  onRecusar?: (id: string) => Promise<void>;
 }) {
   if (items.length === 0) {
     return (
@@ -664,6 +666,7 @@ function Grid({
           enviar={enviar}
           refresh={refresh}
           userId={userId}
+          onRecusar={onRecusar}
         />
       ))}
     </div>
