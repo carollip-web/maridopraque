@@ -297,11 +297,11 @@ function ProfissionalArea() {
 
   // Auto-navigate + open sheet when arriving via notification (?orcamentoId=...)
   useEffect(() => {
-    if (!orcamentoId || orcamentos.length === 0) return;
+    if (!orcamentoId || loadingList || orcamentos.length === 0) return;
     const o = orcamentos.find((x) => x.id === orcamentoId);
     if (!o) return;
 
-    // Open the detail sheet immediately
+    // Open the detail sheet only after data is fully loaded
     setSheetOrcamentoId(orcamentoId);
 
     // Decide which top tab + sub-tab the orçamento lives in
@@ -323,7 +323,7 @@ function ProfissionalArea() {
     } else if (o.status === "enviado") {
       setPedidosSubTab("enviados");
     }
-  }, [orcamentoId, chat, orcamentos, tab, user?.id, navigate]);
+  }, [orcamentoId, chat, orcamentos, loadingList, tab, user?.id, navigate]);
 
   const distanciaCliente = (clienteId: string): number | null => {
     if (profGeo.lat == null || profGeo.lng == null) return null;
