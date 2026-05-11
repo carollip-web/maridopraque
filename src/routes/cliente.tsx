@@ -860,6 +860,12 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       <span className="text-muted-foreground">Taxa de visita</span>
                       <span className="font-bold">R$ 30,00</span>
                     </div>
+                    {dataAgendada && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Agendado para</span>
+                        <span className="font-bold">{dataAgendada.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+                      </div>
+                    )}
                     <div className="pt-3 border-t border-slate-200 flex justify-between">
                       <span className="font-bold text-brand">Total</span>
                       <span className="font-bold text-brand text-lg">{sp.price}</span>
