@@ -121,7 +121,9 @@ function ProfissionalArea() {
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
   const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
-  const { notifications: profNotifications, unreadCount: unreadNotifications, markAsRead: markNotifAsRead, markAllAsRead: markAllNotifAsRead } = useNotifications();
+  const { notifications: profNotificationsAll, markAsRead: markNotifAsRead, markAllAsRead: markAllNotifAsRead } = useNotifications();
+  const profNotifications = profNotificationsAll.filter(n => !n.link || n.link.startsWith("/profissional"));
+  const unreadNotifications = profNotifications.filter(n => !n.read).length;
 
   const [ativo, setAtivo] = useState(false);
   const [mediaAvaliacoes, setMediaAvaliacoes] = useState<string>("—");
@@ -537,41 +539,63 @@ function ProfissionalArea() {
                     </button>
                   )}
                 </div>
-                {profNotifications.length === 0 ? (
-                  <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
-                    <Bell className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500 font-medium text-sm">Nenhuma notificação por enquanto.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {profNotifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => {
-                          markNotifAsRead(n.id);
-                          if (n.pedidoId) {
-                            const titleLower = n.title.toLowerCase();
-                            const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
-                            navigate({ to: "/profissional", search: { tab: isServicos ? "servicos" : "orcamentos", orcamentoId: n.pedidoId } as any });
-                          }
-                        }}
-                        className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-sm ${n.read ? "bg-white border-border opacity-70 hover:opacity-100" : "bg-brand/5 border-brand/20"}`}
-                      >
-                        <div className={`mt-0.5 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${n.read ? "bg-slate-100" : "bg-brand/15"}`}>
-                          <Bell className={`h-4 w-4 ${n.read ? "text-slate-400" : "text-brand"}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm font-bold ${n.read ? "text-foreground" : "text-brand"}`}>{n.title}</p>
-                            {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5 shrink-0" />}
+                {(() => {
+                  const profOnly = profNotifications;
+                  const handleNotifClick = (n: typeof profOnly[number]) => {
+                    markNotifAsRead(n.id);
+                    if (n.pedidoId) {
+                      const titleLower = n.title.toLowerCase();
+                      const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
+                      navigate({ to: "/profissional", search: { tab: isServicos ? "servicos" : "orcamentos", orcamentoId: n.pedidoId } as any });
+                    } else if (n.link) {
+                      // Fallback: try to parse link for params
+                      try {
+                        const url = new URL(n.link, window.location.origin);
+                        const oid = url.searchParams.get("orcamentoId");
+                        const t = (url.searchParams.get("tab") as any) || "orcamentos";
+                        navigate({ to: "/profissional", search: { tab: t, orcamentoId: oid ?? undefined } as any });
+                      } catch {
+                        navigate({ to: "/profissional", search: { tab: "orcamentos" } as any });
+                      }
+                    }
+                  };
+                  if (profOnly.length === 0) return (
+                    <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                      <Bell className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-500 font-medium text-sm">Nenhuma notificação por enquanto.</p>
+                    </div>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      {profOnly.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => handleNotifClick(n)}
+                          className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-sm ${n.read ? "bg-white border-border opacity-60 hover:opacity-100" : "bg-brand/5 border-brand/20 shadow-sm"}`}
+                        >
+                          <div className={`mt-0.5 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${n.read ? "bg-slate-100" : "bg-brand/15"}`}>
+                            <Bell className={`h-4 w-4 ${n.read ? "text-slate-400" : "text-brand"}`} />
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.desc}</p>
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-2">{n.time}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`text-sm font-bold ${n.read ? "text-foreground" : "text-brand"}`}>{n.title}</p>
+                              {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5 shrink-0" />}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.desc}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
+                              {(n.pedidoId || n.link) && (
+                                <span className="text-[10px] font-bold text-brand uppercase tracking-wider flex items-center gap-1">
+                                  Ver pedido →
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             ) : tab === "configuracoes" ? (
               <ProfissionalConfiguracoes />
