@@ -130,7 +130,7 @@ export function Header() {
                        className="block w-full text-center text-xs font-bold text-[#b85c45] uppercase hover:underline py-2" 
                        onClick={() => {
                          setShowNotifications(false);
-                         window.location.href = "/cliente?tab=notificacoes";
+                         window.location.href = isProfissional ? "/profissional?tab=notificacoes" : isAdmin ? "/admin" : "/cliente?tab=notificacoes";
                        }}
                      >
                         Ver todas as notificações
