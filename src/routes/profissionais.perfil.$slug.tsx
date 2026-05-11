@@ -59,7 +59,7 @@ function PerfilProfissional() {
         if (prof?.nome) setNome(prof.nome);
         const { data: avs } = await supabase
           .from("avaliacoes")
-          .select("id, nota, comentario, created_at")
+          .select("id, nota, comentario, created_at, resposta_profissional, resposta_em")
           .eq("profissional_id", p.user_id)
           .order("created_at", { ascending: false })
           .limit(20);
