@@ -109,7 +109,8 @@ export function Header() {
                            onClick={() => {
                              markAsRead(n.id);
                              setShowNotifications(false);
-                             navigate({ to: "/cliente", search: { tab: "notificacoes", id: String(n.id) } as any });
+                             const dest = isProfissional ? "/profissional" : isAdmin ? "/admin" : "/cliente";
+                             navigate({ to: dest, search: { tab: "notificacoes", id: String(n.id) } as any });
                            }}
                          >
                             <div className="flex justify-between items-start mb-1">
@@ -129,7 +130,7 @@ export function Header() {
                        className="block w-full text-center text-xs font-bold text-[#b85c45] uppercase hover:underline py-2" 
                        onClick={() => {
                          setShowNotifications(false);
-                         window.location.href = "/cliente?tab=notificacoes";
+                         window.location.href = isProfissional ? "/profissional?tab=notificacoes" : isAdmin ? "/admin" : "/cliente?tab=notificacoes";
                        }}
                      >
                         Ver todas as notificações
