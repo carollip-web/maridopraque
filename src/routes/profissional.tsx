@@ -38,12 +38,16 @@ import {
   LayoutGrid,
   MapPin,
   Camera,
+  Wallet,
+  MessageSquare,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
+import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "servicos", "configuracoes"]).optional().catch("pedidos"),
+    tab: z.enum(["pedidos", "servicos", "financeiro", "avaliacoes", "configuracoes"]).optional().catch("pedidos"),
   }),
   component: ProfissionalArea,
 });
@@ -396,6 +400,21 @@ function ProfissionalArea() {
                 <Briefcase className="h-4 w-4" /> Meus Serviços
               </button>
 
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'financeiro' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <Wallet className="h-4 w-4" /> Financeiro
+              </button>
+
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" }})}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'avaliacoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              >
+                <MessageSquare className="h-4 w-4" /> Avaliações
+
+              </button>
+
               <button 
                 onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'configuracoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
@@ -408,6 +427,10 @@ function ProfissionalArea() {
           <main className="flex-1 min-w-0">
             {tab === "configuracoes" ? (
               <ProfissionalConfiguracoes />
+            ) : tab === "financeiro" ? (
+              <ProfissionalFinanceiro />
+            ) : tab === "avaliacoes" ? (
+              <ProfissionalAvaliacoes />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
                 <Tabs defaultValue="ativos" className="w-full animate-in fade-in duration-700">

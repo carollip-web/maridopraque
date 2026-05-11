@@ -23,6 +23,8 @@ export type Database = {
           nota: number
           orcamento_id: string
           profissional_id: string | null
+          resposta_em: string | null
+          resposta_profissional: string | null
         }
         Insert: {
           cliente_id: string
@@ -32,6 +34,8 @@ export type Database = {
           nota: number
           orcamento_id: string
           profissional_id?: string | null
+          resposta_em?: string | null
+          resposta_profissional?: string | null
         }
         Update: {
           cliente_id?: string
@@ -41,6 +45,8 @@ export type Database = {
           nota?: number
           orcamento_id?: string
           profissional_id?: string | null
+          resposta_em?: string | null
+          resposta_profissional?: string | null
         }
         Relationships: []
       }
