@@ -293,6 +293,7 @@ function ProfissionalArea() {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
         if (!(o.status === "customizado_pendente" && o.profissional_id === null && especialidades.includes(o.service_name))) return false;
+        if (recusados.has(o.id)) return false;
         // Filtro por raio: só aplica se ambos os lados tiverem geo
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
