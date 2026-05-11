@@ -478,6 +478,7 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                 stats?.recentes.map((item: any, i: number) => {
                   const isConcluido = item.status === "pago";
                   const isOrcamento = item.status === "customizado_pendente";
+                  const isFixo = item.status === "fixo_auto";
                   return (
                     <div 
                       key={i} 
@@ -486,15 +487,15 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     >
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center shrink-0 ${
                         isConcluido ? "bg-green-50 text-green-600" : 
-                        isOrcamento ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
+                        (isOrcamento || isFixo) ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"
                       }`}>
                         {isConcluido ? <CheckCircle2 className="h-5 w-5" /> : 
-                         isOrcamento ? <FileText className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                         (isOrcamento || isFixo) ? <FileText className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold group-hover:text-brand transition-colors">{item.service_name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {isConcluido ? "Concluído" : isOrcamento ? "Aguardando orçamento" : "Em andamento"} • {new Date(item.created_at).toLocaleDateString()}
+                          {isConcluido ? "Concluído" : (isOrcamento || isFixo) ? "Aguardando orçamento" : "Em andamento"} • {new Date(item.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
