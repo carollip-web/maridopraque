@@ -107,7 +107,11 @@ export function ProfissionalAgenda() {
 
       <AgendaCalendar />
 
-
+      <section className="rounded-3xl bg-white border border-border p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Clock className="h-4 w-4 text-brand" />
+          <h3 className="text-sm font-bold text-slate-900">Duração padrão de atendimento</h3>
+        </div>
         <div className="flex items-center gap-2">
           <Input
             type="number" min={15} max={480} step={15} value={duracao}
