@@ -484,7 +484,10 @@ function Grid({
   enviar,
   refresh,
   emptyMsg,
-  emptyIcon: EmptyIcon
+  emptyIcon: EmptyIcon,
+  clienteGeo,
+  profGeo,
+  userId,
 }: {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -495,6 +498,9 @@ function Grid({
   refresh?: () => void;
   emptyMsg: string;
   emptyIcon: any;
+  clienteGeo: Record<string, ClienteGeo>;
+  profGeo: { lat: number | null; lng: number | null; raio: number };
+  userId: string;
 }) {
   if (items.length === 0) {
     return (
@@ -506,6 +512,12 @@ function Grid({
       </div>
     );
   }
+  const distFor = (cid: string): number | null => {
+    if (profGeo.lat == null || profGeo.lng == null) return null;
+    const g = clienteGeo[cid];
+    if (!g || g.lat == null || g.lng == null) return null;
+    return distanceKm({ lat: profGeo.lat, lng: profGeo.lng }, { lat: g.lat, lng: g.lng });
+  };
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {items.map((o) => (
@@ -513,11 +525,14 @@ function Grid({
           key={o.id}
           o={o}
           cliente={profiles[o.cliente_id]}
+          clienteCidade={clienteGeo[o.cliente_id]?.cidade ?? null}
+          distanciaKm={distFor(o.cliente_id)}
           range={o.service_id ? catalog[o.service_id] : undefined}
           materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}
           refresh={refresh}
+          userId={userId}
         />
       ))}
     </div>
@@ -527,19 +542,25 @@ function Grid({
 function OrcamentoCard({
   o,
   cliente,
+  clienteCidade,
+  distanciaKm: distKm,
   range,
   materiais,
   mode,
   enviar,
   refresh,
+  userId,
 }: {
   o: Orcamento;
   cliente: Profile | undefined;
+  clienteCidade: string | null;
+  distanciaKm: number | null;
   range: ServicoCat | undefined;
   materiais: OrcMat[];
   mode: "pegar" | "enviar" | "revisar" | "info";
   enviar: any;
   refresh?: () => void;
+  userId: string;
 }) {
   const [editing, setEditing] = useState(mode === "enviar");
   const initialValor = o.valor_servico ?? o.valor ?? null;
