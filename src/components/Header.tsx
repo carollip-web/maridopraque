@@ -2,9 +2,25 @@ import { Wrench, ArrowRight, Bell, User, CreditCard, LogOut, ShieldCheck, Briefc
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, type Notification as AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
 
+
+function extractNotificationOrcamentoId(notification: AppNotification) {
+  if (notification.pedidoId) return notification.pedidoId;
+  if (!notification.link || typeof window === "undefined") return undefined;
+
+  try {
+    const url = new URL(notification.link, window.location.origin);
+    return url.searchParams.get("orcamentoId") ?? url.searchParams.get("pedidoId") ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isMessageNotification(notification: AppNotification) {
+  return notification.title.toLowerCase().includes("mensagem");
+}
 
 
 export function Header() {
@@ -18,6 +34,39 @@ export function Header() {
     logout();
     setShowProfileMenu(false);
     navigate({ to: "/" });
+  };
+
+  const openNotification = (notification: AppNotification) => {
+    markAsRead(notification.id);
+    setShowNotifications(false);
+
+    const orcamentoId = extractNotificationOrcamentoId(notification);
+    const isMessage = isMessageNotification(notification);
+    const link = notification.link ?? "";
+
+    if (orcamentoId) {
+      if (link.startsWith("/profissional") || (isProfissional && !link.startsWith("/cliente"))) {
+        navigate({
+          to: "/profissional",
+          search: { tab: "orcamentos", orcamentoId, chat: isMessage ? "1" : undefined } as any,
+        });
+        return;
+      }
+
+      navigate({
+        to: "/cliente",
+        search: { tab: "pedidos", pedidoId: orcamentoId, chat: isMessage ? "1" : undefined } as any,
+      });
+      return;
+    }
+
+    if (link.startsWith("/admin")) {
+      navigate({ to: "/admin" as any });
+      return;
+    }
+
+    const dest = isProfissional || isAdmin ? "/cliente" : "/cliente";
+    navigate({ to: dest, search: { tab: "notificacoes", id: String(notification.id) } as any });
   };
 
   useEffect(() => {
@@ -109,16 +158,7 @@ export function Header() {
                          <div 
                            key={n.id} 
                            className={`p-4 border-b border-border transition-colors cursor-pointer group ${n.read ? "bg-white opacity-60 hover:opacity-100" : "bg-brand/5 hover:bg-brand/10"}`}
-                            onClick={() => {
-                              markAsRead(n.id);
-                              setShowNotifications(false);
-                              if (n.link) {
-                                window.location.href = n.link;
-                              } else {
-                                const dest = isProfissional ? "/profissional" : isAdmin ? "/admin" : "/cliente";
-                                navigate({ to: dest, search: { tab: "notificacoes", id: String(n.id) } as any });
-                              }
-                            }}
+                             onClick={() => openNotification(n)}
                          >
                             <div className="flex justify-between items-start mb-1">
                                <p className={`text-sm font-bold group-hover:text-brand transition-colors ${!n.read ? "text-brand" : "text-foreground"}`}>{n.title}</p>
@@ -136,8 +176,12 @@ export function Header() {
                      <button 
                        className="block w-full text-center text-xs font-bold text-[#b85c45] uppercase hover:underline py-2" 
                        onClick={() => {
-                         setShowNotifications(false);
-                         window.location.href = isProfissional ? "/profissional?tab=notificacoes" : isAdmin ? "/admin" : "/cliente?tab=notificacoes";
+                          setShowNotifications(false);
+                          if (isAdmin && !isProfissional) {
+                            navigate({ to: "/admin" });
+                          } else {
+                            navigate({ to: "/cliente", search: { tab: "notificacoes" } as any });
+                          }
                        }}
                      >
                         Ver todas as notificações
