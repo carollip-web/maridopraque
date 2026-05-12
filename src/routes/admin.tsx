@@ -249,7 +249,7 @@ function AdminPedidos() {
       const promises: Promise<any>[] = [];
       
       if (ids.length > 0) {
-        promises.push(supabase.from("profiles").select("id, nome, email").in("id", ids).then(({ data }) => {
+        promises.push(Promise.resolve(supabase.from("profiles").select("id, nome, email").in("id", ids)).then(({ data }) => {
           profileMap = Object.fromEntries((data || []).map((p: any) => [p.id, p]));
         }));
       }
