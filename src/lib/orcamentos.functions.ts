@@ -15,29 +15,10 @@ const solicitarSchema = z.object({
 });
 
 export const solicitarOrcamento = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => solicitarSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const request = getRequest();
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) throw new Error("Unauthorized: No token provided");
-
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Missing Supabase environment variables");
-    }
-
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient<any>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) throw new Error("Unauthorized: Invalid token");
-    
-    const userId = user.id;
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
     console.log("[solicitarOrcamento] Creating for userId:", userId);
     const { data: row, error } = await supabase
       .from("orcamentos")
