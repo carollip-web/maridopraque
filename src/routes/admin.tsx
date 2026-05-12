@@ -1032,7 +1032,7 @@ function AdminClientes() {
   const navigate = useNavigate();
   const searchParams = useSearch({ from: "/admin" }) as any;
   const q = searchParams.cli_q || "";
-  const setQ = (val: string) => navigate({ search: (old: any) => ({ ...old, cli_q: val || undefined }) });
+  const setQ = (val: string) => navigate({ search: ((old: any) => ({ ...old, cli_q: val || undefined })) as any });
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["admin", "clientes"],
