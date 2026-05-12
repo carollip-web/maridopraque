@@ -839,6 +839,19 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     >
                       Suporte
                     </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-full font-bold h-12"
+                      onClick={async () => {
+                        try {
+                          await gerarPdfOrcamento(sp.id);
+                        } catch (e: any) {
+                          toast.error(e?.message || "Erro ao gerar PDF");
+                        }
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                    </Button>
                  </div>
               </div>
            </div>
