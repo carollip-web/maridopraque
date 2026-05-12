@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
 
 const materialItemSchema = z.object({
   materialId: z.string().uuid(),
@@ -337,31 +338,49 @@ export const cancelarPedido = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => cancelarSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase: userClient, userId } = context;
 
-    // 1. Verify ownership
-    const { data: orc, error: e0 } = await supabase
+    // 1. Verify ownership using the user's client (subject to RLS)
+    const { data: orc, error: e0 } = await userClient
       .from("orcamentos")
-      .select("cliente_id")
+      .select("cliente_id, status")
       .eq("id", data.orcamentoId)
       .single();
-    if (e0 || !orc) throw new Error("Pedido não encontrado.");
+    
+    if (e0 || !orc) throw new Error("Pedido não encontrado ou sem permissão.");
     if (orc.cliente_id !== userId) throw new Error("Sem permissão para cancelar.");
-
-    // 2. Delete linked data manually to avoid FK errors (if not CASCADE)
-    // materials
-    await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
-    // proposals (and their materials)
-    const { data: props } = await (supabase as any).from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
-    if (props && props.length > 0) {
-      const propIds = props.map((p: any) => p.id);
-      await (supabase as any).from("proposta_materiais").delete().in("proposta_id", propIds);
-      await (supabase as any).from("propostas").delete().in("id", propIds);
+    if (["pago", "concluido"].includes(orc.status?.toLowerCase())) {
+      throw new Error("Este pedido já foi pago ou concluído e não pode ser cancelado.");
     }
 
-    // 3. Delete the budget
-    const { error: ed } = await supabase.from("orcamentos").delete().eq("id", data.orcamentoId);
-    if (ed) throw new Error(ed.message);
+    // 2. Create an admin client to bypass RLS and ensure deletion
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+    if (!SERVICE_ROLE) {
+      console.warn("SERVICE_ROLE_KEY missing, falling back to user client");
+    }
+
+    const admin = SERVICE_ROLE 
+      ? createClient(SUPABASE_URL!, SERVICE_ROLE)
+      : userClient;
+
+    // 3. Delete linked data manually
+    // materials
+    await admin.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+    
+    // proposals (and their materials)
+    const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
+    if (props && props.length > 0) {
+      const propIds = props.map((p: any) => p.id);
+      await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
+      await admin.from("propostas").delete().in("id", propIds);
+    }
+
+    // 4. Delete the budget
+    const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
+    if (ed) throw new Error(`Erro ao excluir: ${ed.message}`);
+
+    console.log(`[cancelarPedido] Pedido ${data.orcamentoId} excluído com sucesso por ${userId}`);
     return { ok: true };
   });
