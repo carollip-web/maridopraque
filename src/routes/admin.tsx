@@ -407,10 +407,37 @@ function AdminPedidos() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `relatorio_unificado_pedidos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `pedidos_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const [isDeletingOrder, setIsDeletingOrder] = useState<string | null>(null);
+
+  const handleDeleteOrder = async (order: any) => {
+    const items = order._original_items || [order];
+    const ids = items.map((i: any) => i.id);
+    const msg = items.length > 1 
+      ? `Tem certeza que deseja excluir este pedido unificado? Isso removerá ${items.length} itens (IDs: ${ids.map((id: string) => id.slice(0,8)).join(", ")}).`
+      : `Tem certeza que deseja excluir o pedido #${order.id.slice(0,8)}?`;
+
+    if (!confirm(msg)) return;
+
+    setIsDeletingOrder(order.id);
+    try {
+      // Delete from orcamentos. materials should cascade if set up, 
+      // but let's be safe if FKs aren't cascading.
+      const { error } = await supabase.from("orcamentos").delete().in("id", ids);
+      if (error) throw error;
+      
+      toast.success("Pedido excluído com sucesso.");
+      refetch();
+    } catch (e: any) {
+      toast.error("Erro ao excluir pedido", { description: e.message });
+    } finally {
+      setIsDeletingOrder(null);
+    }
   };
 
   return (
@@ -595,14 +622,25 @@ function AdminPedidos() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-900">R$ {Number(o.valor || 0).toFixed(2)}</span>
-                        {(o.valor_servico || matsTotal > 0) && (
-                          <span className="text-[9px] text-slate-400 mt-0.5">
-                            {o.valor_servico ? `S: R$ ${Number(o.valor_servico).toFixed(0)}` : ""}
-                            {matsTotal > 0 ? ` + M: R$ ${matsTotal.toFixed(0)}` : ""}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-900">R$ {Number(o.valor || 0).toFixed(2)}</span>
+                          {(o.valor_servico || matsTotal > 0) && (
+                            <span className="text-[9px] text-slate-400 mt-0.5">
+                              {o.valor_servico ? `S: R$ ${Number(o.valor_servico).toFixed(0)}` : ""}
+                              {matsTotal > 0 ? ` + M: R$ ${matsTotal.toFixed(0)}` : ""}
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteOrder(o)}
+                          disabled={isDeletingOrder === o.id}
+                          className="text-slate-300 hover:text-red-500 hover:bg-red-50 ml-auto opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          {isDeletingOrder === o.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                        </Button>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500">

@@ -25,7 +25,8 @@ import {
   Phone,
   Filter,
   ChevronDown,
-  Download
+  Download,
+  Trash2
 } from "lucide-react";
 const gerarPdfOrcamento = (id: string) =>
   import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
@@ -600,6 +601,25 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const queryClient = useQueryClient();
   const aceitarPropostaFn = useServerFn(aceitarProposta);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  const handleDeleteOrder = async (orderId: string, title: string) => {
+    if (!confirm(`Tem certeza que deseja cancelar o pedido "${title}"?`)) return;
+    
+    setIsDeleting(orderId);
+    try {
+      const { error } = await supabase.from("orcamentos").delete().eq("id", orderId);
+      if (error) throw error;
+      
+      toast.success("Pedido cancelado com sucesso.");
+      queryClient.invalidateQueries({ queryKey: ["cliente"] });
+      if (pedidoId === orderId) closePedido();
+    } catch (e: any) {
+      toast.error("Erro ao cancelar pedido", { description: e.message });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["cliente", "pedidos", user?.id],
@@ -852,6 +872,15 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       }}
                     >
                       <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-full font-bold h-12 text-red-500 hover:bg-red-50 hover:border-red-200"
+                      disabled={isDeleting === sp.id || ["pago", "concluido"].includes(sp.status.toLowerCase())}
+                      onClick={() => handleDeleteOrder(sp.id, sp.title)}
+                    >
+                      {isDeleting === sp.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                      Cancelar Pedido
                     </Button>
                  </div>
               </div>
@@ -1159,14 +1188,13 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      gerarPdfOrcamento(p.id).catch((err: any) =>
-                        toast.error(err?.message || "Erro ao gerar PDF")
-                      );
+                      handleDeleteOrder(p.id, p.title);
                     }}
-                    title="Baixar PDF do orçamento"
-                    className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:bg-brand hover:text-white hover:border-brand transition-all"
+                    disabled={isDeleting === p.id || ["pago", "concluido"].includes(p.status.toLowerCase())}
+                    title="Cancelar pedido"
+                    className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-30"
                   >
-                    <Download className="h-4 w-4" />
+                    {isDeleting === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </button>
                   <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center group-hover:bg-brand group-hover:text-white group-hover:border-brand transition-all">
                     <ChevronRight className="h-4 w-4" />
