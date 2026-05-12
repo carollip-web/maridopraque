@@ -218,6 +218,8 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
 
 function AdminPedidos() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const excluirPedidoFn = useServerFn(excluirPedidoAdmin);
   const searchParams = useSearch({ from: "/admin" }) as any;
   const search = searchParams.q || "";
   const filter = searchParams.status || "todos";
