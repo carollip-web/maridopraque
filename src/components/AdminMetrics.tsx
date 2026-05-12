@@ -49,11 +49,18 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         prevStartDate = subDays(startDate, 30);
       }
 
-      const [{ data: orcs }, { data: avs }, { count: clientesCount }] = await Promise.all([
+      const [{ data: orcs }, { data: avs }, { data: roles }] = await Promise.all([
         supabase.from("orcamentos").select("*").eq("is_test", false).order("created_at", { ascending: false }),
         supabase.from("avaliacoes").select("nota, created_at"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_test", false),
+        supabase.from("user_roles").select("user_id, role"),
       ]);
+
+      const allRoles = roles || [];
+      const nonClientUserIds = new Set(allRoles.filter(r => r.role !== 'cliente').map(r => r.user_id));
+      const clientUserIds = allRoles.filter(r => r.role === 'cliente').map(r => r.user_id);
+      
+      // Consistent with AdminClientes: show as client if they have 'cliente' role AND NOT any other role
+      const clientesCount = clientUserIds.filter(id => !nonClientUserIds.has(id)).length;
 
       const list = orcs || [];
       const currentPeriod = list.filter(o => new Date(o.created_at) >= startDate);
