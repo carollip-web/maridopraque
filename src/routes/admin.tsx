@@ -255,7 +255,7 @@ function AdminPedidos() {
       }
 
       if (orcIds.length > 0) {
-        promises.push(supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds).then(({ data }) => {
+        promises.push(Promise.resolve(supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds)).then(({ data }) => {
           (data || []).forEach((m: any) => {
             if (!materialsMap[m.orcamento_id]) materialsMap[m.orcamento_id] = [];
             materialsMap[m.orcamento_id].push(m);
