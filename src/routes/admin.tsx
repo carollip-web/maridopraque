@@ -230,19 +230,37 @@ function AdminPedidos() {
       
       const list = orcs || [];
       const ids = Array.from(new Set(list.flatMap((o: any) => [o.cliente_id, o.profissional_id]).filter(Boolean)));
+      const orcIds = list.map((o: any) => o.id);
       
       let profileMap: Record<string, any> = {};
-      if (ids.length > 0) {
-        const { data: profs } = await supabase.from("profiles").select("id, nome, email").in("id", ids);
-        profileMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p]));
-      }
+      let materialsMap: Record<string, any[]> = {};
+
+      const promises: Promise<any>[] = [];
       
-      return { orcamentos: list, profiles: profileMap };
+      if (ids.length > 0) {
+        promises.push(supabase.from("profiles").select("id, nome, email").in("id", ids).then(({ data }) => {
+          profileMap = Object.fromEntries((data || []).map((p: any) => [p.id, p]));
+        }));
+      }
+
+      if (orcIds.length > 0) {
+        promises.push(supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds).then(({ data }) => {
+          (data || []).forEach((m: any) => {
+            if (!materialsMap[m.orcamento_id]) materialsMap[m.orcamento_id] = [];
+            materialsMap[m.orcamento_id].push(m);
+          });
+        }));
+      }
+
+      await Promise.all(promises);
+      
+      return { orcamentos: list, profiles: profileMap, materials: materialsMap };
     }
   });
 
   const orcamentos = data?.orcamentos || [];
   const profiles = data?.profiles || {};
+  const materials = data?.materials || {};
   
   // Get list of unique professionals from data for the dropdown
   const allPros = useMemo(() => {
@@ -301,21 +319,40 @@ function AdminPedidos() {
 
   const handleExport = () => {
     if (filtered.length === 0) return;
-    const headers = ["ID", "Cliente", "E-mail Cliente", "Serviço", "Profissional", "Status", "Valor (R$)", "Data"];
+    const headers = [
+      "ID_Completo", 
+      "Data",
+      "Cliente_Nome", 
+      "Cliente_Email", 
+      "Servico_Nome", 
+      "Profissional_Nome", 
+      "Status", 
+      "Valor_Servico", 
+      "Valor_Materiais", 
+      "Valor_Total",
+      "Materiais_Detalhe"
+    ];
+
     const rows = filtered.map((o: any) => {
       const cli = profiles[o.cliente_id];
       const prof = o.profissional_id ? profiles[o.profissional_id] : null;
       const statusLabel = STATUS_COLORS[o.status]?.label || o.status;
+      const oMats = materials[o.id] || [];
+      const materialsList = oMats.map((m: any) => `${m.nome_snapshot} (x${m.quantidade})`).join(" | ");
+      const materialsTotal = oMats.reduce((sum, m) => sum + (Number(m.preco_unitario) * Number(m.quantidade)), 0);
       
       return [
-        o.id.slice(0, 8),
+        o.id,
+        new Date(o.created_at).toLocaleDateString("pt-BR"),
         cli?.nome || "—",
         cli?.email || "—",
         o.service_name || "—",
         prof?.nome || "—",
         statusLabel,
+        o.valor_servico ? Number(o.valor_servico).toFixed(2) : "0.00",
+        materialsTotal.toFixed(2),
         o.valor ? Number(o.valor).toFixed(2) : "0.00",
-        new Date(o.created_at).toLocaleDateString("pt-BR")
+        materialsList || "Nenhum"
       ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
     });
 
@@ -324,7 +361,7 @@ function AdminPedidos() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `pedidos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `relatorio_unificado_pedidos_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
