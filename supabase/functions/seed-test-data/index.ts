@@ -141,9 +141,20 @@ Deno.serve(async (req) => {
           data_aprovacao: ["aprovado", "agendado", "pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
           data_pagamento: ["pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
           data_agendada: ["agendado", "pago", "concluido"].includes(s.status) ? new Date(Date.now() + 86400000).toISOString() : null,
-        });
         pedidosCriados++;
       }
+    }
+
+    // 5. Cleanup: Reassign budgets where a pro is mistakenly the client
+    const { data: allProRoles } = await admin.from("user_roles").select("user_id").eq("role", "profissional");
+    const allProIds = (allProRoles || []).map(p => p.user_id);
+    if (allProIds.length > 0 && clientes.length > 0) {
+      const targetClientId = clientes[0].user_id;
+      const { error: errFix } = await admin
+        .from("orcamentos")
+        .update({ cliente_id: targetClientId })
+        .in("cliente_id", allProIds);
+      if (errFix) console.error("Error reassigning pro budgets:", errFix);
     }
 
     return json({
