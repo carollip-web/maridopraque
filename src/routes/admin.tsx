@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { z } from "zod";
 import {
   BarChart3,
   Wrench,
@@ -58,6 +59,16 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      tab: z.string().optional().catch(undefined).parse(search.tab),
+      q: z.string().optional().catch(undefined).parse(search.q),
+      status: z.string().optional().catch(undefined).parse(search.status),
+      pro_id: z.string().optional().catch(undefined).parse(search.pro_id),
+      range: z.string().optional().catch(undefined).parse(search.range),
+      cli_q: z.string().optional().catch(undefined).parse(search.cli_q),
+    };
+  },
   head: () => ({ meta: [{ title: "Admin · Marido pra Quê?" }] }),
 });
 
