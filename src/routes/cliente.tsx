@@ -26,7 +26,8 @@ import {
   Filter,
   ChevronDown,
   Download,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 const gerarPdfOrcamento = (id: string) =>
   import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
