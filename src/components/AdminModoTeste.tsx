@@ -146,6 +146,24 @@ export function AdminModoTeste() {
                   {copied === c.email ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                   Credenciais
                 </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const r = await callFn("impersonate-user", {
+                        target_user_id: c.id,
+                        redirect_to: window.location.origin + (c.role === "profissional" ? "/profissional" : c.role === "admin" ? "/admin" : "/cliente"),
+                      });
+                      if (r.action_link) window.open(r.action_link, "_blank");
+                      else toast.error("Link não retornado");
+                    } catch (e: any) {
+                      toast.error(e.message);
+                    }
+                  }}
+                  className="text-xs flex items-center gap-1 px-2 py-1.5 rounded-md bg-foreground text-background hover:bg-foreground/90"
+                >
+                  <LogIn className="h-3 w-3" />
+                  Entrar como
+                </button>
               </div>
             ))}
           </div>
