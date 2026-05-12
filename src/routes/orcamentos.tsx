@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import {
   Loader2,
@@ -131,7 +131,6 @@ function MeusOrcamentos() {
 
   const draftKey = user ? `orc-draft-${user.id}` : null;
 
-  const solicitar = useServerFn(solicitarOrcamento);
   const editar = useServerFn(editarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
 
