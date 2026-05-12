@@ -258,7 +258,7 @@ function AdminPedidos() {
     { id: "enviado", label: `Enviados (${orcamentos.filter(o => o.status === "enviado").length})` },
     { id: "aprovado", label: `Aprovados (${orcamentos.filter(o => o.status === "aprovado").length})` },
     { id: "pago", label: `Pagos (${orcamentos.filter(o => o.status === "pago").length})` },
-    { id: "agendado", label: `Agendados (${orcamentos.filter(o => o.status === "agendado").length})` },
+    { id: "agendado", label: `Agendados (${orcamentos.filter(o => (o.status as string) === "agendado").length})` },
     { id: "concluido", label: `Concluídos (${orcamentos.filter(o => o.status === "concluido").length})` },
     { id: "cancelado", label: `Cancelados (${orcamentos.filter(o => o.status === "cancelado").length})` },
     { id: "recusado", label: `Recusados (${orcamentos.filter(o => o.status === "recusado").length})` },
