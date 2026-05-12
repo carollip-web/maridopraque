@@ -1155,6 +1155,18 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       Aprovar
                     </Button>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      gerarPdfOrcamento(p.id).catch((err: any) =>
+                        toast.error(err?.message || "Erro ao gerar PDF")
+                      );
+                    }}
+                    title="Baixar PDF do orçamento"
+                    className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:bg-brand hover:text-white hover:border-brand transition-all"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
                   <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center group-hover:bg-brand group-hover:text-white group-hover:border-brand transition-all">
                     <ChevronRight className="h-4 w-4" />
                   </div>
