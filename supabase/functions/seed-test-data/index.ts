@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      created.push({ email: u.email, user_id: userId, role: u.role, password: TEST_PASSWORD });
+      created.push({ email: u.email, user_id: userId, role: u.role });
     }
 
     // Pegar serviços do catálogo (qualquer)
@@ -150,7 +150,6 @@ Deno.serve(async (req) => {
       ok: true,
       contas: created,
       pedidos_criados: pedidosCriados,
-      senha_padrao: TEST_PASSWORD,
     });
   } catch (e: any) {
     console.error("seed-test-data error:", e);

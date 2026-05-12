@@ -103,6 +103,18 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
+    // 1. Check if the user is a professional
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "profissional")
+      .maybeSingle();
+
+    if (!roleData) {
+      throw new Error("Apenas profissionais podem enviar orçamentos.");
+    }
+
     // Instead of updating the order and claiming it, we submit a proposal
     const { data: row, error } = await (supabase as any).from("propostas")
       .insert({
@@ -157,7 +169,19 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => decisaoSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+
+    // Check if the budget belongs to the user
+    const { data: orcCheck } = await supabase
+      .from("orcamentos")
+      .select("cliente_id")
+      .eq("id", data.orcamentoId)
+      .single();
+
+    if (!orcCheck || orcCheck.cliente_id !== userId) {
+      throw new Error("Sem permissão para decidir sobre este orçamento.");
+    }
+
     const { data: row, error } = await supabase
       .from("orcamentos")
       .update({
@@ -187,13 +211,14 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     if (!orc || orc.cliente_id !== userId) throw new Error("Sem permissão");
     if (orc.status !== "customizado_pendente" && orc.status !== "enviado") throw new Error("Pedido não está mais aberto para propostas.");
 
-    // Update the specific proposta to aceita
+    // Update the specific proposta to aceita, ensuring it belongs to the correct budget
     const { data: prop, error: e1 } = await (supabase as any).from("propostas")
       .update({ status: 'aceita' })
       .eq("id", data.propostaId)
+      .eq("orcamento_id", data.orcamentoId)
       .select()
       .single();
-    if (e1) throw new Error(e1.message);
+    if (e1) throw new Error("Proposta inválida ou não pertence a este orçamento.");
 
     // Reject other proposals
     // Reject other proposals
