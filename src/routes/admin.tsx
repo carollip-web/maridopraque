@@ -220,17 +220,17 @@ function AdminPedidos() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const excluirPedidoFn = useServerFn(excluirPedidoAdmin);
-  const searchParams = useSearch({ from: "/admin" }) as any;
+  const searchParams = (useSearch({ from: "/admin" }) || {}) as any;
   const search = searchParams.q || "";
   const filter = searchParams.status || "todos";
   const proFilter = searchParams.pro_id || "todos";
-  const dateRange = searchParams.range || "all"; // all, today, week, month
+  const dateRange = searchParams.range || "all"; 
 
   const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, q: val || undefined })) as any });
   const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
   const setProFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_id: val || "todos" })) as any });
   const setDateRange = (val: string) => navigate({ search: ((old: any) => ({ ...old, range: val || "all" })) as any });
-  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
@@ -286,9 +286,10 @@ function AdminPedidos() {
     const groups: Record<string, any[]> = {};
     
     orcamentos.forEach((o: any) => {
-      // Group by client_id and created_at (rounded to the second to catch bulk inserts)
+      if (!o.created_at) return;
       const date = new Date(o.created_at);
-      const timestamp = date.toISOString().slice(0, 19); // YYYY-MM-DDTHH:mm:ss
+      if (isNaN(date.getTime())) return;
+      const timestamp = date.toISOString().slice(0, 19); 
       const key = `${o.cliente_id}_${timestamp}`;
       
       if (!groups[key]) groups[key] = [];
