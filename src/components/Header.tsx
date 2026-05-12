@@ -105,8 +105,15 @@ export function Header() {
     };
   }, [showNotifications, showProfileMenu]);
 
+  const isTestAccount = !!userData?.email?.endsWith("@teste.maridopraque.local");
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      {isTestAccount && (
+        <div className="bg-amber-100 text-amber-900 text-xs font-semibold text-center py-1 border-b border-amber-200">
+          🧪 Você está logado em uma conta de teste ({userData.email})
+        </div>
+      )}
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
