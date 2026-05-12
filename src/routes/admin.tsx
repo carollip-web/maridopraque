@@ -30,6 +30,8 @@ import {
   TestTube,
   ChevronDown,
   RefreshCw,
+  FileDown,
+  FileUp,
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
 import { createClient } from "@supabase/supabase-js";
@@ -1208,13 +1210,120 @@ function AdminServicos() {
     return Object.entries(map);
   }, [servicos]);
 
+  const qc = useQueryClient();
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleExport = () => {
+    if (servicos.length === 0) return;
+    const headers = ["id", "nome", "categoria", "descricao", "is_fixed_price", "preco_fixo", "preco_min", "preco_max", "ativo"];
+    const rows = servicos.map((s: any) => headers.map(h => {
+      const val = s[h];
+      if (val === null || val === undefined) return "";
+      return `"${String(val).replace(/"/g, '""')}"`;
+    }).join(","));
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `catalogo_servicos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) throw new Error("Arquivo vazio ou sem dados");
+
+        const headers = lines[0].split(",").map(h => h.replace(/"/g, "").trim());
+        const data = lines.slice(1).map(line => {
+          // Simple CSV line parser that handles quotes
+          const values: string[] = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) {
+              values.push(current);
+              current = "";
+            } else current += char;
+          }
+          values.push(current);
+
+          const obj: any = {};
+          headers.forEach((h, i) => {
+            let val: any = values[i]?.replace(/^"|"$/g, "").replace(/""/g, '"') || null;
+            if (["preco_fixo", "preco_min", "preco_max"].includes(h)) {
+              val = val ? Number(val) : null;
+            } else if (h === "is_fixed_price" || h === "ativo") {
+              val = val?.toLowerCase() === "true" || val === "Sim" || val === "1";
+            }
+            if (h === "id" && !val) return; // Let database generate ID if missing
+            obj[h] = val;
+          });
+          return obj;
+        }).filter(item => item.nome);
+
+        const { error } = await supabase.from("services_catalog").upsert(data);
+        if (error) throw error;
+        
+        toast.success("Catálogo importado!", { description: `${data.length} serviços atualizados.` });
+        qc.invalidateQueries({ queryKey: ["admin", "servicos"] });
+      } catch (err: any) {
+        toast.error("Erro na importação", { description: err.message });
+      } finally {
+        setIsImporting(false);
+        e.target.value = ""; // Reset input
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <h2 className="text-2xl font-bold">Catálogo de Serviços</h2>
-        <div className="flex gap-2">
-          <Link to="/materiais-admin"><Button variant="outline" className="rounded-lg">Materiais</Button></Link>
-          <Link to="/servicos-admin"><Button className="bg-brand text-white rounded-lg">Gerenciar serviços</Button></Link>
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Catálogo de Serviços</h2>
+          <p className="text-sm text-slate-500">Exporte ou importe a tabela para edições em massa no Excel.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} className="rounded-xl gap-2 h-10 px-4 bg-white">
+            <FileDown className="h-4 w-4" /> Exportar CSV
+          </Button>
+          
+          <div className="relative">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleImport}
+              className="hidden"
+              id="csv-import"
+              disabled={isImporting}
+            />
+            <label htmlFor="csv-import">
+              <Button asChild variant="outline" size="sm" className="rounded-xl gap-2 h-10 px-4 bg-white cursor-pointer">
+                <span>
+                  {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+                  Importar CSV
+                </span>
+              </Button>
+            </label>
+          </div>
+
+          <div className="w-px h-6 bg-slate-200 mx-2 hidden sm:block" />
+
+          <Link to="/materiais-admin"><Button variant="outline" className="rounded-xl h-10 px-4 bg-white">Materiais</Button></Link>
+          <Link to="/servicos-admin"><Button className="bg-brand text-white rounded-xl h-10 px-4 font-bold">Gerenciar serviços</Button></Link>
         </div>
       </div>
 
