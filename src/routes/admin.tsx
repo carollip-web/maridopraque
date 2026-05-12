@@ -276,7 +276,7 @@ function AdminPedidos() {
   // Get list of unique professionals from data for the dropdown
   const allPros = useMemo(() => {
     const ids = Array.from(new Set(orcamentos.map(o => o.profissional_id).filter(Boolean)));
-    return ids.map(id => profiles[id]).filter(Boolean).sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+    return ids.map((id: any) => profiles[id]).filter(Boolean).sort((a: any, b: any) => (a.nome || "").localeCompare(b.nome || ""));
   }, [orcamentos, profiles]);
 
   const unifiedOrders = useMemo(() => {
