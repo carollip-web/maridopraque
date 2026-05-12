@@ -322,6 +322,7 @@ export type Database = {
           fotos_concluido: string[]
           fotos_problema: string[]
           id: string
+          is_test: boolean
           observacoes_profissional: string | null
           profissional_id: string | null
           reagendamento_solicitado: string | null
@@ -350,6 +351,7 @@ export type Database = {
           fotos_concluido?: string[]
           fotos_problema?: string[]
           id?: string
+          is_test?: boolean
           observacoes_profissional?: string | null
           profissional_id?: string | null
           reagendamento_solicitado?: string | null
@@ -378,6 +380,7 @@ export type Database = {
           fotos_concluido?: string[]
           fotos_problema?: string[]
           id?: string
+          is_test?: boolean
           observacoes_profissional?: string | null
           profissional_id?: string | null
           reagendamento_solicitado?: string | null
@@ -437,6 +440,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_test: boolean
           nome: string
           total_servicos_pagos: number
           updated_at: string
@@ -446,6 +450,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          is_test?: boolean
           nome?: string
           total_servicos_pagos?: number
           updated_at?: string
@@ -455,6 +460,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_test?: boolean
           nome?: string
           total_servicos_pagos?: number
           updated_at?: string
