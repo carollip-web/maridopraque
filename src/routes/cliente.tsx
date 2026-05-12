@@ -433,6 +433,7 @@ function DashboardTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["cliente", "stats", user?.id],
     queryFn: async () => {
+      if (!user) return { concluidos: 0, ativos: 0, pendentes: 0, total: 0, recentes: [] as any[] };
       const { data, error } = await supabase
         .from("orcamentos")
         .select("status, valor, service_name, created_at")
