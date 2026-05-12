@@ -28,6 +28,8 @@ import {
   X,
   Database,
   TestTube,
+  ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
 import { createClient } from "@supabase/supabase-js";
