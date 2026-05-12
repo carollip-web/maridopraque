@@ -620,8 +620,8 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 
       // 2. Then delete from DB
       // 2. Then delete using server function
-      const { ok, error } = await cancelarPedidoFn({ data: { orcamentoId: orderId } });
-      if (error || !ok) throw new Error(error || "Erro ao cancelar");
+      const { ok } = await cancelarPedidoFn({ data: { orcamentoId: orderId } });
+      if (!ok) throw new Error("Erro ao cancelar");
       
       toast.success("Pedido cancelado com sucesso.");
       
