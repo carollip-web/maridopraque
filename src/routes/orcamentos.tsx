@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { decidirOrcamento, editarOrcamento, solicitarOrcamento } from "@/lib/orcamentos.functions";
+import { decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import {
   Loader2,
@@ -131,7 +131,6 @@ function MeusOrcamentos() {
 
   const draftKey = user ? `orc-draft-${user.id}` : null;
 
-  const solicitar = useServerFn(solicitarOrcamento);
   const editar = useServerFn(editarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
 
@@ -416,6 +415,11 @@ function MeusOrcamentos() {
 
   const handleNew = async () => {
     if (!selServico) return;
+    if (!user) {
+      toast.error("Faça login para enviar uma solicitação.");
+      return;
+    }
+    const userId = user.id;
     const payload = {
       serviceId: selServico.id,
       serviceName: selServico.nome,
@@ -443,10 +447,49 @@ function MeusOrcamentos() {
         await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
-        const res = await solicitar({ data: payload });
-        const novoId = (res as any)?.orcamento?.id;
-        if (novoId && fotos.length > 0) {
-          await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", novoId);
+        const { data: novoOrcamento, error: orcamentoError } = await supabase
+          .from("orcamentos")
+          .insert({
+            cliente_id: userId,
+            service_id: payload.serviceId,
+            service_name: payload.serviceName,
+            descricao: payload.descricao ?? null,
+            fotos_problema: fotos,
+          } as any)
+          .select("id")
+          .single();
+
+        if (orcamentoError) throw orcamentoError;
+
+        const novoId = novoOrcamento?.id;
+        if (novoId && payload.materiais.length > 0) {
+          const materialIds = payload.materiais.map((m) => m.materialId);
+          const { data: materiaisRows, error: materiaisError } = await supabase
+            .from("materiais")
+            .select("id, nome, unidade, preco_atual")
+            .in("id", materialIds);
+
+          if (materiaisError) throw materiaisError;
+
+          const materialItems = payload.materiais
+            .map((m) => {
+              const material = materiaisRows?.find((row) => row.id === m.materialId);
+              if (!material) return null;
+              return {
+                orcamento_id: novoId,
+                material_id: material.id,
+                nome_snapshot: material.nome,
+                unidade_snapshot: material.unidade,
+                quantidade: m.quantidade,
+                preco_unitario: Number(material.preco_atual),
+              };
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
+
+          if (materialItems.length > 0) {
+            const { error: itensError } = await supabase.from("orcamento_materiais").insert(materialItems);
+            if (itensError) throw itensError;
+          }
         }
         toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
         queryClient.invalidateQueries({ queryKey: ["cliente"] });
