@@ -201,8 +201,14 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
 };
 
 function AdminPedidos() {
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<string>("todos");
+  const navigate = useNavigate();
+  const searchParams = useSearch({ from: "/admin" }) as any;
+  const search = searchParams.q || "";
+  const filter = searchParams.status || "todos";
+
+  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, q: val || undefined }) });
+  const setFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, status: val || "todos" }) });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
@@ -247,15 +253,15 @@ function AdminPedidos() {
   }, [orcamentos, filter, search, profiles]);
 
   const tabs = [
-    { id: "todos", label: "Todos" },
-    { id: "customizado_pendente", label: "Pendentes" },
-    { id: "enviado", label: "Enviados" },
-    { id: "aprovado", label: "Aprovados" },
-    { id: "pago", label: "Pagos" },
-    { id: "agendado", label: "Agendados" },
-    { id: "concluido", label: "Concluídos" },
-    { id: "cancelado", label: "Cancelados" },
-    { id: "recusado", label: "Recusados" },
+    { id: "todos", label: `Todos (${orcamentos.length})` },
+    { id: "customizado_pendente", label: `Pendentes (${orcamentos.filter(o => o.status === "customizado_pendente").length})` },
+    { id: "enviado", label: `Enviados (${orcamentos.filter(o => o.status === "enviado").length})` },
+    { id: "aprovado", label: `Aprovados (${orcamentos.filter(o => o.status === "aprovado").length})` },
+    { id: "pago", label: `Pagos (${orcamentos.filter(o => o.status === "pago").length})` },
+    { id: "agendado", label: `Agendados (${orcamentos.filter(o => o.status === "agendado").length})` },
+    { id: "concluido", label: `Concluídos (${orcamentos.filter(o => o.status === "concluido").length})` },
+    { id: "cancelado", label: `Cancelados (${orcamentos.filter(o => o.status === "cancelado").length})` },
+    { id: "recusado", label: `Recusados (${orcamentos.filter(o => o.status === "recusado").length})` },
   ];
 
   return (
@@ -272,6 +278,12 @@ function AdminPedidos() {
               className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none"
             />
           </div>
+          </div>
+          {(search || filter !== "todos") && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
+              <X className="h-4 w-4" /> Limpar
+            </Button>
+          )}
           <Button variant="outline" className="rounded-lg gap-2" onClick={() => refetch()}>
             <Filter className="h-4 w-4" /> Atualizar
           </Button>
@@ -466,8 +478,14 @@ const ESPECIALIDADES_OPCOES = [
 
 function AdminProfissionais() {
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"todos" | "ativo" | "inativo">("todos");
+  const navigate = useNavigate();
+  const searchParams = useSearch({ from: "/admin" }) as any;
+  const search = searchParams.pro_q || "";
+  const filterStatus = searchParams.pro_status || "todos";
+
+  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_q: val || undefined }) });
+  const setFilterStatus = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_status: val || "todos" }) });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
   const [selected, setSelected] = useState<any | null>(null);
   const [editingEsp, setEditingEsp] = useState(false);
   const [espSelected, setEspSelected] = useState<string[]>([]);
@@ -644,19 +662,28 @@ function AdminProfissionais() {
           />
         </div>
         <div className="flex gap-2">
-          {(["todos", "ativo", "inativo"] as const).map((s) => (
+          {[
+            { id: "todos", label: `Todos (${pros.length})` },
+            { id: "ativo", label: `Ativos (${pros.filter(p => p.ativo).length})` },
+            { id: "inativo", label: `Inativos (${pros.filter(p => !p.ativo).length})` },
+          ].map((s) => (
             <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
+              key={s.id}
+              onClick={() => setFilterStatus(s.id as any)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${
-                filterStatus === s
+                filterStatus === s.id
                   ? "bg-slate-900 text-white"
                   : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
-              {s}
+              {s.label}
             </button>
           ))}
+          {(search || filterStatus !== "todos") && (
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
+              <X className="h-4 w-4" /> Limpar
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1003,7 +1030,10 @@ function AdminProfissionais() {
 
 
 function AdminClientes() {
-  const [q, setQ] = useState("");
+  const navigate = useNavigate();
+  const searchParams = useSearch({ from: "/admin" }) as any;
+  const q = searchParams.cli_q || "";
+  const setQ = (val: string) => navigate({ search: (old: any) => ({ ...old, cli_q: val || undefined }) });
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["admin", "clientes"],
