@@ -678,6 +678,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      validar_codigo_indicacao: {
+        Args: { _codigo: string }
+        Returns: {
+          desconto_percent: number
+          owner_id: string
+          valido: boolean
+        }[]
+      }
     }
     Enums: {
       admin_level: "super_admin" | "admin" | "financeiro" | "suporte"
