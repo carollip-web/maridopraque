@@ -1875,7 +1875,7 @@ function AdminFinanceiro() {
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+
 
 const configSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
