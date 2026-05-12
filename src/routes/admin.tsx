@@ -205,10 +205,14 @@ function AdminPedidos() {
   const searchParams = useSearch({ from: "/admin" }) as any;
   const search = searchParams.q || "";
   const filter = searchParams.status || "todos";
+  const proFilter = searchParams.pro_id || "todos";
+  const dateRange = searchParams.range || "all"; // all, today, week, month
 
-  const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, q: val || undefined })) as any });
-  const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
-  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, q: val || undefined }) });
+  const setFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, status: val || "todos" }) });
+  const setProFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_id: val || "todos" }) });
+  const setDateRange = (val: string) => navigate({ search: (old: any) => ({ ...old, range: val || "all" }) });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
@@ -235,10 +239,37 @@ function AdminPedidos() {
 
   const orcamentos = data?.orcamentos || [];
   const profiles = data?.profiles || {};
+  
+  // Get list of unique professionals from data for the dropdown
+  const allPros = useMemo(() => {
+    const ids = Array.from(new Set(orcamentos.map(o => o.profissional_id).filter(Boolean)));
+    return ids.map(id => profiles[id]).filter(Boolean).sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+  }, [orcamentos, profiles]);
 
   const filtered = useMemo(() => {
     return orcamentos.filter((o) => {
+      // Status filter
       if (filter !== "todos" && o.status !== filter) return false;
+      
+      // Professional filter
+      if (proFilter !== "todos" && o.profissional_id !== proFilter) return false;
+      
+      // Date filter
+      if (dateRange !== "all") {
+        const d = new Date(o.created_at);
+        const now = new Date();
+        if (dateRange === "today") {
+          if (d.toDateString() !== now.toDateString()) return false;
+        } else if (dateRange === "week") {
+          const weekAgo = new Date();
+          weekAgo.setDate(now.getDate() - 7);
+          if (d < weekAgo) return false;
+        } else if (dateRange === "month") {
+          if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
+        }
+      }
+
+      // Search text
       if (!search) return true;
       const q = search.toLowerCase();
       const cliente = profiles[o.cliente_id]?.nome?.toLowerCase() || "";
@@ -250,7 +281,7 @@ function AdminPedidos() {
         profissional.includes(q)
       );
     });
-  }, [orcamentos, filter, search, profiles]);
+  }, [orcamentos, filter, search, profiles, proFilter, dateRange]);
 
   const tabs = [
     { id: "todos", label: `Todos (${orcamentos.length})` },
@@ -266,26 +297,65 @@ function AdminPedidos() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">Todos os Pedidos</h2>
-        <div className="flex gap-2">
-          <div className="relative">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold">Todos os Pedidos</h2>
+          <p className="text-sm text-slate-500">Gerencie e acompanhe todos os serviços da plataforma.</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative min-w-[240px] flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por cliente, serviço..."
-              className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none"
+              placeholder="Cliente ou serviço..."
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all"
             />
           </div>
-          {(search || filter !== "todos") && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
-              <X className="h-4 w-4" /> Limpar
+
+          {/* Professional Selector */}
+          <div className="relative min-w-[200px]">
+            <select
+              value={proFilter}
+              onChange={(e) => setProFilter(e.target.value)}
+              className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none appearance-none transition-all"
+            >
+              <option value="todos">Todos Profissionais</option>
+              {allPros.map(p => (
+                <option key={p.id} value={p.id}>{p.nome}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Date Range Selector */}
+          <div className="relative min-w-[140px]">
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none appearance-none transition-all"
+            >
+              <option value="all">Todo período</option>
+              <option value="today">Hoje</option>
+              <option value="week">Últimos 7 dias</option>
+              <option value="month">Este mês</option>
+            </select>
+            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* Clear & Refresh */}
+          <div className="flex items-center gap-2">
+            {(search || filter !== "todos" || proFilter !== "todos" || dateRange !== "all") && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-3 h-9 rounded-xl">
+                <X className="h-4 w-4" /> Limpar
+              </Button>
+            )}
+            <Button variant="outline" size="sm" className="h-9 rounded-xl gap-2 bg-white" onClick={() => refetch()}>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
             </Button>
-          )}
-          <Button variant="outline" className="rounded-lg gap-2" onClick={() => refetch()}>
-            <Filter className="h-4 w-4" /> Atualizar
-          </Button>
+          </div>
         </div>
       </div>
 
