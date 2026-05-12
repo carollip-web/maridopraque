@@ -341,40 +341,32 @@ export const cancelarPedido = createServerFn({ method: "POST" })
     const { supabase: userClient, userId } = context;
 
     try {
-      // 1. Verify ownership using the user's client (subject to RLS)
-      const { data: orc, error: e0 } = await userClient
+      // 1. Create an admin client to bypass RLS
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
+
+      // 2. Verify ownership using ADMIN client to avoid RLS issues on the check itself
+      const { data: orc, error: e0 } = await admin
         .from("orcamentos")
         .select("cliente_id, status")
         .eq("id", data.orcamentoId)
         .single();
       
-      if (e0 || !orc) return { ok: false, error: "Pedido não encontrado ou sem permissão." };
-      if (orc.cliente_id !== userId) return { ok: false, error: "Sem permissão para cancelar." };
+      if (e0 || !orc) return { ok: false, error: "Pedido não encontrado." };
+      if (orc.cliente_id !== userId) return { ok: false, error: "Sem permissão para cancelar este pedido." };
+      
       if (["pago", "concluido"].includes(orc.status?.toLowerCase())) {
         return { ok: false, error: "Este pedido já foi pago ou concluído e não pode ser cancelado." };
       }
 
-      // 2. Create an admin client to bypass RLS and ensure deletion
-      const SUPABASE_URL = process.env.SUPABASE_URL;
-      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      const admin = SERVICE_ROLE 
-        ? createClient(SUPABASE_URL!, SERVICE_ROLE)
-        : userClient;
-
       console.log(`[cancelarPedido] Iniciando exclusão do pedido ${data.orcamentoId}...`);
 
-      // 3. Delete linked data in the correct order to avoid FK errors
-      // - Messages (Chat)
+      // 3. Delete linked data in the correct order
       await admin.from("mensagens").delete().eq("orcamento_id", data.orcamentoId);
-      
-      // - Notifications
       await admin.from("notificacoes").delete().eq("orcamento_id", data.orcamentoId);
-      
-      // - Materials
       await admin.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
       
-      // - Proposals (and their materials)
       const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
         const propIds = props.map((p: any) => p.id);
@@ -386,11 +378,10 @@ export const cancelarPedido = createServerFn({ method: "POST" })
       const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
       if (ed) throw new Error(`Erro final ao excluir orcamento: ${ed.message}`);
 
-      console.log(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} e dependências removidos.`);
       return { ok: true };
     } catch (err: any) {
       console.error("[cancelarPedido] Erro fatal:", err);
-      return { ok: false, error: err.message || "Erro interno ao processar cancelamento" };
+      return { ok: false, error: err.message || "Erro interno ao processar" };
     }
   });
 
@@ -401,8 +392,13 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
     const { supabase: userClient, userId } = context;
 
     try {
-      // 1. Verify if caller is admin
-      const { data: roleData } = await userClient
+      // 1. Create admin client
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
+
+      // 2. Verify if caller is admin
+      const { data: roleData } = await admin
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
@@ -410,11 +406,6 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
         .maybeSingle();
 
       if (!roleData) throw new Error("Apenas administradores podem excluir pedidos.");
-
-      // 2. Create admin client
-      const SUPABASE_URL = process.env.SUPABASE_URL;
-      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
 
       console.log(`[excluirPedidoAdmin] Admin ${userId} excluindo pedido ${data.orcamentoId}...`);
 
