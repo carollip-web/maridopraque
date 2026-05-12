@@ -593,7 +593,7 @@ function AdminPedidos() {
                         <span className="text-sm font-medium text-slate-700">{o.service_name}</span>
                         {oMats.length > 0 && (
                           <span className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                            {oMats.map(m => `${m.nome_snapshot} (x${m.quantidade})`).join(", ")}
+                            {oMats.map((m: any) => `${m.nome_snapshot} (x${m.quantidade})`).join(", ")}
                           </span>
                         )}
                       </div>
