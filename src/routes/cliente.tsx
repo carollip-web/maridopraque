@@ -34,7 +34,7 @@ const gerarPdfOrcamento = (id: string) =>
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { aceitarProposta } from "@/lib/orcamentos.functions";
+import { aceitarProposta, cancelarPedido } from "@/lib/orcamentos.functions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { toast } from "sonner";
@@ -601,6 +601,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
   const [dataAgendada, setDataAgendada] = useState<Date | null>(null);
   const queryClient = useQueryClient();
   const aceitarPropostaFn = useServerFn(aceitarProposta);
+  const cancelarPedidoFn = useServerFn(cancelarPedido);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -618,13 +619,15 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
       }
 
       // 2. Then delete from DB
-      const { error } = await supabase.from("orcamentos").delete().eq("id", orderId);
-      if (error) throw error;
+      // 2. Then delete using server function
+      const { ok, error } = await cancelarPedidoFn({ data: { orcamentoId: orderId } });
+      if (error || !ok) throw new Error(error || "Erro ao cancelar");
       
       toast.success("Pedido cancelado com sucesso.");
       
-      // 3. Finally invalidate to refresh the list
-      queryClient.invalidateQueries({ queryKey: ["cliente"] });
+      // 3. Force cache refresh and local state update
+      await queryClient.invalidateQueries({ queryKey: ["cliente"] });
+      await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
     } catch (e: any) {
       toast.error("Erro ao cancelar pedido", { description: e.message });
     } finally {

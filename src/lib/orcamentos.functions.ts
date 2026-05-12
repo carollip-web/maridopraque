@@ -328,3 +328,40 @@ export const editarOrcamento = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+const cancelarSchema = z.object({
+  orcamentoId: z.string().uuid(),
+});
+
+export const cancelarPedido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => cancelarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // 1. Verify ownership
+    const { data: orc, error: e0 } = await supabase
+      .from("orcamentos")
+      .select("cliente_id")
+      .eq("id", data.orcamentoId)
+      .single();
+    if (e0 || !orc) throw new Error("Pedido não encontrado.");
+    if (orc.cliente_id !== userId) throw new Error("Sem permissão para cancelar.");
+
+    // 2. Delete linked data manually to avoid FK errors (if not CASCADE)
+    // materials
+    await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+    // proposals (and their materials)
+    const { data: props } = await (supabase as any).from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
+    if (props && props.length > 0) {
+      const propIds = props.map((p: any) => p.id);
+      await (supabase as any).from("proposta_materiais").delete().in("proposta_id", propIds);
+      await (supabase as any).from("propostas").delete().in("id", propIds);
+    }
+
+    // 3. Delete the budget
+    const { error: ed } = await supabase.from("orcamentos").delete().eq("id", data.orcamentoId);
+    if (ed) throw new Error(ed.message);
+
+    return { ok: true };
+  });
