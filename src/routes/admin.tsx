@@ -268,8 +268,43 @@ function AdminPedidos() {
     return ids.map(id => profiles[id]).filter(Boolean).sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
   }, [orcamentos, profiles]);
 
+  const unifiedOrders = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    
+    orcamentos.forEach((o: any) => {
+      // Group by client_id and created_at (rounded to the second to catch bulk inserts)
+      const date = new Date(o.created_at);
+      const timestamp = date.toISOString().slice(0, 19); // YYYY-MM-DDTHH:mm:ss
+      const key = `${o.cliente_id}_${timestamp}`;
+      
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(o);
+    });
+
+    return Object.values(groups).map(items => {
+      const first = items[0];
+      const totalValor = items.reduce((sum, i) => sum + (Number(i.valor) || 0), 0);
+      const totalServico = items.reduce((sum, i) => sum + (Number(i.valor_servico) || 0), 0);
+      const allServiceNames = items.map(i => i.service_name).join(" + ");
+      
+      // Collect all materials
+      const allMats = items.flatMap(i => materials[i.id] || []);
+      
+      return {
+        ...first,
+        id: first.id, // Use first ID as order ID
+        service_name: allServiceNames,
+        valor: totalValor,
+        valor_servico: totalServico,
+        items_count: items.length,
+        _original_items: items,
+        _unified_materials: allMats
+      };
+    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [orcamentos, materials]);
+
   const filtered = useMemo(() => {
-    return orcamentos.filter((o) => {
+    return unifiedOrders.filter((o) => {
       // Status filter
       if (filter !== "todos" && o.status !== filter) return false;
       
@@ -303,18 +338,18 @@ function AdminPedidos() {
         profissional.includes(q)
       );
     });
-  }, [orcamentos, filter, search, profiles, proFilter, dateRange]);
+  }, [unifiedOrders, filter, search, profiles, proFilter, dateRange]);
 
   const tabs = [
-    { id: "todos", label: `Todos (${orcamentos.length})` },
-    { id: "customizado_pendente", label: `Pendentes (${orcamentos.filter(o => o.status === "customizado_pendente").length})` },
-    { id: "enviado", label: `Enviados (${orcamentos.filter(o => o.status === "enviado").length})` },
-    { id: "aprovado", label: `Aprovados (${orcamentos.filter(o => o.status === "aprovado").length})` },
-    { id: "pago", label: `Pagos (${orcamentos.filter(o => o.status === "pago").length})` },
-    { id: "agendado", label: `Agendados (${orcamentos.filter(o => (o.status as string) === "agendado").length})` },
-    { id: "concluido", label: `Concluídos (${orcamentos.filter(o => o.status === "concluido").length})` },
-    { id: "cancelado", label: `Cancelados (${orcamentos.filter(o => o.status === "cancelado").length})` },
-    { id: "recusado", label: `Recusados (${orcamentos.filter(o => o.status === "recusado").length})` },
+    { id: "todos", label: `Todos (${unifiedOrders.length})` },
+    { id: "customizado_pendente", label: `Pendentes (${unifiedOrders.filter(o => o.status === "customizado_pendente").length})` },
+    { id: "enviado", label: `Enviados (${unifiedOrders.filter(o => o.status === "enviado").length})` },
+    { id: "aprovado", label: `Aprovados (${unifiedOrders.filter(o => o.status === "aprovado").length})` },
+    { id: "pago", label: `Pagos (${unifiedOrders.filter(o => o.status === "pago").length})` },
+    { id: "agendado", label: `Agendados (${unifiedOrders.filter(o => (o.status as string) === "agendado").length})` },
+    { id: "concluido", label: `Concluídos (${unifiedOrders.filter(o => o.status === "concluido").length})` },
+    { id: "cancelado", label: `Cancelados (${unifiedOrders.filter(o => o.status === "cancelado").length})` },
+    { id: "recusado", label: `Recusados (${unifiedOrders.filter(o => o.status === "recusado").length})` },
   ];
 
   const handleExport = () => {
@@ -488,12 +523,19 @@ function AdminPedidos() {
                 const meta = STATUS_COLORS[o.status] ?? { bg: "bg-slate-100", color: "text-slate-600", label: o.status };
                 const cli = profiles[o.cliente_id];
                 const prof = o.profissional_id ? profiles[o.profissional_id] : null;
-                const oMats = materials[o.id] || [];
-                const matsTotal = oMats.reduce((sum, m) => sum + (Number(m.preco_unitario) * Number(m.quantidade)), 0);
+                const oMats = o._unified_materials || [];
+                const matsTotal = oMats.reduce((sum: number, m: any) => sum + (Number(m.preco_unitario) * Number(m.quantidade)), 0);
                 
                 return (
                   <tr key={o.id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-6 py-4 text-xs font-mono text-slate-400">#{o.id.slice(0, 8)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-mono text-slate-400">#{o.id.slice(0, 8)}</span>
+                        {o.items_count > 1 && (
+                          <span className="text-[9px] font-bold text-brand uppercase mt-0.5">{o.items_count} Itens</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-900">{cli?.nome || "—"}</span>
