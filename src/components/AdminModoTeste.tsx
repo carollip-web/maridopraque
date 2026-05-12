@@ -86,7 +86,7 @@ export function AdminModoTeste() {
   const advance = async (orcId: string, status: string, extra: Record<string, any> = {}) => {
     setAdvancing(orcId + status);
     try {
-      const { error } = await supabase.from("orcamentos").update({ status, ...extra }).eq("id", orcId);
+      const { error } = await supabase.from("orcamentos").update({ status: status as any, ...extra }).eq("id", orcId);
       if (error) throw error;
       toast.success(`Pedido → ${status}`);
       qc.invalidateQueries({ queryKey: ["test-orcamentos"] });
