@@ -278,7 +278,6 @@ function AdminPedidos() {
               className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none"
             />
           </div>
-          </div>
           {(search || filter !== "todos") && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
               <X className="h-4 w-4" /> Limpar
