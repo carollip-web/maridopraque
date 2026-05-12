@@ -444,8 +444,8 @@ function AdminPedidos() {
     try {
       // 1. Delete all items in this unified order using server function
       for (const item of items) {
-        const { ok, error } = await excluirPedidoFn({ data: { orcamentoId: item.id } });
-        if (error || !ok) throw new Error(error || "Erro ao excluir um dos itens.");
+        const { ok, error: serverError } = await excluirPedidoFn({ data: { orcamentoId: item.id } });
+        if (!ok) throw new Error(serverError || "Erro ao excluir um dos itens.");
       }
       
       toast.success("Pedido e todas as suas dependências foram excluídos.");
