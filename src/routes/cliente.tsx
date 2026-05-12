@@ -27,7 +27,8 @@ import {
   ChevronDown,
   Download
 } from "lucide-react";
-import { gerarPdfOrcamento } from "@/lib/pdf-orcamento";
+const gerarPdfOrcamento = (id: string) =>
+  import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
