@@ -607,13 +607,22 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     if (!confirm(`Tem certeza que deseja cancelar o pedido "${title}"?`)) return;
     
     setIsDeleting(orderId);
-    try {
+      // 1. First navigate away if we are looking at this order
+      if (pedidoId === orderId) {
+        await navigate({ 
+          to: "/cliente", 
+          search: (prev: any) => ({ ...prev, pedidoId: undefined, chat: undefined }) 
+        });
+      }
+
+      // 2. Then delete from DB
       const { error } = await supabase.from("orcamentos").delete().eq("id", orderId);
       if (error) throw error;
       
       toast.success("Pedido cancelado com sucesso.");
+      
+      // 3. Finally invalidate to refresh the list
       queryClient.invalidateQueries({ queryKey: ["cliente"] });
-      if (pedidoId === orderId) closePedido();
     } catch (e: any) {
       toast.error("Erro ao cancelar pedido", { description: e.message });
     } finally {
@@ -744,7 +753,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     return matchesSearch && matchesFilter;
   });
 
-  if (selectedPedidoWithStatus) {
+  if (selectedPedidoWithStatus && selectedPedido) {
     const sp = selectedPedidoWithStatus;
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
