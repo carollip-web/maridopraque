@@ -43,6 +43,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin")({
   component: AdminArea,
@@ -1271,11 +1282,17 @@ function AdminProfissionais() {
 
 function AdminClientes() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const searchParams = useSearch({ from: "/admin" }) as any;
   const q = searchParams.cli_q || "";
   const setQ = (val: string) => navigate({ search: ((old: any) => ({ ...old, cli_q: val || undefined })) as any });
 
-  const { data: clientes = [], isLoading } = useQuery({
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [newClient, setNewClient] = useState({ nome: "", email: "", password: "" });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { data: clientes = [], isLoading, refetch } = useQuery({
     queryKey: ["admin", "clientes"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
@@ -1289,6 +1306,74 @@ function AdminClientes() {
     }
   });
 
+  const handleCreateClient = async () => {
+    if (!newClient.email || !newClient.nome || !newClient.password) {
+      toast.error("Preencha todos os campos.");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-professionals", {
+        body: { 
+          action: "create", 
+          ...newClient,
+          target_role: "cliente" 
+        }
+      });
+      if (error || data?.error) throw new Error(error?.message || data?.error);
+      
+      toast.success("Cliente criado com sucesso!");
+      setIsDialogOpen(false);
+      setNewClient({ nome: "", email: "", password: "" });
+      qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
+    } catch (e: any) {
+      toast.error("Erro ao criar cliente", { description: e.message });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDeleteClient = async (id: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja remover o cliente ${nome}? Todos os dados de acesso serão excluídos.`)) return;
+    setIsDeleting(id);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-professionals", {
+        body: { action: "delete", user_id: id }
+      });
+      if (error || data?.error) throw new Error(error?.message || data?.error);
+      
+      toast.success("Cliente removido.");
+      qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
+    } catch (e: any) {
+      toast.error("Erro ao remover", { description: e.message });
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleExportClients = () => {
+    if (clientes.length === 0) return;
+    const headers = ["ID", "Nome", "E-mail", "WhatsApp", "Pedidos Pagos", "Cadastro"];
+    const rows = clientes.map((c: any) => [
+      c.id,
+      c.nome || "—",
+      c.email || "—",
+      c.whatsapp || "—",
+      c.total_servicos_pagos || 0,
+      new Date(c.created_at).toLocaleDateString("pt-BR")
+    ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(","));
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filtered = clientes.filter(
     (c) =>
       !q ||
@@ -1298,25 +1383,93 @@ function AdminClientes() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <h2 className="text-xl font-bold">Lista de Clientes ({clientes.length})</h2>
-        <div className="relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6">
+        <div>
+          <h2 className="text-2xl font-bold">Base de Clientes</h2>
+          <p className="text-sm text-slate-500 mt-1">Gerencie os {clientes.length} clientes cadastrados na plataforma.</p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" onClick={handleExportClients} className="rounded-xl h-10 px-4 bg-white gap-2">
+            <FileDown className="h-4 w-4" /> Exportar Base
+          </Button>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-brand text-white rounded-xl h-10 px-4 font-bold gap-2">
+                <UserPlus className="h-4 w-4" /> Novo Cliente
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Adicionar Novo Cliente</DialogTitle>
+                <DialogDescription>
+                  Crie uma conta de acesso para um novo cliente. Ele poderá fazer login com este e-mail e senha.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Nome Completo</Label>
+                  <Input 
+                    id="name" 
+                    placeholder="João da Silva" 
+                    value={newClient.nome}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, nome: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="joao@exemplo.com" 
+                    value={newClient.email}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Senha Temporária</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={newClient.password}
+                    onChange={(e) => setNewClient(prev => ({ ...prev, password: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isCreating}>Cancelar</Button>
+                <Button onClick={handleCreateClient} disabled={isCreating} className="bg-brand text-white">
+                  {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Cliente"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-6">
+        <div className="relative max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar..."
-            className="pl-9 pr-4 py-2 bg-slate-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-brand/20 outline-none"
+            placeholder="Filtrar por nome ou e-mail..."
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all"
           />
         </div>
+        <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-slate-500 gap-2">
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
       
       {isLoading && (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-3">
+            <div key={i} className="flex items-center justify-between py-4 border-b border-slate-50">
               <div className="flex items-center gap-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-48" />
@@ -1331,23 +1484,47 @@ function AdminClientes() {
         </div>
       )}
 
-      {!isLoading && filtered.length === 0 && <p className="text-sm text-slate-400">Nenhum cliente encontrado.</p>}
+      {!isLoading && filtered.length === 0 && (
+        <div className="text-center py-12">
+          <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+          <p className="text-slate-400">Nenhum cliente encontrado para sua busca.</p>
+        </div>
+      )}
       
-      <div className="space-y-4">
+      <div className="divide-y divide-slate-100">
         {!isLoading && filtered.map((c) => (
-          <div key={c.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+          <div key={c.id} className="flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors group px-2 -mx-2 rounded-xl">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="h-10 w-10 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-base shrink-0">
                 {c.nome?.[0]?.toUpperCase() || "?"}
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-sm truncate">{c.nome || "Sem nome"}</h4>
-                <p className="text-xs text-slate-500 truncate">{c.email} {c.whatsapp ? `· ${c.whatsapp}` : ""}</p>
+                <h4 className="font-bold text-slate-900 truncate">{c.nome || "Sem nome"}</h4>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="truncate">{c.email}</span>
+                  {c.whatsapp && (
+                    <>
+                      <span>·</span>
+                      <span className="truncate">{c.whatsapp}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="text-right shrink-0">
-              <p className="text-xs font-bold">{c.total_servicos_pagos} pedidos pagos</p>
-              <p className="text-[10px] text-slate-400 italic">Desde {new Date(c.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}</p>
+            <div className="flex items-center gap-6">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-slate-900">{c.total_servicos_pagos} pedidos pagos</p>
+                <p className="text-[10px] text-slate-400">Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => handleDeleteClient(c.id, c.nome)}
+                disabled={isDeleting === c.id}
+                className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+              >
+                {isDeleting === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              </Button>
             </div>
           </div>
         ))}

@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     );
     if (!isSuperAdmin) return json({ error: "Apenas super_admin" }, 403);
 
-    const { action, email, nome, password, user_id } = await req.json();
+    const { action, email, nome, password, user_id, target_role = "profissional" } = await req.json();
     const admin = createClient(supabaseUrl, serviceKey);
 
     if (action === "create") {
@@ -54,17 +54,19 @@ Deno.serve(async (req) => {
 
       // Set role
       await admin.from("user_roles").insert({
-        user_id: userId, role: "profissional",
+        user_id: userId, role: target_role,
       });
 
-      // Create profissional profile
-      await admin.from("profissional_perfil").insert({
-        user_id: userId,
-        ativo: true,
-        onboarding_completo: true,
-        termo_aceito_em: new Date().toISOString(),
-        termo_versao: "v1",
-      });
+      // If Profissional: criar perfil específico
+      if (target_role === "profissional") {
+        await admin.from("profissional_perfil").insert({
+          user_id: userId,
+          ativo: true,
+          onboarding_completo: true,
+          termo_aceito_em: new Date().toISOString(),
+          termo_versao: "v1",
+        });
+      }
 
       return json({ ok: true, user_id: userId });
     }
