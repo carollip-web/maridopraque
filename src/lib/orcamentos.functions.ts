@@ -342,46 +342,82 @@ export const cancelarPedido = createServerFn({ method: "POST" })
 
     try {
       // 1. Create an admin client to bypass RLS
-      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!SERVICE_ROLE) {
+        console.warn("[cancelarPedido] WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Deletion might fail due to RLS.");
+      }
+
       const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
 
-      // 2. Verify ownership using ADMIN client to avoid RLS issues on the check itself
+      // 2. Verify ownership
       const { data: orc, error: e0 } = await admin
         .from("orcamentos")
         .select("cliente_id, status")
         .eq("id", data.orcamentoId)
         .single();
       
-      if (e0 || !orc) return { ok: false, error: "Pedido não encontrado." };
-      if (orc.cliente_id !== userId) return { ok: false, error: "Sem permissão para cancelar este pedido." };
+      if (e0 || !orc) {
+        console.error("[cancelarPedido] Pedido não encontrado:", data.orcamentoId, e0);
+        return { ok: false, error: "Pedido não encontrado." };
+      }
+
+      if (orc.cliente_id !== userId) {
+        console.warn(`[cancelarPedido] Tentativa de exclusão não autorizada por usuário ${userId} para pedido ${data.orcamentoId}`);
+        return { ok: false, error: "Sem permissão para cancelar este pedido." };
+      }
       
       if (["pago", "concluido"].includes(orc.status?.toLowerCase())) {
         return { ok: false, error: "Este pedido já foi pago ou concluído e não pode ser cancelado." };
       }
 
-      console.log(`[cancelarPedido] Iniciando exclusão do pedido ${data.orcamentoId}...`);
+      console.log(`[cancelarPedido] Iniciando limpeza profunda para o pedido ${data.orcamentoId}...`);
 
-      // 3. Delete linked data in the correct order
-      await admin.from("mensagens").delete().eq("orcamento_id", data.orcamentoId);
-      await admin.from("notificacoes").delete().eq("orcamento_id", data.orcamentoId);
-      await admin.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+      // 3. Delete linked data in the correct order to avoid FK errors
+      const cleanupTasks = [
+        { table: "avaliacoes", field: "orcamento_id" },
+        { table: "orcamento_recusas", field: "orcamento_id" },
+        { table: "panico_eventos", field: "orcamento_id" },
+        { table: "mensagens", field: "orcamento_id" },
+        { table: "notificacoes", field: "orcamento_id" },
+        { table: "orcamento_materiais", field: "orcamento_id" },
+      ];
+
+      for (const task of cleanupTasks) {
+        const { error } = await admin.from(task.table).delete().eq(task.field, data.orcamentoId);
+        if (error) {
+          console.warn(`[cancelarPedido] Falha ao limpar tabela ${task.table}:`, error.message);
+        } else {
+          console.log(`[cancelarPedido] Tabela ${task.table} limpa.`);
+        }
+      }
       
+      // Propostas depend on Proposal Materials
       const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
         const propIds = props.map((p: any) => p.id);
-        await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
-        await admin.from("propostas").delete().in("id", propIds);
+        const { error: em } = await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
+        if (em) console.warn("[cancelarPedido] Falha ao limpar proposta_materiais:", em.message);
+        
+        const { error: ep } = await admin.from("propostas").delete().in("id", propIds);
+        if (ep) console.warn("[cancelarPedido] Falha ao limpar propostas:", ep.message);
+        
+        console.log(`[cancelarPedido] Propostas (${props.length}) limpas.`);
       }
 
       // 4. Finally, delete the budget itself
       const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
-      if (ed) throw new Error(`Erro final ao excluir orcamento: ${ed.message}`);
+      if (ed) {
+        console.error("[cancelarPedido] ERRO FINAL AO EXCLUIR ORCAMENTO:", ed.message);
+        throw new Error(`Não foi possível remover o registro principal: ${ed.message}`);
+      }
 
+      console.log(`[cancelarPedido] Pedido ${data.orcamentoId} removido com sucesso.`);
       return { ok: true };
     } catch (err: any) {
-      console.error("[cancelarPedido] Erro fatal:", err);
-      return { ok: false, error: err.message || "Erro interno ao processar" };
+      console.error("[cancelarPedido] Erro fatal durante o processo:", err);
+      return { ok: false, error: err.message || "Erro interno ao processar o cancelamento." };
     }
   });
 
@@ -393,7 +429,7 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
 
     try {
       // 1. Create admin client
-      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
 
@@ -407,12 +443,13 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
 
       if (!roleData) throw new Error("Apenas administradores podem excluir pedidos.");
 
-      console.log(`[excluirPedidoAdmin] Admin ${userId} excluindo pedido ${data.orcamentoId}...`);
+      console.log(`[excluirPedidoAdmin] Admin ${userId} iniciando exclusão do pedido ${data.orcamentoId}...`);
 
-      // 3. Sequential deletion of all dependencies
-      await admin.from("mensagens").delete().eq("orcamento_id", data.orcamentoId);
-      await admin.from("notificacoes").delete().eq("orcamento_id", data.orcamentoId);
-      await admin.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+      // 3. Re-use the cleanup logic logic for robustness
+      const cleanupTables = ["avaliacoes", "orcamento_recusas", "panico_eventos", "mensagens", "notificacoes", "orcamento_materiais"];
+      for (const table of cleanupTables) {
+        await admin.from(table).delete().eq("orcamento_id", data.orcamentoId);
+      }
       
       const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
