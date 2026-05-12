@@ -458,10 +458,10 @@ function AdminPedidos() {
               <tr>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Serviço</th>
+                <th className="px-6 py-4">Serviço & Materiais</th>
                 <th className="px-6 py-4">Profissional</th>
                 <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Valor</th>
+                <th className="px-6 py-4">Financeiro</th>
                 <th className="px-6 py-4">Data</th>
               </tr>
             </thead>
@@ -488,19 +488,69 @@ function AdminPedidos() {
                 const meta = STATUS_COLORS[o.status] ?? { bg: "bg-slate-100", color: "text-slate-600", label: o.status };
                 const cli = profiles[o.cliente_id];
                 const prof = o.profissional_id ? profiles[o.profissional_id] : null;
+                const oMats = materials[o.id] || [];
+                const matsTotal = oMats.reduce((sum, m) => sum + (Number(m.preco_unitario) * Number(m.quantidade)), 0);
+                
                 return (
-                  <tr key={o.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={o.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-6 py-4 text-xs font-mono text-slate-400">#{o.id.slice(0, 8)}</td>
-                    <td className="px-6 py-4 text-sm font-bold">{cli?.nome || "—"}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{o.service_name}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{prof?.nome || "—"}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-900">{cli?.nome || "—"}</span>
+                        {cli?.whatsapp && (
+                          <a 
+                            href={`https://wa.me/${cli.whatsapp.replace(/\D/g, '')}`} 
+                            target="_blank" 
+                            className="text-[10px] text-brand flex items-center gap-1 hover:underline mt-0.5"
+                          >
+                            <Mail className="h-2.5 w-2.5" /> WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-slate-700">{o.service_name}</span>
+                        {oMats.length > 0 && (
+                          <span className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                            {oMats.map(m => `${m.nome_snapshot} (x${m.quantidade})`).join(", ")}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {prof ? (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-slate-700">{prof.nome}</span>
+                          {prof.whatsapp && (
+                            <a 
+                              href={`https://wa.me/${prof.whatsapp.replace(/\D/g, '')}`} 
+                              target="_blank" 
+                              className="text-[10px] text-brand flex items-center gap-1 hover:underline mt-0.5"
+                            >
+                              <Mail className="h-2.5 w-2.5" /> WhatsApp
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-300 italic">Não atribuído</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-tight inline-block ${meta.bg} ${meta.color}`}>
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold">
-                      {o.valor && Number(o.valor) > 0 ? `R$ ${Number(o.valor).toFixed(2)}` : "—"}
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-900">R$ {Number(o.valor || 0).toFixed(2)}</span>
+                        {(o.valor_servico || matsTotal > 0) && (
+                          <span className="text-[9px] text-slate-400 mt-0.5">
+                            {o.valor_servico ? `S: R$ ${Number(o.valor_servico).toFixed(0)}` : ""}
+                            {matsTotal > 0 ? ` + M: R$ ${matsTotal.toFixed(0)}` : ""}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500">
                       {new Date(o.created_at).toLocaleDateString("pt-BR")}
