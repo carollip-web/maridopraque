@@ -334,8 +334,8 @@ function AdminPedidos() {
                     <td className="px-6 py-4 text-sm font-bold">{cli?.nome || "—"}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{o.service_name}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{prof?.nome || "—"}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${meta.bg} ${meta.color}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-tight inline-block ${meta.bg} ${meta.color}`}>
                         {meta.label}
                       </span>
                     </td>

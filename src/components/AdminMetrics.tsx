@@ -68,8 +68,8 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       const revPrev = calcRev(prevPeriod);
       const revChange = revPrev > 0 ? ((revCurrent - revPrev) / revPrev) * 100 : 0;
 
-      const activeCurrent = currentPeriod.filter(o => ["enviado", "aprovado", "customizado_pendente"].includes(o.status)).length;
-      const activePrev = prevPeriod.filter(o => ["enviado", "aprovado", "customizado_pendente"].includes(o.status)).length;
+      const activeCurrent = currentPeriod.filter(o => ["enviado", "aprovado", "customizado_pendente", "agendado"].includes(o.status)).length;
+      const activePrev = prevPeriod.filter(o => ["enviado", "aprovado", "customizado_pendente", "agendado"].includes(o.status)).length;
       const activeChange = activePrev > 0 ? ((activeCurrent - activePrev) / activePrev) * 100 : 0;
 
       const mediaNota = avs && avs.length > 0
@@ -118,6 +118,8 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
     switch (s) {
       case "pago": return "bg-emerald-50 text-emerald-700";
       case "aprovado": return "bg-blue-50 text-blue-700";
+      case "agendado": return "bg-indigo-50 text-indigo-700";
+      case "concluido": return "bg-green-50 text-green-700";
       case "enviado": return "bg-sky-50 text-sky-700";
       case "customizado_pendente": return "bg-amber-50 text-amber-700";
       case "cancelado": case "recusado": return "bg-red-50 text-red-700";
