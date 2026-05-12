@@ -482,9 +482,9 @@ function AdminProfissionais() {
   const search = searchParams.pro_q || "";
   const filterStatus = searchParams.pro_status || "todos";
 
-  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_q: val || undefined }) });
-  const setFilterStatus = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_status: val || "todos" }) });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_q: val || undefined })) as any });
+  const setFilterStatus = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_status: val || "todos" })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
   const [selected, setSelected] = useState<any | null>(null);
   const [editingEsp, setEditingEsp] = useState(false);
   const [espSelected, setEspSelected] = useState<string[]>([]);
