@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
 import { createClient } from "@supabase/supabase-js";
+import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AdminMetrics } from "@/components/AdminMetrics";
@@ -426,13 +427,14 @@ function AdminPedidos() {
 
     setIsDeletingOrder(order.id);
     try {
-      // Delete from orcamentos. materials should cascade if set up, 
-      // but let's be safe if FKs aren't cascading.
-      const { error } = await supabase.from("orcamentos").delete().in("id", ids);
-      if (error) throw error;
+      // 1. Delete all items in this unified order using server function
+      for (const item of items) {
+        const { ok, error } = await excluirPedidoFn({ data: { orcamentoId: item.id } });
+        if (error || !ok) throw new Error(error || "Erro ao excluir um dos itens.");
+      }
       
-      toast.success("Pedido excluído com sucesso.");
-      refetch();
+      toast.success("Pedido e todas as suas dependências foram excluídos.");
+      qc.invalidateQueries({ queryKey: ["admin", "orcamentos"] });
     } catch (e: any) {
       toast.error("Erro ao excluir pedido", { description: e.message });
     } finally {
@@ -637,7 +639,7 @@ function AdminPedidos() {
                           size="sm"
                           onClick={() => handleDeleteOrder(o)}
                           disabled={isDeletingOrder === o.id}
-                          className="text-slate-300 hover:text-red-500 hover:bg-red-50 ml-auto opacity-0 group-hover:opacity-100 transition-all"
+                          className="text-slate-300 hover:text-red-500 hover:bg-red-50 ml-auto transition-all"
                         >
                           {isDeletingOrder === o.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
                         </Button>

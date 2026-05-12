@@ -393,3 +393,49 @@ export const cancelarPedido = createServerFn({ method: "POST" })
       return { ok: false, error: err.message || "Erro interno ao processar cancelamento" };
     }
   });
+
+export const excluirPedidoAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => cancelarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase: userClient, userId } = context;
+
+    try {
+      // 1. Verify if caller is admin
+      const { data: roleData } = await userClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!roleData) throw new Error("Apenas administradores podem excluir pedidos.");
+
+      // 2. Create admin client
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
+
+      console.log(`[excluirPedidoAdmin] Admin ${userId} excluindo pedido ${data.orcamentoId}...`);
+
+      // 3. Sequential deletion of all dependencies
+      await admin.from("mensagens").delete().eq("orcamento_id", data.orcamentoId);
+      await admin.from("notificacoes").delete().eq("orcamento_id", data.orcamentoId);
+      await admin.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+      
+      const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
+      if (props && props.length > 0) {
+        const propIds = props.map((p: any) => p.id);
+        await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
+        await admin.from("propostas").delete().in("id", propIds);
+      }
+
+      const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
+      if (ed) throw new Error(ed.message);
+
+      return { ok: true };
+    } catch (err: any) {
+      console.error("[excluirPedidoAdmin] Erro:", err);
+      return { ok: false, error: err.message || "Erro ao excluir pedido" };
+    }
+  });
