@@ -26,7 +26,8 @@ import {
   Filter,
   ChevronDown,
   Download,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 const gerarPdfOrcamento = (id: string) =>
   import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
@@ -607,6 +608,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
     if (!confirm(`Tem certeza que deseja cancelar o pedido "${title}"?`)) return;
     
     setIsDeleting(orderId);
+    try {
       // 1. First navigate away if we are looking at this order
       if (pedidoId === orderId) {
         await navigate({ 

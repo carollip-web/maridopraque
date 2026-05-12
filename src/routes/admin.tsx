@@ -223,11 +223,11 @@ function AdminPedidos() {
   const proFilter = searchParams.pro_id || "todos";
   const dateRange = searchParams.range || "all"; // all, today, week, month
 
-  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, q: val || undefined }) });
-  const setFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, status: val || "todos" }) });
-  const setProFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_id: val || "todos" }) });
-  const setDateRange = (val: string) => navigate({ search: (old: any) => ({ ...old, range: val || "all" }) });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, q: val || undefined })) as any });
+  const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
+  const setProFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_id: val || "todos" })) as any });
+  const setDateRange = (val: string) => navigate({ search: ((old: any) => ({ ...old, range: val || "all" })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
@@ -249,13 +249,13 @@ function AdminPedidos() {
       const promises: Promise<any>[] = [];
       
       if (ids.length > 0) {
-        promises.push(supabase.from("profiles").select("id, nome, email").in("id", ids).then(({ data }) => {
+        promises.push(Promise.resolve(supabase.from("profiles").select("id, nome, email").in("id", ids)).then(({ data }) => {
           profileMap = Object.fromEntries((data || []).map((p: any) => [p.id, p]));
         }));
       }
 
       if (orcIds.length > 0) {
-        promises.push(supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds).then(({ data }) => {
+        promises.push(Promise.resolve(supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds)).then(({ data }) => {
           (data || []).forEach((m: any) => {
             if (!materialsMap[m.orcamento_id]) materialsMap[m.orcamento_id] = [];
             materialsMap[m.orcamento_id].push(m);
@@ -276,7 +276,7 @@ function AdminPedidos() {
   // Get list of unique professionals from data for the dropdown
   const allPros = useMemo(() => {
     const ids = Array.from(new Set(orcamentos.map(o => o.profissional_id).filter(Boolean)));
-    return ids.map(id => profiles[id]).filter(Boolean).sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+    return ids.map((id: any) => profiles[id]).filter(Boolean).sort((a: any, b: any) => (a.nome || "").localeCompare(b.nome || ""));
   }, [orcamentos, profiles]);
 
   const unifiedOrders = useMemo(() => {
@@ -593,7 +593,7 @@ function AdminPedidos() {
                         <span className="text-sm font-medium text-slate-700">{o.service_name}</span>
                         {oMats.length > 0 && (
                           <span className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                            {oMats.map(m => `${m.nome_snapshot} (x${m.quantidade})`).join(", ")}
+                            {oMats.map((m: any) => `${m.nome_snapshot} (x${m.quantidade})`).join(", ")}
                           </span>
                         )}
                       </div>
