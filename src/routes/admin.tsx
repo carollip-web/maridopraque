@@ -299,6 +299,37 @@ function AdminPedidos() {
     { id: "recusado", label: `Recusados (${orcamentos.filter(o => o.status === "recusado").length})` },
   ];
 
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+    const headers = ["ID", "Cliente", "E-mail Cliente", "Serviço", "Profissional", "Status", "Valor (R$)", "Data"];
+    const rows = filtered.map((o: any) => {
+      const cli = profiles[o.cliente_id];
+      const prof = o.profissional_id ? profiles[o.profissional_id] : null;
+      const statusLabel = STATUS_COLORS[o.status]?.label || o.status;
+      
+      return [
+        o.id.slice(0, 8),
+        cli?.nome || "—",
+        cli?.email || "—",
+        o.service_name || "—",
+        prof?.nome || "—",
+        statusLabel,
+        o.valor ? Number(o.valor).toFixed(2) : "0.00",
+        new Date(o.created_at).toLocaleDateString("pt-BR")
+      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
+    });
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `pedidos_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
@@ -308,6 +339,13 @@ function AdminPedidos() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          {/* Export Button */}
+          <Button variant="outline" size="sm" onClick={handleExport} className="rounded-xl gap-2 h-10 px-4 bg-white">
+            <FileDown className="h-4 w-4" /> Exportar
+          </Button>
+
+          <div className="w-px h-6 bg-slate-200 mx-1 hidden xl:block" />
+
           {/* Search */}
           <div className="relative min-w-[240px] flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
