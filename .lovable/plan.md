@@ -1,48 +1,66 @@
-## Orçamento tabelado + materiais opcionais
+# Modo de Teste da Plataforma
 
-### O que muda
+Vou implementar em **4 fases**, cada uma entregando valor sozinha. Você pode pausar entre fases ou pedir para pular alguma.
 
-1. **Remover WhatsApp como canal de orçamento** — tirar campo/menção de WhatsApp dos fluxos de solicitação, notificação e do card do orçamento. WhatsApp continua só como contato no perfil (não como canal de envio de orçamento).
-2. **Orçamento tabelado** — todo serviço passa a ter `preco_min` e `preco_max` no catálogo. Cliente vê o range antes de solicitar (ex: "R$ 80–150"). Não há mais "customizado pendente sem valor": o profissional ajusta o valor *dentro* do range para fechar.
-3. **Taxa opcional de material** — cada serviço tem uma lista pré-definida de materiais sugeridos. No momento da solicitação, o cliente marca quais quer incluir; o sistema soma o preço de cada material e adiciona como `taxa_material` no orçamento, discriminada item a item.
-4. **Fonte de preço de material híbrida** — tabela interna como base; botão "Atualizar via marketplace" no painel admin (e opcionalmente no card do material) consulta um marketplace de materiais e atualiza `preco_atual` + `preco_fonte` + `preco_atualizado_em`.
+---
 
-### Banco (migration)
+## Fase 1 — Seed de dados de teste (base de tudo)
 
-- `services_catalog`: adicionar `preco_min numeric`, `preco_max numeric`. Remover/depreciar `preco_fixo` (manter coluna mas não usar mais). `is_fixed_price` vira irrelevante.
-- `materiais`: nova tabela — `id`, `nome`, `unidade` (un/m/kg), `preco_base numeric` (manual), `preco_atual numeric` (último valor), `preco_fonte text` (`tabela` | `marketplace`), `preco_atualizado_em timestamptz`, `marketplace_url text`, `ativo bool`.
-- `service_materiais`: junção — `service_id`, `material_id`, `quantidade_sugerida numeric`. Define a lista pré-definida por serviço.
-- `orcamentos`: adicionar `taxa_material numeric default 0`, `valor_servico numeric` (valor da mão de obra, dentro do range). `valor` permanece como total (`valor_servico + taxa_material`).
-- `orcamento_materiais`: itens escolhidos pelo cliente — `orcamento_id`, `material_id`, `quantidade`, `preco_unitario` (snapshot no momento da solicitação), `subtotal`.
-- Trigger `process_new_orcamento` atualizado: define `valor_servico` = média do range como sugestão inicial e soma `taxa_material` a partir dos itens em `orcamento_materiais`. Status inicial `customizado_pendente` (profissional confirma valor dentro do range).
-- RLS: `materiais` e `service_materiais` leitura pública; admin gerencia. `orcamento_materiais` segue RLS do orçamento pai.
+**Objetivo:** ter sempre um conjunto previsível de usuários e pedidos para testar.
 
-### Server functions (`src/lib/`)
+- Edge function `seed-test-data` (protegida, só super_admin chama) que:
+  - Cria/atualiza 1 admin, 3 profissionais, 5 clientes — todos com sufixo `@teste.maridopraque.local` ou flag `is_test=true` no `profiles`.
+  - Cria pedidos cobrindo cada status: `customizado_pendente`, `enviado`, `aprovado`, `agendado`, `pago`, `concluido`.
+  - Senha padrão única (ex: `Teste@2026!`) documentada na UI.
+- Edge function `reset-test-data` que apaga tudo marcado `is_test=true` e recria do zero.
+- Migração: adicionar coluna `is_test boolean default false` em `profiles` e `orcamentos`.
+- Banner sutil no header quando logado como conta de teste: "🧪 Conta de teste".
 
-- `solicitarOrcamento` — passa a aceitar `materiais: { materialId, quantidade }[]`. Insere o orçamento e os itens em `orcamento_materiais` em uma transação (RPC).
-- `enviarOrcamento` — valida que `valor_servico` está dentro de `[preco_min, preco_max]` do serviço.
-- Nova `atualizarPrecoMaterialMarketplace` — admin only; chama o marketplace, grava `preco_atual`/`preco_fonte`/`preco_atualizado_em`.
-- Nova `listarMateriaisDoServico` — leitura pública para o cliente montar a lista de checkboxes.
+## Fase 2 — Painel Modo Demo no /admin
 
-### Marketplace de materiais
+**Objetivo:** botões para disparar ações e avançar fluxos sem trocar de conta.
 
-Como integração real depende de chave de API e de qual marketplace, esta versão entrega:
-- estrutura completa no banco e nos server fns,
-- botão "Atualizar via marketplace" que **chama um stub** retornando o preço base ± variação (placeholder claro). Quando você quiser conectar Mercado Livre / Leroy Merlin / outro, basta trocar a função `fetchMarketplacePrice` em `materiais.server.ts` — peço a chave/credencial nesse momento.
+- Nova aba `/admin` → "Modo Teste" (visível só para super_admin).
+- Cards:
+  - **Contas de teste** — lista todas as contas `is_test`, com email/senha e botão "Copiar credenciais".
+  - **Seed/Reset** — chama as edge functions da Fase 1.
+  - **Simular fluxo** — selecionar um pedido de teste e botões: "Enviar orçamento", "Aprovar", "Agendar", "Marcar pago", "Concluir". Cada um chama um server function que avança o status.
+  - **Criar pedido fake** — formulário rápido (cliente + serviço) que insere um orçamento `is_test=true`.
 
-### UI
+## Fase 3 — Impersonação (logar como)
 
-- `/orcamentos` (cliente): formulário "Nova solicitação" passa a:
-  - mostrar dropdown de serviços do catálogo com range "R$ X–Y";
-  - listar materiais sugeridos com checkbox + quantidade + preço unitário atual;
-  - mostrar **subtotal serviço (range)** + **subtotal materiais** + **total estimado**.
-  - Card do orçamento mostra discriminação: "Mão de obra: R$ X · Materiais: R$ Y" com lista expandível dos itens.
-- `/profissional`: ao revisar/enviar, input de valor com helper "Range permitido R$ X–Y" e bloqueio se fora do range. Materiais aparecem só para leitura.
-- `/admin`: nova aba **Materiais** com CRUD, coluna `preco_atual`, `fonte`, botão "Atualizar via marketplace" por linha.
-- Remover qualquer link `wa.me`/menção a "enviar por WhatsApp" dos cards de orçamento.
+**Objetivo:** super_admin entra como qualquer usuário em 1 clique.
 
-### Detalhes técnicos
+- Edge function `impersonate-user` (super_admin only):
+  - Recebe `user_id`, valida que o alvo é `is_test=true` (segurança: só permite impersonar contas de teste por padrão; flag opcional para liberar contas reais).
+  - Usa `supabase.auth.admin.generateLink({ type: 'magiclink' })` e devolve o link.
+- Botão "Entrar como" em cada conta de teste do painel.
+- Ao clicar: abre nova aba com o magic link → sessão da conta alvo.
+- Banner laranja persistente "Você está vendo como [nome] — sair da impersonação".
 
-- Migration única com as 2 novas tabelas, alterações em `services_catalog` e `orcamentos`, RLS, e seed de ~10 materiais comuns (bucha, parafuso, fita isolante, silicone, etc.) ligados aos serviços já existentes do catálogo.
-- O total do orçamento é **sempre** recalculado server-side (trigger `BEFORE INSERT/UPDATE` em `orcamento_materiais` recomputa `taxa_material` e `valor` no orçamento pai) — cliente nunca define total.
-- Tipos do Supabase regeneram após a migration.
+## Fase 4 — Testes E2E automatizados (Playwright)
+
+**Objetivo:** rodar o fluxo cliente → profissional → admin de uma vez via terminal.
+
+- `bun add -d @playwright/test` + `bunx playwright install chromium`.
+- Pasta `tests/e2e/`:
+  - `fluxo-completo.spec.ts` — cliente cria pedido → profissional envia orçamento → cliente aprova → profissional faz check-in/out → cliente avalia → admin vê tudo.
+  - `auth.spec.ts` — login dos 3 perfis, redirect correto.
+  - `helpers/` — login utilitário, seed via API.
+- Script `bun test:e2e` no `package.json`.
+- README curto explicando como rodar local e contra a preview publicada.
+
+---
+
+## Detalhes técnicos
+
+- **Segurança das edge functions de teste:** todas validam `super_admin` via `user_roles.admin_level`. `seed/reset` recusam executar em produção se não houver flag `ENABLE_TEST_MODE=true` nos secrets (você habilita só onde quiser).
+- **Isolamento:** flag `is_test` em `profiles` e `orcamentos` permite filtrar facilmente em queries do admin "real" para não poluir métricas — adicionarei filtros `.eq('is_test', false)` nos dashboards de produção.
+- **Senhas de teste:** geradas determinísticas (`Teste@2026!`) e exibidas no painel. Não envia email de confirmação (auto-confirm via `auth.admin.createUser`).
+- **Playwright contra preview publicada:** usa `https://maridopraque.lovable.app` por padrão; variável `BASE_URL` para apontar local.
+
+---
+
+## Por onde começar?
+
+Sugiro **Fase 1 primeiro** porque tudo depende dela. Quer que eu comece por ela, ou prefere uma ordem diferente?
