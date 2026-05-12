@@ -208,6 +208,7 @@ function AdminPedidos() {
       const { data: orcs } = await supabase
         .from("orcamentos")
         .select("*")
+        .eq("is_test", false)
         .order("created_at", { ascending: false })
         .limit(200);
       
