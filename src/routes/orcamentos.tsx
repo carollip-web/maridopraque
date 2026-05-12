@@ -416,6 +416,11 @@ function MeusOrcamentos() {
 
   const handleNew = async () => {
     if (!selServico) return;
+    if (!user) {
+      toast.error("Faça login para enviar uma solicitação.");
+      return;
+    }
+    const userId = user.id;
     const payload = {
       serviceId: selServico.id,
       serviceName: selServico.nome,
@@ -446,7 +451,7 @@ function MeusOrcamentos() {
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
           .insert({
-            cliente_id: user.id,
+            cliente_id: userId,
             service_id: payload.serviceId,
             service_name: payload.serviceName,
             descricao: payload.descricao ?? null,
