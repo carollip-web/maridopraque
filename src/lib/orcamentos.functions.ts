@@ -221,7 +221,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     if (e1) throw new Error("Proposta inválida ou não pertence a este orçamento.");
 
     // Reject other proposals
-    // Reject other proposals
+    console.log(`Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`);
     await (supabase as any).from("propostas").update({ status: 'recusada' }).eq("orcamento_id", data.orcamentoId).neq("id", data.propostaId);
 
     // Copy materials from proposta_materiais to orcamento_materiais
