@@ -190,9 +190,11 @@ function AdminArea() {
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
   customizado_pendente: { bg: "bg-amber-50", color: "text-amber-700", label: "Pendente" },
-  enviado: { bg: "bg-sky-50", color: "text-sky-700", label: "Enviado" },
+  enviado: { bg: "bg-sky-50", color: "text-sky-700", label: "Proposta Enviada" },
   aprovado: { bg: "bg-blue-50", color: "text-blue-700", label: "Aprovado" },
   pago: { bg: "bg-emerald-50", color: "text-emerald-700", label: "Pago" },
+  agendado: { bg: "bg-indigo-50", color: "text-indigo-700", label: "Agendado" },
+  concluido: { bg: "bg-green-50", color: "text-green-700", label: "Concluído" },
   recusado: { bg: "bg-red-50", color: "text-red-700", label: "Recusado" },
   cancelado: { bg: "bg-slate-100", color: "text-slate-600", label: "Cancelado" },
   fixo_auto: { bg: "bg-violet-50", color: "text-violet-700", label: "Auto-aprovado" },
@@ -234,10 +236,12 @@ function AdminPedidos() {
       if (!search) return true;
       const q = search.toLowerCase();
       const cliente = profiles[o.cliente_id]?.nome?.toLowerCase() || "";
+      const profissional = o.profissional_id ? (profiles[o.profissional_id]?.nome?.toLowerCase() || "") : "";
       return (
         o.id.toLowerCase().includes(q) ||
         o.service_name?.toLowerCase().includes(q) ||
-        cliente.includes(q)
+        cliente.includes(q) ||
+        profissional.includes(q)
       );
     });
   }, [orcamentos, filter, search, profiles]);
@@ -248,7 +252,10 @@ function AdminPedidos() {
     { id: "enviado", label: "Enviados" },
     { id: "aprovado", label: "Aprovados" },
     { id: "pago", label: "Pagos" },
+    { id: "agendado", label: "Agendados" },
+    { id: "concluido", label: "Concluídos" },
     { id: "cancelado", label: "Cancelados" },
+    { id: "recusado", label: "Recusados" },
   ];
 
   return (
@@ -332,7 +339,9 @@ function AdminPedidos() {
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold">R$ {Number(o.valor || 0).toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm font-bold">
+                      {o.valor && Number(o.valor) > 0 ? `R$ ${Number(o.valor).toFixed(2)}` : "—"}
+                    </td>
                     <td className="px-6 py-4 text-xs text-slate-500">
                       {new Date(o.created_at).toLocaleDateString("pt-BR")}
                     </td>
