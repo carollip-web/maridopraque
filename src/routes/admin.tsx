@@ -26,8 +26,10 @@ import {
   UserPlus,
   Crown,
   X,
-  Database
+  Database,
+  TestTube,
 } from "lucide-react";
+import { AdminModoTeste } from "@/components/AdminModoTeste";
 import { createClient } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,7 @@ const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementT
   { id: "financeiro",    label: "Financeiro",         icon: DollarSign },
   { id: "config",        label: "Configurações",      icon: Settings },
   { id: "equipe",        label: "Equipe Admin",       icon: UserCog },
+  { id: "modo_teste",    label: "Modo Teste",         icon: TestTube },
 ];
 
 function AdminArea() {
@@ -176,6 +179,7 @@ function AdminArea() {
           {activeTab === "financeiro"     && canAccess("financeiro")     && <AdminFinanceiro />}
           {activeTab === "config"         && canAccess("config")         && <AdminConfig />}
           {activeTab === "equipe"         && isSuperAdmin                && <AdminEquipe />}
+          {activeTab === "modo_teste"     && isSuperAdmin                && <AdminModoTeste />}
         </div>
       </main>
     </div>
