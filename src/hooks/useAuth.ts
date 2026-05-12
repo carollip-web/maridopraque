@@ -13,11 +13,12 @@ export type AdminSection =
   | "servicos"
   | "financeiro"
   | "config"
-  | "equipe";
+  | "equipe"
+  | "modo_teste";
 
 // Permission matrix per admin level
 const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
-  super_admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "financeiro", "config", "equipe"],
+  super_admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "financeiro", "config", "equipe", "modo_teste"],
   admin:       ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
   financeiro:  ["dashboard", "financeiro"],
   suporte:     ["pedidos", "clientes"],
