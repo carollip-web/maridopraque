@@ -223,11 +223,11 @@ function AdminPedidos() {
   const proFilter = searchParams.pro_id || "todos";
   const dateRange = searchParams.range || "all"; // all, today, week, month
 
-  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, q: val || undefined }) });
-  const setFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, status: val || "todos" }) });
-  const setProFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, pro_id: val || "todos" }) });
-  const setDateRange = (val: string) => navigate({ search: (old: any) => ({ ...old, range: val || "all" }) });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, q: val || undefined })) as any });
+  const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
+  const setProFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_id: val || "todos" })) as any });
+  const setDateRange = (val: string) => navigate({ search: ((old: any) => ({ ...old, range: val || "all" })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
