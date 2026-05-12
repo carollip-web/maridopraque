@@ -206,9 +206,9 @@ function AdminPedidos() {
   const search = searchParams.q || "";
   const filter = searchParams.status || "todos";
 
-  const setSearch = (val: string) => navigate({ search: (old: any) => ({ ...old, q: val || undefined }) });
-  const setFilter = (val: string) => navigate({ search: (old: any) => ({ ...old, status: val || "todos" }) });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const setSearch = (val: string) => navigate({ search: ((old: any) => ({ ...old, q: val || undefined })) as any });
+  const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
