@@ -50,9 +50,9 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       }
 
       const [{ data: orcs }, { data: avs }, { count: clientesCount }] = await Promise.all([
-        supabase.from("orcamentos").select("*").order("created_at", { ascending: false }),
+        supabase.from("orcamentos").select("*").eq("is_test", false).order("created_at", { ascending: false }),
         supabase.from("avaliacoes").select("nota, created_at"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_test", false),
       ]);
 
       const list = orcs || [];
