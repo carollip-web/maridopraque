@@ -24,8 +24,10 @@ import {
   MessageCircle,
   Phone,
   Filter,
-  ChevronDown
+  ChevronDown,
+  Download
 } from "lucide-react";
+import { gerarPdfOrcamento } from "@/lib/pdf-orcamento";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -837,6 +839,19 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                     >
                       Suporte
                     </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-full font-bold h-12"
+                      onClick={async () => {
+                        try {
+                          await gerarPdfOrcamento(sp.id);
+                        } catch (e: any) {
+                          toast.error(e?.message || "Erro ao gerar PDF");
+                        }
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                    </Button>
                  </div>
               </div>
            </div>
@@ -1140,6 +1155,18 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
                       Aprovar
                     </Button>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      gerarPdfOrcamento(p.id).catch((err: any) =>
+                        toast.error(err?.message || "Erro ao gerar PDF")
+                      );
+                    }}
+                    title="Baixar PDF do orçamento"
+                    className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:bg-brand hover:text-white hover:border-brand transition-all"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
                   <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center group-hover:bg-brand group-hover:text-white group-hover:border-brand transition-all">
                     <ChevronRight className="h-4 w-4" />
                   </div>
