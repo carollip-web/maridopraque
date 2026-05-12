@@ -341,17 +341,18 @@ export const cancelarPedido = createServerFn({ method: "POST" })
     const { supabase: userClient, userId } = context;
 
     try {
-      // 1. Create an admin client to bypass RLS
+      // 1. Robust env detection for TanStack Start / Server environment
       const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
       
-      if (!SERVICE_ROLE) {
-        console.warn("[cancelarPedido] WARNING: SUPABASE_SERVICE_ROLE_KEY not found. Deletion might fail due to RLS.");
+      if (!SUPABASE_URL || !SERVICE_ROLE) {
+        console.error("[cancelarPedido] Erro: Variáveis de ambiente Supabase ausentes no servidor.");
+        return { ok: false, error: "Erro de configuração do servidor. Contate o administrador." };
       }
 
-      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-      // 2. Verify ownership
+      // 2. Fetch order data with admin client to verify ownership
       const { data: orc, error: e0 } = await admin
         .from("orcamentos")
         .select("cliente_id, status")
@@ -359,65 +360,63 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         .single();
       
       if (e0 || !orc) {
-        console.error("[cancelarPedido] Pedido não encontrado:", data.orcamentoId, e0);
+        console.error("[cancelarPedido] Erro ao localizar pedido:", e0);
         return { ok: false, error: "Pedido não encontrado." };
       }
 
       if (orc.cliente_id !== userId) {
-        console.warn(`[cancelarPedido] Tentativa de exclusão não autorizada por usuário ${userId} para pedido ${data.orcamentoId}`);
-        return { ok: false, error: "Sem permissão para cancelar este pedido." };
+        return { ok: false, error: "Você não tem permissão para cancelar este pedido." };
       }
       
       if (["pago", "concluido"].includes(orc.status?.toLowerCase())) {
-        return { ok: false, error: "Este pedido já foi pago ou concluído e não pode ser cancelado." };
+        return { ok: false, error: "Pedidos já pagos ou concluídos não podem ser removidos." };
       }
 
-      console.log(`[cancelarPedido] Iniciando limpeza profunda para o pedido ${data.orcamentoId}...`);
+      console.log(`[cancelarPedido] Iniciando faxina para o pedido ${data.orcamentoId}...`);
 
-      // 3. Delete linked data in the correct order to avoid FK errors
-      const cleanupTasks = [
-        { table: "avaliacoes", field: "orcamento_id" },
-        { table: "orcamento_recusas", field: "orcamento_id" },
-        { table: "panico_eventos", field: "orcamento_id" },
-        { table: "mensagens", field: "orcamento_id" },
-        { table: "notificacoes", field: "orcamento_id" },
-        { table: "orcamento_materiais", field: "orcamento_id" },
+      // 3. Sequential deletion with explicit error tracking
+      const simpleTables = [
+        { name: "Mensagens", table: "mensagens" },
+        { name: "Notificações", table: "notificacoes" },
+        { name: "Materiais", table: "orcamento_materiais" },
+        { name: "Avaliações", table: "avaliacoes" },
+        { name: "Recusas", table: "orcamento_recusas" },
+        { name: "Eventos de Pânico", table: "panico_eventos" },
       ];
 
-      for (const task of cleanupTasks) {
-        const { error } = await admin.from(task.table).delete().eq(task.field, data.orcamentoId);
+      for (const t of simpleTables) {
+        const { error } = await admin.from(t.table).delete().eq("orcamento_id", data.orcamentoId);
         if (error) {
-          console.warn(`[cancelarPedido] Falha ao limpar tabela ${task.table}:`, error.message);
+          console.warn(`[cancelarPedido] Aviso: Falha ao limpar ${t.name}:`, error.message);
+          // We don't throw here to try to delete as much as possible, 
+          // but the final delete will fail if there's a hard FK.
         } else {
-          console.log(`[cancelarPedido] Tabela ${task.table} limpa.`);
+          console.log(`[cancelarPedido] Tabela ${t.name} limpa.`);
         }
       }
       
-      // Propostas depend on Proposal Materials
+      // 4. Handle Proposals (Complex Cleanup)
       const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
         const propIds = props.map((p: any) => p.id);
-        const { error: em } = await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
-        if (em) console.warn("[cancelarPedido] Falha ao limpar proposta_materiais:", em.message);
-        
-        const { error: ep } = await admin.from("propostas").delete().in("id", propIds);
-        if (ep) console.warn("[cancelarPedido] Falha ao limpar propostas:", ep.message);
-        
+        await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
+        await admin.from("propostas").delete().in("id", propIds);
         console.log(`[cancelarPedido] Propostas (${props.length}) limpas.`);
       }
 
-      // 4. Finally, delete the budget itself
+      // 5. Final attempt to delete the main record
       const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
+      
       if (ed) {
-        console.error("[cancelarPedido] ERRO FINAL AO EXCLUIR ORCAMENTO:", ed.message);
-        throw new Error(`Não foi possível remover o registro principal: ${ed.message}`);
+        console.error("[cancelarPedido] ERRO CRÍTICO NA EXCLUSÃO FINAL:", ed);
+        return { ok: false, error: `Não foi possível remover o pedido: ${ed.message}. Algum dado ainda está vinculado.` };
       }
 
-      console.log(`[cancelarPedido] Pedido ${data.orcamentoId} removido com sucesso.`);
+      console.log(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} totalmente removido.`);
       return { ok: true };
     } catch (err: any) {
-      console.error("[cancelarPedido] Erro fatal durante o processo:", err);
-      return { ok: false, error: err.message || "Erro interno ao processar o cancelamento." };
+      console.error("[cancelarPedido] Falha catastrófica:", err);
+      return { ok: false, error: err.message || "Erro inesperado ao cancelar o pedido." };
     }
   });
 
@@ -425,15 +424,14 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => cancelarSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase: userClient, userId } = context;
+    const { userId } = context;
 
     try {
-      // 1. Create admin client
       const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const admin = SERVICE_ROLE ? createClient(SUPABASE_URL!, SERVICE_ROLE) : userClient;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      const admin = createClient(SUPABASE_URL!, SERVICE_ROLE!);
 
-      // 2. Verify if caller is admin
+      // Verify Admin
       const { data: roleData } = await admin
         .from("user_roles")
         .select("role")
@@ -441,13 +439,13 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
         .eq("role", "admin")
         .maybeSingle();
 
-      if (!roleData) throw new Error("Apenas administradores podem excluir pedidos.");
+      if (!roleData) throw new Error("Apenas administradores podem fazer isso.");
 
-      console.log(`[excluirPedidoAdmin] Admin ${userId} iniciando exclusão do pedido ${data.orcamentoId}...`);
+      console.log(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
 
-      // 3. Re-use the cleanup logic logic for robustness
-      const cleanupTables = ["avaliacoes", "orcamento_recusas", "panico_eventos", "mensagens", "notificacoes", "orcamento_materiais"];
-      for (const table of cleanupTables) {
+      // Reuse deep cleanup logic
+      const tables = ["avaliacoes", "orcamento_recusas", "panico_eventos", "mensagens", "notificacoes", "orcamento_materiais"];
+      for (const table of tables) {
         await admin.from(table).delete().eq("orcamento_id", data.orcamentoId);
       }
       
@@ -464,6 +462,6 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
       return { ok: true };
     } catch (err: any) {
       console.error("[excluirPedidoAdmin] Erro:", err);
-      return { ok: false, error: err.message || "Erro ao excluir pedido" };
+      return { ok: false, error: err.message || "Erro ao excluir" };
     }
   });
