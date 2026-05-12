@@ -242,7 +242,7 @@ function AdminPedidos() {
   const setFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, status: val || "todos" })) as any });
   const setProFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_id: val || "todos" })) as any });
   const setDateRange = (val: string) => navigate({ search: ((old: any) => ({ ...old, range: val || "all" })) as any });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
