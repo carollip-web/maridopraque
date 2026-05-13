@@ -66,7 +66,7 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const { tab: activeTab } = Route.useSearch();
-  const { logout, userData, isProfissional, isAdmin, user } = useAuth();
+  const { session, logout, userData, isProfissional, isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -620,7 +620,12 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 
       // 2. Then delete from DB
       // 2. Then delete using server function
-      const { ok, error: serverError } = await cancelarPedidoFn({ data: { orcamentoId: orderId } });
+      const { ok, error: serverError } = await cancelarPedidoFn({ 
+        data: { orcamentoId: orderId },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
+        }
+      });
       if (!ok) throw new Error(serverError || "Erro ao cancelar");
       
       toast.success("Pedido cancelado com sucesso.");
@@ -1459,7 +1464,7 @@ const profileSchema = z.object({
 type ProfileValues = z.infer<typeof profileSchema>;
 
 function DadosTab() {
-  const { user, profile, profilePhoto, updatePhoto } = useAuth();
+  const { session, user, profile, profilePhoto, updatePhoto } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);

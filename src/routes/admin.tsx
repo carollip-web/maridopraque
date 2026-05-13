@@ -444,7 +444,12 @@ function AdminPedidos() {
     try {
       // 1. Delete all items in this unified order using server function
       for (const item of items) {
-        const { ok, error: serverError } = await excluirPedidoFn({ data: { orcamentoId: item.id } });
+        const { ok, error: serverError } = await excluirPedidoFn({ 
+          data: { orcamentoId: item.id },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`
+          }
+        });
         if (!ok) throw new Error(serverError || "Erro ao excluir um dos itens.");
       }
       
