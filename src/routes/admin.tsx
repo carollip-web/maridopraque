@@ -102,7 +102,8 @@ function AdminArea() {
   // Use URL param as source of truth for active tab
   const activeTab = (search.tab as AdminSection) || "dashboard";
   const setActiveTab = (tab: AdminSection) => navigate({ 
-    search: (old: any) => ({ ...old, tab }) as any,
+    to: "/admin",
+    search: { ...search, tab } as any,
     replace: true 
   });
 
@@ -1053,11 +1054,10 @@ function AdminProfissionais() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const { ok, error } = await criarUsuarioFn({
+      await criarUsuarioFn({
         data: { ...newPro, role: "profissional" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao criar profissional");
       
       toast.success("Profissional criado com sucesso!");
       setShowAddModal(false);
@@ -1074,11 +1074,10 @@ function AdminProfissionais() {
     if (!confirm("Tem certeza que deseja excluir este profissional? Esta ação é irreversível e removerá todos os dados do usuário.")) return;
     setIsDeleting(true);
     try {
-      const { ok, error } = await excluirUsuarioFn({
+      await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao excluir profissional");
       
       toast.success("Profissional excluído!");
       setSelectedIds(prev => prev.filter(sid => sid !== id));
@@ -1650,11 +1649,10 @@ function AdminClientes() {
     }
     setIsCreating(true);
     try {
-      const { ok, error } = await criarUsuarioFn({
+      await criarUsuarioFn({
         data: { ...newClient, role: "cliente" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao criar cliente");
       
       toast.success("Cliente criado com sucesso!");
       setIsDialogOpen(false);
@@ -1671,11 +1669,10 @@ function AdminClientes() {
     if (!confirm(`Tem certeza que deseja remover o cliente ${nome}? Todos os dados de acesso serão excluídos.`)) return;
     setIsDeleting(id);
     try {
-      const { ok, error } = await excluirUsuarioFn({
+      await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao excluir cliente");
       
       toast.success("Cliente removido.");
       setSelectedIds(prev => prev.filter(sid => sid !== id));

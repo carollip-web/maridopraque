@@ -107,6 +107,9 @@ function ClienteArea() {
     }
   }, [session, user, isAdmin, navigate]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
     console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
     const channel = supabase
       .channel(`cliente-realtime-${user.id}`)
