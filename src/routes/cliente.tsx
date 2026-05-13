@@ -220,6 +220,7 @@ function ClienteArea() {
         {activeTab === "dados" && <DadosTab />}
       </main>
     </div>
+    </div>
   );
 }
 
