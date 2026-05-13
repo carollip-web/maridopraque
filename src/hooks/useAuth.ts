@@ -77,6 +77,8 @@ export function useAuth() {
       const rawLevel = adminRow?.admin_level ?? null;
       const adminLevel = (roleList.includes("admin") && !rawLevel ? "super_admin" : rawLevel) as AdminLevel;
 
+      console.log("[useAuth] userId:", userId, "roles:", roleList, "adminLevel:", adminLevel);
+
       setState((s) => ({
         ...s,
         profile: profile

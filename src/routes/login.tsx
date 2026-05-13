@@ -63,7 +63,6 @@ function LoginPage() {
             .select("role")
             .eq("user_id", userId);
           const r = (roles ?? []).map((x: any) => x.role);
-          
           if (r.includes("admin")) dest = "/admin";
           else if (r.includes("profissional")) dest = "/profissional";
         }
@@ -80,7 +79,7 @@ function LoginPage() {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/admin` },
+      options: { redirectTo: `${window.location.origin}/cliente` },
     });
     if (error) setError(error.message);
   };
