@@ -41,6 +41,7 @@ import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -917,8 +918,11 @@ const ESPECIALIDADES_OPCOES = [
 ];
 
 function AdminProfissionais() {
+  const { session } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
+  const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
   const searchParams = useSearch({ from: "/admin" }) as any;
   const search = searchParams.pro_q || "";
   const filterStatus = searchParams.pro_status || "todos";
@@ -1039,34 +1043,42 @@ function AdminProfissionais() {
   const handleCreatePro = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
-    const { data, error } = await supabase.functions.invoke("manage-professionals", {
-      body: { action: "create", ...newPro }
-    });
-    setIsCreating(false);
-    if (error || data?.error) {
-      toast.error("Erro ao criar", { description: error?.message || data?.error });
-      return;
+    try {
+      const { ok, error } = await criarUsuarioFn({
+        data: { ...newPro, role: "profissional" },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      });
+      if (!ok) throw new Error(error || "Erro ao criar profissional");
+      
+      toast.success("Profissional criado com sucesso!");
+      setShowAddModal(false);
+      setNewPro({ nome: "", email: "", password: "" });
+      qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    } catch (e: any) {
+      toast.error("Erro ao criar", { description: e.message });
+    } finally {
+      setIsCreating(false);
     }
-    toast.success("Profissional criado com sucesso!");
-    setShowAddModal(false);
-    setNewPro({ nome: "", email: "", password: "" });
-    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
   };
 
   const handleDeletePro = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este profissional? Esta ação é irreversível e removerá todos os dados do usuário.")) return;
     setIsDeleting(true);
-    const { data, error } = await supabase.functions.invoke("manage-professionals", {
-      body: { action: "delete", user_id: id }
-    });
-    setIsDeleting(false);
-    if (error || data?.error) {
-      toast.error("Erro ao excluir", { description: error?.message || data?.error });
-      return;
+    try {
+      const { ok, error } = await excluirUsuarioFn({
+        data: { targetUserId: id },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      });
+      if (!ok) throw new Error(error || "Erro ao excluir profissional");
+      
+      toast.success("Profissional excluído!");
+      setSelected(null);
+      qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    } catch (e: any) {
+      toast.error("Erro ao excluir", { description: e.message });
+    } finally {
+      setIsDeleting(false);
     }
-    toast.success("Profissional excluído!");
-    setSelected(null);
-    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
   };
 
   return (
@@ -1470,8 +1482,11 @@ function AdminProfissionais() {
 
 
 function AdminClientes() {
+  const { session } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
+  const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
   const searchParams = useSearch({ from: "/admin" }) as any;
   const q = searchParams.cli_q || "";
   const setQ = (val: string) => navigate({ search: ((old: any) => ({ ...old, cli_q: val || undefined })) as any });
@@ -1502,14 +1517,11 @@ function AdminClientes() {
     }
     setIsCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("manage-professionals", {
-        body: { 
-          action: "create", 
-          ...newClient,
-          target_role: "cliente" 
-        }
+      const { ok, error } = await criarUsuarioFn({
+        data: { ...newClient, role: "cliente" },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (error || data?.error) throw new Error(error?.message || data?.error);
+      if (!ok) throw new Error(error || "Erro ao criar cliente");
       
       toast.success("Cliente criado com sucesso!");
       setIsDialogOpen(false);
@@ -1526,10 +1538,11 @@ function AdminClientes() {
     if (!confirm(`Tem certeza que deseja remover o cliente ${nome}? Todos os dados de acesso serão excluídos.`)) return;
     setIsDeleting(id);
     try {
-      const { data, error } = await supabase.functions.invoke("manage-professionals", {
-        body: { action: "delete", user_id: id }
+      const { ok, error } = await excluirUsuarioFn({
+        data: { targetUserId: id },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (error || data?.error) throw new Error(error?.message || data?.error);
+      if (!ok) throw new Error(error || "Erro ao excluir cliente");
       
       toast.success("Cliente removido.");
       qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
