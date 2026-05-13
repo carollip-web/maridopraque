@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdminLevel } from "./admin-permissions.server";
 
 const materialItemSchema = z.object({
   materialId: z.string().uuid(),
