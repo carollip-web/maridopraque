@@ -1632,13 +1632,21 @@ function AdminClientes() {
     queryKey: ["admin", "clientes"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      const proIds = new Set((roles || []).filter((r: any) => r.role !== "cliente").map((r: any) => r.user_id));
+      // Coletamos IDs de qualquer um que tenha papel de admin ou profissional
+      const excludeIds = new Set(
+        (roles || [])
+          .filter((r: any) => r.role === "admin" || r.role === "profissional")
+          .map((r: any) => r.user_id)
+      );
+      
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, nome, email, whatsapp, total_servicos_pagos, created_at")
         .order("created_at", { ascending: false })
-        .limit(200);
-      return (profs || []).filter((p: any) => !proIds.has(p.id));
+        .limit(500);
+
+      // Retorna apenas perfis que NÃO estão na lista de exclusão
+      return (profs || []).filter((p: any) => !excludeIds.has(p.id));
     }
   });
 
@@ -2322,12 +2330,14 @@ function AdminConfig() {
             )}
           </div>
           <Button
+            asChild
             variant="outline"
             className="rounded-xl font-bold shrink-0 flex items-center gap-2"
-            onClick={() => navigate({ to: "/cliente", search: { tab: "dados" } as any })}
           >
-            <ArrowUpRight className="h-4 w-4" />
-            Editar perfil
+            <Link to="/cliente" search={{ tab: "dados" } as any}>
+              <ArrowUpRight className="h-4 w-4" />
+              Editar perfil
+            </Link>
           </Button>
         </div>
         <p className="mt-6 text-xs text-slate-400 flex items-center gap-1.5">
@@ -2399,25 +2409,12 @@ function AdminEquipe() {
         return;
       }
 
-      // 2. Check if already admin
-      const { data: existing } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", profile.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (existing) {
-        toast.error("Este usuário já é administrador.");
-        return;
-      }
-
-      // 3. Upsert role
-      const { error } = await supabase.from("user_roles").insert({
+      // 2. Upsert role (allow updating if already exists)
+      const { error } = await supabase.from("user_roles").upsert({
         user_id: profile.id,
         role: "admin",
         admin_level: inviteLevel,
-      });
+      }, { onConflict: "user_id,role" });
 
       if (error) throw error;
       toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
