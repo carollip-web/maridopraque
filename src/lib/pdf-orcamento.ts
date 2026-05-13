@@ -37,13 +37,13 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
           .select("nome,email,whatsapp")
           .eq("id", orc.profissional_id)
           .maybeSingle()
-      : Promise.resolve({ data: null } as any),
+      : Promise.resolve({ data: null as { nome: string; email: string; whatsapp: string } | null }),
     supabase
       .from("orcamento_materiais")
       .select("nome_snapshot, unidade_snapshot, quantidade, preco_unitario, subtotal")
       .eq("orcamento_id", orcamentoId),
   ]);
-  const profissional = (profRes as any)?.data ?? null;
+  const profissional = profRes?.data ?? null;
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -137,7 +137,14 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
   y += infos.length * 13 + 10;
 
   // Tabela de materiais
-  const matRows = (materiais || []).map((m: any) => [
+  type MaterialRow = {
+    nome_snapshot: string;
+    unidade_snapshot: string;
+    quantidade: number | string;
+    preco_unitario: number | string;
+    subtotal: number | string | null;
+  };
+  const matRows = ((materiais ?? []) as MaterialRow[]).map((m) => [
     m.nome_snapshot,
     `${Number(m.quantidade)} ${m.unidade_snapshot}`,
     BRL(m.preco_unitario),
@@ -153,7 +160,7 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
       styles: { fontSize: 10 },
       margin: { left: margin, right: margin },
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14;
   }
 
   // Totais
