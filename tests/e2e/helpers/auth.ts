@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export const TEST_PASSWORD = "Teste@2026!";
 export const TEST_DOMAIN = "teste.maridopraque.local";
