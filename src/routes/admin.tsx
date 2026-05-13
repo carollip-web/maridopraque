@@ -1540,11 +1540,11 @@ function AdminClientes() {
     if (!confirm(`Tem certeza que deseja remover o cliente ${nome}? Todos os dados de acesso serão excluídos.`)) return;
     setIsDeleting(id);
     try {
-      const { ok, error } = await excluirUsuarioFn({
+      const { ok } = await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao excluir cliente");
+      if (!ok) throw new Error("Erro ao excluir cliente");
       
       toast.success("Cliente removido.");
       setSelectedIds(prev => prev.filter(sid => sid !== id));
