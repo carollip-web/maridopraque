@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     if (!isSuperAdmin) return json({ error: "Apenas super_admin" }, 403);
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const created: { email: string; user_id: string; role: string; password: string }[] = [];
+    const created: { email: string; user_id: string; role: string }[] = [];
 
     // Create / update users
     for (const u of USERS) {
