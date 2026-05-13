@@ -99,7 +99,13 @@ function ClienteArea() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!session && !user) {
+      navigate({ to: "/login" });
+    } else if (isAdmin) {
+      // Se for admin, mandamos direto pro painel administrativo conforme solicitado
+      navigate({ to: "/admin" });
+    }
+  }, [session, user, isAdmin, navigate]);
 
     console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
     const channel = supabase

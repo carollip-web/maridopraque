@@ -56,13 +56,14 @@ function LoginPage() {
         if (loginError) throw loginError;
         // Redireciona conforme o papel do usuário
         const userId = data.user?.id;
-        let dest: "/admin" | "/profissional" | "/cliente" = "/cliente";
+        let dest: any = "/cliente";
         if (userId) {
           const { data: roles } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", userId);
           const r = (roles ?? []).map((x: any) => x.role);
+          
           if (r.includes("admin")) dest = "/admin";
           else if (r.includes("profissional")) dest = "/profissional";
         }
@@ -79,7 +80,7 @@ function LoginPage() {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/cliente` },
+      options: { redirectTo: `${window.location.origin}/admin` },
     });
     if (error) setError(error.message);
   };
