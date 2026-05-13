@@ -1496,6 +1496,9 @@ function AdminClientes() {
   const [newClient, setNewClient] = useState({ nome: "", email: "", password: "" });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const { data: clientes = [], isLoading, refetch } = useQuery({
     queryKey: ["admin", "clientes"],
     queryFn: async () => {
@@ -1545,12 +1548,60 @@ function AdminClientes() {
       if (!ok) throw new Error(error || "Erro ao excluir cliente");
       
       toast.success("Cliente removido.");
+      setSelectedIds(prev => prev.filter(sid => sid !== id));
       qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
     } catch (e: any) {
       toast.error("Erro ao remover", { description: e.message });
     } finally {
       setIsDeleting(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Tem certeza que deseja remover os ${selectedIds.length} clientes selecionados? Esta ação é irreversível.`)) return;
+
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const id of selectedIds) {
+        const { ok } = await excluirUsuarioFn({
+          data: { targetUserId: id },
+          headers: { Authorization: `Bearer ${session?.access_token}` }
+        });
+        if (ok) successCount++;
+        else failCount++;
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} clientes removidos.`);
+        setSelectedIds([]);
+        qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
+      }
+      if (failCount > 0) {
+        toast.error(`Falha ao remover ${failCount} clientes.`);
+      }
+    } catch (e: any) {
+      toast.error("Erro na exclusão em massa", { description: e.message });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map(c => c.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    );
   };
 
   const handleExportClients = () => {
@@ -1585,6 +1636,41 @@ function AdminClientes() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 animate-in fade-in duration-500">
+      {/* Bulk Actions Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {selectedIds.length}
+              </span>
+              <span className="text-sm font-medium">selecionados</span>
+            </div>
+            <div className="h-4 w-px bg-white/20" />
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                size="sm" 
+                variant="ghost" 
+                className="text-red-400 hover:text-red-300 hover:bg-white/10 gap-2 h-9 rounded-xl font-bold"
+              >
+                {isBulkDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Excluir em massa
+              </Button>
+              <Button 
+                onClick={() => setSelectedIds([])}
+                size="sm" 
+                variant="ghost" 
+                className="text-white/60 hover:text-white hover:bg-white/10 h-9 rounded-xl"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6">
         <div>
           <h2 className="text-2xl font-bold">Base de Clientes</h2>
@@ -1594,6 +1680,23 @@ function AdminClientes() {
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" size="sm" onClick={handleExportClients} className="rounded-xl h-10 px-4 bg-white gap-2">
             <FileDown className="h-4 w-4" /> Exportar Base
+          </Button>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-10 rounded-xl gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold" 
+            onClick={async () => {
+              const count = filtered.length;
+              if (count === 0) return;
+              const confirmText = prompt(`ATENÇÃO: Você está prestes a remover PERMANENTEMENTE os ${count} clientes exibidos nesta tela.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
+              if (confirmText === "EXCLUIR TUDO") {
+                setSelectedIds(filtered.map(c => c.id));
+                setTimeout(() => handleBulkDelete(), 100);
+              }
+            }}
+          >
+            <Trash2 className="h-4 w-4" /> Excluir Todos
           </Button>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
