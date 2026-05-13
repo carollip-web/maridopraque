@@ -592,6 +592,23 @@ function AdminPedidos() {
             <Button variant="outline" size="sm" className="h-9 rounded-xl gap-2 bg-white" onClick={() => refetch()}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 rounded-xl gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100" 
+              onClick={async () => {
+                const count = filtered.length;
+                if (count === 0) return;
+                const confirmText = prompt(`ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE os ${count} pedidos exibidos nesta tela.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
+                if (confirmText === "EXCLUIR TUDO") {
+                  setSelectedIds(filtered.map(o => o.id));
+                  // Wait for state update is not needed if we call the function directly with IDs
+                  setTimeout(() => handleBulkDelete(), 100);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4" /> Excluir Todos
+            </Button>
           </div>
         </div>
       </div>
