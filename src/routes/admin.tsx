@@ -312,7 +312,7 @@ function AdminPedidos() {
       const orcIds = list.map((o: any) => o.id);
 
       let profileMap: Record<string, any> = {};
-      let materialsMap: Record<string, any[]> = {};
+      const materialsMap: Record<string, any[]> = {};
 
       const promises: Promise<any>[] = [];
 

@@ -777,7 +777,7 @@ function PedidosTab({ setActiveTab }: { setActiveTab: (tab: Tab) => void }) {
 
       const orcIds = list.map((o) => o.id);
       let propostas: any[] = [];
-      let profsMap: Record<string, string> = {};
+      const profsMap: Record<string, string> = {};
       if (orcIds.length > 0) {
         const { data: pData } = await (supabase as any)
           .from("propostas")
