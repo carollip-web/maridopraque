@@ -1,15 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWritableAdminSection } from "./admin-permissions.server";
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  if (!roles?.some((r: any) => r.role === "admin")) {
-    throw new Error("Apenas admin");
-  }
+  await requireWritableAdminSection(supabase, userId, "servicos");
 }
 
 const servicoSchema = z.object({
