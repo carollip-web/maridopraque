@@ -19,7 +19,8 @@ export const criarUsuarioAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => userSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    // suporte é apenas leitura — só super_admin/admin criam usuários.
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
