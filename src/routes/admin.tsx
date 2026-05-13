@@ -244,6 +244,9 @@ function AdminPedidos() {
   const setProFilter = (val: string) => navigate({ search: ((old: any) => ({ ...old, pro_id: val || "todos" })) as any });
   const setDateRange = (val: string) => navigate({ search: ((old: any) => ({ ...old, range: val || "all" })) as any });
   const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin", "orcamentos"],
@@ -455,12 +458,70 @@ function AdminPedidos() {
       }
       
       toast.success("Pedido e todas as suas dependências foram excluídos.");
+      setSelectedIds(prev => prev.filter(id => id !== order.id));
       qc.invalidateQueries({ queryKey: ["admin", "orcamentos"] });
     } catch (e: any) {
       toast.error("Erro ao excluir pedido", { description: e.message });
     } finally {
       setIsDeletingOrder(null);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Tem certeza que deseja excluir permanentemente os ${selectedIds.length} pedidos selecionados? Esta ação não pode ser desfeita.`)) return;
+
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const id of selectedIds) {
+        const order = unifiedOrders.find(o => o.id === id);
+        if (!order) continue;
+        
+        const items = order._original_items || [order];
+        let orderSuccess = true;
+
+        for (const item of items) {
+          const { ok } = await excluirPedidoFn({ 
+            data: { orcamentoId: item.id },
+            headers: { Authorization: `Bearer ${session?.access_token}` }
+          });
+          if (!ok) orderSuccess = false;
+        }
+
+        if (orderSuccess) successCount++;
+        else failCount++;
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} pedidos excluídos com sucesso.`);
+        setSelectedIds([]);
+        qc.invalidateQueries({ queryKey: ["admin", "orcamentos"] });
+      }
+      if (failCount > 0) {
+        toast.error(`Falha ao excluir ${failCount} pedidos. Verifique as dependências.`);
+      }
+    } catch (e: any) {
+      toast.error("Erro no processamento em lote", { description: e.message });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map(o => o.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   return (
@@ -534,6 +595,41 @@ function AdminPedidos() {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {selectedIds.length}
+              </span>
+              <span className="text-sm font-medium">selecionados</span>
+            </div>
+            <div className="h-4 w-px bg-white/20" />
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
+                size="sm" 
+                variant="ghost" 
+                className="text-red-400 hover:text-red-300 hover:bg-white/10 gap-2 h-9 rounded-xl font-bold"
+              >
+                {isBulkDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Excluir em massa
+              </Button>
+              <Button 
+                onClick={() => setSelectedIds([])}
+                size="sm" 
+                variant="ghost" 
+                className="text-white/60 hover:text-white hover:bg-white/10 h-9 rounded-xl"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex gap-2 overflow-x-auto no-scrollbar">
           {tabs.map((t) => (
@@ -552,6 +648,13 @@ function AdminPedidos() {
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
               <tr>
+                <th className="px-6 py-4 w-10">
+                  <Checkbox 
+                    checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                    onCheckedChange={toggleSelectAll}
+                    className="border-slate-300"
+                  />
+                </th>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Cliente</th>
                 <th className="px-6 py-4">Serviço & Materiais</th>
@@ -588,7 +691,14 @@ function AdminPedidos() {
                 const matsTotal = oMats.reduce((sum: number, m: any) => sum + (Number(m.preco_unitario) * Number(m.quantidade)), 0);
                 
                 return (
-                  <tr key={o.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr key={o.id} className={`hover:bg-slate-50 transition-colors group ${selectedIds.includes(o.id) ? 'bg-brand-soft/20' : ''}`}>
+                    <td className="px-6 py-4">
+                      <Checkbox 
+                        checked={selectedIds.includes(o.id)}
+                        onCheckedChange={() => toggleSelect(o.id)}
+                        className="border-slate-300"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-xs font-mono text-slate-400">#{o.id.slice(0, 8)}</span>
