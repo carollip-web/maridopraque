@@ -85,7 +85,8 @@ export const excluirUsuarioAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => deleteUserSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    // Exclusão é destrutiva — apenas super_admin/admin podem.
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
