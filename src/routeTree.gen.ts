@@ -30,6 +30,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
 import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
+import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
@@ -137,6 +138,11 @@ const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
   path: '/profissional',
   getParentRoute: () => LoginRoute,
 } as any)
+const AuthRedirectRoute = AuthRedirectRouteImport.update({
+  id: '/auth/redirect',
+  path: '/auth/redirect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
   id: '/perfil/$slug',
   path: '/perfil/$slug',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/auth/redirect': typeof AuthRedirectRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/auth/redirect': typeof AuthRedirectRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/auth/redirect': typeof AuthRedirectRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/auth/redirect'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/auth/redirect'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/auth/redirect'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
+  AuthRedirectRoute: typeof AuthRedirectRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -462,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginProfissionalRouteImport
       parentRoute: typeof LoginRoute
     }
+    '/auth/redirect': {
+      id: '/auth/redirect'
+      path: '/auth/redirect'
+      fullPath: '/auth/redirect'
+      preLoaderRoute: typeof AuthRedirectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profissionais/perfil/$slug': {
       id: '/profissionais/perfil/$slug'
       path: '/perfil/$slug'
@@ -526,6 +546,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
+  AuthRedirectRoute: AuthRedirectRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
