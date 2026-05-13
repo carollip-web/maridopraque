@@ -21,7 +21,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => solicitarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    console.log("[solicitarOrcamento] Creating for userId:", userId);
+    console.info("[solicitarOrcamento] Creating for userId:", userId);
     const { data: row, error } = await supabase
       .from("orcamentos")
       .insert({
@@ -36,7 +36,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
       console.error("[solicitarOrcamento] error:", error);
       throw new Error(error.message);
     }
-    console.log("[solicitarOrcamento] Created row:", row);
+    console.info("[solicitarOrcamento] Created row:", row);
 
     if (data.materiais && data.materiais.length > 0) {
       const ids = data.materiais.map((m) => m.materialId);
@@ -233,7 +233,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     if (e1) throw new Error("Proposta inválida ou não pertence a este orçamento.");
 
     // Reject other proposals
-    console.log(
+    console.info(
       `Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`,
     );
     await (supabase as any)
@@ -358,7 +358,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => cancelarSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase: userClient, userId } = context;
+    const { userId } = context;
 
     try {
       const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -393,7 +393,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         return { ok: false, error: "Pedidos já pagos ou concluídos não podem ser removidos." };
       }
 
-      console.log(`[cancelarPedido] Iniciando faxina para o pedido ${data.orcamentoId}...`);
+      console.info(`[cancelarPedido] Iniciando faxina para o pedido ${data.orcamentoId}...`);
 
       // 3. Sequential deletion with explicit error tracking
       const simpleTables = [
@@ -412,7 +412,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
           // We don't throw here to try to delete as much as possible,
           // but the final delete will fail if there's a hard FK.
         } else {
-          console.log(`[cancelarPedido] Tabela ${t.name} limpa.`);
+          console.info(`[cancelarPedido] Tabela ${t.name} limpa.`);
         }
       }
 
@@ -425,7 +425,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         const propIds = props.map((p: any) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
         await admin.from("propostas").delete().in("id", propIds);
-        console.log(`[cancelarPedido] Propostas (${props.length}) limpas.`);
+        console.info(`[cancelarPedido] Propostas (${props.length}) limpas.`);
       }
 
       // 5. Final attempt to delete the main record
@@ -439,11 +439,12 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         };
       }
 
-      console.log(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} totalmente removido.`);
+      console.info(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} totalmente removido.`);
       return { ok: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[cancelarPedido] Falha catastrófica:", err);
-      return { ok: false, error: err.message || "Erro inesperado ao cancelar o pedido." };
+      const message = err instanceof Error ? err.message : "Erro inesperado ao cancelar o pedido.";
+      return { ok: false, error: message };
     }
   });
 
@@ -468,7 +469,7 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
       }
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-      console.log(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
+      console.info(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
 
       // Reuse deep cleanup logic
       const tables = [
@@ -497,8 +498,9 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
       if (ed) throw new Error(ed.message);
 
       return { ok: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[excluirPedidoAdmin] Erro:", err);
-      return { ok: false, error: err.message || "Erro ao excluir" };
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      return { ok: false, error: message };
     }
   });
