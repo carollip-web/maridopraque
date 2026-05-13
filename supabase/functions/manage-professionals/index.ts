@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const { data: roles } = await userClient
       .from("user_roles").select("role, admin_level").eq("user_id", userData.user.id);
     const isSuperAdmin = (roles ?? []).some(
-      (r: any) => r.role === "admin" && (r.admin_level === "super_admin" || r.admin_level === null),
+      (r: any) => r.role === "admin" && r.admin_level === "super_admin",
     );
     if (!isSuperAdmin) return json({ error: "Apenas super_admin" }, 403);
 
