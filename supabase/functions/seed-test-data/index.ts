@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
           data_aprovacao: ["aprovado", "agendado", "pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
           data_pagamento: ["pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
           data_agendada: ["agendado", "pago", "concluido"].includes(s.status) ? new Date(Date.now() + 86400000).toISOString() : null,
+        });
         pedidosCriados++;
       }
     }
