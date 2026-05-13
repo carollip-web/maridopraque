@@ -40,6 +40,7 @@ import { createClient } from "@supabase/supabase-js";
 import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
