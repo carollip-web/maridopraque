@@ -935,6 +935,8 @@ function AdminProfissionais() {
   const [savingEsp, setSavingEsp] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<"ganhos" | "servicos" | "nota" | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPro, setNewPro] = useState({ nome: "", email: "", password: "" });
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
