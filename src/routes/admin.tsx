@@ -41,7 +41,7 @@ import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { criarUsuarioAdmin, excluirUsuarioAdmin, convidarAdmin } from "@/lib/usuarios.functions";
+import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,16 +96,8 @@ const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementT
 
 function AdminArea() {
   const { isLoggedIn, isAdmin, isSuperAdmin, adminLevel, loading, profile, user, logout, canAccess, allowedTabs } = useAuth();
-  const search = useSearch({ from: "/admin" }) as any;
+  const [activeTab, setActiveTab] = useState<AdminSection>("dashboard");
   const navigate = useNavigate();
-  
-  // Use URL param as source of truth for active tab
-  const activeTab = (search.tab as AdminSection) || "dashboard";
-  const setActiveTab = (tab: AdminSection) => navigate({ 
-    to: "/admin",
-    search: { ...search, tab } as any,
-    replace: true 
-  });
 
   useEffect(() => {
     if (loading) return;
@@ -948,9 +940,6 @@ function AdminProfissionais() {
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
   const { data: pros = [], isLoading } = useQuery({
     queryKey: ["admin", "profissionais"],
     queryFn: async () => {
@@ -1054,10 +1043,11 @@ function AdminProfissionais() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      await criarUsuarioFn({
+      const { ok, error } = await criarUsuarioFn({
         data: { ...newPro, role: "profissional" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
+      if (!ok) throw new Error(error || "Erro ao criar profissional");
       
       toast.success("Profissional criado com sucesso!");
       setShowAddModal(false);
@@ -1074,13 +1064,13 @@ function AdminProfissionais() {
     if (!confirm("Tem certeza que deseja excluir este profissional? Esta ação é irreversível e removerá todos os dados do usuário.")) return;
     setIsDeleting(true);
     try {
-      await excluirUsuarioFn({
+      const { ok, error } = await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
+      if (!ok) throw new Error(error || "Erro ao excluir profissional");
       
       toast.success("Profissional excluído!");
-      setSelectedIds(prev => prev.filter(sid => sid !== id));
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
     } catch (e: any) {
@@ -1090,148 +1080,37 @@ function AdminProfissionais() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (!confirm(`Tem certeza que deseja remover os ${selectedIds.length} profissionais selecionados? Esta ação é irreversível.`)) return;
-
-    setIsBulkDeleting(true);
-    let successCount = 0;
-    let failCount = 0;
-
-    try {
-      for (const id of selectedIds) {
-        const { ok } = await excluirUsuarioFn({
-          data: { targetUserId: id },
-          headers: { Authorization: `Bearer ${session?.access_token}` }
-        });
-        if (ok) successCount++;
-        else failCount++;
-      }
-
-      if (successCount > 0) {
-        toast.success(`${successCount} profissionais removidos.`);
-        setSelectedIds([]);
-        qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
-      }
-      if (failCount > 0) {
-        toast.error(`Falha ao remover ${failCount} profissionais.`);
-      }
-    } catch (e: any) {
-      toast.error("Erro na exclusão em massa", { description: e.message });
-    } finally {
-      setIsBulkDeleting(false);
-    }
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filtered.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filtered.map(p => p.id));
-    }
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
-    );
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Bulk Actions Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
-          <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                {selectedIds.length}
-              </span>
-              <span className="text-sm font-medium">selecionados</span>
-            </div>
-            <div className="h-4 w-px bg-white/20" />
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={handleBulkDelete}
-                disabled={isBulkDeleting}
-                size="sm" 
-                variant="ghost" 
-                className="text-red-400 hover:text-red-300 hover:bg-white/10 gap-2 h-9 rounded-xl font-bold"
-              >
-                {isBulkDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Excluir em massa
-              </Button>
-              <Button 
-                onClick={() => setSelectedIds([])}
-                size="sm" 
-                variant="ghost" 
-                className="text-white/60 hover:text-white hover:bg-white/10 h-9 rounded-xl"
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Profissionais</h2>
           <p className="text-sm text-slate-500">{pros.length} cadastrados · {pros.filter(p => p.ativo).length} ativos</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-10 rounded-full gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold px-5 transition-all shadow-sm" 
-            onClick={async () => {
-              const count = filtered.length;
-              if (count === 0) return;
-              const confirmText = prompt(`ATENÇÃO: Você está prestes a remover PERMANENTEMENTE os ${count} profissionais selecionados.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
-              if (confirmText === "EXCLUIR TUDO") {
-                setSelectedIds(filtered.map(p => p.id));
-                setTimeout(() => handleBulkDelete(), 100);
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4" /> Excluir Selecionados
-          </Button>
-
-          <Button 
+        <div className="flex items-center gap-2">
+          <button 
             onClick={() => setShowAddModal(true)}
-            className="h-10 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 px-5 gap-2"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors shrink-0"
           >
             <UserPlus className="h-4 w-4" /> Novo Profissional
-          </Button>
-          <Button asChild className="h-10 rounded-full bg-brand text-white text-sm font-bold hover:bg-brand/90 transition-all shadow-lg shadow-brand/20 px-6">
-            <Link to="/admin" search={{ tab: "modo_teste" } as any}>🛡️ Validação</Link>
-          </Button>
+          </button>
+          <a href="/admin-validacao" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-white text-sm font-bold hover:bg-brand/90 transition-colors shrink-0">
+            🛡️ Validação
+          </a>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome, e-mail ou especialidade…"
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all shadow-sm"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
           />
-        </div>
-
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 shadow-sm shrink-0">
-          <Checkbox 
-            id="select-all-pros"
-            checked={filtered.length > 0 && selectedIds.length === filtered.length}
-            onCheckedChange={toggleSelectAll}
-            className="border-slate-300"
-          />
-          <label htmlFor="select-all-pros" className="text-xs font-bold text-slate-500 cursor-pointer select-none">
-            Selecionar Todos
-          </label>
         </div>
         <div className="flex gap-2">
           {[
@@ -1284,49 +1163,40 @@ function AdminProfissionais() {
           {!isLoading && (
             <div className="space-y-3">
               {filtered.map((pro) => (
-                <div
+                <button
                   key={pro.id}
-                  className={`group w-full bg-white rounded-2xl border p-5 flex items-center gap-4 transition-all hover:shadow-md ${
+                  onClick={() => { setSelected(pro); setEditingEsp(false); setDetailView(null); setEspSelected([...pro.especialidades]); }}
+                  className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
                     selected?.id === pro.id ? "border-brand ring-2 ring-brand/20" : "border-slate-200"
-                  } ${selectedIds.includes(pro.id) ? 'bg-brand-soft/20 border-brand/50' : ''}`}
+                  }`}
                 >
-                  <Checkbox 
-                    checked={selectedIds.includes(pro.id)}
-                    onCheckedChange={() => toggleSelect(pro.id)}
-                    className="border-slate-300"
-                  />
-                  <div 
-                    onClick={() => { setSelected(pro); setEditingEsp(false); setDetailView(null); setEspSelected([...pro.especialidades]); }}
-                    className="flex-1 flex items-center gap-4 cursor-pointer min-w-0"
-                  >
-                    <div className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}>
-                      {pro.nome?.[0]?.toUpperCase() || "?"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm truncate">{pro.nome}</p>
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`} />
-                      </div>
-                      <p className="text-xs text-slate-500 truncate">{pro.email}</p>
-                      {pro.especialidades.length > 0 && (
-                        <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {pro.especialidades.slice(0, 3).map((e: string) => (
-                            <span key={e} className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">{e}</span>
-                          ))}
-                          {pro.especialidades.length > 3 && <span className="text-[9px] text-slate-400">+{pro.especialidades.length - 3}</span>}
-                        </div>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-right hidden sm:block">
-                      {pro.rating != null && (
-                        <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
-                          {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
-                        </p>
-                      )}
-                      <p className="text-[10px] text-slate-400">{pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}</p>
-                    </div>
+                  <div className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}>
+                    {pro.nome?.[0]?.toUpperCase() || "?"}
                   </div>
-                </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-sm truncate">{pro.nome}</p>
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`} />
+                    </div>
+                    <p className="text-xs text-slate-500 truncate">{pro.email}</p>
+                    {pro.especialidades.length > 0 && (
+                      <div className="flex gap-1 mt-1.5 flex-wrap">
+                        {pro.especialidades.slice(0, 3).map((e: string) => (
+                          <span key={e} className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">{e}</span>
+                        ))}
+                        {pro.especialidades.length > 3 && <span className="text-[9px] text-slate-400">+{pro.especialidades.length - 3}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right hidden sm:block">
+                    {pro.rating != null && (
+                      <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
+                        {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-400">{pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}</p>
+                  </div>
+                </button>
               ))}
             </div>
           )}
@@ -1632,21 +1502,13 @@ function AdminClientes() {
     queryKey: ["admin", "clientes"],
     queryFn: async () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      // Coletamos IDs de qualquer um que tenha papel de admin ou profissional
-      const excludeIds = new Set(
-        (roles || [])
-          .filter((r: any) => r.role === "admin" || r.role === "profissional")
-          .map((r: any) => r.user_id)
-      );
-      
+      const proIds = new Set((roles || []).filter((r: any) => r.role !== "cliente").map((r: any) => r.user_id));
       const { data: profs } = await supabase
         .from("profiles")
         .select("id, nome, email, whatsapp, total_servicos_pagos, created_at")
         .order("created_at", { ascending: false })
-        .limit(500);
-
-      // Retorna apenas perfis que NÃO estão na lista de exclusão
-      return (profs || []).filter((p: any) => !excludeIds.has(p.id));
+        .limit(200);
+      return (profs || []).filter((p: any) => !proIds.has(p.id));
     }
   });
 
@@ -1657,10 +1519,11 @@ function AdminClientes() {
     }
     setIsCreating(true);
     try {
-      await criarUsuarioFn({
+      const { ok, error } = await criarUsuarioFn({
         data: { ...newClient, role: "cliente" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
+      if (!ok) throw new Error(error || "Erro ao criar cliente");
       
       toast.success("Cliente criado com sucesso!");
       setIsDialogOpen(false);
@@ -1677,10 +1540,11 @@ function AdminClientes() {
     if (!confirm(`Tem certeza que deseja remover o cliente ${nome}? Todos os dados de acesso serão excluídos.`)) return;
     setIsDeleting(id);
     try {
-      await excluirUsuarioFn({
+      const { ok, error } = await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
+      if (!ok) throw new Error(error || "Erro ao excluir cliente");
       
       toast.success("Cliente removido.");
       setSelectedIds(prev => prev.filter(sid => sid !== id));
@@ -2330,14 +2194,12 @@ function AdminConfig() {
             )}
           </div>
           <Button
-            asChild
             variant="outline"
             className="rounded-xl font-bold shrink-0 flex items-center gap-2"
+            onClick={() => navigate({ to: "/cliente", search: { tab: "dados" } as any })}
           >
-            <Link to="/cliente" search={{ tab: "dados" } as any}>
-              <ArrowUpRight className="h-4 w-4" />
-              Editar perfil
-            </Link>
+            <ArrowUpRight className="h-4 w-4" />
+            Editar perfil
           </Button>
         </div>
         <p className="mt-6 text-xs text-slate-400 flex items-center gap-1.5">
@@ -2393,29 +2255,48 @@ function AdminEquipe() {
     },
   });
 
-  const convidarAdminFn = useServerFn(convidarAdmin);
-
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      const result: any = await convidarAdminFn({
-        data: { email: inviteEmail.trim(), admin_level: inviteLevel },
-      });
-      if (result?.created && result?.tempPassword) {
-        toast.success("Conta criada e admin atribuído!", {
-          description: `Senha temporária: ${result.tempPassword} — envie para ${inviteEmail} e peça para trocar no primeiro login.`,
-          duration: 20000,
-        });
-      } else {
-        toast.success("Administrador adicionado!", {
-          description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
-        });
+      // 1. Look up user by email in profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", inviteEmail.trim())
+        .maybeSingle();
+
+      if (!profile) {
+        toast.error("Usuário não encontrado", { description: "O e-mail precisa ter uma conta no sistema." });
+        return;
       }
+
+      // 2. Check if already admin
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (existing) {
+        toast.error("Este usuário já é administrador.");
+        return;
+      }
+
+      // 3. Upsert role
+      const { error } = await supabase.from("user_roles").insert({
+        user_id: profile.id,
+        role: "admin",
+        admin_level: inviteLevel,
+      });
+
+      if (error) throw error;
+      toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
       setInviteEmail("");
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
-      toast.error("Erro ao convidar", { description: e?.message || "Falha ao adicionar admin." });
+      toast.error("Erro ao convidar", { description: e.message });
     } finally {
       setInviting(false);
     }
@@ -2481,7 +2362,7 @@ function AdminEquipe() {
         <h3 className="font-bold mb-1 flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
         </h3>
-        <p className="text-sm text-slate-500 mb-6">Se o e-mail ainda não tiver conta, criamos automaticamente com uma senha temporária.</p>
+        <p className="text-sm text-slate-500 mb-6">O usuário já precisa ter uma conta no sistema.</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="email"

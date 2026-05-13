@@ -66,7 +66,7 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const { tab: activeTab } = Route.useSearch();
-  const { session, logout, userData, isProfissional, isAdmin, user, loading: authLoading } = useAuth();
+  const { session, logout, userData, isProfissional, isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -99,14 +99,7 @@ function ClienteArea() {
   });
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!session && !user) {
-      navigate({ to: "/login" });
-    }
-  }, [authLoading, session, user, navigate]);
-
-  useEffect(() => {
-    if (!user?.id) return;
+    if (!user) return;
 
     console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
     const channel = supabase
@@ -145,20 +138,7 @@ function ClienteArea() {
   }, [user, queryClient]);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col">
-      {/* Admin View Banner */}
-      {isAdmin && (
-        <div className="bg-slate-900 text-white px-4 py-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest z-[60]">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-3.5 w-3.5 text-brand" />
-            <span>Visualização de Administrador — Você está testando o sistema</span>
-          </div>
-          <Link to="/admin" className="bg-brand text-white px-3 py-1 rounded-full hover:bg-brand/90 transition-all">
-            Voltar ao Painel
-          </Link>
-        </div>
-      )}
-      <div className="flex-1 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
       {/* Sidebar */}
       <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-border shrink-0 z-20">
         <div className="p-8 hidden md:block">
@@ -220,7 +200,6 @@ function ClienteArea() {
         {activeTab === "notificacoes" && <NotificacoesTab setActiveTab={setActiveTab} />}
         {activeTab === "dados" && <DadosTab />}
       </main>
-    </div>
     </div>
   );
 }

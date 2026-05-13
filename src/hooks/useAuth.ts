@@ -71,21 +71,11 @@ export function useAuth() {
       if (!mounted) return;
       if (rolesError) console.error("[useAuth] roles query error:", rolesError);
 
-      let roleList = (roles ?? []).map((r) => r.role as Role);
+      const roleList = (roles ?? []).map((r) => r.role as Role);
       const adminRow = (roles ?? []).find((r) => r.role === "admin");
       // Fallback: if column doesn't exist yet (migration pending), treat admin as super_admin
       const rawLevel = adminRow?.admin_level ?? null;
-      let adminLevel = (roleList.includes("admin") && !rawLevel ? "super_admin" : rawLevel) as AdminLevel;
-
-      // EMERGÊNCIA: Bypass para Carol e Diego
-      const userEmail = profile?.email;
-      if (userEmail && ["carol.lip@gmail.com", "engenheirodonald@yahoo.com"].includes(userEmail.toLowerCase())) {
-        console.log("[useAuth] EMERGENCY BYPASS TRIGGERED for", userEmail);
-        if (!roleList.includes("admin")) roleList.push("admin");
-        adminLevel = "super_admin";
-      }
-
-      console.log("[useAuth] userId:", userId, "email:", userEmail, "roles:", roleList, "adminLevel:", adminLevel);
+      const adminLevel = (roleList.includes("admin") && !rawLevel ? "super_admin" : rawLevel) as AdminLevel;
 
       setState((s) => ({
         ...s,

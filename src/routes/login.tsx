@@ -52,12 +52,21 @@ function LoginPage() {
         if (signupError) throw signupError;
         setInfo("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
       } else {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
         if (loginError) throw loginError;
-        
-        // Redirecionamos para /admin por padrão; o componente AdminArea 
-        // ou o hook useAuth cuidará de redirecionar para o lugar certo se não for admin.
-        navigate({ to: "/admin" });
+        // Redireciona conforme o papel do usuário
+        const userId = data.user?.id;
+        let dest: "/admin" | "/profissional" | "/cliente" = "/cliente";
+        if (userId) {
+          const { data: roles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId);
+          const r = (roles ?? []).map((x: any) => x.role);
+          if (r.includes("admin")) dest = "/admin";
+          else if (r.includes("profissional")) dest = "/profissional";
+        }
+        navigate({ to: dest });
       }
     } catch (err: any) {
       setError(err?.message ?? "Erro ao autenticar");
