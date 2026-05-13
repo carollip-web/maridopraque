@@ -341,28 +341,14 @@ export const cancelarPedido = createServerFn({ method: "POST" })
     const { supabase: userClient, userId } = context;
 
     try {
-      // 1. Robust env detection for TanStack Start / Server environment
       const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
       
-      if (!SUPABASE_URL || !SERVICE_ROLE) {
-        console.error("[cancelarPedido] Erro: Variáveis de ambiente Supabase ausentes no servidor.");
-        return { ok: false, error: "Erro de configuração do servidor. Contate o administrador." };
-      }
-
-      const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-      // 2. Fetch order data with admin client to verify ownership
-      const { data: orc, error: e0 } = await admin
-        .from("orcamentos")
-        .select("cliente_id, status")
-        .eq("id", data.orcamentoId)
-        .single();
-      
-      if (e0 || !orc) {
-        console.error("[cancelarPedido] Erro ao localizar pedido:", e0);
-        return { ok: false, error: "Pedido não encontrado." };
-      }
+      // DIAGNOSTIC TEST: Force a return to see if the client receives this specific string
+      return { 
+        ok: false, 
+        error: `DIAGNOSTICO: URL=${SUPABASE_URL ? "OK" : "FALTA"}, ROLE=${SERVICE_ROLE ? "OK" : "FALTA"}. Se você ler isso, a conexão servidor-cliente está funcionando.` 
+      };
 
       if (orc.cliente_id !== userId) {
         return { ok: false, error: "Você não tem permissão para cancelar este pedido." };
