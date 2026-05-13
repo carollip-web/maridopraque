@@ -78,7 +78,7 @@ export function useAuth() {
       let adminLevel = (roleList.includes("admin") && !rawLevel ? "super_admin" : rawLevel) as AdminLevel;
 
       // EMERGÊNCIA: Bypass para Carol e Diego
-      const userEmail = profile?.email || session?.user?.email;
+      const userEmail = profile?.email;
       if (userEmail && ["carol.lip@gmail.com", "engenheirodonald@yahoo.com"].includes(userEmail.toLowerCase())) {
         console.log("[useAuth] EMERGENCY BYPASS TRIGGERED for", userEmail);
         if (!roleList.includes("admin")) roleList.push("admin");

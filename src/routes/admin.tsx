@@ -41,7 +41,7 @@ import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { criarUsuarioAdmin, excluirUsuarioAdmin, convidarAdmin } from "@/lib/usuarios.functions";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -2393,35 +2393,29 @@ function AdminEquipe() {
     },
   });
 
+  const convidarAdminFn = useServerFn(convidarAdmin);
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      // 1. Look up user by email in profiles
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", inviteEmail.trim())
-        .maybeSingle();
-
-      if (!profile) {
-        toast.error("Usuário não encontrado", { description: "O e-mail precisa ter uma conta no sistema." });
-        return;
+      const result: any = await convidarAdminFn({
+        data: { email: inviteEmail.trim(), admin_level: inviteLevel },
+      });
+      if (result?.created && result?.tempPassword) {
+        toast.success("Conta criada e admin atribuído!", {
+          description: `Senha temporária: ${result.tempPassword} — envie para ${inviteEmail} e peça para trocar no primeiro login.`,
+          duration: 20000,
+        });
+      } else {
+        toast.success("Administrador adicionado!", {
+          description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
+        });
       }
-
-      // 2. Upsert role (allow updating if already exists)
-      const { error } = await supabase.from("user_roles").upsert({
-        user_id: profile.id,
-        role: "admin",
-        admin_level: inviteLevel,
-      }, { onConflict: "user_id,role" });
-
-      if (error) throw error;
-      toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
       setInviteEmail("");
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
-      toast.error("Erro ao convidar", { description: e.message });
+      toast.error("Erro ao convidar", { description: e?.message || "Falha ao adicionar admin." });
     } finally {
       setInviting(false);
     }
@@ -2487,7 +2481,7 @@ function AdminEquipe() {
         <h3 className="font-bold mb-1 flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
         </h3>
-        <p className="text-sm text-slate-500 mb-6">O usuário já precisa ter uma conta no sistema.</p>
+        <p className="text-sm text-slate-500 mb-6">Se o e-mail ainda não tiver conta, criamos automaticamente com uma senha temporária.</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="email"
