@@ -2,16 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  if (!roles?.some((r: any) => r.role === "admin")) {
-    throw new Error("Apenas administradores podem gerenciar usuários.");
-  }
-}
+import {
+  requireAdminLevel,
+  requireSuperAdmin,
+} from "./admin-permissions.server";
 
 const userSchema = z.object({
   nome: z.string().min(2),
