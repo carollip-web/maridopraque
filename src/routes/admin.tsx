@@ -2620,7 +2620,6 @@ function AdminFinanceiro() {
 
 /* ============== CONFIG ============== */
 
-
 const configSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   whatsapp: z.string().min(10, "WhatsApp inválido"),
