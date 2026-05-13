@@ -147,8 +147,8 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
   const matRows = ((materiais ?? []) as MaterialRow[]).map((m) => [
     m.nome_snapshot,
     `${Number(m.quantidade)} ${m.unidade_snapshot}`,
-    BRL(m.preco_unitario),
-    BRL(m.subtotal ?? Number(m.quantidade) * Number(m.preco_unitario)),
+    BRL(Number(m.preco_unitario)),
+    BRL(m.subtotal != null ? Number(m.subtotal) : Number(m.quantidade) * Number(m.preco_unitario)),
   ]);
   if (matRows.length) {
     autoTable(doc, {
