@@ -35,7 +35,6 @@ import {
   endOfMonth,
   isSameDay,
 } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 type Metric = {
   label: string;

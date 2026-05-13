@@ -36,7 +36,6 @@ import {
   FileUp,
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
-import { createClient } from "@supabase/supabase-js";
 import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -2620,9 +2619,6 @@ function AdminFinanceiro() {
 }
 
 /* ============== CONFIG ============== */
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 const configSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),

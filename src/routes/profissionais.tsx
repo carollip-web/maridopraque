@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { UserRound, Wrench, HeartHandshake, ShieldCheck, Users, Star } from "lucide-react";
+import { UserRound, Wrench, HeartHandshake, ShieldCheck, Star } from "lucide-react";
 
 export const Route = createFileRoute("/profissionais")({
   head: () => ({
