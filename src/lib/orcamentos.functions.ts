@@ -424,25 +424,18 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => cancelarSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const { supabase, userId } = context;
 
     try {
+      // Bloqueia suporte/financeiro: exclusão de pedido só para super_admin/admin.
+      await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
+
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!SUPABASE_URL || !SERVICE_ROLE) {
         return { ok: false, error: "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios." };
       }
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-      // Verify Admin
-      const { data: roleData } = await admin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (!roleData) throw new Error("Apenas administradores podem fazer isso.");
 
       console.log(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
 
