@@ -6,14 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { atualizarPrecoMaterialMarketplace, salvarMaterial } from "@/lib/materiais.functions";
-import {
-  Loader2,
-  RefreshCw,
-  Plus,
-  Pencil,
-  Package,
-  ArrowLeft,
-} from "lucide-react";
+import { Loader2, RefreshCw, Plus, Pencil, Package, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/materiais-admin")({
   component: MateriaisAdmin,
@@ -101,13 +94,18 @@ function MateriaisAdmin() {
     <div className="max-w-5xl mx-auto px-6 py-12">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <div>
-          <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2">
+          <Link
+            to="/admin"
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2"
+          >
             <ArrowLeft className="h-3 w-3" /> Voltar ao admin
           </Link>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
             <Package className="h-7 w-7 text-brand" /> Materiais
           </h1>
-          <p className="text-muted-foreground mt-1">Catálogo de materiais para taxa adicional dos orçamentos.</p>
+          <p className="text-muted-foreground mt-1">
+            Catálogo de materiais para taxa adicional dos orçamentos.
+          </p>
         </div>
         <Button
           onClick={() => {
@@ -184,7 +182,9 @@ function MateriaisAdmin() {
                   <td className="px-4 py-3 font-medium">{m.nome}</td>
                   <td className="px-4 py-3 text-muted-foreground">{m.unidade}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{brl(m.preco_base)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-bold">{brl(m.preco_atual)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold">
+                    {brl(m.preco_atual)}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -279,7 +279,9 @@ function MaterialForm({
           />
         </div>
         <div>
-          <label className="text-xs uppercase font-bold text-muted-foreground">Preço base (R$)</label>
+          <label className="text-xs uppercase font-bold text-muted-foreground">
+            Preço base (R$)
+          </label>
           <input
             type="number"
             min={0}
@@ -290,7 +292,9 @@ function MaterialForm({
           />
         </div>
         <div>
-          <label className="text-xs uppercase font-bold text-muted-foreground">URL marketplace (opcional)</label>
+          <label className="text-xs uppercase font-bold text-muted-foreground">
+            URL marketplace (opcional)
+          </label>
           <input
             value={m.marketplace_url ?? ""}
             onChange={(e) => setM({ ...m, marketplace_url: e.target.value })}

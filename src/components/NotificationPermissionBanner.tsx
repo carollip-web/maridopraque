@@ -39,18 +39,33 @@ export function NotificationPermissionBanner() {
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-sm text-slate-900">Receba avisos de novos chamados</h4>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ative as notificações do navegador para ser avisado em tempo real quando um cliente solicitar um orçamento.
+          Ative as notificações do navegador para ser avisado em tempo real quando um cliente
+          solicitar um orçamento.
         </p>
         <div className="flex gap-2 mt-3">
-          <Button onClick={handleEnable} disabled={asking} size="sm" className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs">
+          <Button
+            onClick={handleEnable}
+            disabled={asking}
+            size="sm"
+            className="rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs"
+          >
             {asking ? "Solicitando..." : "Ativar notificações"}
           </Button>
-          <Button onClick={handleDismiss} variant="ghost" size="sm" className="rounded-full text-xs text-muted-foreground">
+          <Button
+            onClick={handleDismiss}
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-xs text-muted-foreground"
+          >
             Agora não
           </Button>
         </div>
       </div>
-      <button onClick={handleDismiss} className="text-muted-foreground hover:text-foreground shrink-0" aria-label="Fechar">
+      <button
+        onClick={handleDismiss}
+        className="text-muted-foreground hover:text-foreground shrink-0"
+        aria-label="Fechar"
+      >
         <X className="h-4 w-4" />
       </button>
     </div>

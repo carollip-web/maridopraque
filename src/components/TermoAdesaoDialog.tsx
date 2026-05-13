@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,31 +59,67 @@ export function TermoAdesaoDialog({ open, onOpenChange, userId, onAccepted }: Pr
         </DialogHeader>
 
         <div className="rounded-xl border border-border bg-slate-50 p-4 text-xs text-slate-700 space-y-2 max-h-72 overflow-y-auto">
-          <p><strong>1. Autonomia.</strong> Atuo como prestador autônomo, sem vínculo empregatício com a plataforma. Sou responsável pelos meus tributos, INSS e demais obrigações fiscais.</p>
-          <p><strong>2. Capacitação.</strong> Possuo conhecimento técnico, ferramentas e EPIs adequados para os serviços que aceitar.</p>
-          <p><strong>3. Responsabilidade integral.</strong> Sou inteira e exclusivamente responsável pela execução, qualidade, segurança e eventuais danos causados durante o serviço, isentando a plataforma de qualquer reparação a terceiros.</p>
-          <p><strong>4. Conduta.</strong> Comprometo-me com pontualidade, respeito, honestidade e sigilo das informações do cliente.</p>
-          <p><strong>5. Preço e pagamento.</strong> Aceito a tabela vigente da plataforma e o repasse na forma e prazos divulgados.</p>
-          <p><strong>6. Cancelamento.</strong> Posso recusar serviços, mas o cancelamento após aceite injustificado pode gerar penalidades.</p>
-          <p><strong>7. Dados.</strong> Autorizo o uso de meus dados de perfil, avaliações e histórico conforme LGPD.</p>
-          <p><strong>8. Validade.</strong> Este termo permanece válido enquanto eu mantiver cadastro ativo. Atualizações exigirão novo aceite.</p>
+          <p>
+            <strong>1. Autonomia.</strong> Atuo como prestador autônomo, sem vínculo empregatício
+            com a plataforma. Sou responsável pelos meus tributos, INSS e demais obrigações fiscais.
+          </p>
+          <p>
+            <strong>2. Capacitação.</strong> Possuo conhecimento técnico, ferramentas e EPIs
+            adequados para os serviços que aceitar.
+          </p>
+          <p>
+            <strong>3. Responsabilidade integral.</strong> Sou inteira e exclusivamente responsável
+            pela execução, qualidade, segurança e eventuais danos causados durante o serviço,
+            isentando a plataforma de qualquer reparação a terceiros.
+          </p>
+          <p>
+            <strong>4. Conduta.</strong> Comprometo-me com pontualidade, respeito, honestidade e
+            sigilo das informações do cliente.
+          </p>
+          <p>
+            <strong>5. Preço e pagamento.</strong> Aceito a tabela vigente da plataforma e o repasse
+            na forma e prazos divulgados.
+          </p>
+          <p>
+            <strong>6. Cancelamento.</strong> Posso recusar serviços, mas o cancelamento após aceite
+            injustificado pode gerar penalidades.
+          </p>
+          <p>
+            <strong>7. Dados.</strong> Autorizo o uso de meus dados de perfil, avaliações e
+            histórico conforme LGPD.
+          </p>
+          <p>
+            <strong>8. Validade.</strong> Este termo permanece válido enquanto eu mantiver cadastro
+            ativo. Atualizações exigirão novo aceite.
+          </p>
         </div>
 
         <label className="flex items-start gap-2 cursor-pointer p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-          <Checkbox checked={aceito} onCheckedChange={(v) => setAceito(v === true)} className="mt-0.5" />
+          <Checkbox
+            checked={aceito}
+            onCheckedChange={(v) => setAceito(v === true)}
+            className="mt-0.5"
+          />
           <span className="text-sm font-medium text-slate-900">
-            Li, entendi e <strong>aceito integralmente</strong> os termos acima, assumindo total responsabilidade pelos serviços que prestar.
+            Li, entendi e <strong>aceito integralmente</strong> os termos acima, assumindo total
+            responsabilidade pelos serviços que prestar.
           </span>
         </label>
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Agora não</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
+            Agora não
+          </Button>
           <Button
             disabled={!aceito || saving}
             onClick={handleAceitar}
             className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold"
           >
-            {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+            {saving ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+            )}
             Aceitar e continuar
           </Button>
         </div>

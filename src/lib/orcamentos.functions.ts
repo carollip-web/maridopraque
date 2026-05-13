@@ -97,7 +97,10 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .eq("id", orc.service_id)
         .single();
       if (cat?.preco_min != null && cat?.preco_max != null) {
-        if (data.valorServico < Number(cat.preco_min) || data.valorServico > Number(cat.preco_max)) {
+        if (
+          data.valorServico < Number(cat.preco_min) ||
+          data.valorServico > Number(cat.preco_max)
+        ) {
           throw new Error(
             `Valor fora do range tabelado para "${cat.nome}" (R$ ${Number(cat.preco_min).toFixed(2)} – R$ ${Number(cat.preco_max).toFixed(2)})`,
           );
@@ -118,7 +121,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // Instead of updating the order and claiming it, we submit a proposal
-    const { data: row, error } = await (supabase as any).from("propostas")
+    const { data: row, error } = await (supabase as any)
+      .from("propostas")
       .insert({
         orcamento_id: data.orcamentoId,
         profissional_id: userId,
@@ -128,7 +132,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    
+
     // Process proposal materials if provided
     if (data.materiais && data.materiais.length > 0) {
       const ids = data.materiais.map((m) => m.materialId);
@@ -158,7 +162,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         if (e3) throw new Error(e3.message);
       }
     }
-    
+
     return { proposta: row };
   });
 
@@ -207,15 +211,21 @@ export const aceitarProposta = createServerFn({ method: "POST" })
   .inputValidator((input) => aceitarPropostaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    
+
     // First verify if the orcamento belongs to the user and is still open
-    const { data: orc } = await supabase.from("orcamentos").select("cliente_id, status").eq("id", data.orcamentoId).single();
+    const { data: orc } = await supabase
+      .from("orcamentos")
+      .select("cliente_id, status")
+      .eq("id", data.orcamentoId)
+      .single();
     if (!orc || orc.cliente_id !== userId) throw new Error("Sem permissão");
-    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") throw new Error("Pedido não está mais aberto para propostas.");
+    if (orc.status !== "customizado_pendente" && orc.status !== "enviado")
+      throw new Error("Pedido não está mais aberto para propostas.");
 
     // Update the specific proposta to aceita, ensuring it belongs to the correct budget
-    const { data: prop, error: e1 } = await (supabase as any).from("propostas")
-      .update({ status: 'aceita' })
+    const { data: prop, error: e1 } = await (supabase as any)
+      .from("propostas")
+      .update({ status: "aceita" })
       .eq("id", data.propostaId)
       .eq("orcamento_id", data.orcamentoId)
       .select()
@@ -223,11 +233,20 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     if (e1) throw new Error("Proposta inválida ou não pertence a este orçamento.");
 
     // Reject other proposals
-    console.log(`Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`);
-    await (supabase as any).from("propostas").update({ status: 'recusada' }).eq("orcamento_id", data.orcamentoId).neq("id", data.propostaId);
+    console.log(
+      `Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`,
+    );
+    await (supabase as any)
+      .from("propostas")
+      .update({ status: "recusada" })
+      .eq("orcamento_id", data.orcamentoId)
+      .neq("id", data.propostaId);
 
     // Copy materials from proposta_materiais to orcamento_materiais
-    const { data: pMats } = await (supabase as any).from("proposta_materiais").select("*").eq("proposta_id", prop.id);
+    const { data: pMats } = await (supabase as any)
+      .from("proposta_materiais")
+      .select("*")
+      .eq("proposta_id", prop.id);
     if (pMats && pMats.length > 0) {
       // First clear existing orcamento_materiais if any
       await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
@@ -240,7 +259,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
           unidade_snapshot: m.unidade_snapshot,
           quantidade: m.quantidade,
           preco_unitario: m.preco_unitario,
-        }))
+        })),
       );
     }
 
@@ -258,7 +277,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    
+
     return { orcamento: row };
   });
 
@@ -344,9 +363,11 @@ export const cancelarPedido = createServerFn({ method: "POST" })
     try {
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
+
       if (!SUPABASE_URL || !SERVICE_ROLE) {
-        console.error("[cancelarPedido] Erro: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes no servidor.");
+        console.error(
+          "[cancelarPedido] Erro: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes no servidor.",
+        );
         return { ok: false, error: "Erro de configuração do servidor. Contate o administrador." };
       }
 
@@ -358,7 +379,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         .select("cliente_id, status")
         .eq("id", data.orcamentoId)
         .single();
-      
+
       if (e0 || !orc) {
         console.error("[cancelarPedido] Erro ao localizar pedido:", e0);
         return { ok: false, error: "Pedido não encontrado." };
@@ -367,7 +388,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
       if (orc.cliente_id !== userId) {
         return { ok: false, error: "Você não tem permissão para cancelar este pedido." };
       }
-      
+
       if (["pago", "concluido"].includes(orc.status?.toLowerCase())) {
         return { ok: false, error: "Pedidos já pagos ou concluídos não podem ser removidos." };
       }
@@ -388,15 +409,18 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         const { error } = await admin.from(t.table).delete().eq("orcamento_id", data.orcamentoId);
         if (error) {
           console.warn(`[cancelarPedido] Aviso: Falha ao limpar ${t.name}:`, error.message);
-          // We don't throw here to try to delete as much as possible, 
+          // We don't throw here to try to delete as much as possible,
           // but the final delete will fail if there's a hard FK.
         } else {
           console.log(`[cancelarPedido] Tabela ${t.name} limpa.`);
         }
       }
-      
+
       // 4. Handle Proposals (Complex Cleanup)
-      const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
+      const { data: props } = await admin
+        .from("propostas")
+        .select("id")
+        .eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
         const propIds = props.map((p: any) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
@@ -406,10 +430,13 @@ export const cancelarPedido = createServerFn({ method: "POST" })
 
       // 5. Final attempt to delete the main record
       const { error: ed } = await admin.from("orcamentos").delete().eq("id", data.orcamentoId);
-      
+
       if (ed) {
         console.error("[cancelarPedido] ERRO CRÍTICO NA EXCLUSÃO FINAL:", ed);
-        return { ok: false, error: `Não foi possível remover o pedido: ${ed.message}. Algum dado ainda está vinculado.` };
+        return {
+          ok: false,
+          error: `Não foi possível remover o pedido: ${ed.message}. Algum dado ainda está vinculado.`,
+        };
       }
 
       console.log(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} totalmente removido.`);
@@ -433,19 +460,33 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!SUPABASE_URL || !SERVICE_ROLE) {
-        return { ok: false, error: "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios." };
+        return {
+          ok: false,
+          error:
+            "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios.",
+        };
       }
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
       console.log(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
 
       // Reuse deep cleanup logic
-      const tables = ["avaliacoes", "orcamento_recusas", "panico_eventos", "mensagens", "notificacoes", "orcamento_materiais"];
+      const tables = [
+        "avaliacoes",
+        "orcamento_recusas",
+        "panico_eventos",
+        "mensagens",
+        "notificacoes",
+        "orcamento_materiais",
+      ];
       for (const table of tables) {
         await admin.from(table).delete().eq("orcamento_id", data.orcamentoId);
       }
-      
-      const { data: props } = await admin.from("propostas").select("id").eq("orcamento_id", data.orcamentoId);
+
+      const { data: props } = await admin
+        .from("propostas")
+        .select("id")
+        .eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
         const propIds = props.map((p: any) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);

@@ -4,8 +4,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { preflight, ensureOrigin, jsonResponse, logAudit } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
-  const pf = preflight(req); if (pf) return pf;
-  const originGuard = ensureOrigin(req); if (originGuard) return originGuard;
+  const pf = preflight(req);
+  if (pf) return pf;
+  const originGuard = ensureOrigin(req);
+  if (originGuard) return originGuard;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -20,7 +22,9 @@ Deno.serve(async (req) => {
     const { data: userData } = await userClient.auth.getUser();
     if (!userData.user) return jsonResponse(req, { error: "Não autenticado" }, 401);
     const { data: roles } = await userClient
-      .from("user_roles").select("role, admin_level").eq("user_id", userData.user.id);
+      .from("user_roles")
+      .select("role, admin_level")
+      .eq("user_id", userData.user.id);
     const isSuperAdmin = (roles ?? []).some(
       (r: any) => r.role === "admin" && r.admin_level === "super_admin",
     );
@@ -66,7 +70,11 @@ Deno.serve(async (req) => {
       details: { usuarios_removidos: userIds.length, pedidos_removidos: pedIds.length },
     });
 
-    return jsonResponse(req, { ok: true, usuarios_removidos: userIds.length, pedidos_removidos: pedIds.length });
+    return jsonResponse(req, {
+      ok: true,
+      usuarios_removidos: userIds.length,
+      pedidos_removidos: pedIds.length,
+    });
   } catch (e: any) {
     console.error("reset-test-data error:", e?.message);
     return jsonResponse(req, { error: e?.message ?? "Erro interno" }, 500);

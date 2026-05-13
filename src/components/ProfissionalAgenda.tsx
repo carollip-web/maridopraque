@@ -33,9 +33,22 @@ export function ProfissionalAgenda() {
     if (!user) return;
     setLoading(true);
     const [{ data: jans }, { data: blocs }, { data: perfil }] = await Promise.all([
-      supabase.from("profissional_disponibilidade").select("*").eq("user_id", user.id).order("dia_semana").order("hora_inicio"),
-      supabase.from("profissional_bloqueios").select("*").eq("user_id", user.id).order("data_inicio"),
-      supabase.from("profissional_perfil").select("duracao_padrao_min").eq("user_id", user.id).maybeSingle(),
+      supabase
+        .from("profissional_disponibilidade")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("dia_semana")
+        .order("hora_inicio"),
+      supabase
+        .from("profissional_bloqueios")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("data_inicio"),
+      supabase
+        .from("profissional_perfil")
+        .select("duracao_padrao_min")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
     setJanelas((jans as JanelaRow[]) ?? []);
     setBloqueios((blocs as Bloqueio[]) ?? []);
@@ -43,7 +56,9 @@ export function ProfissionalAgenda() {
     setLoading(false);
   };
 
-  useEffect(() => { carregar(); }, [user?.id]);
+  useEffect(() => {
+    carregar();
+  }, [user?.id]);
 
   const addJanela = async () => {
     if (!user || horaFim <= horaIni) {
@@ -51,7 +66,10 @@ export function ProfissionalAgenda() {
       return;
     }
     const { error } = await supabase.from("profissional_disponibilidade").insert({
-      user_id: user.id, dia_semana: diaSel, hora_inicio: horaIni, hora_fim: horaFim,
+      user_id: user.id,
+      dia_semana: diaSel,
+      hora_inicio: horaIni,
+      hora_fim: horaFim,
     });
     if (error) return toast.error("Erro ao adicionar", { description: error.message });
     toast.success("Janela adicionada");
@@ -74,10 +92,15 @@ export function ProfissionalAgenda() {
       return;
     }
     const { error } = await supabase.from("profissional_bloqueios").insert({
-      user_id: user.id, data_inicio: bIni, data_fim: bFim, motivo: bMotivo || null,
+      user_id: user.id,
+      data_inicio: bIni,
+      data_fim: bFim,
+      motivo: bMotivo || null,
     });
     if (error) return toast.error("Erro", { description: error.message });
-    setBIni(""); setBFim(""); setBMotivo("");
+    setBIni("");
+    setBFim("");
+    setBMotivo("");
     toast.success("Bloqueio criado");
     carregar();
   };
@@ -91,18 +114,30 @@ export function ProfissionalAgenda() {
   const salvarDuracao = async (val: number) => {
     if (!user) return;
     setDuracao(val);
-    await supabase.from("profissional_perfil").update({ duracao_padrao_min: val }).eq("user_id", user.id);
+    await supabase
+      .from("profissional_perfil")
+      .update({ duracao_padrao_min: val })
+      .eq("user_id", user.id);
   };
 
   if (loading) {
-    return <div className="py-24 grid place-items-center"><Loader2 className="h-8 w-8 animate-spin text-brand" /></div>;
+    return (
+      <div className="py-24 grid place-items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Agenda & disponibilidade</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Defina seus horários de atendimento e bloqueios. Clientes só conseguem agendar nos slots disponíveis.</p>
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+          Agenda & disponibilidade
+        </h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Defina seus horários de atendimento e bloqueios. Clientes só conseguem agendar nos slots
+          disponíveis.
+        </p>
       </div>
 
       <AgendaCalendar />
@@ -114,7 +149,11 @@ export function ProfissionalAgenda() {
         </div>
         <div className="flex items-center gap-2">
           <Input
-            type="number" min={15} max={480} step={15} value={duracao}
+            type="number"
+            min={15}
+            max={480}
+            step={15}
+            value={duracao}
             onChange={(e) => setDuracao(Number(e.target.value))}
             onBlur={(e) => salvarDuracao(Number(e.target.value))}
             className="w-24"
@@ -137,7 +176,11 @@ export function ProfissionalAgenda() {
               onChange={(e) => setDiaSel(Number(e.target.value))}
               className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              {DIAS_SEMANA.map((d, i) => <option key={i} value={i}>{d}</option>)}
+              {DIAS_SEMANA.map((d, i) => (
+                <option key={i} value={i}>
+                  {d}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -148,24 +191,35 @@ export function ProfissionalAgenda() {
             <Label className="text-xs">Fim</Label>
             <Input type="time" value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
           </div>
-          <Button onClick={addJanela} className="bg-brand hover:bg-brand-700 text-white rounded-full">
+          <Button
+            onClick={addJanela}
+            className="bg-brand hover:bg-brand-700 text-white rounded-full"
+          >
             <Plus className="h-4 w-4 mr-1" /> Adicionar
           </Button>
         </div>
 
         {janelas.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">Nenhuma janela cadastrada. Adicione ao menos um dia para começar a receber agendamentos.</p>
+          <p className="text-xs text-muted-foreground text-center py-6">
+            Nenhuma janela cadastrada. Adicione ao menos um dia para começar a receber agendamentos.
+          </p>
         ) : (
           <div className="space-y-1">
             {DIAS_SEMANA.map((nome, i) => {
               const doDia = janelas.filter((j) => j.dia_semana === i);
               if (doDia.length === 0) return null;
               return (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+                <div
+                  key={i}
+                  className="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0"
+                >
                   <span className="w-12 text-xs font-bold uppercase text-slate-700">{nome}</span>
                   <div className="flex flex-wrap gap-2 flex-1">
                     {doDia.map((j) => (
-                      <span key={j.id} className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-medium">
+                      <span
+                        key={j.id}
+                        className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-medium"
+                      >
                         {j.hora_inicio.slice(0, 5)}–{j.hora_fim.slice(0, 5)}
                         <button onClick={() => removerJanela(j.id)} className="hover:text-rose-600">
                           <Trash2 className="h-3 w-3" />
@@ -183,7 +237,9 @@ export function ProfissionalAgenda() {
       <section className="rounded-3xl bg-white border border-border p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Ban className="h-4 w-4 text-rose-500" />
-          <h3 className="text-sm font-bold text-slate-900">Bloqueios (férias, indisponibilidade)</h3>
+          <h3 className="text-sm font-bold text-slate-900">
+            Bloqueios (férias, indisponibilidade)
+          </h3>
         </div>
 
         <div className="grid sm:grid-cols-4 gap-2 mb-4 items-end">
@@ -197,7 +253,11 @@ export function ProfissionalAgenda() {
           </div>
           <div>
             <Label className="text-xs">Motivo (opcional)</Label>
-            <Input value={bMotivo} onChange={(e) => setBMotivo(e.target.value)} placeholder="Férias, evento…" />
+            <Input
+              value={bMotivo}
+              onChange={(e) => setBMotivo(e.target.value)}
+              placeholder="Férias, evento…"
+            />
           </div>
           <Button onClick={addBloqueio} variant="outline" className="rounded-full">
             <Plus className="h-4 w-4 mr-1" /> Adicionar
@@ -205,19 +265,34 @@ export function ProfissionalAgenda() {
         </div>
 
         {bloqueios.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">Nenhum bloqueio cadastrado.</p>
+          <p className="text-xs text-muted-foreground text-center py-6">
+            Nenhum bloqueio cadastrado.
+          </p>
         ) : (
           <div className="space-y-2">
             {bloqueios.map((b) => (
-              <div key={b.id} className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100">
+              <div
+                key={b.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-100"
+              >
                 <div className="text-xs">
                   <p className="font-bold text-rose-900">
-                    {new Date(b.data_inicio).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} →{" "}
-                    {new Date(b.data_fim).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    {new Date(b.data_inicio).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}{" "}
+                    →{" "}
+                    {new Date(b.data_fim).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
                   </p>
                   {b.motivo && <p className="text-rose-700 mt-0.5">{b.motivo}</p>}
                 </div>
-                <button onClick={() => removerBloqueio(b.id)} className="text-rose-500 hover:text-rose-700">
+                <button
+                  onClick={() => removerBloqueio(b.id)}
+                  className="text-rose-500 hover:text-rose-700"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>

@@ -15,20 +15,68 @@ type SeedUser = {
 };
 
 const USERS: SeedUser[] = [
-  { email: `admin-teste@${TEST_EMAIL_DOMAIN}`, nome: "Admin Teste", whatsapp: "11999990001", role: "admin", adminLevel: "admin" },
-  { email: `pro1@${TEST_EMAIL_DOMAIN}`, nome: "Pedro Profissional", whatsapp: "11999990010", role: "profissional" },
-  { email: `pro2@${TEST_EMAIL_DOMAIN}`, nome: "Paulo Profissional", whatsapp: "11999990011", role: "profissional" },
-  { email: `pro3@${TEST_EMAIL_DOMAIN}`, nome: "Pamela Profissional", whatsapp: "11999990012", role: "profissional" },
-  { email: `cli1@${TEST_EMAIL_DOMAIN}`, nome: "Carla Cliente", whatsapp: "11999990020", role: "cliente" },
-  { email: `cli2@${TEST_EMAIL_DOMAIN}`, nome: "Caio Cliente", whatsapp: "11999990021", role: "cliente" },
-  { email: `cli3@${TEST_EMAIL_DOMAIN}`, nome: "Camila Cliente", whatsapp: "11999990022", role: "cliente" },
-  { email: `cli4@${TEST_EMAIL_DOMAIN}`, nome: "Cesar Cliente", whatsapp: "11999990023", role: "cliente" },
-  { email: `cli5@${TEST_EMAIL_DOMAIN}`, nome: "Cintia Cliente", whatsapp: "11999990024", role: "cliente" },
+  {
+    email: `admin-teste@${TEST_EMAIL_DOMAIN}`,
+    nome: "Admin Teste",
+    whatsapp: "11999990001",
+    role: "admin",
+    adminLevel: "admin",
+  },
+  {
+    email: `pro1@${TEST_EMAIL_DOMAIN}`,
+    nome: "Pedro Profissional",
+    whatsapp: "11999990010",
+    role: "profissional",
+  },
+  {
+    email: `pro2@${TEST_EMAIL_DOMAIN}`,
+    nome: "Paulo Profissional",
+    whatsapp: "11999990011",
+    role: "profissional",
+  },
+  {
+    email: `pro3@${TEST_EMAIL_DOMAIN}`,
+    nome: "Pamela Profissional",
+    whatsapp: "11999990012",
+    role: "profissional",
+  },
+  {
+    email: `cli1@${TEST_EMAIL_DOMAIN}`,
+    nome: "Carla Cliente",
+    whatsapp: "11999990020",
+    role: "cliente",
+  },
+  {
+    email: `cli2@${TEST_EMAIL_DOMAIN}`,
+    nome: "Caio Cliente",
+    whatsapp: "11999990021",
+    role: "cliente",
+  },
+  {
+    email: `cli3@${TEST_EMAIL_DOMAIN}`,
+    nome: "Camila Cliente",
+    whatsapp: "11999990022",
+    role: "cliente",
+  },
+  {
+    email: `cli4@${TEST_EMAIL_DOMAIN}`,
+    nome: "Cesar Cliente",
+    whatsapp: "11999990023",
+    role: "cliente",
+  },
+  {
+    email: `cli5@${TEST_EMAIL_DOMAIN}`,
+    nome: "Cintia Cliente",
+    whatsapp: "11999990024",
+    role: "cliente",
+  },
 ];
 
 Deno.serve(async (req) => {
-  const pf = preflight(req); if (pf) return pf;
-  const originGuard = ensureOrigin(req); if (originGuard) return originGuard;
+  const pf = preflight(req);
+  if (pf) return pf;
+  const originGuard = ensureOrigin(req);
+  if (originGuard) return originGuard;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -44,7 +92,9 @@ Deno.serve(async (req) => {
     const { data: userData } = await userClient.auth.getUser();
     if (!userData.user) return jsonResponse(req, { error: "Não autenticado" }, 401);
     const { data: roles } = await userClient
-      .from("user_roles").select("role, admin_level").eq("user_id", userData.user.id);
+      .from("user_roles")
+      .select("role, admin_level")
+      .eq("user_id", userData.user.id);
     const isSuperAdmin = (roles ?? []).some(
       (r: any) => r.role === "admin" && r.admin_level === "super_admin",
     );
@@ -76,13 +126,19 @@ Deno.serve(async (req) => {
 
       // Upsert profile (handle_new_user trigger may already have created it)
       await admin.from("profiles").upsert({
-        id: userId, nome: u.nome, email: u.email, whatsapp: u.whatsapp, is_test: true,
+        id: userId,
+        nome: u.nome,
+        email: u.email,
+        whatsapp: u.whatsapp,
+        is_test: true,
       });
 
       // Set role
       await admin.from("user_roles").delete().eq("user_id", userId);
       await admin.from("user_roles").insert({
-        user_id: userId, role: u.role, admin_level: u.adminLevel ?? null,
+        user_id: userId,
+        role: u.role,
+        admin_level: u.adminLevel ?? null,
       });
 
       // Profissional: criar perfil
@@ -104,7 +160,11 @@ Deno.serve(async (req) => {
     }
 
     // Pegar serviços do catálogo (qualquer)
-    const { data: services } = await admin.from("services_catalog").select("id, nome").eq("ativo", true).limit(5);
+    const { data: services } = await admin
+      .from("services_catalog")
+      .select("id, nome")
+      .eq("ativo", true)
+      .limit(5);
     const svc = services?.[0];
 
     const clientes = created.filter((c) => c.role === "cliente");
@@ -113,12 +173,16 @@ Deno.serve(async (req) => {
     let pedidosCriados = 0;
     if (svc && clientes.length && profs.length) {
       const statuses = [
-        { status: "customizado_pendente", profissional_id: null as string | null, valor: null as number | null },
-        { status: "enviado",              profissional_id: profs[0].user_id, valor: 250 },
-        { status: "aprovado",             profissional_id: profs[0].user_id, valor: 300 },
-        { status: "agendado",             profissional_id: profs[1].user_id, valor: 350 },
-        { status: "pago",                 profissional_id: profs[1].user_id, valor: 400 },
-        { status: "concluido",            profissional_id: profs[2].user_id, valor: 450 },
+        {
+          status: "customizado_pendente",
+          profissional_id: null as string | null,
+          valor: null as number | null,
+        },
+        { status: "enviado", profissional_id: profs[0].user_id, valor: 250 },
+        { status: "aprovado", profissional_id: profs[0].user_id, valor: 300 },
+        { status: "agendado", profissional_id: profs[1].user_id, valor: 350 },
+        { status: "pago", profissional_id: profs[1].user_id, valor: 400 },
+        { status: "concluido", profissional_id: profs[2].user_id, valor: 450 },
       ];
       for (let i = 0; i < statuses.length; i++) {
         const s = statuses[i];
@@ -134,17 +198,26 @@ Deno.serve(async (req) => {
           valor_servico: s.valor,
           fotos_problema: [],
           is_test: true,
-          data_aprovacao: ["aprovado", "agendado", "pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
-          data_pagamento: ["pago", "concluido"].includes(s.status) ? new Date().toISOString() : null,
-          data_agendada: ["agendado", "pago", "concluido"].includes(s.status) ? new Date(Date.now() + 86400000).toISOString() : null,
+          data_aprovacao: ["aprovado", "agendado", "pago", "concluido"].includes(s.status)
+            ? new Date().toISOString()
+            : null,
+          data_pagamento: ["pago", "concluido"].includes(s.status)
+            ? new Date().toISOString()
+            : null,
+          data_agendada: ["agendado", "pago", "concluido"].includes(s.status)
+            ? new Date(Date.now() + 86400000).toISOString()
+            : null,
         });
         pedidosCriados++;
       }
     }
 
     // 5. Cleanup: Reassign budgets where a pro is mistakenly the client
-    const { data: allProRoles } = await admin.from("user_roles").select("user_id").eq("role", "profissional");
-    const allProIds = (allProRoles || []).map(p => p.user_id);
+    const { data: allProRoles } = await admin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "profissional");
+    const allProIds = (allProRoles || []).map((p) => p.user_id);
     if (allProIds.length > 0 && clientes.length > 0) {
       const targetClientId = clientes[0].user_id;
       const { error: errFix } = await admin

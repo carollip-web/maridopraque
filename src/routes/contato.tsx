@@ -6,9 +6,16 @@ export const Route = createFileRoute("/contato")({
   head: () => ({
     meta: [
       { title: "Contato — WhatsApp, telefone e e-mail | Marido pra Quê?" },
-      { name: "description", content: "Fale com a gente pelo WhatsApp, telefone ou e-mail. Atendimento ágil de segunda a sábado, com plantão 24h para emergências." },
+      {
+        name: "description",
+        content:
+          "Fale com a gente pelo WhatsApp, telefone ou e-mail. Atendimento ágil de segunda a sábado, com plantão 24h para emergências.",
+      },
       { property: "og:title", content: "Fale com a Marido pra Quê?" },
-      { property: "og:description", content: "WhatsApp, telefone e e-mail — escolha o canal que prefere." },
+      {
+        property: "og:description",
+        content: "WhatsApp, telefone e e-mail — escolha o canal que prefere.",
+      },
     ],
   }),
   component: Contato,
@@ -25,7 +32,8 @@ function Contato() {
           Estamos a um clique de distância.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Escolha o canal de sua preferência. Nossa equipe está pronta para te atender com agilidade e educação.
+          Escolha o canal de sua preferência. Nossa equipe está pronta para te atender com agilidade
+          e educação.
         </p>
       </div>
 
@@ -34,14 +42,22 @@ function Contato() {
           <div className="rounded-3xl bg-brand p-10 text-brand-foreground shadow-brand transition hover:scale-[1.01]">
             <MessageCircle className="h-10 w-10 mb-6" />
             <h2 className="text-3xl font-bold">WhatsApp</h2>
-            <p className="mt-2 text-brand-foreground/80">O jeito mais rápido de conseguir seu orçamento gratuito.</p>
-            <Button asChild size="lg" className="mt-8 w-full rounded-full bg-background text-foreground hover:bg-background/90">
+            <p className="mt-2 text-brand-foreground/80">
+              O jeito mais rápido de conseguir seu orçamento gratuito.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="mt-8 w-full rounded-full bg-background text-foreground hover:bg-background/90"
+            >
               <a href={WHATSAPP} target="_blank" rel="noreferrer">
                 Mandar mensagem agora
               </a>
             </Button>
             <p className="mt-6 text-[11px] font-medium leading-relaxed text-brand-foreground/70 text-center italic">
-              * Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+              * Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a
+              disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de
+              uma acompanhante para sua segurança e conforto.
             </p>
           </div>
 
@@ -79,8 +95,10 @@ function Contato() {
             <div>
               <h3 className="text-xl font-bold">Horário de Atendimento</h3>
               <p className="mt-1 text-muted-foreground leading-relaxed">
-                Segunda a Sexta: 08h às 19h<br />
-                Sábado: 08h às 14h<br />
+                Segunda a Sexta: 08h às 19h
+                <br />
+                Sábado: 08h às 14h
+                <br />
                 Plantão para emergências 24h via WhatsApp.
               </p>
             </div>
@@ -96,10 +114,16 @@ function Contato() {
                 Siga-nos para ver fotos de nossos serviços e dicas de manutenção residencial.
               </p>
               <div className="mt-4 flex gap-4">
-                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground">
+                <a
+                  href="#"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground"
+                >
                   <Instagram className="h-5 w-5" />
                 </a>
-                <a href="#" className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground">
+                <a
+                  href="#"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground"
+                >
                   <Facebook className="h-5 w-5" />
                 </a>
               </div>

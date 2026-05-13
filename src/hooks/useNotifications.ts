@@ -45,12 +45,19 @@ function showBrowserNotification(title: string, body: string, link?: string) {
   }
 }
 
-function normalizeNotificationLink(link?: string | null, orcamentoId?: string | null, title?: string | null) {
+function normalizeNotificationLink(
+  link?: string | null,
+  orcamentoId?: string | null,
+  title?: string | null,
+) {
   const isMessage = (title ?? "").toLowerCase().includes("mensagem");
   if (orcamentoId && link?.startsWith("/profissional")) {
     // "aprovado" and "pago" orders live in the "servicos" tab; everything else in "orcamentos"
     const titleLower = (title ?? "").toLowerCase();
-    const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
+    const isServicos =
+      titleLower.includes("aprovado") ||
+      titleLower.includes("pago") ||
+      titleLower.includes("conclu");
     const profTab = isServicos ? "servicos" : "orcamentos";
     return `/profissional?tab=${profTab}&orcamentoId=${orcamentoId}${isMessage ? "&chat=1" : ""}`;
   }
@@ -109,7 +116,11 @@ export function useNotifications() {
       const instanceId = Math.random().toString(36).slice(2, 8);
       channel = supabase
         .channel("notif-" + userId + "-" + instanceId)
-        .on("postgres_changes", { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${userId}` }, () => fetchAll())
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${userId}` },
+          () => fetchAll(),
+        )
         .subscribe();
     });
 
@@ -130,7 +141,10 @@ export function useNotifications() {
 
   const requestBrowserPermission = async (): Promise<NotificationPermission> => {
     if (typeof window === "undefined" || !("Notification" in window)) return "denied";
-    if (window.Notification.permission === "granted" || window.Notification.permission === "denied") {
+    if (
+      window.Notification.permission === "granted" ||
+      window.Notification.permission === "denied"
+    ) {
       return window.Notification.permission;
     }
     return await window.Notification.requestPermission();

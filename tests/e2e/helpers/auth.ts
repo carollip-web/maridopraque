@@ -19,7 +19,9 @@ export async function login(page: Page, email: string, password = TEST_PASSWORD)
 
 export async function logout(page: Page) {
   await page.evaluate(() => {
-    Object.keys(localStorage).filter((k) => k.startsWith("sb-")).forEach((k) => localStorage.removeItem(k));
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("sb-"))
+      .forEach((k) => localStorage.removeItem(k));
   });
   await page.context().clearCookies();
 }

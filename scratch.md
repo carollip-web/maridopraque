@@ -1,4 +1,5 @@
 Plan for materials in profissional.tsx:
+
 1. `const [materiaisCat, setMateriaisCat] = useState<any[]>([]);`
 2. `refresh()` fetches `materiais`:
    `const { data: matsData } = await supabase.from('materiais').select('id, nome, unidade, preco_atual').eq('ativo', true);`

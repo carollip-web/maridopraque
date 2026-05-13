@@ -18,18 +18,28 @@ export type AdminSection =
 
 // Permission matrix per admin level
 const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
-  super_admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "financeiro", "config", "equipe", "modo_teste"],
-  admin:       ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
-  financeiro:  ["dashboard", "financeiro"],
-  suporte:     ["pedidos", "clientes"],
+  super_admin: [
+    "dashboard",
+    "pedidos",
+    "profissionais",
+    "clientes",
+    "servicos",
+    "financeiro",
+    "config",
+    "equipe",
+    "modo_teste",
+  ],
+  admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
+  financeiro: ["dashboard", "financeiro"],
+  suporte: ["pedidos", "clientes"],
 };
 
 // Sections where a level has read-only access (no mutations)
 export const READ_ONLY_SECTIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
   super_admin: [],
-  admin:       [],
-  financeiro:  ["dashboard"],
-  suporte:     ["pedidos", "clientes"],
+  admin: [],
+  financeiro: ["dashboard"],
+  suporte: ["pedidos", "clientes"],
 };
 
 interface UserProfile {
@@ -87,7 +97,9 @@ export function useAuth() {
       }));
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
       setState((s) => ({
         ...s,
         session,
@@ -156,7 +168,9 @@ export function useAuth() {
       email: state.profile?.email ?? state.user?.email ?? "",
     },
     login: () => {},
-    logout: async () => { await supabase.auth.signOut(); },
+    logout: async () => {
+      await supabase.auth.signOut();
+    },
     updatePhoto: (_: string) => {},
     updateUserData: (_: any) => {},
   };

@@ -26,15 +26,25 @@ export function ProfileCompletenessCard() {
         { key: "whatsapp", label: "WhatsApp profissional", done: !!profile?.whatsapp?.trim() },
         { key: "foto", label: "Foto de perfil", done: !!perfil?.foto_url },
         { key: "bio", label: "Bio / sobre você", done: !!perfil?.bio?.trim() },
-        { key: "cidade", label: "Cidade de atendimento", done: !!perfil?.cidade?.trim() && perfil?.lat != null },
-        { key: "raio", label: "Raio de atendimento", done: !!perfil?.raio_atendimento_km && perfil.raio_atendimento_km > 0 },
+        {
+          key: "cidade",
+          label: "Cidade de atendimento",
+          done: !!perfil?.cidade?.trim() && perfil?.lat != null,
+        },
+        {
+          key: "raio",
+          label: "Raio de atendimento",
+          done: !!perfil?.raio_atendimento_km && perfil.raio_atendimento_km > 0,
+        },
         { key: "esp", label: "Especialidades", done: (perfil?.especialidades?.length ?? 0) > 0 },
       ];
       setItems(list);
       setLoaded(true);
     };
     load();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [user?.id, profile?.nome, profile?.whatsapp]);
 
   if (!loaded || items.length === 0) return null;
@@ -48,10 +58,14 @@ export function ProfileCompletenessCard() {
   const isUrgent = pct < 50;
 
   return (
-    <section className={`rounded-3xl border p-6 shadow-sm ${isUrgent ? "bg-amber-50 border-amber-200" : "bg-white border-border"}`}>
+    <section
+      className={`rounded-3xl border p-6 shadow-sm ${isUrgent ? "bg-amber-50 border-amber-200" : "bg-white border-border"}`}
+    >
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className={`h-12 w-12 rounded-full grid place-items-center ${isUrgent ? "bg-amber-100 text-amber-700" : "bg-brand/10 text-brand"}`}>
+          <div
+            className={`h-12 w-12 rounded-full grid place-items-center ${isUrgent ? "bg-amber-100 text-amber-700" : "bg-brand/10 text-brand"}`}
+          >
             <Sparkles className="h-6 w-6" />
           </div>
           <div>
@@ -87,7 +101,11 @@ export function ProfileCompletenessCard() {
             ) : (
               <Circle className="h-3.5 w-3.5 text-slate-300 shrink-0" />
             )}
-            <span className={i.done ? "text-muted-foreground line-through" : "text-slate-700 font-medium"}>
+            <span
+              className={
+                i.done ? "text-muted-foreground line-through" : "text-slate-700 font-medium"
+              }
+            >
               {i.label}
             </span>
           </li>

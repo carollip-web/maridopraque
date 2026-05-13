@@ -1,6 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Wrench, CheckSquare, Square, Loader2 } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Wrench,
+  CheckSquare,
+  Square,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -32,7 +42,11 @@ function LoginPage() {
     setError(null);
     setInfo(null);
 
-    const parsed = authSchema.safeParse({ nome: isRegistering ? nome : undefined, email, password });
+    const parsed = authSchema.safeParse({
+      nome: isRegistering ? nome : undefined,
+      email,
+      password,
+    });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
@@ -52,7 +66,10 @@ function LoginPage() {
         if (signupError) throw signupError;
         setInfo("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
       } else {
-        const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (loginError) throw loginError;
         // Redireciona conforme o papel do usuário
         const userId = data.user?.id;
@@ -110,7 +127,9 @@ function LoginPage() {
           <form className="space-y-5" onSubmit={handleAuth}>
             {isRegistering && (
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Nome Completo</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  Nome Completo
+                </label>
                 <input
                   type="text"
                   value={nome}
@@ -122,7 +141,9 @@ function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">E-mail</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                E-mail
+              </label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -136,7 +157,9 @@ function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Senha</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                Senha
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -146,22 +169,35 @@ function LoginPage() {
                   placeholder="••••••••"
                   className="w-full h-12 pl-11 pr-12 rounded-2xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20 transition"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <button type="button" onClick={() => setKeepLoggedIn(!keepLoggedIn)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground ml-1">
-                {keepLoggedIn ? <CheckSquare className="h-4 w-4 text-brand" /> : <Square className="h-4 w-4" />}
+              <button
+                type="button"
+                onClick={() => setKeepLoggedIn(!keepLoggedIn)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground ml-1"
+              >
+                {keepLoggedIn ? (
+                  <CheckSquare className="h-4 w-4 text-brand" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
                 Manter conectado
               </button>
               {!isRegistering && (
                 <button
                   type="button"
                   onClick={async () => {
-                    setError(null); setInfo(null);
+                    setError(null);
+                    setInfo(null);
                     if (!email) return setError("Digite seu e-mail acima primeiro.");
                     const { error } = await supabase.auth.resetPasswordForEmail(email, {
                       redirectTo: `${window.location.origin}/reset-password`,
@@ -179,8 +215,19 @@ function LoginPage() {
             {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
             {info && <p className="text-sm text-green-700 font-medium">{info}</p>}
 
-            <Button type="submit" disabled={loading} size="lg" className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg mt-2">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : isRegistering ? "Criar Minha Conta" : "Entrar Agora"}
+            <Button
+              type="submit"
+              disabled={loading}
+              size="lg"
+              className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg mt-2"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isRegistering ? (
+                "Criar Minha Conta"
+              ) : (
+                "Entrar Agora"
+              )}
             </Button>
           </form>
 
@@ -193,14 +240,20 @@ function LoginPage() {
             </div>
           </div>
 
-          <button onClick={handleGoogle} className="w-full flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-white hover:bg-muted transition-colors font-medium text-sm">
+          <button
+            onClick={handleGoogle}
+            className="w-full flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-white hover:bg-muted transition-colors font-medium text-sm"
+          >
             Continuar com Google
           </button>
         </div>
 
         <p className="text-center mt-8 text-sm text-muted-foreground">
           {isRegistering ? "Já tem uma conta?" : "Ainda não tem conta?"}{" "}
-          <button onClick={() => setIsRegistering(!isRegistering)} className="font-bold text-brand hover:underline">
+          <button
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="font-bold text-brand hover:underline"
+          >
             {isRegistering ? "Faça login" : "Cadastre-se grátis"}
           </button>
         </p>

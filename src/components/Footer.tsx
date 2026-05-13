@@ -16,11 +16,21 @@ export function Footer() {
           </div>
 
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] font-medium text-foreground">
-            <Link to="/servicos" className="transition hover:text-brand">Serviços</Link>
-            <Link to="/profissionais" className="transition hover:text-brand">Equipe</Link>
-            <Link to="/pagamento" className="transition hover:text-brand">Pagamento</Link>
-            <Link to="/ajuda" className="transition hover:text-brand">Ajuda</Link>
-            <Link to="/contato" className="transition hover:text-brand">Contato</Link>
+            <Link to="/servicos" className="transition hover:text-brand">
+              Serviços
+            </Link>
+            <Link to="/profissionais" className="transition hover:text-brand">
+              Equipe
+            </Link>
+            <Link to="/pagamento" className="transition hover:text-brand">
+              Pagamento
+            </Link>
+            <Link to="/ajuda" className="transition hover:text-brand">
+              Ajuda
+            </Link>
+            <Link to="/contato" className="transition hover:text-brand">
+              Contato
+            </Link>
           </nav>
 
           <p className="text-[11px]">© {new Date().getFullYear()} — Marido pra Quê?</p>

@@ -8,7 +8,11 @@ export const Route = createFileRoute("/profissionais/perfil/$slug")({
   head: ({ params }) => ({
     meta: [
       { title: `Profissional ${params.slug} — Marido pra Quê?` },
-      { name: "description", content: "Perfil verificado de profissional Marido pra Quê?: avaliações, especialidades e contato." },
+      {
+        name: "description",
+        content:
+          "Perfil verificado de profissional Marido pra Quê?: avaliações, especialidades e contato.",
+      },
       { property: "og:title", content: `Profissional verificado — Marido pra Quê?` },
       { property: "og:description", content: "Veja avaliações reais e solicite um orçamento." },
     ],
@@ -70,14 +74,20 @@ function PerfilProfissional() {
   }, [slug]);
 
   if (loading) {
-    return <div className="mx-auto max-w-4xl px-4 py-24 text-center text-muted-foreground">Carregando perfil…</div>;
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-24 text-center text-muted-foreground">
+        Carregando perfil…
+      </div>
+    );
   }
 
   if (!perfil) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-24 text-center">
         <h1 className="text-3xl font-bold">Perfil não encontrado</h1>
-        <p className="mt-3 text-muted-foreground">Esse profissional pode ter saído da plataforma.</p>
+        <p className="mt-3 text-muted-foreground">
+          Esse profissional pode ter saído da plataforma.
+        </p>
         <Button asChild className="mt-8 rounded-full bg-brand text-brand-foreground px-8 h-12">
           <Link to="/profissionais">Ver todos os tipos de atendimento</Link>
         </Button>
@@ -92,7 +102,10 @@ function PerfilProfissional() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16">
-      <Link to="/profissionais" className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand mb-8">
+      <Link
+        to="/profissionais"
+        className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand mb-8"
+      >
         <ArrowLeft className="h-4 w-4" /> Todos os profissionais
       </Link>
 
@@ -119,11 +132,16 @@ function PerfilProfissional() {
               <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-100 px-4 py-1.5">
                 <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 <span className="text-sm font-bold">{media}</span>
-                <span className="text-xs text-muted-foreground">({avaliacoes.length} avaliações)</span>
+                <span className="text-xs text-muted-foreground">
+                  ({avaliacoes.length} avaliações)
+                </span>
               </div>
             )}
           </div>
-          <Button asChild className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold">
+          <Button
+            asChild
+            className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold"
+          >
             <Link to="/servicos">Pedir orçamento</Link>
           </Button>
         </div>
@@ -135,7 +153,10 @@ function PerfilProfissional() {
         {perfil.especialidades && perfil.especialidades.length > 0 && (
           <div className="mt-8 flex flex-wrap gap-2">
             {perfil.especialidades.map((e) => (
-              <span key={e} className="rounded-full bg-muted px-4 py-1.5 text-xs font-bold uppercase tracking-wider">
+              <span
+                key={e}
+                className="rounded-full bg-muted px-4 py-1.5 text-xs font-bold uppercase tracking-wider"
+              >
                 {e}
               </span>
             ))}
@@ -171,7 +192,9 @@ function PerfilProfissional() {
                     <p className="text-[10px] uppercase tracking-widest text-brand font-bold mb-1">
                       Resposta de {nome}
                     </p>
-                    <p className="text-sm text-foreground/90 leading-relaxed">{a.resposta_profissional}</p>
+                    <p className="text-sm text-foreground/90 leading-relaxed">
+                      {a.resposta_profissional}
+                    </p>
                     {a.resposta_em && (
                       <p className="mt-1 text-[10px] text-muted-foreground">
                         {new Date(a.resposta_em).toLocaleDateString("pt-BR")}

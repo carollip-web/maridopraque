@@ -54,7 +54,12 @@ export function ProfissionalConfiguracoes() {
     enabled: !!user,
   });
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       nome: profile?.nome ?? "",
@@ -66,7 +71,7 @@ export function ProfissionalConfiguracoes() {
       raio_atendimento_km: 0,
       atende_emergencias: false,
       veiculo_proprio: false,
-    }
+    },
   });
 
   useEffect(() => {
@@ -88,10 +93,13 @@ export function ProfissionalConfiguracoes() {
   const handleSaveProfile = async (values: ProfileValues) => {
     if (!user) return;
     setSaving(true);
-    
+
     // Update profiles table
-    const p1 = supabase.from("profiles").update({ nome: values.nome, whatsapp: values.whatsapp }).eq("id", user.id);
-    
+    const p1 = supabase
+      .from("profiles")
+      .update({ nome: values.nome, whatsapp: values.whatsapp })
+      .eq("id", user.id);
+
     // Geocodifica a cidade (best-effort) para habilitar filtro por raio
     let geo: { lat: number; lng: number } | null = null;
     if (values.cidade?.trim()) {
@@ -100,27 +108,30 @@ export function ProfissionalConfiguracoes() {
     }
 
     // Update profissional_perfil table
-    const p2 = supabase.from("profissional_perfil").update({ 
-      bio: values.bio, 
-      cidade: values.cidade,
-      chave_pix: values.chave_pix,
-      anos_experiencia: values.anos_experiencia,
-      raio_atendimento_km: values.raio_atendimento_km,
-      atende_emergencias: values.atende_emergencias,
-      veiculo_proprio: values.veiculo_proprio,
-      lat: geo?.lat ?? null,
-      lng: geo?.lng ?? null,
-    } as any).eq("user_id", user.id);
-    
+    const p2 = supabase
+      .from("profissional_perfil")
+      .update({
+        bio: values.bio,
+        cidade: values.cidade,
+        chave_pix: values.chave_pix,
+        anos_experiencia: values.anos_experiencia,
+        raio_atendimento_km: values.raio_atendimento_km,
+        atende_emergencias: values.atende_emergencias,
+        veiculo_proprio: values.veiculo_proprio,
+        lat: geo?.lat ?? null,
+        lng: geo?.lng ?? null,
+      } as any)
+      .eq("user_id", user.id);
+
     const [res1, res2] = await Promise.all([p1, p2]);
-    
+
     setSaving(false);
-    
+
     if (res1.error || res2.error) {
       toast.error("Erro ao salvar", { description: res1.error?.message || res2.error?.message });
       return;
     }
-    
+
     toast.success("Perfil atualizado com sucesso!");
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2500);
@@ -149,10 +160,23 @@ export function ProfissionalConfiguracoes() {
       {/* Sidebar Info */}
       <div className="space-y-6">
         <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm text-center">
-          <div className="relative mx-auto w-24 h-24 mb-6 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <input type="file" className="hidden" accept="image/*" ref={fileInputRef} onChange={handleFileChange} />
+          <div
+            className="relative mx-auto w-24 h-24 mb-6 group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+            />
             {profilePhoto ? (
-              <img src={profilePhoto} alt="Profile" className="w-full h-full rounded-full object-cover border-2 border-brand/20" />
+              <img
+                src={profilePhoto}
+                alt="Profile"
+                className="w-full h-full rounded-full object-cover border-2 border-brand/20"
+              />
             ) : (
               <div className="w-full h-full rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center text-brand text-3xl font-bold">
                 {(profile?.nome?.[0] || profile?.email?.[0] || "?").toUpperCase()}
@@ -170,7 +194,11 @@ export function ProfissionalConfiguracoes() {
           <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
           </h4>
-          <Button variant="outline" className="w-full rounded-xl text-xs font-bold py-6" onClick={handleResetPassword}>
+          <Button
+            variant="outline"
+            className="w-full rounded-xl text-xs font-bold py-6"
+            onClick={handleResetPassword}
+          >
             Redefinir Senha
           </Button>
           <p className="text-[11px] text-muted-foreground mt-3 text-center">
@@ -189,29 +217,42 @@ export function ProfissionalConfiguracoes() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(handleSaveProfile)} className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+          <form
+            onSubmit={handleSubmit(handleSaveProfile)}
+            className="grid gap-x-8 gap-y-6 sm:grid-cols-2"
+          >
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Nome de Exibição</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Nome de Exibição
+              </label>
               <input
                 {...register("nome")}
                 className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.nome ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="Como os clientes te chamam"
               />
-              {errors.nome && <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>}
+              {errors.nome && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">WhatsApp Profissional</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                WhatsApp Profissional
+              </label>
               <input
                 {...register("whatsapp")}
                 className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.whatsapp ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="(00) 00000-0000"
               />
-              {errors.whatsapp && <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>}
+              {errors.whatsapp && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>
+              )}
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Bio / Sobre você</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Bio / Sobre você
+              </label>
               <textarea
                 {...register("bio")}
                 className="w-full text-sm font-medium p-3 rounded-xl border border-border focus:outline-none transition-colors bg-transparent focus:border-brand resize-none"
@@ -221,7 +262,9 @@ export function ProfissionalConfiguracoes() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Cidade de Atendimento</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Cidade de Atendimento
+              </label>
               <input
                 {...register("cidade")}
                 className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
@@ -230,7 +273,9 @@ export function ProfissionalConfiguracoes() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Chave PIX (Para Repasses)</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Chave PIX (Para Repasses)
+              </label>
               <input
                 {...register("chave_pix")}
                 className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
@@ -239,7 +284,9 @@ export function ProfissionalConfiguracoes() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Anos de Experiência</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Anos de Experiência
+              </label>
               <input
                 type="number"
                 {...register("anos_experiencia")}
@@ -250,7 +297,9 @@ export function ProfissionalConfiguracoes() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Raio de Atendimento (KM)</label>
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Raio de Atendimento (KM)
+              </label>
               <input
                 type="number"
                 {...register("raio_atendimento_km")}
@@ -265,21 +314,37 @@ export function ProfissionalConfiguracoes() {
               <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
                 <div>
                   <p className="text-sm font-bold text-slate-800">Atendimento 24h / Urgência</p>
-                  <p className="text-xs text-muted-foreground">Aceita chamados de madrugada e finais de semana.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aceita chamados de madrugada e finais de semana.
+                  </p>
                 </div>
-                <input type="checkbox" {...register("atende_emergencias")} className="h-5 w-5 accent-brand cursor-pointer" />
+                <input
+                  type="checkbox"
+                  {...register("atende_emergencias")}
+                  className="h-5 w-5 accent-brand cursor-pointer"
+                />
               </div>
               <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
                 <div>
                   <p className="text-sm font-bold text-slate-800">Veículo Próprio</p>
-                  <p className="text-xs text-muted-foreground">Utilizado para carregar materiais volumosos.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Utilizado para carregar materiais volumosos.
+                  </p>
                 </div>
-                <input type="checkbox" {...register("veiculo_proprio")} className="h-5 w-5 accent-brand cursor-pointer" />
+                <input
+                  type="checkbox"
+                  {...register("veiculo_proprio")}
+                  className="h-5 w-5 accent-brand cursor-pointer"
+                />
               </div>
             </div>
 
             <div className="sm:col-span-2 mt-4 flex justify-end">
-              <Button type="submit" disabled={saving} className="bg-brand text-white rounded-full px-8 font-bold">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-brand text-white rounded-full px-8 font-bold"
+              >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {showSuccess ? "Salvo!" : "Salvar Perfil"}
               </Button>
@@ -293,11 +358,14 @@ export function ProfissionalConfiguracoes() {
             <User className="h-5 w-5 text-brand" />
             <h3 className="font-bold text-lg">Especialidades (Serviços)</h3>
           </div>
-          
+
           {profissionalPerfil?.especialidades && profissionalPerfil.especialidades.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profissionalPerfil.especialidades.map((esp: string) => (
-                <span key={esp} className="px-3 py-1.5 bg-brand-soft text-brand-foreground text-xs font-bold rounded-full">
+                <span
+                  key={esp}
+                  className="px-3 py-1.5 bg-brand-soft text-brand-foreground text-xs font-bold rounded-full"
+                >
                   {esp}
                 </span>
               ))}
@@ -309,7 +377,9 @@ export function ProfissionalConfiguracoes() {
           <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
             <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
-              As especialidades definem quais pedidos de orçamento você recebe. Para adicionar ou remover especialidades, <strong>entre em contato com o suporte ou administrador</strong> da plataforma.
+              As especialidades definem quais pedidos de orçamento você recebe. Para adicionar ou
+              remover especialidades,{" "}
+              <strong>entre em contato com o suporte ou administrador</strong> da plataforma.
             </p>
           </div>
         </section>

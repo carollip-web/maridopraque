@@ -3,9 +3,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const BRL = (n: number | null | undefined) =>
-  `R$ ${Number(n ?? 0).toFixed(2).replace(".", ",")}`;
-const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleString("pt-BR") : "—";
+  `R$ ${Number(n ?? 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
+const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleString("pt-BR") : "—");
 
 const STATUS_LABEL: Record<string, string> = {
   customizado_pendente: "Aguardando profissional",
@@ -31,7 +32,11 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
   const [{ data: cliente }, profRes, { data: materiais }] = await Promise.all([
     supabase.from("profiles").select("nome,email,whatsapp").eq("id", orc.cliente_id).maybeSingle(),
     orc.profissional_id
-      ? supabase.from("profiles").select("nome,email,whatsapp").eq("id", orc.profissional_id).maybeSingle()
+      ? supabase
+          .from("profiles")
+          .select("nome,email,whatsapp")
+          .eq("id", orc.profissional_id)
+          .maybeSingle()
       : Promise.resolve({ data: null } as any),
     supabase
       .from("orcamento_materiais")
@@ -56,7 +61,9 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
   doc.setFont("helvetica", "normal");
   doc.text("Orçamento de serviço", margin, 52);
   doc.setFontSize(9);
-  doc.text(`Emitido em ${new Date().toLocaleString("pt-BR")}`, pageW - margin, 52, { align: "right" });
+  doc.text(`Emitido em ${new Date().toLocaleString("pt-BR")}`, pageW - margin, 52, {
+    align: "right",
+  });
 
   y = 100;
   doc.setTextColor(20, 20, 20);
@@ -85,11 +92,9 @@ export async function gerarPdfOrcamento(orcamentoId: string) {
   y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const clienteLines = [
-    cliente?.nome || "—",
-    cliente?.email || "",
-    cliente?.whatsapp || "",
-  ].filter(Boolean);
+  const clienteLines = [cliente?.nome || "—", cliente?.email || "", cliente?.whatsapp || ""].filter(
+    Boolean,
+  );
   clienteLines.forEach((l, i) => doc.text(l, margin, y + i * 13));
   if (profissional) {
     const profLines = [

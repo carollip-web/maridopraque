@@ -31,7 +31,8 @@ export const Route = createFileRoute("/para-profissionais")({
       { property: "og:title", content: "Trabalhe com a gente — Marido pra Quê?" },
       {
         property: "og:description",
-        content: "Mais clientes, menos esforço. Cadastre-se e comece a receber chamados na sua região.",
+        content:
+          "Mais clientes, menos esforço. Cadastre-se e comece a receber chamados na sua região.",
       },
     ],
   }),
@@ -59,20 +60,21 @@ function ParaProfissionaisPage() {
       inicioMes.setDate(1);
       inicioMes.setHours(0, 0, 0, 0);
 
-      const [{ data: pend }, { data: pagos }, { data: perfil }, { data: avals }] = await Promise.all([
-        supabase
-          .from("orcamentos")
-          .select("id", { count: "exact", head: false })
-          .is("profissional_id", null)
-          .eq("status", "customizado_pendente"),
-        supabase
-          .from("orcamentos")
-          .select("valor_servico, data_pagamento")
-          .eq("profissional_id", uid)
-          .gte("data_pagamento", inicioMes.toISOString()),
-        supabase.from("profissional_perfil").select("ativo").eq("user_id", uid).maybeSingle(),
-        supabase.from("avaliacoes").select("nota").eq("profissional_id", uid),
-      ]);
+      const [{ data: pend }, { data: pagos }, { data: perfil }, { data: avals }] =
+        await Promise.all([
+          supabase
+            .from("orcamentos")
+            .select("id", { count: "exact", head: false })
+            .is("profissional_id", null)
+            .eq("status", "customizado_pendente"),
+          supabase
+            .from("orcamentos")
+            .select("valor_servico, data_pagamento")
+            .eq("profissional_id", uid)
+            .gte("data_pagamento", inicioMes.toISOString()),
+          supabase.from("profissional_perfil").select("ativo").eq("user_id", uid).maybeSingle(),
+          supabase.from("avaliacoes").select("nota").eq("profissional_id", uid),
+        ]);
 
       const ganhos = (pagos ?? []).reduce((s, o: any) => s + Number(o.valor_servico ?? 0), 0);
       const notas = (avals ?? []).map((a: any) => Number(a.nota)).filter((n) => !isNaN(n));
@@ -101,24 +103,38 @@ function ParaProfissionaisPage() {
               Mais chamados, menos prospecção.
             </h1>
             <p className="mt-5 text-base leading-relaxed text-white/80 md:text-lg">
-              Receba pedidos qualificados na sua região, gerencie sua agenda e o pagamento cai direto na sua conta.
-              Sem mensalidade — você só paga uma comissão por serviço concluído.
+              Receba pedidos qualificados na sua região, gerencie sua agenda e o pagamento cai
+              direto na sua conta. Sem mensalidade — você só paga uma comissão por serviço
+              concluído.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {isProfissional ? (
-                <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8">
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8"
+                >
                   <Link to="/profissional">
                     Abrir meu painel <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8"
+                  >
                     <Link to="/profissional-cadastro">
                       Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="rounded-full border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white h-12 px-8">
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white h-12 px-8"
+                  >
                     <Link to="/login/profissional">Já sou profissional</Link>
                   </Button>
                 </>
@@ -154,7 +170,10 @@ function ParaProfissionaisPage() {
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">Atalhos rápidos do seu painel</p>
               </div>
-              <Link to="/profissional" className="text-sm font-bold text-brand hover:underline inline-flex items-center gap-1">
+              <Link
+                to="/profissional"
+                className="text-sm font-bold text-brand hover:underline inline-flex items-center gap-1"
+              >
                 Ver painel completo <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
@@ -194,7 +213,9 @@ function ParaProfissionaisPage() {
       <section className="border-b border-border">
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Por que entrar</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+              Por que entrar
+            </span>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
               Tudo o que você precisa para crescer.
             </h2>
@@ -274,15 +295,29 @@ function ParaProfissionaisPage() {
       <section className="border-b border-border">
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Como funciona</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+              Como funciona
+            </span>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
               Comece em 3 passos.
             </h2>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <Step n="1" title="Cadastre-se" desc="Crie sua conta de profissional, envie seus documentos e defina suas especialidades." />
-            <Step n="2" title="Receba chamados" desc="Notificações em tempo real com todos os detalhes do serviço e endereço aproximado." />
-            <Step n="3" title="Trabalhe e receba" desc="Conclua o serviço, o cliente aprova e o dinheiro cai na sua conta em 48h." />
+            <Step
+              n="1"
+              title="Cadastre-se"
+              desc="Crie sua conta de profissional, envie seus documentos e defina suas especialidades."
+            />
+            <Step
+              n="2"
+              title="Receba chamados"
+              desc="Notificações em tempo real com todos os detalhes do serviço e endereço aproximado."
+            />
+            <Step
+              n="3"
+              title="Trabalhe e receba"
+              desc="Conclua o serviço, o cliente aprova e o dinheiro cai na sua conta em 48h."
+            />
           </div>
         </div>
       </section>
@@ -299,13 +334,21 @@ function ParaProfissionaisPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3 justify-center">
             {isProfissional ? (
-              <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
+              >
                 <Link to="/profissional">
                   Ir para meu painel <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             ) : (
-              <Button asChild size="lg" className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
+              >
                 <Link to="/login/profissional">
                   Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -335,8 +378,8 @@ function ShortcutCard({
     tone === "success"
       ? "text-emerald-600"
       : tone === "warning"
-      ? "text-amber-600"
-      : "text-foreground";
+        ? "text-amber-600"
+        : "text-foreground";
   return (
     <Link
       to={to}
@@ -353,14 +396,26 @@ function ShortcutCard({
 function Benefit({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="rounded-2xl border border-border bg-white p-6">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">{icon}</div>
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
+        {icon}
+      </div>
       <h3 className="mt-4 font-semibold text-lg">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{desc}</p>
     </div>
   );
 }
 
-function Aviso({ tag, titulo, desc, data }: { tag: string; titulo: string; desc: string; data: string }) {
+function Aviso({
+  tag,
+  titulo,
+  desc,
+  data,
+}: {
+  tag: string;
+  titulo: string;
+  desc: string;
+  data: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-white p-5">
       <div className="flex items-center justify-between">

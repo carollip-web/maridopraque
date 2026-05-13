@@ -1,7 +1,16 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
-  Hammer, Wrench, Scale, ArrowRight, CheckCircle2, Search, X,
-  Clock, ListChecks, Info, ChevronDown,
+  Hammer,
+  Wrench,
+  Scale,
+  ArrowRight,
+  CheckCircle2,
+  Search,
+  X,
+  Clock,
+  ListChecks,
+  Info,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,7 +137,10 @@ export const Route = createFileRoute("/servicos/$categoria")({
       "@type": "FAQPage",
       mainEntity: cat.observacoesPadrao.map((q, i) => ({
         "@type": "Question",
-        name: i === 0 ? `O que preciso saber antes do serviço de ${cat.nome}?` : `Mais detalhes sobre ${cat.nome}`,
+        name:
+          i === 0
+            ? `O que preciso saber antes do serviço de ${cat.nome}?`
+            : `Mais detalhes sobre ${cat.nome}`,
         acceptedAnswer: { "@type": "Answer", text: q },
       })),
     };
@@ -149,9 +161,7 @@ export const Route = createFileRoute("/servicos/$categoria")({
   notFoundComponent: () => (
     <div className="mx-auto max-w-3xl px-4 py-24 text-center">
       <h1 className="text-3xl font-bold">Categoria não encontrada</h1>
-      <p className="mt-4 text-muted-foreground">
-        A categoria que você buscou não existe.
-      </p>
+      <p className="mt-4 text-muted-foreground">A categoria que você buscou não existe.</p>
       <Button asChild className="mt-8 rounded-full" variant="brand">
         <Link to="/servicos">Ver todos os serviços</Link>
       </Button>
@@ -218,10 +228,17 @@ function CategoriaPage() {
 
   const filtered = useMemo(() => {
     const list = servicos ?? [];
-    const term = query.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const term = query
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
     if (!term) return list;
     return list.filter((s) => {
-      const hay = `${s.nome} ${s.descricao ?? ""}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const hay = `${s.nome} ${s.descricao ?? ""}`
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
       return term.split(/\s+/).every((t: string) => hay.includes(t));
     });
   }, [servicos, query]);
@@ -265,9 +282,7 @@ function CategoriaPage() {
       <section className="mt-16">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Serviços nesta categoria
-            </h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Serviços nesta categoria</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Preços tabelados. Toque em um serviço para ver a estimativa completa.
             </p>
@@ -307,7 +322,9 @@ function CategoriaPage() {
               const max = s.preco_max != null ? Number(s.preco_max) : null;
               const priceLabel =
                 min != null && max != null
-                  ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+                  ? min === max
+                    ? brl(min)
+                    : `${brl(min)} – ${brl(max)}`
                   : "Sob consulta";
               const tempo = estimarTempo(min, max);
               const itens = itensTipicosFor(s.id);
@@ -322,7 +339,9 @@ function CategoriaPage() {
                   <div>
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="text-lg font-semibold">{s.nome}</h3>
-                      <span className="text-sm font-bold text-brand whitespace-nowrap">{priceLabel}</span>
+                      <span className="text-sm font-bold text-brand whitespace-nowrap">
+                        {priceLabel}
+                      </span>
                     </div>
                     {s.descricao && (
                       <p className="mt-2 text-sm text-muted-foreground">{s.descricao}</p>
@@ -336,7 +355,9 @@ function CategoriaPage() {
                     aria-expanded={isOpen}
                   >
                     {isOpen ? "Ocultar estimativa" : "Ver estimativa completa"}
-                    <ChevronDown className={`h-3.5 w-3.5 transition ${isOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition ${isOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
 
                   {isOpen && (
@@ -364,7 +385,9 @@ function CategoriaPage() {
                             {itens.slice(0, 5).map((it) => (
                               <li key={it.nome} className="truncate">
                                 • {it.nome}
-                                {it.qtd > 1 ? ` (${it.qtd}${it.unidade !== "un" ? ` ${it.unidade}` : ""})` : ""}
+                                {it.qtd > 1
+                                  ? ` (${it.qtd}${it.unidade !== "un" ? ` ${it.unidade}` : ""})`
+                                  : ""}
                               </li>
                             ))}
                             {itens.length > 5 && (
@@ -372,7 +395,9 @@ function CategoriaPage() {
                             )}
                           </ul>
                         ) : (
-                          <p className="mt-1 text-xs text-muted-foreground">Nenhum material obrigatório.</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Nenhum material obrigatório.
+                          </p>
                         )}
                       </div>
                       {cat.observacoesPadrao.length > 0 && (
@@ -398,7 +423,9 @@ function CategoriaPage() {
                   >
                     <Link
                       to="/orcamentos"
-                      search={{ new: 1, serviceId: s.id, categoria: cat.nome, serviceName: s.nome } as any}
+                      search={
+                        { new: 1, serviceId: s.id, categoria: cat.nome, serviceName: s.nome } as any
+                      }
                     >
                       Pedir orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Link>
@@ -411,15 +438,23 @@ function CategoriaPage() {
       </section>
 
       <section className="mt-20 rounded-3xl bg-foreground p-10 text-center text-background md:p-16">
-        <h2 className="text-balance text-3xl font-semibold md:text-4xl">
-          Pronto para resolver?
-        </h2>
+        <h2 className="text-balance text-3xl font-semibold md:text-4xl">Pronto para resolver?</h2>
         <p className="mx-auto mt-4 max-w-md text-background/70">
           Em 2 minutos você descreve o serviço e recebe a confirmação do profissional.
         </p>
         <div className="mt-8 flex justify-center">
           <Button asChild variant="brand" size="xl">
-            <Link to="/orcamentos" search={{ new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined } as any}>
+            <Link
+              to="/orcamentos"
+              search={
+                {
+                  new: 1,
+                  serviceId: undefined,
+                  categoria: undefined,
+                  serviceName: undefined,
+                } as any
+              }
+            >
               Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>

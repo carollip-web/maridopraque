@@ -38,7 +38,7 @@ function fmtDay(d: Date) {
 }
 
 function hourToY(h: number, m: number) {
-  return ((h - HOUR_START) + m / 60) * PX_PER_HOUR;
+  return (h - HOUR_START + m / 60) * PX_PER_HOUR;
 }
 
 function timeStrToMinutes(s: string) {
@@ -56,8 +56,14 @@ export function AgendaCalendar() {
   const [duracao, setDuracao] = useState(60);
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
-  const hours = useMemo(() => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i), []);
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  );
+  const hours = useMemo(
+    () => Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i),
+    [],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -65,13 +71,28 @@ export function AgendaCalendar() {
     (async () => {
       setLoading(true);
       const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }] = await Promise.all([
-        supabase.from("profissional_disponibilidade").select("dia_semana,hora_inicio,hora_fim").eq("user_id", user.id),
-        supabase.from("profissional_bloqueios").select("data_inicio,data_fim,motivo").eq("user_id", user.id)
-          .lt("data_inicio", weekEnd.toISOString()).gt("data_fim", weekStart.toISOString()),
-        supabase.from("orcamentos").select("id,service_name,data_agendada,status").eq("profissional_id", user.id)
+        supabase
+          .from("profissional_disponibilidade")
+          .select("dia_semana,hora_inicio,hora_fim")
+          .eq("user_id", user.id),
+        supabase
+          .from("profissional_bloqueios")
+          .select("data_inicio,data_fim,motivo")
+          .eq("user_id", user.id)
+          .lt("data_inicio", weekEnd.toISOString())
+          .gt("data_fim", weekStart.toISOString()),
+        supabase
+          .from("orcamentos")
+          .select("id,service_name,data_agendada,status")
+          .eq("profissional_id", user.id)
           .not("data_agendada", "is", null)
-          .gte("data_agendada", weekStart.toISOString()).lt("data_agendada", weekEnd.toISOString()),
-        supabase.from("profissional_perfil").select("duracao_padrao_min").eq("user_id", user.id).maybeSingle(),
+          .gte("data_agendada", weekStart.toISOString())
+          .lt("data_agendada", weekEnd.toISOString()),
+        supabase
+          .from("profissional_perfil")
+          .select("duracao_padrao_min")
+          .eq("user_id", user.id)
+          .maybeSingle(),
       ]);
       if (!alive) return;
       setJanelas((jans as Janela[]) ?? []);
@@ -81,7 +102,9 @@ export function AgendaCalendar() {
       setAgendamentos(((ags as any[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [user?.id, weekStart, weekEnd]);
 
   const totalHeight = (HOUR_END - HOUR_START) * PX_PER_HOUR;
@@ -98,49 +121,82 @@ export function AgendaCalendar() {
           <h3 className="text-sm font-bold text-slate-900">Visão semanal</h3>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="rounded-full h-8 px-3"
-            onClick={() => setWeekStart((w) => addDays(w, -7))}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full h-8 px-3"
+            onClick={() => setWeekStart((w) => addDays(w, -7))}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-xs font-medium text-slate-700 min-w-[140px] text-center">
             {fmtDay(weekStart)} – {fmtDay(addDays(weekEnd, -1))}
           </span>
-          <Button variant="outline" size="sm" className="rounded-full h-8 px-3"
-            onClick={() => setWeekStart((w) => addDays(w, 7))}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full h-8 px-3"
+            onClick={() => setWeekStart((w) => addDays(w, 7))}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="rounded-full h-8 text-xs"
-            onClick={() => setWeekStart(startOfWeek(new Date()))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full h-8 text-xs"
+            onClick={() => setWeekStart(startOfWeek(new Date()))}
+          >
             Hoje
           </Button>
         </div>
       </div>
 
       <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-slate-500 mb-2">
-        <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-emerald-200" /> Disponível</span>
-        <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-rose-300" /> Bloqueio</span>
-        <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-brand" /> Agendamento</span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-emerald-200" /> Disponível
+        </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-rose-300" /> Bloqueio
+        </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-brand" /> Agendamento
+        </span>
       </div>
 
       {loading ? (
-        <div className="py-16 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>
+        <div className="py-16 grid place-items-center">
+          <Loader2 className="h-6 w-6 animate-spin text-brand" />
+        </div>
       ) : (
         <div className="overflow-x-auto">
-          <div className="min-w-[720px] grid" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+          <div
+            className="min-w-[720px] grid"
+            style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}
+          >
             {/* Header */}
             <div />
             {days.map((d, i) => (
-              <div key={i} className={`text-center text-xs font-bold uppercase tracking-wider py-2 border-b border-slate-200 ${isToday(d) ? "text-brand" : "text-slate-600"}`}>
+              <div
+                key={i}
+                className={`text-center text-xs font-bold uppercase tracking-wider py-2 border-b border-slate-200 ${isToday(d) ? "text-brand" : "text-slate-600"}`}
+              >
                 <div>{DIAS_SEMANA[i]}</div>
-                <div className={`text-[10px] font-medium ${isToday(d) ? "text-brand" : "text-slate-400"}`}>{fmtDay(d)}</div>
+                <div
+                  className={`text-[10px] font-medium ${isToday(d) ? "text-brand" : "text-slate-400"}`}
+                >
+                  {fmtDay(d)}
+                </div>
               </div>
             ))}
 
             {/* Hour gutter */}
             <div className="relative" style={{ height: totalHeight }}>
               {hours.map((h) => (
-                <div key={h} className="absolute left-0 right-0 -translate-y-1/2 text-[10px] text-slate-400 text-right pr-1"
-                     style={{ top: hourToY(h, 0) }}>
+                <div
+                  key={h}
+                  className="absolute left-0 right-0 -translate-y-1/2 text-[10px] text-slate-400 text-right pr-1"
+                  style={{ top: hourToY(h, 0) }}
+                >
                   {String(h).padStart(2, "0")}:00
                 </div>
               ))}
@@ -150,26 +206,37 @@ export function AgendaCalendar() {
             {days.map((d, i) => {
               const dow = d.getDay();
               const dayJanelas = janelas.filter((j) => j.dia_semana === dow);
-              const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
+              const dayStart = new Date(d);
+              dayStart.setHours(0, 0, 0, 0);
               const dayEnd = addDays(dayStart, 1);
 
               return (
-                <div key={i} className="relative border-l border-slate-100" style={{ height: totalHeight }}>
+                <div
+                  key={i}
+                  className="relative border-l border-slate-100"
+                  style={{ height: totalHeight }}
+                >
                   {/* Hour grid lines */}
                   {hours.map((h) => (
-                    <div key={h} className="absolute left-0 right-0 border-t border-slate-100"
-                         style={{ top: hourToY(h, 0) }} />
+                    <div
+                      key={h}
+                      className="absolute left-0 right-0 border-t border-slate-100"
+                      style={{ top: hourToY(h, 0) }}
+                    />
                   ))}
 
                   {/* Disponibilidade */}
                   {dayJanelas.map((j, k) => {
                     const startMin = timeStrToMinutes(j.hora_inicio);
                     const endMin = timeStrToMinutes(j.hora_fim);
-                    const top = ((startMin / 60) - HOUR_START) * PX_PER_HOUR;
+                    const top = (startMin / 60 - HOUR_START) * PX_PER_HOUR;
                     const height = ((endMin - startMin) / 60) * PX_PER_HOUR;
                     return (
-                      <div key={k} className="absolute left-0.5 right-0.5 bg-emerald-100/70 border-l-2 border-emerald-400 rounded-md"
-                           style={{ top, height }} />
+                      <div
+                        key={k}
+                        className="absolute left-0.5 right-0.5 bg-emerald-100/70 border-l-2 border-emerald-400 rounded-md"
+                        style={{ top, height }}
+                      />
                     );
                   })}
 
@@ -181,38 +248,51 @@ export function AgendaCalendar() {
                     const start = bIni < dayStart ? dayStart : bIni;
                     const end = bFim > dayEnd ? dayEnd : bFim;
                     const startMin = start.getHours() * 60 + start.getMinutes();
-                    const endMin = end.getHours() * 60 + end.getMinutes() + (end.getDate() !== start.getDate() ? 24 * 60 : 0);
-                    const top = Math.max(0, ((startMin / 60) - HOUR_START) * PX_PER_HOUR);
+                    const endMin =
+                      end.getHours() * 60 +
+                      end.getMinutes() +
+                      (end.getDate() !== start.getDate() ? 24 * 60 : 0);
+                    const top = Math.max(0, (startMin / 60 - HOUR_START) * PX_PER_HOUR);
                     const height = Math.max(8, ((endMin - startMin) / 60) * PX_PER_HOUR);
                     return (
-                      <div key={k} className="absolute left-0.5 right-0.5 bg-rose-200/80 border border-rose-400 rounded-md text-[10px] text-rose-900 px-1 overflow-hidden"
-                           style={{ top, height }} title={b.motivo ?? "Bloqueio"}>
+                      <div
+                        key={k}
+                        className="absolute left-0.5 right-0.5 bg-rose-200/80 border border-rose-400 rounded-md text-[10px] text-rose-900 px-1 overflow-hidden"
+                        style={{ top, height }}
+                        title={b.motivo ?? "Bloqueio"}
+                      >
                         {b.motivo ?? "Bloqueio"}
                       </div>
                     );
                   })}
 
                   {/* Agendamentos */}
-                  {agendamentos.filter((a) => {
-                    const dt = new Date(a.data_agendada);
-                    return dt >= dayStart && dt < dayEnd;
-                  }).map((a) => {
-                    const dt = new Date(a.data_agendada);
-                    const startMin = dt.getHours() * 60 + dt.getMinutes();
-                    const top = ((startMin / 60) - HOUR_START) * PX_PER_HOUR;
-                    const height = (duracao / 60) * PX_PER_HOUR;
-                    return (
-                      <div key={a.id}
-                           className="absolute left-1 right-1 bg-brand text-white rounded-md px-1.5 py-1 shadow-sm overflow-hidden"
-                           style={{ top, height, minHeight: 28 }}
-                           title={`${a.service_name} • ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}>
-                        <p className="text-[10px] font-bold leading-tight truncate">
-                          {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                        <p className="text-[10px] leading-tight truncate opacity-90">{a.service_name}</p>
-                      </div>
-                    );
-                  })}
+                  {agendamentos
+                    .filter((a) => {
+                      const dt = new Date(a.data_agendada);
+                      return dt >= dayStart && dt < dayEnd;
+                    })
+                    .map((a) => {
+                      const dt = new Date(a.data_agendada);
+                      const startMin = dt.getHours() * 60 + dt.getMinutes();
+                      const top = (startMin / 60 - HOUR_START) * PX_PER_HOUR;
+                      const height = (duracao / 60) * PX_PER_HOUR;
+                      return (
+                        <div
+                          key={a.id}
+                          className="absolute left-1 right-1 bg-brand text-white rounded-md px-1.5 py-1 shadow-sm overflow-hidden"
+                          style={{ top, height, minHeight: 28 }}
+                          title={`${a.service_name} • ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                        >
+                          <p className="text-[10px] font-bold leading-tight truncate">
+                            {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          <p className="text-[10px] leading-tight truncate opacity-90">
+                            {a.service_name}
+                          </p>
+                        </div>
+                      );
+                    })}
                 </div>
               );
             })}

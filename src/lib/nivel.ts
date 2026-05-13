@@ -17,7 +17,10 @@ export function calcularNivel(args: { concluidos: number; notaMedia: number }): 
       nome: "Ouro",
       cor: "from-amber-200 to-amber-400 text-amber-900",
       emoji: "🥇",
-      proximo: { nome: "Platina", faltam: { servicos: Math.max(0, 50 - concluidos), nota: Math.max(0, 4.8 - notaMedia) } },
+      proximo: {
+        nome: "Platina",
+        faltam: { servicos: Math.max(0, 50 - concluidos), nota: Math.max(0, 4.8 - notaMedia) },
+      },
     };
   }
   if (concluidos >= 5 && notaMedia >= 4.0) {
@@ -25,13 +28,19 @@ export function calcularNivel(args: { concluidos: number; notaMedia: number }): 
       nome: "Prata",
       cor: "from-slate-100 to-slate-300 text-slate-800",
       emoji: "🥈",
-      proximo: { nome: "Ouro", faltam: { servicos: Math.max(0, 20 - concluidos), nota: Math.max(0, 4.5 - notaMedia) } },
+      proximo: {
+        nome: "Ouro",
+        faltam: { servicos: Math.max(0, 20 - concluidos), nota: Math.max(0, 4.5 - notaMedia) },
+      },
     };
   }
   return {
     nome: "Bronze",
     cor: "from-orange-200 to-orange-400 text-orange-900",
     emoji: "🥉",
-    proximo: { nome: "Prata", faltam: { servicos: Math.max(0, 5 - concluidos), nota: Math.max(0, 4.0 - notaMedia) } },
+    proximo: {
+      nome: "Prata",
+      faltam: { servicos: Math.max(0, 5 - concluidos), nota: Math.max(0, 4.0 - notaMedia) },
+    },
   };
 }

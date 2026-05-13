@@ -20,18 +20,28 @@ export type AdminSection =
 
 // Espelha PERMISSIONS de src/hooks/useAuth.ts.
 const PERMISSIONS: Record<AdminLevel, AdminSection[]> = {
-  super_admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "financeiro", "config", "equipe", "modo_teste"],
-  admin:       ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
-  financeiro:  ["dashboard", "financeiro"],
-  suporte:     ["pedidos", "clientes"],
+  super_admin: [
+    "dashboard",
+    "pedidos",
+    "profissionais",
+    "clientes",
+    "servicos",
+    "financeiro",
+    "config",
+    "equipe",
+    "modo_teste",
+  ],
+  admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
+  financeiro: ["dashboard", "financeiro"],
+  suporte: ["pedidos", "clientes"],
 };
 
 // Espelha READ_ONLY_SECTIONS de src/hooks/useAuth.ts.
 const READ_ONLY_SECTIONS: Record<AdminLevel, AdminSection[]> = {
   super_admin: [],
-  admin:       [],
-  financeiro:  ["dashboard"],
-  suporte:     ["pedidos", "clientes"],
+  admin: [],
+  financeiro: ["dashboard"],
+  suporte: ["pedidos", "clientes"],
 };
 
 interface AdminContext {

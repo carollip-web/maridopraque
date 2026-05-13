@@ -6,7 +6,11 @@ import { Copy, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 function gerarCodigo(nome: string) {
-  const base = (nome || "PRO").replace(/[^A-Za-zÀ-ú]/g, "").slice(0, 4).toUpperCase() || "PRO";
+  const base =
+    (nome || "PRO")
+      .replace(/[^A-Za-zÀ-ú]/g, "")
+      .slice(0, 4)
+      .toUpperCase() || "PRO";
   return `${base}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
@@ -25,7 +29,10 @@ export function ProfissionalIndicacao({ nome }: { nome: string }) {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) { setCodigo(data.codigo); setUsos(data.usos ?? 0); }
+        if (data) {
+          setCodigo(data.codigo);
+          setUsos(data.usos ?? 0);
+        }
         setLoading(false);
       });
   }, [user?.id]);
@@ -40,7 +47,10 @@ export function ProfissionalIndicacao({ nome }: { nome: string }) {
       .select("codigo, usos")
       .single();
     setCriando(false);
-    if (error) { toast.error("Não foi possível gerar o código."); return; }
+    if (error) {
+      toast.error("Não foi possível gerar o código.");
+      return;
+    }
     setCodigo(data.codigo);
     setUsos(data.usos ?? 0);
     toast.success("Código de indicação criado!");
@@ -55,7 +65,8 @@ export function ProfissionalIndicacao({ nome }: { nome: string }) {
         <h3 className="font-bold">Indique outros profissionais</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-4">
-        Convide colegas de confiança. Você ganha bônus a cada profissional aprovado que faz o primeiro serviço pela plataforma.
+        Convide colegas de confiança. Você ganha bônus a cada profissional aprovado que faz o
+        primeiro serviço pela plataforma.
       </p>
 
       {loading ? (
@@ -63,11 +74,16 @@ export function ProfissionalIndicacao({ nome }: { nome: string }) {
       ) : codigo ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-sm font-mono font-bold">{codigo}</code>
+            <code className="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-sm font-mono font-bold">
+              {codigo}
+            </code>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copiado!"); }}
+              onClick={() => {
+                navigator.clipboard.writeText(link);
+                toast.success("Link copiado!");
+              }}
               className="rounded-full"
             >
               <Copy className="h-3.5 w-3.5 mr-1" /> Copiar link
@@ -78,7 +94,11 @@ export function ProfissionalIndicacao({ nome }: { nome: string }) {
           </p>
         </div>
       ) : (
-        <Button onClick={criar} disabled={criando} className="bg-brand text-brand-foreground rounded-full font-bold">
+        <Button
+          onClick={criar}
+          disabled={criando}
+          className="bg-brand text-brand-foreground rounded-full font-bold"
+        >
           {criando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar meu código"}
         </Button>
       )}

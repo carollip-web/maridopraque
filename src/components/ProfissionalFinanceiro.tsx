@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Download, Loader2, TrendingUp, Clock, CreditCard, Calendar, Filter } from "lucide-react";
+import {
+  DollarSign,
+  Download,
+  Loader2,
+  TrendingUp,
+  Clock,
+  CreditCard,
+  Calendar,
+  Filter,
+} from "lucide-react";
 
 type Linha = {
   id: string;
@@ -44,7 +53,9 @@ export function ProfissionalFinanceiro() {
       setLoading(true);
       const { data: orcs } = await supabase
         .from("orcamentos")
-        .select("id, service_name, status, valor, valor_servico, taxa_material, data_pagamento, data_aprovacao, created_at, updated_at, cliente_id")
+        .select(
+          "id, service_name, status, valor, valor_servico, taxa_material, data_pagamento, data_aprovacao, created_at, updated_at, cliente_id",
+        )
         .eq("profissional_id", user.id)
         .order("updated_at", { ascending: false });
       if (!alive) return;
@@ -53,7 +64,9 @@ export function ProfissionalFinanceiro() {
         ? await supabase.from("profiles").select("id, nome").in("id", ids)
         : { data: [] as any[] };
       const nomeMap: Record<string, string> = {};
-      (profs ?? []).forEach((p: any) => { nomeMap[p.id] = p.nome ?? "Cliente"; });
+      (profs ?? []).forEach((p: any) => {
+        nomeMap[p.id] = p.nome ?? "Cliente";
+      });
       const list: Linha[] = (orcs ?? []).map((o: any) => ({
         id: o.id,
         service_name: o.service_name,
@@ -71,7 +84,9 @@ export function ProfissionalFinanceiro() {
       setLoading(false);
     };
     load();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [user?.id]);
 
   const filtradas = useMemo(() => {
@@ -97,7 +112,13 @@ export function ProfissionalFinanceiro() {
     const totalPagos = pagos.reduce((a, l) => a + l.valor, 0);
     const totalReceber = aReceber.reduce((a, l) => a + l.valor, 0);
     const ticket = pagos.length ? totalPagos / pagos.length : 0;
-    return { totalPagos, totalReceber, ticket, qtdPagos: pagos.length, qtdReceber: aReceber.length };
+    return {
+      totalPagos,
+      totalReceber,
+      ticket,
+      qtdPagos: pagos.length,
+      qtdReceber: aReceber.length,
+    };
   }, [filtradas]);
 
   const exportarCSV = () => {
@@ -122,20 +143,44 @@ export function ProfissionalFinanceiro() {
   };
 
   if (loading) {
-    return <div className="py-24 grid place-items-center"><Loader2 className="h-8 w-8 animate-spin text-brand" /></div>;
+    return (
+      <div className="py-24 grid place-items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-slate-900 tracking-tight">Financeiro</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Acompanhe ganhos, recebimentos pendentes e exporte seu extrato.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Acompanhe ganhos, recebimentos pendentes e exporte seu extrato.
+        </p>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatBox icon={DollarSign} label="Recebido no período" value={`R$ ${totais.totalPagos.toFixed(2)}`} sub={`${totais.qtdPagos} pagamentos`} accent="bg-emerald-50 text-emerald-700 border-emerald-200" />
-        <StatBox icon={Clock} label="A receber" value={`R$ ${totais.totalReceber.toFixed(2)}`} sub={`${totais.qtdReceber} aprovados`} accent="bg-amber-50 text-amber-700 border-amber-200" />
-        <StatBox icon={TrendingUp} label="Ticket médio" value={`R$ ${totais.ticket.toFixed(2)}`} sub="por serviço pago" accent="bg-sky-50 text-sky-700 border-sky-200" />
+        <StatBox
+          icon={DollarSign}
+          label="Recebido no período"
+          value={`R$ ${totais.totalPagos.toFixed(2)}`}
+          sub={`${totais.qtdPagos} pagamentos`}
+          accent="bg-emerald-50 text-emerald-700 border-emerald-200"
+        />
+        <StatBox
+          icon={Clock}
+          label="A receber"
+          value={`R$ ${totais.totalReceber.toFixed(2)}`}
+          sub={`${totais.qtdReceber} aprovados`}
+          accent="bg-amber-50 text-amber-700 border-amber-200"
+        />
+        <StatBox
+          icon={TrendingUp}
+          label="Ticket médio"
+          value={`R$ ${totais.ticket.toFixed(2)}`}
+          sub="por serviço pago"
+          accent="bg-sky-50 text-sky-700 border-sky-200"
+        />
       </section>
 
       <section className="rounded-3xl bg-white border border-border p-4 sm:p-6 shadow-sm">
@@ -147,7 +192,13 @@ export function ProfissionalFinanceiro() {
                 onClick={() => setPeriodo(p)}
                 className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${periodo === p ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand"}`}
               >
-                {p === "30d" ? "Últimos 30 dias" : p === "90d" ? "Últimos 90 dias" : p === "ano" ? "Último ano" : "Tudo"}
+                {p === "30d"
+                  ? "Últimos 30 dias"
+                  : p === "90d"
+                    ? "Últimos 90 dias"
+                    : p === "ano"
+                      ? "Último ano"
+                      : "Tudo"}
               </button>
             ))}
           </div>
@@ -164,7 +215,13 @@ export function ProfissionalFinanceiro() {
                 {f === "todos" ? "Todos" : f === "pagos" ? "Pagos" : "A receber"}
               </button>
             ))}
-            <Button onClick={exportarCSV} variant="outline" size="sm" className="rounded-full text-xs h-8" disabled={filtradas.length === 0}>
+            <Button
+              onClick={exportarCSV}
+              variant="outline"
+              size="sm"
+              className="rounded-full text-xs h-8"
+              disabled={filtradas.length === 0}
+            >
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
           </div>
@@ -188,31 +245,47 @@ export function ProfissionalFinanceiro() {
               </thead>
               <tbody>
                 {filtradas.map((l) => {
-                  const meta = STATUS_LABEL[l.status] ?? { label: l.status, color: "bg-slate-100 text-slate-700" };
+                  const meta = STATUS_LABEL[l.status] ?? {
+                    label: l.status,
+                    color: "bg-slate-100 text-slate-700",
+                  };
                   const data = new Date(l.data_pagamento ?? l.data_aprovacao ?? l.updated_at);
                   const isPago = l.status === "pago" || l.status === "concluido";
                   const isReceber = l.status === "aprovado";
                   // estimativa: 2 dias úteis após aprovação
-                  const previsao = isReceber && l.data_aprovacao ? new Date(new Date(l.data_aprovacao).getTime() + 2 * 86400000) : null;
+                  const previsao =
+                    isReceber && l.data_aprovacao
+                      ? new Date(new Date(l.data_aprovacao).getTime() + 2 * 86400000)
+                      : null;
                   return (
-                    <tr key={l.id} className="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <tr
+                      key={l.id}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition"
+                    >
                       <td className="px-4 py-3 text-xs text-slate-700 tabular-nums">
                         {data.toLocaleDateString("pt-BR")}
                         {previsao && (
                           <div className="text-[10px] text-amber-700 flex items-center gap-1 mt-0.5">
-                            <Calendar className="h-3 w-3" /> previsão {previsao.toLocaleDateString("pt-BR")}
+                            <Calendar className="h-3 w-3" /> previsão{" "}
+                            {previsao.toLocaleDateString("pt-BR")}
                           </div>
                         )}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-900">{l.service_name}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{l.cliente_nome}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">
+                        {l.cliente_nome}
+                      </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}>
+                        <span
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
+                        >
                           {isPago && <CreditCard className="inline h-3 w-3 mr-0.5 -mt-0.5" />}
                           {meta.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-bold">R$ {l.valor.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums font-bold">
+                        R$ {l.valor.toFixed(2)}
+                      </td>
                     </tr>
                   );
                 })}
@@ -225,7 +298,19 @@ export function ProfissionalFinanceiro() {
   );
 }
 
-function StatBox({ icon: Icon, label, value, sub, accent }: { icon: any; label: string; value: string; sub: string; accent: string }) {
+function StatBox({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  sub: string;
+  accent: string;
+}) {
   return (
     <div className={`rounded-3xl border p-5 ${accent}`}>
       <div className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold opacity-90">

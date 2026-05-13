@@ -57,7 +57,19 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
-    tab: z.enum(["pedidos", "orcamentos", "servicos", "agenda", "financeiro", "avaliacoes", "configuracoes", "notificacoes"]).optional().catch("pedidos"),
+    tab: z
+      .enum([
+        "pedidos",
+        "orcamentos",
+        "servicos",
+        "agenda",
+        "financeiro",
+        "avaliacoes",
+        "configuracoes",
+        "notificacoes",
+      ])
+      .optional()
+      .catch("pedidos"),
     orcamentoId: z.string().optional(),
     chat: z.string().optional(),
   }),
@@ -96,13 +108,22 @@ type Orcamento = {
 };
 
 type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
-type OrcMat = { orcamento_id: string; nome_snapshot: string; unidade_snapshot: string; quantidade: number; subtotal: number };
+type OrcMat = {
+  orcamento_id: string;
+  nome_snapshot: string;
+  unidade_snapshot: string;
+  quantidade: number;
+  subtotal: number;
+};
 type ClienteGeo = { lat: number | null; lng: number | null; cidade: string | null };
 
 type Profile = { id: string; nome: string; whatsapp: string | null; email: string | null };
 
 const STATUS_META: Record<Orcamento["status"], { label: string; className: string }> = {
-  customizado_pendente: { label: "Aguardando seu orçamento", className: "bg-amber-100 text-amber-800" },
+  customizado_pendente: {
+    label: "Aguardando seu orçamento",
+    className: "bg-amber-100 text-amber-800",
+  },
   enviado: { label: "Enviado ao cliente", className: "bg-sky-100 text-sky-800" },
   fixo_auto: { label: "Preço fixo", className: "bg-slate-100 text-slate-700" },
   aprovado: { label: "Aprovado", className: "bg-emerald-100 text-emerald-800" },
@@ -126,9 +147,15 @@ function ProfissionalArea() {
   const [sheetOrcamentoId, setSheetOrcamentoId] = useState<string | null>(null);
   const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
   const enviar = useServerFn(enviarOrcamento);
-  const { notifications: profNotificationsAll, markAsRead: markNotifAsRead, markAllAsRead: markAllNotifAsRead } = useNotifications();
-  const profNotifications = profNotificationsAll.filter(n => !n.link || n.link.startsWith("/profissional"));
-  const unreadNotifications = profNotifications.filter(n => !n.read).length;
+  const {
+    notifications: profNotificationsAll,
+    markAsRead: markNotifAsRead,
+    markAllAsRead: markAllNotifAsRead,
+  } = useNotifications();
+  const profNotifications = profNotificationsAll.filter(
+    (n) => !n.link || n.link.startsWith("/profissional"),
+  );
+  const unreadNotifications = profNotifications.filter((n) => !n.read).length;
 
   const [ativo, setAtivo] = useState(false);
   const [mediaAvaliacoes, setMediaAvaliacoes] = useState<string>("—");
@@ -136,7 +163,11 @@ function ProfissionalArea() {
   const [aReceber, setAReceber] = useState(0);
   const [ticketMedio, setTicketMedio] = useState(0);
   const [especialidades, setEspecialidades] = useState<string[]>([]);
-  const [profGeo, setProfGeo] = useState<{ lat: number | null; lng: number | null; raio: number }>({ lat: null, lng: null, raio: 15 });
+  const [profGeo, setProfGeo] = useState<{ lat: number | null; lng: number | null; raio: number }>({
+    lat: null,
+    lng: null,
+    raio: 15,
+  });
   const [clienteGeo, setClienteGeo] = useState<Record<string, ClienteGeo>>({});
   const [ganhosMes, setGanhosMes] = useState(0);
   const [taxaAceitacao, setTaxaAceitacao] = useState<string>("—");
@@ -149,7 +180,10 @@ function ProfissionalArea() {
     const { error } = await supabase
       .from("orcamento_recusas")
       .insert({ orcamento_id: orcamentoId, profissional_id: user.id });
-    if (error) { toast.error("Não foi possível recusar agora."); return; }
+    if (error) {
+      toast.error("Não foi possível recusar agora.");
+      return;
+    }
     setRecusados((s) => new Set(s).add(orcamentoId));
     toast.success("Pedido recusado e removido do seu radar.");
   };
@@ -184,7 +218,9 @@ function ProfissionalArea() {
     const ticket = pagos.length > 0 ? ganhos / pagos.length : 0;
 
     // Métricas mensais e operacionais
-    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
     const ganhosM = pagos
       .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
       .reduce((acc, o) => acc + Number(o.valor || 0), 0);
@@ -206,10 +242,11 @@ function ProfissionalArea() {
       ["enviado", "aprovado", "pago", "concluido"].includes(o.status),
     );
     if (enviados.length > 0) {
-      const horas = enviados.reduce((acc, o) => {
-        const t = (new Date(o.updated_at).getTime() - new Date(o.created_at).getTime()) / 36e5;
-        return acc + Math.max(0, t);
-      }, 0) / enviados.length;
+      const horas =
+        enviados.reduce((acc, o) => {
+          const t = (new Date(o.updated_at).getTime() - new Date(o.created_at).getTime()) / 36e5;
+          return acc + Math.max(0, t);
+        }, 0) / enviados.length;
       setSlaMedioH(horas < 1 ? `${Math.round(horas * 60)} min` : `${horas.toFixed(1)} h`);
     }
 
@@ -220,13 +257,21 @@ function ProfissionalArea() {
 
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
-        supabase.from("profissional_perfil").select("ativo, especialidades, lat, lng, raio_atendimento_km").eq("user_id", user.id).maybeSingle(),
+        supabase
+          .from("profissional_perfil")
+          .select("ativo, especialidades, lat, lng, raio_atendimento_km")
+          .eq("user_id", user.id)
+          .maybeSingle(),
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!),
       ]);
       if (perfil) {
         setAtivo(perfil.ativo);
         setEspecialidades(perfil.especialidades || []);
-        setProfGeo({ lat: perfil.lat ?? null, lng: perfil.lng ?? null, raio: perfil.raio_atendimento_km ?? 15 });
+        setProfGeo({
+          lat: perfil.lat ?? null,
+          lng: perfil.lng ?? null,
+          raio: perfil.raio_atendimento_km ?? 15,
+        });
       }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
@@ -242,7 +287,10 @@ function ProfissionalArea() {
     if (ids.length) {
       const [{ data: profs }, { data: ends }] = await Promise.all([
         supabase.from("profiles").select("id, nome, whatsapp, email").in("id", ids),
-        supabase.from("cliente_enderecos").select("user_id, lat, lng, cidade, is_padrao").in("user_id", ids),
+        supabase
+          .from("cliente_enderecos")
+          .select("user_id, lat, lng, cidade, is_padrao")
+          .in("user_id", ids),
       ]);
       const map: Record<string, Profile> = {};
       (profs ?? []).forEach((p: any) => (map[p.id] = p));
@@ -255,8 +303,9 @@ function ProfissionalArea() {
       setClienteGeo(gmap);
     }
 
-
-    const serviceIds = Array.from(new Set(list.map((o) => o.service_id).filter(Boolean) as string[]));
+    const serviceIds = Array.from(
+      new Set(list.map((o) => o.service_id).filter(Boolean) as string[]),
+    );
     if (serviceIds.length) {
       const { data: cats } = await supabase
         .from("services_catalog")
@@ -295,10 +344,8 @@ function ProfissionalArea() {
     refresh();
     const channel = supabase
       .channel("prof-orc")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orcamentos" },
-        () => refresh(),
+      .on("postgres_changes", { event: "*", schema: "public", table: "orcamentos" }, () =>
+        refresh(),
       )
       .subscribe();
     return () => {
@@ -317,11 +364,20 @@ function ProfissionalArea() {
 
     // Decide which top tab + sub-tab the orçamento lives in
     const isMine = o.profissional_id === user?.id;
-    const inServicos = isMine && (o.status === "aprovado" || o.status === "pago" || o.status === "concluido" || o.status === "cancelado" || o.status === "recusado");
+    const inServicos =
+      isMine &&
+      (o.status === "aprovado" ||
+        o.status === "pago" ||
+        o.status === "concluido" ||
+        o.status === "cancelado" ||
+        o.status === "recusado");
     const targetTab = inServicos ? "servicos" : "orcamentos";
 
     if (tab !== targetTab) {
-      navigate({ to: "/profissional", search: { tab: targetTab as any, orcamentoId, chat } as any });
+      navigate({
+        to: "/profissional",
+        search: { tab: targetTab as any, orcamentoId, chat } as any,
+      });
       return;
     }
 
@@ -343,10 +399,19 @@ function ProfissionalArea() {
     return distanceKm({ lat: profGeo.lat, lng: profGeo.lng }, { lat: g.lat, lng: g.lng });
   };
 
-  const filterBy = (type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados") => {
+  const filterBy = (
+    type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados",
+  ) => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        if (!(o.status === "customizado_pendente" && !minhasPropostas.some(p => p.orcamento_id === o.id) && especialidades.includes(o.service_name))) return false;
+        if (
+          !(
+            o.status === "customizado_pendente" &&
+            !minhasPropostas.some((p) => p.orcamento_id === o.id) &&
+            especialidades.includes(o.service_name)
+          )
+        )
+          return false;
         if (recusados.has(o.id)) return false;
         // Filtro por raio: só aplica se ambos os lados tiverem geo
         const d = distanciaCliente(o.cliente_id);
@@ -357,13 +422,19 @@ function ProfissionalArea() {
         return false;
       }
       if (type === "enviados") {
-        return (o.status === "customizado_pendente" || o.status === "enviado") && minhasPropostas.some(p => p.orcamento_id === o.id && p.status === "pendente");
+        return (
+          (o.status === "customizado_pendente" || o.status === "enviado") &&
+          minhasPropostas.some((p) => p.orcamento_id === o.id && p.status === "pendente")
+        );
       }
       if (type === "ativos") {
         return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
       }
       if (type === "finalizados") {
-        return ["recusado", "cancelado", "concluido"].includes(o.status) && o.profissional_id === user?.id;
+        return (
+          ["recusado", "cancelado", "concluido"].includes(o.status) &&
+          o.profissional_id === user?.id
+        );
       }
       return false;
     });
@@ -418,7 +489,7 @@ function ProfissionalArea() {
   const handleGenerateTestOrder = async () => {
     if (!user) return;
     const testServiceName = especialidades.length > 0 ? especialidades[0] : "Serviço Genérico";
-    
+
     toast.loading("Gerando pedido de teste...", { id: "test-order" });
     const { error } = await supabase.from("orcamentos").insert({
       cliente_id: user.id,
@@ -435,10 +506,16 @@ function ProfissionalArea() {
   };
 
   // Find the orcamento for the sheet
-  const sheetOrc = sheetOrcamentoId ? orcamentos.find(o => o.id === sheetOrcamentoId) ?? null : null;
+  const sheetOrc = sheetOrcamentoId
+    ? (orcamentos.find((o) => o.id === sheetOrcamentoId) ?? null)
+    : null;
   const sheetMode = sheetOrc
     ? sheetOrc.profissional_id === user?.id
-      ? (sheetOrc.status === "enviado" ? "revisar" : sheetOrc.status === "customizado_pendente" ? "enviar" : "info")
+      ? sheetOrc.status === "enviado"
+        ? "revisar"
+        : sheetOrc.status === "customizado_pendente"
+          ? "enviar"
+          : "info"
       : "pegar"
     : "pegar";
 
@@ -448,10 +525,24 @@ function ProfissionalArea() {
       <PanicButton />
 
       {/* Detail Sheet — opens when arriving via notification */}
-      <Sheet open={!!sheetOrc} onOpenChange={(open) => { if (!open) { setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}}>
-        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0" aria-describedby={undefined}>
+      <Sheet
+        open={!!sheetOrc}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSheetOrcamentoId(null);
+            navigate({ to: "/profissional", search: { tab } as any });
+          }
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg overflow-y-auto p-0"
+          aria-describedby={undefined}
+        >
           <SheetHeader className="px-6 pt-6 pb-4 border-b border-border bg-slate-50">
-            <SheetTitle className="text-lg font-bold">{sheetOrc?.service_name ?? "Pedido"}</SheetTitle>
+            <SheetTitle className="text-lg font-bold">
+              {sheetOrc?.service_name ?? "Pedido"}
+            </SheetTitle>
           </SheetHeader>
           <div className="p-6">
             {sheetOrc && (
@@ -465,9 +556,17 @@ function ProfissionalArea() {
                 materiais={orcMats[sheetOrc.id] ?? []}
                 mode={sheetMode}
                 enviar={enviar}
-                refresh={() => { refresh(); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
+                refresh={() => {
+                  refresh();
+                  setSheetOrcamentoId(null);
+                  navigate({ to: "/profissional", search: { tab } as any });
+                }}
                 userId={user?.id ?? ""}
-                onRecusar={async (id) => { await recusarOrcamento(id); setSheetOrcamentoId(null); navigate({ to: "/profissional", search: { tab } as any }); }}
+                onRecusar={async (id) => {
+                  await recusarOrcamento(id);
+                  setSheetOrcamentoId(null);
+                  navigate({ to: "/profissional", search: { tab } as any });
+                }}
                 disableChat
               />
             )}
@@ -478,39 +577,46 @@ function ProfissionalArea() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 shrink-0 space-y-6">
-            
             {/* Status Card */}
             <div className="bg-white rounded-3xl border border-border p-6 shadow-sm flex flex-col items-center text-center">
               <div className="h-16 w-16 bg-brand/10 text-brand rounded-full flex items-center justify-center mb-4">
                 <Wrench className="h-7 w-7" />
               </div>
               <div className="mb-6">
-                <h3 className="font-bold text-slate-900 leading-tight">{user?.user_metadata?.nome || "Profissional"}</h3>
+                <h3 className="font-bold text-slate-900 leading-tight">
+                  {user?.user_metadata?.nome || "Profissional"}
+                </h3>
                 <div className="flex items-center justify-center gap-1.5 mt-1.5 text-amber-500 font-medium text-xs">
                   <Star className="h-3.5 w-3.5 fill-amber-500" />
                   <span>{mediaAvaliacoes} Avaliações</span>
                 </div>
               </div>
-              
+
               <div className="w-full pt-4 border-t border-border flex items-center justify-between">
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${ativo ? "text-emerald-600" : "text-slate-400"}`}>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-widest ${ativo ? "text-emerald-600" : "text-slate-400"}`}
+                >
                   {ativo ? "Online" : "Offline"}
                 </span>
-                <Switch checked={ativo} onCheckedChange={handleToggleAtivo} className="data-[state=checked]:bg-emerald-500" />
+                <Switch
+                  checked={ativo}
+                  onCheckedChange={handleToggleAtivo}
+                  className="data-[state=checked]:bg-emerald-500"
+                />
               </div>
             </div>
 
             <nav className="flex flex-col gap-2">
-              <button 
-                onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'pedidos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "pedidos" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "pedidos" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <LayoutGrid className="h-4 w-4" /> Visão Geral
               </button>
 
               <button
-                onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'orcamentos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "orcamentos" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <Send className="h-4 w-4" /> Pedidos e Orçamentos
                 {counts.oportunidades + counts.elaboracao > 0 && (
@@ -520,49 +626,50 @@ function ProfissionalArea() {
                 )}
               </button>
 
-              <button 
-                onClick={() => navigate({ to: "/profissional", search: { tab: "servicos" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'servicos' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "servicos" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "servicos" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <Briefcase className="h-4 w-4" /> Meus Serviços
               </button>
 
               <button
-                onClick={() => navigate({ to: "/profissional", search: { tab: "agenda" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'agenda' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                onClick={() => navigate({ to: "/profissional", search: { tab: "agenda" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "agenda" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <CalendarClock className="h-4 w-4" /> Agenda
               </button>
 
               <button
-                onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'financeiro' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "financeiro" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <Wallet className="h-4 w-4" /> Financeiro
               </button>
 
               <button
-                onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'avaliacoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "avaliacoes" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <MessageSquare className="h-4 w-4" /> Avaliações
-
               </button>
 
-              <button 
-                onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'configuracoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+              <button
+                onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "configuracoes" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <Settings className="h-4 w-4" /> Configurações do Perfil
               </button>
 
               <button
-                onClick={() => navigate({ to: "/profissional", search: { tab: "notificacoes" }})}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === 'notificacoes' ? 'bg-brand text-white shadow-md' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                onClick={() => navigate({ to: "/profissional", search: { tab: "notificacoes" } })}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${tab === "notificacoes" ? "bg-brand text-white shadow-md" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
               >
                 <Bell className="h-4 w-4" /> Notificações
                 {unreadNotifications > 0 && (
-                  <span className="ml-auto text-[10px] bg-brand/15 text-brand px-2 py-0.5 rounded-full">{unreadNotifications}</span>
+                  <span className="ml-auto text-[10px] bg-brand/15 text-brand px-2 py-0.5 rounded-full">
+                    {unreadNotifications}
+                  </span>
                 )}
               </button>
             </nav>
@@ -574,7 +681,9 @@ function ProfissionalArea() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight">Notificações</h2>
-                    <p className="text-sm text-muted-foreground">Atualizações sobre seus pedidos e serviços.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Atualizações sobre seus pedidos e serviços.
+                    </p>
                   </div>
                   {unreadNotifications > 0 && (
                     <button
@@ -587,30 +696,45 @@ function ProfissionalArea() {
                 </div>
                 {(() => {
                   const profOnly = profNotifications;
-                  const handleNotifClick = (n: typeof profOnly[number]) => {
+                  const handleNotifClick = (n: (typeof profOnly)[number]) => {
                     markNotifAsRead(n.id);
                     if (n.pedidoId) {
                       const titleLower = n.title.toLowerCase();
-                      const isServicos = titleLower.includes("aprovado") || titleLower.includes("pago") || titleLower.includes("conclu");
-                      navigate({ to: "/profissional", search: { tab: isServicos ? "servicos" : "orcamentos", orcamentoId: n.pedidoId } as any });
+                      const isServicos =
+                        titleLower.includes("aprovado") ||
+                        titleLower.includes("pago") ||
+                        titleLower.includes("conclu");
+                      navigate({
+                        to: "/profissional",
+                        search: {
+                          tab: isServicos ? "servicos" : "orcamentos",
+                          orcamentoId: n.pedidoId,
+                        } as any,
+                      });
                     } else if (n.link) {
                       // Fallback: try to parse link for params
                       try {
                         const url = new URL(n.link, window.location.origin);
                         const oid = url.searchParams.get("orcamentoId");
                         const t = (url.searchParams.get("tab") as any) || "orcamentos";
-                        navigate({ to: "/profissional", search: { tab: t, orcamentoId: oid ?? undefined } as any });
+                        navigate({
+                          to: "/profissional",
+                          search: { tab: t, orcamentoId: oid ?? undefined } as any,
+                        });
                       } catch {
                         navigate({ to: "/profissional", search: { tab: "orcamentos" } as any });
                       }
                     }
                   };
-                  if (profOnly.length === 0) return (
-                    <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
-                      <Bell className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-500 font-medium text-sm">Nenhuma notificação por enquanto.</p>
-                    </div>
-                  );
+                  if (profOnly.length === 0)
+                    return (
+                      <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                        <Bell className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500 font-medium text-sm">
+                          Nenhuma notificação por enquanto.
+                        </p>
+                      </div>
+                    );
                   return (
                     <div className="space-y-2">
                       {profOnly.map((n) => (
@@ -619,17 +743,31 @@ function ProfissionalArea() {
                           onClick={() => handleNotifClick(n)}
                           className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-sm ${n.read ? "bg-white border-border opacity-60 hover:opacity-100" : "bg-brand/5 border-brand/20 shadow-sm"}`}
                         >
-                          <div className={`mt-0.5 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${n.read ? "bg-slate-100" : "bg-brand/15"}`}>
-                            <Bell className={`h-4 w-4 ${n.read ? "text-slate-400" : "text-brand"}`} />
+                          <div
+                            className={`mt-0.5 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${n.read ? "bg-slate-100" : "bg-brand/15"}`}
+                          >
+                            <Bell
+                              className={`h-4 w-4 ${n.read ? "text-slate-400" : "text-brand"}`}
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className={`text-sm font-bold ${n.read ? "text-foreground" : "text-brand"}`}>{n.title}</p>
-                              {!n.read && <div className="h-2 w-2 rounded-full bg-brand mt-1.5 shrink-0" />}
+                              <p
+                                className={`text-sm font-bold ${n.read ? "text-foreground" : "text-brand"}`}
+                              >
+                                {n.title}
+                              </p>
+                              {!n.read && (
+                                <div className="h-2 w-2 rounded-full bg-brand mt-1.5 shrink-0" />
+                              )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{n.desc}</p>
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                              {n.desc}
+                            </p>
                             <div className="flex items-center justify-between mt-2">
-                              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{n.time}</p>
+                              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                                {n.time}
+                              </p>
                               {(n.pedidoId || n.link) && (
                                 <span className="text-[10px] font-bold text-brand uppercase tracking-wider flex items-center gap-1">
                                   Ver pedido →
@@ -653,57 +791,132 @@ function ProfissionalArea() {
               <ProfissionalAgenda />
             ) : tab === "servicos" ? (
               <div className="space-y-8">
-                <Tabs value={servicosSubTab} onValueChange={setServicosSubTab} className="w-full animate-in fade-in duration-700">
+                <Tabs
+                  value={servicosSubTab}
+                  onValueChange={setServicosSubTab}
+                  className="w-full animate-in fade-in duration-700"
+                >
                   <div className="flex items-center justify-between mb-6">
-                     <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">Meus Serviços em Andamento</h2>
-                     <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
-                       <TabsTrigger value="ativos" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all font-medium">
-                         Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
-                       </TabsTrigger>
-                       <TabsTrigger value="finalizados" className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all font-medium">
-                         Histórico <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
-                       </TabsTrigger>
-                     </TabsList>
+                    <h2 className="text-xl font-bold text-slate-900 tracking-tight hidden lg:block">
+                      Meus Serviços em Andamento
+                    </h2>
+                    <TabsList className="bg-white border border-slate-200 shadow-sm rounded-full h-auto p-1.5 flex-wrap w-full lg:w-auto">
+                      <TabsTrigger
+                        value="ativos"
+                        className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-900 data-[state=active]:shadow-none transition-all font-medium"
+                      >
+                        Em andamento <span className="ml-1.5 opacity-60">({counts.ativos})</span>
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="finalizados"
+                        className="rounded-full px-4 py-2 text-sm data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 data-[state=active]:shadow-none transition-all font-medium"
+                      >
+                        Histórico <span className="ml-1.5 opacity-60">({counts.finalizados})</span>
+                      </TabsTrigger>
+                    </TabsList>
                   </div>
 
                   <TabsContent value="ativos" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("ativos")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Você não possui nenhum serviço em andamento." emptyIcon={CheckCircle2} />
+                    <Grid
+                      items={filterBy("ativos")}
+                      profiles={profiles}
+                      catalog={catalog}
+                      orcMats={orcMats}
+                      clienteGeo={clienteGeo}
+                      profGeo={profGeo}
+                      userId={user?.id ?? ""}
+                      mode="info"
+                      enviar={enviar}
+                      emptyMsg="Você não possui nenhum serviço em andamento."
+                      emptyIcon={CheckCircle2}
+                    />
                   </TabsContent>
                   <TabsContent value="finalizados" className="mt-0 focus-visible:outline-none">
-                    <Grid items={filterBy("finalizados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="info" enviar={enviar} emptyMsg="Nenhum histórico de orçamentos encerrados." emptyIcon={XCircle} />
+                    <Grid
+                      items={filterBy("finalizados")}
+                      profiles={profiles}
+                      catalog={catalog}
+                      orcMats={orcMats}
+                      clienteGeo={clienteGeo}
+                      profGeo={profGeo}
+                      userId={user?.id ?? ""}
+                      mode="info"
+                      enviar={enviar}
+                      emptyMsg="Nenhum histórico de orçamentos encerrados."
+                      emptyIcon={XCircle}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>
             ) : tab === "orcamentos" ? (
               <div className="space-y-6">
-                <Tabs value={pedidosSubTab} onValueChange={setPedidosSubTab} className="w-full animate-in fade-in duration-700">
+                <Tabs
+                  value={pedidosSubTab}
+                  onValueChange={setPedidosSubTab}
+                  className="w-full animate-in fade-in duration-700"
+                >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight text-foreground">Pedidos e orçamentos</h2>
+                      <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                        Pedidos e orçamentos
+                      </h2>
                       <p className="text-sm text-muted-foreground">
                         Acompanhe oportunidades, propostas em elaboração e retornos de clientes.
                       </p>
                     </div>
-                    <Button variant="outline" onClick={handleGenerateTestOrder} className="rounded-full">
+                    <Button
+                      variant="outline"
+                      onClick={handleGenerateTestOrder}
+                      className="rounded-full"
+                    >
                       Gerar pedido teste
                     </Button>
                   </div>
 
                   <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <Stat icon={Clock} label="Na fila" value={counts.oportunidades} accent="bg-amber-100 text-amber-700" />
-                    <Stat icon={Send} label="Para enviar" value={counts.elaboracao} accent="bg-sky-100 text-sky-700" />
-                    <Stat icon={TrendingUp} label="Em andamento" value={counts.ativos} accent="bg-emerald-100 text-emerald-700" />
-                    <Stat icon={DollarSign} label="A receber" value={aReceber} accent="bg-brand-soft text-brand" />
+                    <Stat
+                      icon={Clock}
+                      label="Na fila"
+                      value={counts.oportunidades}
+                      accent="bg-amber-100 text-amber-700"
+                    />
+                    <Stat
+                      icon={Send}
+                      label="Para enviar"
+                      value={counts.elaboracao}
+                      accent="bg-sky-100 text-sky-700"
+                    />
+                    <Stat
+                      icon={TrendingUp}
+                      label="Em andamento"
+                      value={counts.ativos}
+                      accent="bg-emerald-100 text-emerald-700"
+                    />
+                    <Stat
+                      icon={DollarSign}
+                      label="A receber"
+                      value={aReceber}
+                      accent="bg-brand-soft text-brand"
+                    />
                   </section>
 
                   <TabsList className="mt-6 h-auto w-full flex-wrap justify-start rounded-2xl border border-border bg-card p-1.5 shadow-sm lg:w-auto">
-                    <TabsTrigger value="oportunidades" className="rounded-xl px-4 py-2 text-sm font-medium">
+                    <TabsTrigger
+                      value="oportunidades"
+                      className="rounded-xl px-4 py-2 text-sm font-medium"
+                    >
                       Radar <span className="ml-1.5 opacity-60">({counts.oportunidades})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="elaboracao" className="rounded-xl px-4 py-2 text-sm font-medium">
+                    <TabsTrigger
+                      value="elaboracao"
+                      className="rounded-xl px-4 py-2 text-sm font-medium"
+                    >
                       Elaborar <span className="ml-1.5 opacity-60">({counts.elaboracao})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="enviados" className="rounded-xl px-4 py-2 text-sm font-medium">
+                    <TabsTrigger
+                      value="enviados"
+                      className="rounded-xl px-4 py-2 text-sm font-medium"
+                    >
                       Enviados <span className="ml-1.5 opacity-60">({counts.enviados})</span>
                     </TabsTrigger>
                   </TabsList>
@@ -715,14 +928,57 @@ function ProfissionalArea() {
                       </div>
                     ) : (
                       <>
-                        <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("oportunidades")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="pegar" enviar={enviar} refresh={refresh} onRecusar={recusarOrcamento} emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento." emptyIcon={Clock} />
+                        <TabsContent
+                          value="oportunidades"
+                          className="mt-0 focus-visible:outline-none"
+                        >
+                          <Grid
+                            items={filterBy("oportunidades")}
+                            profiles={profiles}
+                            catalog={catalog}
+                            orcMats={orcMats}
+                            clienteGeo={clienteGeo}
+                            profGeo={profGeo}
+                            userId={user?.id ?? ""}
+                            mode="pegar"
+                            enviar={enviar}
+                            refresh={refresh}
+                            onRecusar={recusarOrcamento}
+                            emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento."
+                            emptyIcon={Clock}
+                          />
                         </TabsContent>
                         <TabsContent value="elaboracao" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("elaboracao")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="enviar" enviar={enviar} refresh={refresh} emptyMsg="Você ainda não possui pedidos reservados para elaborar." emptyIcon={Pencil} />
+                          <Grid
+                            items={filterBy("elaboracao")}
+                            profiles={profiles}
+                            catalog={catalog}
+                            orcMats={orcMats}
+                            clienteGeo={clienteGeo}
+                            profGeo={profGeo}
+                            userId={user?.id ?? ""}
+                            mode="enviar"
+                            enviar={enviar}
+                            refresh={refresh}
+                            emptyMsg="Você ainda não possui pedidos reservados para elaborar."
+                            emptyIcon={Pencil}
+                          />
                         </TabsContent>
                         <TabsContent value="enviados" className="mt-0 focus-visible:outline-none">
-                          <Grid items={filterBy("enviados")} profiles={profiles} catalog={catalog} orcMats={orcMats} clienteGeo={clienteGeo} profGeo={profGeo} userId={user?.id ?? ""} mode="revisar" enviar={enviar} refresh={refresh} emptyMsg="Nenhuma proposta enviada aguardando resposta." emptyIcon={Send} />
+                          <Grid
+                            items={filterBy("enviados")}
+                            profiles={profiles}
+                            catalog={catalog}
+                            orcMats={orcMats}
+                            clienteGeo={clienteGeo}
+                            profGeo={profGeo}
+                            userId={user?.id ?? ""}
+                            mode="revisar"
+                            enviar={enviar}
+                            refresh={refresh}
+                            emptyMsg="Nenhuma proposta enviada aguardando resposta."
+                            emptyIcon={Send}
+                          />
                         </TabsContent>
                       </>
                     )}
@@ -735,26 +991,39 @@ function ProfissionalArea() {
 
                 {/* Hero greeting */}
                 <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand via-orange-500 to-amber-500 text-white p-6 sm:p-8 shadow-xl">
-                  <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" aria-hidden />
-                  <div className="absolute -left-8 -bottom-16 h-40 w-40 rounded-full bg-white/10 blur-2xl" aria-hidden />
+                  <div
+                    className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl"
+                    aria-hidden
+                  />
+                  <div
+                    className="absolute -left-8 -bottom-16 h-40 w-40 rounded-full bg-white/10 blur-2xl"
+                    aria-hidden
+                  />
                   <div className="relative flex flex-wrap items-start justify-between gap-6">
                     <div className="min-w-0">
                       <p className="text-[11px] uppercase tracking-[0.2em] text-white/70 font-semibold">
-                        {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                        {new Date().toLocaleDateString("pt-BR", {
+                          weekday: "long",
+                          day: "2-digit",
+                          month: "long",
+                        })}
                       </p>
                       <h2 className="mt-1 text-2xl sm:text-3xl font-black tracking-tight">
-                        {greetingByHour()}, {(user?.user_metadata as any)?.nome?.split(" ")[0] || "profissional"}!
+                        {greetingByHour()},{" "}
+                        {(user?.user_metadata as any)?.nome?.split(" ")[0] || "profissional"}!
                       </h2>
                       <p className="mt-2 text-sm text-white/85 max-w-md">
                         {counts.oportunidades > 0
                           ? `Você tem ${counts.oportunidades} oportunidade${counts.oportunidades > 1 ? "s" : ""} esperando no radar.`
                           : counts.elaboracao > 0
-                          ? `${counts.elaboracao} orçamento${counts.elaboracao > 1 ? "s" : ""} aguardando você enviar a proposta.`
-                          : "Tudo em dia por aqui. Continue acompanhando seus pedidos."}
+                            ? `${counts.elaboracao} orçamento${counts.elaboracao > 1 ? "s" : ""} aguardando você enviar a proposta.`
+                            : "Tudo em dia por aqui. Continue acompanhando seus pedidos."}
                       </p>
                     </div>
                     <Button
-                      onClick={() => navigate({ to: "/profissional", search: { tab: "orcamentos" }})}
+                      onClick={() =>
+                        navigate({ to: "/profissional", search: { tab: "orcamentos" } })
+                      }
                       className="rounded-full bg-white text-brand hover:bg-white/90 shadow-md font-bold"
                     >
                       Ver pedidos
@@ -778,7 +1047,10 @@ function ProfissionalArea() {
                     value={counts.oportunidades}
                     accent="from-amber-50 to-amber-100 text-amber-700 ring-amber-200"
                     cta="Ver radar"
-                    onClick={() => { setPedidosSubTab("oportunidades"); navigate({ to: "/profissional", search: { tab: "orcamentos" }}); }}
+                    onClick={() => {
+                      setPedidosSubTab("oportunidades");
+                      navigate({ to: "/profissional", search: { tab: "orcamentos" } });
+                    }}
                   />
                   <ActionStat
                     icon={Pencil}
@@ -786,7 +1058,10 @@ function ProfissionalArea() {
                     value={counts.elaboracao}
                     accent="from-sky-50 to-sky-100 text-sky-700 ring-sky-200"
                     cta="Elaborar agora"
-                    onClick={() => { setPedidosSubTab("elaboracao"); navigate({ to: "/profissional", search: { tab: "orcamentos" }}); }}
+                    onClick={() => {
+                      setPedidosSubTab("elaboracao");
+                      navigate({ to: "/profissional", search: { tab: "orcamentos" } });
+                    }}
                   />
                   <ActionStat
                     icon={TrendingUp}
@@ -794,7 +1069,10 @@ function ProfissionalArea() {
                     value={counts.ativos}
                     accent="from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-200"
                     cta="Ver serviços"
-                    onClick={() => { setServicosSubTab("ativos"); navigate({ to: "/profissional", search: { tab: "servicos" }}); }}
+                    onClick={() => {
+                      setServicosSubTab("ativos");
+                      navigate({ to: "/profissional", search: { tab: "servicos" } });
+                    }}
                   />
                   <ActionStat
                     icon={DollarSign}
@@ -802,7 +1080,7 @@ function ProfissionalArea() {
                     value={aReceber}
                     accent="from-orange-50 to-orange-100 text-brand ring-orange-200"
                     cta="Financeiro"
-                    onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})}
+                    onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" } })}
                   />
                 </section>
 
@@ -812,17 +1090,44 @@ function ProfissionalArea() {
                     <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
                   </div>
                   <div className="space-y-4">
-                    <NivelBadge concluidos={totalConcluidos} notaMedia={Number(mediaAvaliacoes) || 0} />
+                    <NivelBadge
+                      concluidos={totalConcluidos}
+                      notaMedia={Number(mediaAvaliacoes) || 0}
+                    />
                     <div className="rounded-2xl border border-border bg-card p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <Star className="h-4 w-4 text-amber-500" />
                         <h3 className="text-sm font-bold text-foreground">Atalhos rápidos</h3>
                       </div>
                       <div className="grid gap-2">
-                        <QuickLink icon={CalendarClock} label="Minha agenda" onClick={() => navigate({ to: "/profissional", search: { tab: "agenda" }})} />
-                        <QuickLink icon={Star} label="Avaliações" onClick={() => navigate({ to: "/profissional", search: { tab: "avaliacoes" }})} />
-                        <QuickLink icon={Wallet} label="Financeiro" onClick={() => navigate({ to: "/profissional", search: { tab: "financeiro" }})} />
-                        <QuickLink icon={Settings} label="Perfil e configurações" onClick={() => navigate({ to: "/profissional", search: { tab: "configuracoes" }})} />
+                        <QuickLink
+                          icon={CalendarClock}
+                          label="Minha agenda"
+                          onClick={() =>
+                            navigate({ to: "/profissional", search: { tab: "agenda" } })
+                          }
+                        />
+                        <QuickLink
+                          icon={Star}
+                          label="Avaliações"
+                          onClick={() =>
+                            navigate({ to: "/profissional", search: { tab: "avaliacoes" } })
+                          }
+                        />
+                        <QuickLink
+                          icon={Wallet}
+                          label="Financeiro"
+                          onClick={() =>
+                            navigate({ to: "/profissional", search: { tab: "financeiro" } })
+                          }
+                        />
+                        <QuickLink
+                          icon={Settings}
+                          label="Perfil e configurações"
+                          onClick={() =>
+                            navigate({ to: "/profissional", search: { tab: "configuracoes" } })
+                          }
+                        />
                       </div>
                     </div>
                   </div>
@@ -913,7 +1218,15 @@ function ActionStat({
   );
 }
 
-function QuickLink({ icon: Icon, label, onClick }: { icon: any; label: string; onClick: () => void }) {
+function QuickLink({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: any;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -922,7 +1235,9 @@ function QuickLink({ icon: Icon, label, onClick }: { icon: any; label: string; o
     >
       <Icon className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1 text-left">{label}</span>
-      <span className="text-muted-foreground" aria-hidden>›</span>
+      <span className="text-muted-foreground" aria-hidden>
+        ›
+      </span>
     </button>
   );
 }
@@ -968,7 +1283,7 @@ function Grid({
     return (
       <div className="py-24 px-6 text-center bg-white rounded-3xl border border-dashed border-slate-300 flex flex-col items-center justify-center">
         <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100 shadow-sm">
-           <EmptyIcon className="h-8 w-8 text-slate-300" />
+          <EmptyIcon className="h-8 w-8 text-slate-300" />
         </div>
         <p className="text-slate-500 font-medium text-sm max-w-sm">{emptyMsg}</p>
       </div>
@@ -998,7 +1313,10 @@ function Grid({
           onRecusar={onRecusar}
           minhaProposta={minhasPropostas?.find((p: any) => p.orcamento_id === o.id)}
           materiaisCat={materiaisCat}
-          propostaMateriais={propostasMateriais?.filter((pm: any) => pm.proposta_id === minhasPropostas?.find((p: any) => p.orcamento_id === o.id)?.id)}
+          propostaMateriais={propostasMateriais?.filter(
+            (pm: any) =>
+              pm.proposta_id === minhasPropostas?.find((p: any) => p.orcamento_id === o.id)?.id,
+          )}
         />
       ))}
     </div>
@@ -1041,19 +1359,23 @@ function OrcamentoCard({
   const isOportunidade = !minhaProposta && mode === "pegar";
   const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
   const [editing, setEditing] = useState(isOportunidade);
-  const shouldOpenChat = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("chat") === "1";
+  const shouldOpenChat =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("chat") === "1";
   const initialValor = minhaProposta?.valor_servico ?? o.valor_servico ?? o.valor ?? null;
-  const [valor, setValor] = useState(initialValor != null ? String(initialValor).replace(".", ",") : "");
+  const [valor, setValor] = useState(
+    initialValor != null ? String(initialValor).replace(".", ",") : "",
+  );
   const [obs, setObs] = useState(minhaProposta?.observacoes ?? o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
   const [picked, setPicked] = useState<Record<string, number>>(() => {
     if (propostaMateriais && propostaMateriais.length > 0) {
       const init: Record<string, number> = {};
-      propostaMateriais.forEach(pm => init[pm.material_id] = pm.quantidade);
+      propostaMateriais.forEach((pm) => (init[pm.material_id] = pm.quantidade));
       return init;
     } else if (materiais && materiais.length > 0 && !minhaProposta) {
       const init: Record<string, number> = {};
-      materiais.forEach((m: any) => init[m.material_id!] = m.quantidade);
+      materiais.forEach((m: any) => (init[m.material_id!] = m.quantidade));
       return init;
     }
     return {};
@@ -1100,7 +1422,12 @@ function OrcamentoCard({
   };
 
   const handleRecusar = async () => {
-    if (!confirm("Tem certeza que deseja devolver este pedido para a fila? Ele ficará visível para outros profissionais novamente.")) return;
+    if (
+      !confirm(
+        "Tem certeza que deseja devolver este pedido para a fila? Ele ficará visível para outros profissionais novamente.",
+      )
+    )
+      return;
     setSaving(true);
     const { error } = await supabase
       .from("orcamentos")
@@ -1118,7 +1445,11 @@ function OrcamentoCard({
   const handlePegar = async () => {
     setSaving(true);
     // Verificação dupla no banco
-    const { data } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+    const { data } = await supabase
+      .from("orcamentos")
+      .select("profissional_id")
+      .eq("id", o.id)
+      .single();
     if (data?.profissional_id) {
       toast.error("Poxa! Outro profissional pegou esse pedido 1 segundo antes de você.");
       setSaving(false);
@@ -1143,7 +1474,11 @@ function OrcamentoCard({
   const doAceitar = async () => {
     if (o.valor_servico == null) return;
     setSaving(true);
-    const { data: check } = await supabase.from("orcamentos").select("profissional_id").eq("id", o.id).single();
+    const { data: check } = await supabase
+      .from("orcamentos")
+      .select("profissional_id")
+      .eq("id", o.id)
+      .single();
     if (check?.profissional_id) {
       toast.error("Outro profissional pegou esse pedido antes de você.");
       setSaving(false);
@@ -1172,7 +1507,12 @@ function OrcamentoCard({
 
   const handleConcluir = async () => {
     if (fotosConcluido.length === 0) {
-      if (!confirm("Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.")) return;
+      if (
+        !confirm(
+          "Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.",
+        )
+      )
+        return;
     }
     setSaving(true);
     const { error } = await supabase
@@ -1189,35 +1529,44 @@ function OrcamentoCard({
   };
 
   const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
-  
+
   // Calculate urgency
   let isUrgent = false;
   if (o.status === "customizado_pendente") {
-    const hoursSinceCreated = (new Date().getTime() - new Date(o.created_at).getTime()) / (1000 * 60 * 60);
+    const hoursSinceCreated =
+      (new Date().getTime() - new Date(o.created_at).getTime()) / (1000 * 60 * 60);
     if (hoursSinceCreated >= 2) isUrgent = true; // Urgent if more than half of the SLA has passed
   }
 
-  const isHighlighted = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
+  const isHighlighted =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
 
   return (
-    <div id={`orc-${o.id}`} className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? 'border-brand ring-2 ring-brand/30 shadow-lg' : isUrgent ? 'border-red-200 shadow-red-50' : 'border-border'}`}>
-      {isUrgent && (
-        <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />
-      )}
+    <div
+      id={`orc-${o.id}`}
+      className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? "border-brand ring-2 ring-brand/30 shadow-lg" : isUrgent ? "border-red-200 shadow-red-50" : "border-border"}`}
+    >
+      {isUrgent && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
-          <p className={`text-xs mt-0.5 font-medium ${isUrgent ? 'text-red-500' : 'text-muted-foreground'}`}>
-            Solicitado em {new Date(o.created_at).toLocaleDateString("pt-BR", {
+          <p
+            className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
+          >
+            Solicitado em{" "}
+            {new Date(o.created_at).toLocaleDateString("pt-BR", {
               day: "2-digit",
               month: "short",
               hour: "2-digit",
-              minute: "2-digit"
+              minute: "2-digit",
             })}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${meta.className}`}>
+          <span
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${meta.className}`}
+          >
             {meta.label}
           </span>
           {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
@@ -1231,20 +1580,23 @@ function OrcamentoCard({
           {(clienteCidade || distKm != null) && (
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" />
-              {clienteCidade}{distKm != null && ` · ${distKm.toFixed(1)} km`}
+              {clienteCidade}
+              {distKm != null && ` · ${distKm.toFixed(1)} km`}
             </span>
           )}
         </div>
         {o.descricao && (
-          <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">
-            {o.descricao}
-          </p>
+          <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">{o.descricao}</p>
         )}
         {o.fotos_problema && o.fotos_problema.length > 0 && (
           <div className="flex gap-2 flex-wrap">
             {o.fotos_problema.map((u) => (
               <a key={u} href={u} target="_blank" rel="noopener noreferrer">
-                <img src={u} alt="Foto do problema" className="h-16 w-16 rounded-lg object-cover border border-border hover:opacity-90 transition" />
+                <img
+                  src={u}
+                  alt="Foto do problema"
+                  className="h-16 w-16 rounded-lg object-cover border border-border hover:opacity-90 transition"
+                />
               </a>
             ))}
           </div>
@@ -1257,7 +1609,8 @@ function OrcamentoCard({
             </div>
             {(Number(o.valor_servico ?? 0) > 0 || Number(o.taxa_material) > 0) && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                Mão de obra R$ {Number(o.valor_servico ?? 0).toFixed(2)} · Materiais R$ {Number(o.taxa_material).toFixed(2)}
+                Mão de obra R$ {Number(o.valor_servico ?? 0).toFixed(2)} · Materiais R${" "}
+                {Number(o.taxa_material).toFixed(2)}
               </p>
             )}
           </div>
@@ -1271,9 +1624,14 @@ function OrcamentoCard({
               {materiais.map((m, i) => (
                 <li key={i} className="flex justify-between">
                   <span>
-                    {m.nome_snapshot} <span className="text-muted-foreground">× {Number(m.quantidade)} {m.unidade_snapshot}</span>
+                    {m.nome_snapshot}{" "}
+                    <span className="text-muted-foreground">
+                      × {Number(m.quantidade)} {m.unidade_snapshot}
+                    </span>
                   </span>
-                  <span className="tabular-nums font-medium">R$ {Number(m.subtotal).toFixed(2)}</span>
+                  <span className="tabular-nums font-medium">
+                    R$ {Number(m.subtotal).toFixed(2)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1290,11 +1648,17 @@ function OrcamentoCard({
         )}
         {o.status === "concluido" && o.fotos_concluido && o.fotos_concluido.length > 0 && (
           <div>
-            <p className="text-xs uppercase font-bold text-muted-foreground mb-1.5">Serviço concluído</p>
+            <p className="text-xs uppercase font-bold text-muted-foreground mb-1.5">
+              Serviço concluído
+            </p>
             <div className="flex gap-2 flex-wrap">
               {o.fotos_concluido.map((u) => (
                 <a key={u} href={u} target="_blank" rel="noopener noreferrer">
-                  <img src={u} alt="Serviço concluído" className="h-16 w-16 rounded-lg object-cover border border-border" />
+                  <img
+                    src={u}
+                    alt="Serviço concluído"
+                    className="h-16 w-16 rounded-lg object-cover border border-border"
+                  />
                 </a>
               ))}
             </div>
@@ -1302,7 +1666,7 @@ function OrcamentoCard({
         )}
       </div>
 
-      {(o.profissional_id === userId && (o.status === "aprovado" || o.status === "pago")) && (
+      {o.profissional_id === userId && (o.status === "aprovado" || o.status === "pago") && (
         <div className="pt-3 border-t border-border">
           <CheckInOut
             orcamentoId={o.id}
@@ -1333,132 +1697,154 @@ function OrcamentoCard({
             disabled={saving}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold h-12 shadow-md"
           >
-            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Marcar como concluído</>}
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Marcar como concluído
+              </>
+            )}
           </Button>
         </div>
       )}
 
-      {(isOportunidade || editing) ? (
+      {isOportunidade || editing ? (
         <div className="space-y-3 pt-3 border-t border-border">
-              <div>
-                <label className="text-xs uppercase font-bold text-muted-foreground">Mão de obra (R$)</label>
-                <input
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  placeholder="ex: 180,00"
-                  inputMode="decimal"
-                  className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
-                />
-                {min != null && max != null && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Range tabelado: <span className="font-semibold text-foreground">R$ {min.toFixed(2)} a R$ {max.toFixed(2)}</span>
-                  </p>
-                )}
-              </div>
-              <div className="pt-2">
-                <label className="text-xs uppercase font-bold text-muted-foreground mb-2 block">Materiais Inclusos</label>
-                <div className="space-y-2">
-                  {Object.entries(picked).map(([id, qtd]) => {
-                    const mat = materiaisCat?.find((m) => m.id === id);
-                    if (!mat) return null;
-                    return (
-                      <div key={id} className="flex items-center gap-2">
-                        <div className="flex-1 text-sm">{mat.nome}</div>
-                        <div className="flex items-center border border-border rounded-lg overflow-hidden h-9">
-                          <button
-                            type="button"
-                            className="px-3 hover:bg-slate-100 font-bold"
-                            onClick={() => setPicked(p => { const np = {...p}; np[id] -= 1; if (np[id] <= 0) delete np[id]; return np; })}
-                          >
-                            -
-                          </button>
-                          <span className="w-8 text-center text-sm">{qtd}</span>
-                          <button
-                            type="button"
-                            className="px-3 hover:bg-slate-100 font-bold"
-                            onClick={() => setPicked(p => ({...p, [id]: p[id] + 1}))}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <select 
-                    className="w-full mt-2 h-10 px-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 text-sm"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val) {
-                        setPicked(p => ({...p, [val]: (p[val] || 0) + 1}));
-                        e.target.value = "";
-                      }
-                    }}
-                    value=""
-                  >
-                    <option value="" disabled>+ Adicionar material do catálogo...</option>
-                    {materiaisCat?.filter(m => !picked[m.id]).map(m => (
-                      <option key={m.id} value={m.id}>{m.nome} (R$ {m.preco_atual}/{m.unidade})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>
-                <textarea
-                  value={obs}
-                  onChange={(e) => setObs(e.target.value)}
-                  maxLength={500}
-                  placeholder="Detalhes sobre o serviço, prazo, materiais inclusos…"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
-                  rows={2}
-                />
-              </div>
-              <div className="flex gap-2 mt-4">
-                {mode === "revisar" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditing(false)}
-                    disabled={saving}
-                    className="rounded-full flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                )}
-                {mode === "enviar" && (
-                   <Button
-                     variant="outline"
-                     onClick={handleRecusar}
-                     disabled={saving}
-                     className="rounded-full flex-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-border"
-                   >
-                     <XCircle className="h-4 w-4 mr-1.5" /> Devolver p/ Fila
-                   </Button>
-                )}
-                <Button
-                  onClick={handleEnviar}
-                  disabled={saving}
-                  className="flex-[1.5] bg-brand text-brand-foreground rounded-full font-bold"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : mode === "revisar" ? (
-                    "Salvar proposta"
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-1.5" /> Enviar Cotação
-                    </>
-                  )}
-                </Button>
-              </div>
+          <div>
+            <label className="text-xs uppercase font-bold text-muted-foreground">
+              Mão de obra (R$)
+            </label>
+            <input
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder="ex: 180,00"
+              inputMode="decimal"
+              className="w-full mt-1 h-11 px-3 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
+            />
+            {min != null && max != null && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Range tabelado:{" "}
+                <span className="font-semibold text-foreground">
+                  R$ {min.toFixed(2)} a R$ {max.toFixed(2)}
+                </span>
+              </p>
+            )}
+          </div>
+          <div className="pt-2">
+            <label className="text-xs uppercase font-bold text-muted-foreground mb-2 block">
+              Materiais Inclusos
+            </label>
+            <div className="space-y-2">
+              {Object.entries(picked).map(([id, qtd]) => {
+                const mat = materiaisCat?.find((m) => m.id === id);
+                if (!mat) return null;
+                return (
+                  <div key={id} className="flex items-center gap-2">
+                    <div className="flex-1 text-sm">{mat.nome}</div>
+                    <div className="flex items-center border border-border rounded-lg overflow-hidden h-9">
+                      <button
+                        type="button"
+                        className="px-3 hover:bg-slate-100 font-bold"
+                        onClick={() =>
+                          setPicked((p) => {
+                            const np = { ...p };
+                            np[id] -= 1;
+                            if (np[id] <= 0) delete np[id];
+                            return np;
+                          })
+                        }
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center text-sm">{qtd}</span>
+                      <button
+                        type="button"
+                        className="px-3 hover:bg-slate-100 font-bold"
+                        onClick={() => setPicked((p) => ({ ...p, [id]: p[id] + 1 }))}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              <select
+                className="w-full mt-2 h-10 px-3 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 text-sm"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val) {
+                    setPicked((p) => ({ ...p, [val]: (p[val] || 0) + 1 }));
+                    e.target.value = "";
+                  }
+                }}
+                value=""
+              >
+                <option value="" disabled>
+                  + Adicionar material do catálogo...
+                </option>
+                {materiaisCat
+                  ?.filter((m) => !picked[m.id])
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nome} (R$ {m.preco_atual}/{m.unidade})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs uppercase font-bold text-muted-foreground">Observações</label>
+            <textarea
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              maxLength={500}
+              placeholder="Detalhes sobre o serviço, prazo, materiais inclusos…"
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20"
+              rows={2}
+            />
+          </div>
+          <div className="flex gap-2 mt-4">
+            {mode === "revisar" && (
+              <Button
+                variant="outline"
+                onClick={() => setEditing(false)}
+                disabled={saving}
+                className="rounded-full flex-1"
+              >
+                Cancelar
+              </Button>
+            )}
+            {mode === "enviar" && (
+              <Button
+                variant="outline"
+                onClick={handleRecusar}
+                disabled={saving}
+                className="rounded-full flex-1 text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-border"
+              >
+                <XCircle className="h-4 w-4 mr-1.5" /> Devolver p/ Fila
+              </Button>
+            )}
+            <Button
+              onClick={handleEnviar}
+              disabled={saving}
+              className="flex-[1.5] bg-brand text-brand-foreground rounded-full font-bold"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : mode === "revisar" ? (
+                "Salvar proposta"
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-1.5" /> Enviar Cotação
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       ) : null}
 
       {mode === "revisar" && !editing && (
-        <Button
-          variant="outline"
-          onClick={() => setEditing(true)}
-          className="rounded-full w-full"
-        >
+        <Button variant="outline" onClick={() => setEditing(true)} className="rounded-full w-full">
           <Pencil className="h-4 w-4 mr-1.5" /> Revisar orçamento
         </Button>
       )}

@@ -11,20 +11,16 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-primary text-primary-foreground shadow-soft hover:bg-primary/90 hover:shadow-brand hover:-translate-y-0.5",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
           "border border-border bg-background shadow-sm hover:border-brand/40 hover:bg-brand-soft hover:text-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         brand:
           "bg-brand text-brand-foreground shadow-brand hover:bg-brand/90 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-20px_oklch(0.5_0.13_30/0.55)]",
-        hero:
-          "bg-foreground text-background shadow-soft hover:bg-foreground/90 hover:-translate-y-0.5 hover:shadow-brand",
-        soft:
-          "bg-brand-soft text-foreground hover:bg-brand-soft/80 hover:text-brand",
+        hero: "bg-foreground text-background shadow-soft hover:bg-foreground/90 hover:-translate-y-0.5 hover:shadow-brand",
+        soft: "bg-brand-soft text-foreground hover:bg-brand-soft/80 hover:text-brand",
       },
       size: {
         default: "h-10 px-5 py-2",
