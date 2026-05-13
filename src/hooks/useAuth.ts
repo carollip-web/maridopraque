@@ -172,6 +172,6 @@ export function useAuth() {
       await supabase.auth.signOut();
     },
     updatePhoto: (_: string) => {},
-    updateUserData: (_: any) => {},
+    updateUserData: (_: unknown) => {},
   };
 }
