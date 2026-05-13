@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWritableAdminSection } from "./admin-permissions.server";
 import { fetchMarketplacePrice } from "./materiais.server";
 
 const atualizarSchema = z.object({ materialId: z.string().uuid() });
