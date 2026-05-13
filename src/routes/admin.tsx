@@ -536,7 +536,7 @@ function AdminPedidos() {
         
         <div className="flex flex-wrap items-center gap-3">
           {/* Export Button */}
-          <Button variant="outline" size="sm" onClick={handleExport} className="rounded-xl gap-2 h-10 px-4 bg-white">
+          <Button variant="outline" size="sm" onClick={handleExport} className="rounded-full gap-2 h-10 px-5 bg-white border-slate-200 hover:border-brand/30 hover:bg-slate-50 text-slate-600 transition-all shadow-sm">
             <FileDown className="h-4 w-4" /> Exportar
           </Button>
 
@@ -590,25 +590,24 @@ function AdminPedidos() {
                 <X className="h-4 w-4" /> Limpar
               </Button>
             )}
-            <Button variant="outline" size="sm" className="h-9 rounded-xl gap-2 bg-white" onClick={() => refetch()}>
+            <Button variant="outline" size="sm" className="h-9 rounded-full gap-2 bg-white border-slate-200 hover:border-brand/30 hover:bg-slate-50 text-slate-600 transition-all shadow-sm px-4" onClick={() => refetch()}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-9 rounded-xl gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100" 
+              className="h-9 rounded-full gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold px-4 transition-all shadow-sm" 
               onClick={async () => {
                 const count = filtered.length;
                 if (count === 0) return;
-                const confirmText = prompt(`ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE os ${count} pedidos exibidos nesta tela.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
+                const confirmText = prompt(`ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE os ${count} pedidos selecionados.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
                 if (confirmText === "EXCLUIR TUDO") {
                   setSelectedIds(filtered.map(o => o.id));
-                  // Wait for state update is not needed if we call the function directly with IDs
                   setTimeout(() => handleBulkDelete(), 100);
                 }
               }}
             >
-              <Trash2 className="h-4 w-4" /> Excluir Todos
+              <Trash2 className="h-4 w-4" /> Excluir Selecionados
             </Button>
           </div>
         </div>
@@ -1678,30 +1677,30 @@ function AdminClientes() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm" onClick={handleExportClients} className="rounded-xl h-10 px-4 bg-white gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportClients} className="rounded-full h-10 px-5 bg-white border-slate-200 hover:border-brand/30 hover:bg-slate-50 text-slate-600 transition-all shadow-sm gap-2">
             <FileDown className="h-4 w-4" /> Exportar Base
           </Button>
 
           <Button 
             variant="outline" 
             size="sm" 
-            className="h-10 rounded-xl gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold" 
+            className="h-10 rounded-full gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold px-5 transition-all shadow-sm" 
             onClick={async () => {
               const count = filtered.length;
               if (count === 0) return;
-              const confirmText = prompt(`ATENÇÃO: Você está prestes a remover PERMANENTEMENTE os ${count} clientes exibidos nesta tela.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
+              const confirmText = prompt(`ATENÇÃO: Você está prestes a remover PERMANENTEMENTE os ${count} clientes selecionados.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`);
               if (confirmText === "EXCLUIR TUDO") {
                 setSelectedIds(filtered.map(c => c.id));
                 setTimeout(() => handleBulkDelete(), 100);
               }
             }}
           >
-            <Trash2 className="h-4 w-4" /> Excluir Todos
+            <Trash2 className="h-4 w-4" /> Excluir Selecionados
           </Button>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-brand text-white rounded-xl h-10 px-4 font-bold gap-2">
+              <Button className="bg-brand text-white rounded-full h-10 px-6 font-bold gap-2 shadow-lg shadow-brand/20 hover:shadow-brand/30 transition-all">
                 <UserPlus className="h-4 w-4" /> Novo Cliente
               </Button>
             </DialogTrigger>
