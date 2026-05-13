@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWritableAdminSection } from "./admin-permissions.server";
 import { fetchMarketplacePrice } from "./materiais.server";
 
 const atualizarSchema = z.object({ materialId: z.string().uuid() });
@@ -10,15 +11,7 @@ export const atualizarPrecoMaterialMarketplace = createServerFn({ method: "POST"
   .inputValidator((input) => atualizarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    // valida admin
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    if (!roles?.some((r) => r.role === "admin")) {
-      throw new Error("Apenas admin pode atualizar preço de marketplace");
-    }
+    await requireWritableAdminSection(supabase, userId, "servicos");
 
     const { data: mat, error: e1 } = await supabase
       .from("materiais")
@@ -58,9 +51,7 @@ export const salvarMaterial = createServerFn({ method: "POST" })
   .inputValidator((input) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles } = await supabase
-      .from("user_roles").select("role").eq("user_id", userId);
-    if (!roles?.some((r) => r.role === "admin")) throw new Error("Apenas admin");
+    await requireWritableAdminSection(supabase, userId, "servicos");
 
     if (data.id) {
       const { data: row, error } = await supabase

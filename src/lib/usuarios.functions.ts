@@ -2,16 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  if (!roles?.some((r: any) => r.role === "admin")) {
-    throw new Error("Apenas administradores podem gerenciar usuários.");
-  }
-}
+import {
+  requireAdminLevel,
+  requireSuperAdmin,
+} from "./admin-permissions.server";
 
 const userSchema = z.object({
   nome: z.string().min(2),
@@ -25,7 +19,8 @@ export const criarUsuarioAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => userSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    // suporte é apenas leitura — só super_admin/admin criam usuários.
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -90,7 +85,8 @@ export const excluirUsuarioAdmin = createServerFn({ method: "POST" })
   .inputValidator((input) => deleteUserSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
+    // Exclusão é destrutiva — apenas super_admin/admin podem.
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -138,16 +134,8 @@ export const convidarAdminFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    // Apenas super_admin pode adicionar membros à equipe
-    const { data: myRole } = await supabase
-      .from("user_roles")
-      .select("role, admin_level")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!myRole || myRole.admin_level !== "super_admin") {
-      throw new Error("Apenas super admins podem gerenciar a equipe administrativa.");
-    }
+    // Apenas super_admin pode gerenciar a equipe administrativa.
+    await requireSuperAdmin(supabase, userId);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
