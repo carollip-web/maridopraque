@@ -88,7 +88,11 @@ export async function logAudit(params: {
 }
 
 function sanitizeDetails(d: Record<string, unknown>): Record<string, unknown> {
-  const FORBIDDEN = ["password", "senha", "token", "secret", "service_role", "apikey", "api_key"];
+  const FORBIDDEN = [
+    "password", "senha", "token", "secret", "service_role",
+    "apikey", "api_key", "authorization", "bearer",
+    "access_token", "refresh_token",
+  ];
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(d)) {
     if (FORBIDDEN.some((f) => k.toLowerCase().includes(f))) continue;
