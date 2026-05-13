@@ -105,10 +105,8 @@ const queryClient = new QueryClient({
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Painéis com chrome próprio (sidebar/header internos) não usam Header/Footer públicos
-  const isAppShell =
-    pathname.startsWith("/profissional") ||
-    pathname.startsWith("/cliente");
+  // Header/Footer públicos exibidos em todas as rotas
+  const isAppShell = false;
 
   return (
     <QueryClientProvider client={queryClient}>
