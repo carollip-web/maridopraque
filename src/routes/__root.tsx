@@ -107,11 +107,8 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Painéis com chrome próprio (sidebar/header internos) não usam Header/Footer públicos
   const isAppShell =
-    pathname.startsWith("/admin") ||
     pathname.startsWith("/profissional") ||
-    pathname.startsWith("/cliente") ||
-    pathname.startsWith("/materiais-admin") ||
-    pathname.startsWith("/servicos-admin");
+    pathname.startsWith("/cliente");
 
   return (
     <QueryClientProvider client={queryClient}>
