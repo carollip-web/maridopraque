@@ -105,8 +105,13 @@ const queryClient = new QueryClient({
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Header/Footer públicos exibidos em todas as rotas
-  const isAppShell = false;
+  // Header/Footer públicos ficam ocultos nos painéis privados (admin, cliente, profissional).
+  const isAppShell =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/cliente") ||
+    pathname.startsWith("/profissional") ||
+    pathname.startsWith("/materiais-admin") ||
+    pathname.startsWith("/servicos-admin");
 
   return (
     <QueryClientProvider client={queryClient}>
