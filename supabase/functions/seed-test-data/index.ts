@@ -1,12 +1,7 @@
 // Seed test data: cria 1 admin, 3 profissionais, 5 clientes e pedidos cobrindo todos os status.
 // Apenas super_admin pode invocar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { preflight, ensureOrigin, jsonResponse, logAudit } from "../_shared/security.ts";
 
 const TEST_PASSWORD = "Teste@2026!";
 const TEST_EMAIL_DOMAIN = "teste.maridopraque.local";
@@ -32,7 +27,8 @@ const USERS: SeedUser[] = [
 ];
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const pf = preflight(req); if (pf) return pf;
+  const originGuard = ensureOrigin(req); if (originGuard) return originGuard;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -41,18 +37,18 @@ Deno.serve(async (req) => {
 
     // Validate caller is super_admin
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "Não autenticado" }, 401);
+    if (!authHeader) return jsonResponse(req, { error: "Não autenticado" }, 401);
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData } = await userClient.auth.getUser();
-    if (!userData.user) return json({ error: "Não autenticado" }, 401);
+    if (!userData.user) return jsonResponse(req, { error: "Não autenticado" }, 401);
     const { data: roles } = await userClient
       .from("user_roles").select("role, admin_level").eq("user_id", userData.user.id);
     const isSuperAdmin = (roles ?? []).some(
       (r: any) => r.role === "admin" && r.admin_level === "super_admin",
     );
-    if (!isSuperAdmin) return json({ error: "Apenas super_admin" }, 403);
+    if (!isSuperAdmin) return jsonResponse(req, { error: "Apenas super_admin" }, 403);
 
     const admin = createClient(supabaseUrl, serviceKey);
     const created: { email: string; user_id: string; role: string }[] = [];
@@ -71,7 +67,7 @@ Deno.serve(async (req) => {
         // Find existing user
         const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
         const existing = list.users.find((x) => x.email === u.email);
-        if (!existing) throw new Error(`Falha ao criar/encontrar ${u.email}: ${createErr.message}`);
+        if (!existing) throw new Error(`Falha ao criar/encontrar ${u.email}`);
         userId = existing.id;
         // Reset password
         await admin.auth.admin.updateUserById(userId, { password: TEST_PASSWORD });
@@ -155,23 +151,23 @@ Deno.serve(async (req) => {
         .from("orcamentos")
         .update({ cliente_id: targetClientId })
         .in("cliente_id", allProIds);
-      if (errFix) console.error("Error reassigning pro budgets:", errFix);
+      if (errFix) console.error("Error reassigning pro budgets");
     }
 
-    return json({
+    await logAudit({
+      actor_user_id: userData.user.id,
+      action: "seed_test_data",
+      details: { contas_criadas: created.length, pedidos_criados: pedidosCriados },
+    });
+
+    // Não retorna a senha — quem precisa dela já a conhece (constante interna de teste).
+    return jsonResponse(req, {
       ok: true,
       contas: created,
       pedidos_criados: pedidosCriados,
     });
   } catch (e: any) {
-    console.error("seed-test-data error:", e);
-    return json({ error: e?.message ?? "Erro interno" }, 500);
+    console.error("seed-test-data error:", e?.message);
+    return jsonResponse(req, { error: e?.message ?? "Erro interno" }, 500);
   }
 });
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
