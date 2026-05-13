@@ -79,7 +79,9 @@ export async function carregarAgendaProfissional(profissionalId: string) {
   return {
     janelas: (jans ?? []) as Janela[],
     bloqueios: (blocs ?? []) as Bloqueio[],
-    agendados: (orcs ?? []).filter((o: any) => o.data_agendada) as Agendado[],
+    agendados: (orcs ?? []).filter(
+      (o: { data_agendada: string | null }) => o.data_agendada,
+    ) as Agendado[],
     duracaoMin: perfil?.duracao_padrao_min ?? 60,
   };
 }
