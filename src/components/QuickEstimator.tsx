@@ -41,7 +41,8 @@ export function QuickEstimator() {
   const servicosFiltrados = useMemo(
     () =>
       servicos.filter(
-        (s) => (!categoria || s.categoria === categoria) && s.preco_min != null && s.preco_max != null,
+        (s) =>
+          (!categoria || s.categoria === categoria) && s.preco_min != null && s.preco_max != null,
       ),
     [servicos, categoria],
   );
@@ -59,8 +60,8 @@ export function QuickEstimator() {
             Em 30 segundos, descubra quanto custa.
           </h2>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Escolha a categoria e o serviço. Mostramos a faixa de preço tabelada na hora —
-            sem precisar fazer cadastro.
+            Escolha a categoria e o serviço. Mostramos a faixa de preço tabelada na hora — sem
+            precisar fazer cadastro.
           </p>
         </div>
 
@@ -131,7 +132,12 @@ export function QuickEstimator() {
                 to="/orcamentos"
                 search={
                   selected
-                    ? { new: 1, serviceId: selected.id, categoria: selected.categoria, serviceName: selected.nome }
+                    ? {
+                        new: 1,
+                        serviceId: selected.id,
+                        categoria: selected.categoria,
+                        serviceName: selected.nome,
+                      }
                     : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
                 }
               >
@@ -148,7 +154,9 @@ export function QuickEstimator() {
                   Ver catálogo completo
                 </Link>
               ) : (
-                <Link to="/servicos" search={{ q: undefined } as any}>Ver catálogo completo</Link>
+                <Link to="/servicos" search={{ q: undefined } as any}>
+                  Ver catálogo completo
+                </Link>
               )}
             </Button>
           </div>

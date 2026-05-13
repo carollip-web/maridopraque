@@ -38,9 +38,16 @@ export const Route = createFileRoute("/orcamentos")({
   head: () => ({
     meta: [
       { title: "Meus Orçamentos — Solicitar online | Marido pra Quê?" },
-      { name: "description", content: "Solicite orçamento online em 3 etapas: escolha o serviço, marque os materiais opcionais e envie. Resposta rápida do profissional." },
+      {
+        name: "description",
+        content:
+          "Solicite orçamento online em 3 etapas: escolha o serviço, marque os materiais opcionais e envie. Resposta rápida do profissional.",
+      },
       { property: "og:title", content: "Orçamento online — Marido pra Quê?" },
-      { property: "og:description", content: "Preço tabelado, materiais opcionais e acompanhamento em tempo real." },
+      {
+        property: "og:description",
+        content: "Preço tabelado, materiais opcionais e acompanhamento em tempo real.",
+      },
     ],
   }),
   component: MeusOrcamentos,
@@ -168,8 +175,14 @@ function MeusOrcamentos() {
     if (!user) return;
     refresh();
     Promise.all([
-      supabase.from("services_catalog").select("id, nome, categoria, preco_min, preco_max").eq("ativo", true),
-      supabase.from("materiais").select("id, nome, unidade, preco_atual, preco_fonte").eq("ativo", true),
+      supabase
+        .from("services_catalog")
+        .select("id, nome, categoria, preco_min, preco_max")
+        .eq("ativo", true),
+      supabase
+        .from("materiais")
+        .select("id, nome, unidade, preco_atual, preco_fonte")
+        .eq("ativo", true),
       supabase.from("service_materiais").select("*"),
     ]).then(([s, m, sm]) => {
       setServicos((s.data ?? []) as Servico[]);
@@ -225,7 +238,12 @@ function MeusOrcamentos() {
       }
     }
     if (!matched && search.serviceName) {
-      const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const norm = (t: string) =>
+        t
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
       const target = norm(search.serviceName);
       const targetTokens = target.split(/\s+/).filter((t) => t.length >= 3);
       // Restringe ao escopo da categoria quando informada
@@ -261,7 +279,12 @@ function MeusOrcamentos() {
     if (step !== 1 || selServiceId || !showNew || editingId) return;
     if (!servicos.length) return;
     if (!search.serviceId && !search.serviceName) return;
-    const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const norm = (t: string) =>
+      t
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
     let m: Servico | undefined;
     if (search.serviceId) m = servicos.find((x) => x.id === search.serviceId);
     if (!m && search.serviceName) {
@@ -269,16 +292,28 @@ function MeusOrcamentos() {
       const pool = search.categoria
         ? servicos.filter((x) => norm(x.categoria) === norm(search.categoria!))
         : servicos;
-      m = pool.find((x) => norm(x.nome) === target) ||
-          pool.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
+      m =
+        pool.find((x) => norm(x.nome) === target) ||
+        pool.find((x) => norm(x.nome).includes(target) || target.includes(norm(x.nome)));
     }
     if (m) setSelServiceId(m.id);
-  }, [step, selServiceId, showNew, editingId, servicos, search.serviceId, search.serviceName, search.categoria]);
+  }, [
+    step,
+    selServiceId,
+    showNew,
+    editingId,
+    servicos,
+    search.serviceId,
+    search.serviceName,
+    search.categoria,
+  ]);
 
   const selServico = servicos.find((s) => s.id === selServiceId);
   const sugeridos = useMemo(() => {
     if (!selServiceId) return [] as Material[];
-    const ids = serviceMats.filter((sm) => sm.service_id === selServiceId).map((sm) => sm.material_id);
+    const ids = serviceMats
+      .filter((sm) => sm.service_id === selServiceId)
+      .map((sm) => sm.material_id);
     return materiais.filter((m) => ids.includes(m.id));
   }, [selServiceId, serviceMats, materiais]);
 
@@ -304,7 +339,9 @@ function MeusOrcamentos() {
     serviceId: z.string().uuid({ message: "Selecione um serviço válido." }),
     descricao: z.string().trim().max(2000, "Descrição muito longa.").optional(),
     materiais: z
-      .array(z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }))
+      .array(
+        z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }),
+      )
       .max(50, "Máximo de 50 itens de material."),
   });
 
@@ -392,7 +429,7 @@ function MeusOrcamentos() {
       if (m.material_id) p[m.material_id] = Number(m.quantidade);
     });
     setPicked(p);
-    setFotos((((o as any).fotos_problema as string[]) ?? []));
+    setFotos(((o as any).fotos_problema as string[]) ?? []);
     setStep(1);
     setShowNew(true);
   };
@@ -444,7 +481,10 @@ function MeusOrcamentos() {
             materiais: payload.materiais,
           },
         });
-        await supabase.from("orcamentos").update({ fotos_problema: fotos } as any).eq("id", editingId);
+        await supabase
+          .from("orcamentos")
+          .update({ fotos_problema: fotos } as any)
+          .eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
         const { data: novoOrcamento, error: orcamentoError } = await supabase
@@ -487,7 +527,9 @@ function MeusOrcamentos() {
             .filter((item): item is NonNullable<typeof item> => item !== null);
 
           if (materialItems.length > 0) {
-            const { error: itensError } = await supabase.from("orcamento_materiais").insert(materialItems);
+            const { error: itensError } = await supabase
+              .from("orcamento_materiais")
+              .insert(materialItems);
             if (itensError) throw itensError;
           }
         }
@@ -529,11 +571,7 @@ function MeusOrcamentos() {
         <div className="flex items-center gap-2 flex-wrap">
           {hasDraft && !showNew && (
             <>
-              <Button
-                onClick={carregarRascunho}
-                variant="outline"
-                className="rounded-full gap-2"
-              >
+              <Button onClick={carregarRascunho} variant="outline" className="rounded-full gap-2">
                 <Save className="h-4 w-4" /> Retomar rascunho
               </Button>
               <Button
@@ -566,7 +604,8 @@ function MeusOrcamentos() {
         <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
           {editingId && (
             <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center gap-2">
-              <Pencil className="h-4 w-4" /> Editando solicitação enviada — alterações são possíveis até o profissional responder.
+              <Pencil className="h-4 w-4" /> Editando solicitação enviada — alterações são possíveis
+              até o profissional responder.
             </div>
           )}
           {!editingId && draftSavedAt && (
@@ -586,7 +625,8 @@ function MeusOrcamentos() {
               const done = step > s.n;
               // Pode navegar para passos já visitados/concluídos, ou para o atual.
               // Avançar exige Serviço selecionado.
-              const canGo = s.n <= step || (s.n === 2 && !!selServiceId) || (s.n === 3 && !!selServiceId);
+              const canGo =
+                s.n <= step || (s.n === 2 && !!selServiceId) || (s.n === 3 && !!selServiceId);
               return (
                 <li key={s.n} className="flex items-center gap-2 flex-1">
                   <button
@@ -608,49 +648,57 @@ function MeusOrcamentos() {
                     </span>
                   </button>
                   {i < 2 && <div className="flex-1 h-px bg-border" />}
-                 </li>
-               );
-             })}
+                </li>
+              );
+            })}
           </ol>
 
           {/* Resumo dinâmico — atualiza com serviço selecionado e materiais */}
-          {selServico && selServico.preco_min != null && selServico.preco_max != null && (() => {
-            const min = Number(selServico.preco_min);
-            const max = Number(selServico.preco_max);
-            const media = (min + max) / 2;
-            const horas = Math.max(0.5, Math.min(8, media / 80));
-            const tempo =
-              horas < 1 ? "≈ 30 min"
-              : horas < 1.5 ? "≈ 1 h"
-              : horas < 5 ? `≈ ${Math.round(horas * 2) / 2} h`
-              : `≈ ${Math.round(horas)} h`;
-            const totalMin = min + subtotalMat;
-            const totalMax = max + subtotalMat;
-            const qtdMat = Object.keys(picked).length;
-            return (
-              <div className="rounded-2xl border border-border bg-card px-5 py-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Resumo
-                    </p>
-                    <p className="mt-1 font-semibold text-foreground truncate">{selServico.nome}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} · {tempo}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Total estimado
-                    </p>
-                    <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
-                      {min === max ? brl(totalMin) : `${brl(totalMin)} – ${brl(totalMax)}`}
-                    </p>
+          {selServico &&
+            selServico.preco_min != null &&
+            selServico.preco_max != null &&
+            (() => {
+              const min = Number(selServico.preco_min);
+              const max = Number(selServico.preco_max);
+              const media = (min + max) / 2;
+              const horas = Math.max(0.5, Math.min(8, media / 80));
+              const tempo =
+                horas < 1
+                  ? "≈ 30 min"
+                  : horas < 1.5
+                    ? "≈ 1 h"
+                    : horas < 5
+                      ? `≈ ${Math.round(horas * 2) / 2} h`
+                      : `≈ ${Math.round(horas)} h`;
+              const totalMin = min + subtotalMat;
+              const totalMax = max + subtotalMat;
+              const qtdMat = Object.keys(picked).length;
+              return (
+                <div className="rounded-2xl border border-border bg-card px-5 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Resumo
+                      </p>
+                      <p className="mt-1 font-semibold text-foreground truncate">
+                        {selServico.nome}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} · {tempo}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Total estimado
+                      </p>
+                      <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
+                        {min === max ? brl(totalMin) : `${brl(totalMin)} – ${brl(totalMax)}`}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
           {/* Step 1: Serviço */}
           {step === 1 && (
@@ -797,7 +845,9 @@ function MeusOrcamentos() {
                   <div className="flex items-center gap-2 mb-3">
                     <Package className="h-4 w-4 text-brand" />
                     <h4 className="font-bold text-sm">Fotos do problema</h4>
-                    <span className="text-xs text-muted-foreground">(opcional, ajuda o profissional)</span>
+                    <span className="text-xs text-muted-foreground">
+                      (opcional, ajuda o profissional)
+                    </span>
                   </div>
                   <PhotoUploader
                     userId={user.id}
@@ -810,13 +860,8 @@ function MeusOrcamentos() {
                 </div>
               )}
 
-
               <div className="flex justify-between gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="rounded-full gap-2"
-                >
+                <Button variant="outline" onClick={() => setStep(1)} className="rounded-full gap-2">
                   <ChevronLeft className="h-4 w-4" /> Voltar
                 </Button>
                 <Button
@@ -855,7 +900,10 @@ function MeusOrcamentos() {
                           <li key={id} className="flex justify-between py-1.5">
                             <span className="text-foreground">
                               {m.nome}
-                              <span className="text-muted-foreground"> · {qty} {m.unidade}</span>
+                              <span className="text-muted-foreground">
+                                {" "}
+                                · {qty} {m.unidade}
+                              </span>
                             </span>
                             <span className="font-medium tabular-nums text-foreground">
                               {brl(Number(m.preco_atual) * qty)}
@@ -931,7 +979,10 @@ function MeusOrcamentos() {
           </div>
         )}
         {list.map((o) => {
-          const s = statusLabel[o.status] ?? { label: o.status, cls: "bg-slate-100 text-slate-700" };
+          const s = statusLabel[o.status] ?? {
+            label: o.status,
+            cls: "bg-slate-100 text-slate-700",
+          };
           const podeAprovar = o.status === "enviado" || o.status === "fixo_auto";
           const mats = orcMats[o.id] ?? [];
           const isOpen = !!expanded[o.id];
@@ -1017,7 +1068,10 @@ function MeusOrcamentos() {
                 )}
                 {o.status === "aprovado" && o.valor && (
                   <Button asChild className="bg-brand text-brand-foreground rounded-full font-bold">
-                    <Link to="/checkout" search={{ service: o.service_name, price: Number(o.valor), step: 1 } as any}>
+                    <Link
+                      to="/checkout"
+                      search={{ service: o.service_name, price: Number(o.valor), step: 1 } as any}
+                    >
                       Pagar agora
                     </Link>
                   </Button>

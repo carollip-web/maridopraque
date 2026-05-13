@@ -20,7 +20,9 @@ function ResetPasswordPage() {
 
   // O Supabase coloca o session token no hash quando o usuário clica no link de recovery
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,7 +42,20 @@ function ResetPasswordPage() {
     setLoading(false);
     if (error) return setError(error.message);
     setInfo("Senha alterada com sucesso! Redirecionando...");
-    setTimeout(() => navigate({ to: "/cliente", search: { tab: "inicio", id: undefined, pedidoId: undefined, chat: undefined, details: false } as any }), 1500);
+    setTimeout(
+      () =>
+        navigate({
+          to: "/cliente",
+          search: {
+            tab: "inicio",
+            id: undefined,
+            pedidoId: undefined,
+            chat: undefined,
+            details: false,
+          } as any,
+        }),
+      1500,
+    );
   };
 
   return (
@@ -62,13 +77,20 @@ function ResetPasswordPage() {
         <div className="bg-white rounded-[2.5rem] border border-border p-8 shadow-xl">
           {!ready ? (
             <p className="text-sm text-muted-foreground text-center">
-              Validando link de recuperação... Se você abriu esta página direto, peça um novo link em
-              <Link to="/login" className="text-brand font-bold hover:underline"> Esqueci a senha</Link>.
+              Validando link de recuperação... Se você abriu esta página direto, peça um novo link
+              em
+              <Link to="/login" className="text-brand font-bold hover:underline">
+                {" "}
+                Esqueci a senha
+              </Link>
+              .
             </p>
           ) : (
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Nova senha</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  Nova senha
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
@@ -78,14 +100,20 @@ function ResetPasswordPage() {
                     placeholder="••••••••"
                     className="w-full h-12 pl-11 pr-12 rounded-2xl border border-border bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/20 transition"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Confirmar senha</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                  Confirmar senha
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
@@ -101,7 +129,12 @@ function ResetPasswordPage() {
               {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
               {info && <p className="text-sm text-green-700 font-medium">{info}</p>}
 
-              <Button type="submit" disabled={loading} size="lg" className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg mt-2">
+              <Button
+                type="submit"
+                disabled={loading}
+                size="lg"
+                className="w-full h-14 rounded-full bg-foreground text-background hover:bg-foreground/90 font-bold shadow-lg mt-2"
+              >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar nova senha"}
               </Button>
             </form>

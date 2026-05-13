@@ -13,8 +13,8 @@ function NotFoundComponent() {
           Essa página tirou folga.
         </h1>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-          O link pode ter mudado, mas o seu reparo a gente resolve. Peça um orçamento
-          em menos de 2 minutos ou volte para o início.
+          O link pode ter mudado, mas o seu reparo a gente resolve. Peça um orçamento em menos de 2
+          minutos ou volte para o início.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
@@ -41,15 +41,25 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Marido pra Quê? — Reparos, Montagem e Regularização" },
-      { name: "description", content: "Profissionais verificados para montagem de móveis, reparos elétricos, hidráulica e legalização de obras. Orçamento online em 2 minutos." },
+      {
+        name: "description",
+        content:
+          "Profissionais verificados para montagem de móveis, reparos elétricos, hidráulica e legalização de obras. Orçamento online em 2 minutos.",
+      },
       { name: "author", content: "Marido pra Quê?" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Marido pra Quê?" },
       { property: "og:title", content: "Marido pra Quê? — Reparos e Montagens" },
-      { property: "og:description", content: "Profissionais verificados, orçamento online e opção com acompanhante feminina." },
+      {
+        property: "og:description",
+        content: "Profissionais verificados, orçamento online e opção com acompanhante feminina.",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Marido pra Quê? — Reparos e Montagens" },
-      { name: "twitter:description", content: "Profissionais verificados, orçamento online e opção com acompanhante feminina." },
+      {
+        name: "twitter:description",
+        content: "Profissionais verificados, orçamento online e opção com acompanhante feminina.",
+      },
       { name: "theme-color", content: "#FF6B35" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },

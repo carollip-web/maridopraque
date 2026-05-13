@@ -15,14 +15,18 @@ test.describe("Fluxo cliente → profissional → admin", () => {
     await login(page, ACCOUNTS.cliente);
     await expect(page).toHaveURL(/\/cliente/);
     // Carla tem ao menos 1 pedido de teste seedado
-    await expect(page.locator("body")).toContainText(/pedido|orçamento|serviço/i, { timeout: 10_000 });
+    await expect(page.locator("body")).toContainText(/pedido|orçamento|serviço/i, {
+      timeout: 10_000,
+    });
     await logout(page);
   });
 
   test("profissional acessa painel", async ({ page }) => {
     await login(page, ACCOUNTS.pro);
     await expect(page).toHaveURL(/\/profissional/);
-    await expect(page.locator("body")).toContainText(/orçamento|serviço|agenda/i, { timeout: 10_000 });
+    await expect(page.locator("body")).toContainText(/orçamento|serviço|agenda/i, {
+      timeout: 10_000,
+    });
     await logout(page);
   });
 

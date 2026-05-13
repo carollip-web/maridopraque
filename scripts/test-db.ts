@@ -6,20 +6,23 @@ dotenv.config({ path: ".env" });
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY!
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY!,
 );
 
 async function run() {
   const fakeId = uuidv4();
-  const { data, error } = await supabase.from("profiles").insert({
-    id: fakeId,
-    nome: "Teste Falso"
-  }).select();
-  
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      id: fakeId,
+      nome: "Teste Falso",
+    })
+    .select();
+
   console.log("Profiles Insert Error:", error);
   if (!error) {
-     console.log("Success! No FK constraint on auth.users.");
-     await supabase.from("profiles").delete().eq("id", fakeId);
+    console.log("Success! No FK constraint on auth.users.");
+    await supabase.from("profiles").delete().eq("id", fakeId);
   }
 }
 

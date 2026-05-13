@@ -33,30 +33,44 @@ export function ProfissionalAvaliacoes() {
     setLoading(true);
     const { data: avals } = await supabase
       .from("avaliacoes")
-      .select("id, nota, comentario, created_at, cliente_id, orcamento_id, resposta_profissional, resposta_em")
+      .select(
+        "id, nota, comentario, created_at, cliente_id, orcamento_id, resposta_profissional, resposta_em",
+      )
       .eq("profissional_id", user.id)
       .order("created_at", { ascending: false });
     const list = avals ?? [];
     const cliIds = Array.from(new Set(list.map((a: any) => a.cliente_id)));
     const orcIds = Array.from(new Set(list.map((a: any) => a.orcamento_id)));
     const [{ data: profs }, { data: orcs }] = await Promise.all([
-      cliIds.length ? supabase.from("profiles").select("id, nome").in("id", cliIds) : { data: [] as any[] },
-      orcIds.length ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds) : { data: [] as any[] },
+      cliIds.length
+        ? supabase.from("profiles").select("id, nome").in("id", cliIds)
+        : { data: [] as any[] },
+      orcIds.length
+        ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds)
+        : { data: [] as any[] },
     ]);
     const nomeMap: Record<string, string> = {};
-    (profs ?? []).forEach((p: any) => { nomeMap[p.id] = p.nome ?? "Cliente"; });
+    (profs ?? []).forEach((p: any) => {
+      nomeMap[p.id] = p.nome ?? "Cliente";
+    });
     const servMap: Record<string, string> = {};
-    (orcs ?? []).forEach((o: any) => { servMap[o.id] = o.service_name; });
+    (orcs ?? []).forEach((o: any) => {
+      servMap[o.id] = o.service_name;
+    });
 
-    setAvs(list.map((a: any) => ({
-      ...a,
-      cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
-      service_name: servMap[a.orcamento_id] ?? "Serviço",
-    })));
+    setAvs(
+      list.map((a: any) => ({
+        ...a,
+        cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
+        service_name: servMap[a.orcamento_id] ?? "Serviço",
+      })),
+    );
     setLoading(false);
   };
 
-  useEffect(() => { carregar(); }, [user?.id]);
+  useEffect(() => {
+    carregar();
+  }, [user?.id]);
 
   const filtradas = useMemo(() => {
     return avs.filter((a) => {
@@ -73,7 +87,9 @@ export function ProfissionalAvaliacoes() {
     const total = avs.length;
     const soma = avs.reduce((a, x) => a + x.nota, 0);
     const dist = [0, 0, 0, 0, 0];
-    avs.forEach((a) => { if (a.nota >= 1 && a.nota <= 5) dist[a.nota - 1]++; });
+    avs.forEach((a) => {
+      if (a.nota >= 1 && a.nota <= 5) dist[a.nota - 1]++;
+    });
     return { media: soma / total, total, dist };
   }, [avs]);
 
@@ -110,37 +126,54 @@ export function ProfissionalAvaliacoes() {
   };
 
   if (loading) {
-    return <div className="py-24 grid place-items-center"><Loader2 className="h-8 w-8 animate-spin text-brand" /></div>;
+    return (
+      <div className="py-24 grid place-items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-slate-900 tracking-tight">Avaliações recebidas</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Responder avaliações mostra profissionalismo e ajuda futuros clientes.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Responder avaliações mostra profissionalismo e ajuda futuros clientes.
+        </p>
       </div>
 
       {avs.length === 0 ? (
         <div className="rounded-3xl bg-white border border-dashed border-border p-12 text-center">
           <Star className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Você ainda não recebeu avaliações. Conclua serviços para começar.</p>
+          <p className="text-sm text-muted-foreground">
+            Você ainda não recebeu avaliações. Conclua serviços para começar.
+          </p>
         </div>
       ) : (
         <>
           <section className="rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-6">
             <div className="grid sm:grid-cols-2 gap-6 items-center">
               <div className="text-center sm:text-left">
-                <p className="text-xs uppercase tracking-widest text-amber-700 font-bold">Média geral</p>
+                <p className="text-xs uppercase tracking-widest text-amber-700 font-bold">
+                  Média geral
+                </p>
                 <div className="flex items-baseline gap-2 justify-center sm:justify-start mt-1">
-                  <span className="text-5xl font-bold text-slate-900 tabular-nums">{stats.media.toFixed(1)}</span>
+                  <span className="text-5xl font-bold text-slate-900 tabular-nums">
+                    {stats.media.toFixed(1)}
+                  </span>
                   <span className="text-lg text-muted-foreground">/ 5</span>
                 </div>
                 <div className="flex justify-center sm:justify-start gap-0.5 mt-1">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <Star key={n} className={`h-4 w-4 ${n <= Math.round(stats.media) ? "fill-amber-400 text-amber-400" : "text-slate-300"}`} />
+                    <Star
+                      key={n}
+                      className={`h-4 w-4 ${n <= Math.round(stats.media) ? "fill-amber-400 text-amber-400" : "text-slate-300"}`}
+                    />
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.total} {stats.total === 1 ? "avaliação" : "avaliações"}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats.total} {stats.total === 1 ? "avaliação" : "avaliações"}
+                </p>
               </div>
               <div className="space-y-1.5">
                 {[5, 4, 3, 2, 1].map((n) => {
@@ -151,9 +184,14 @@ export function ProfissionalAvaliacoes() {
                       <span className="w-3 font-bold tabular-nums">{n}</span>
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />
                       <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
-                        <div className="h-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+                        <div
+                          className="h-full bg-amber-400 transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
-                      <span className="w-8 text-right text-muted-foreground tabular-nums">{qtd}</span>
+                      <span className="w-8 text-right text-muted-foreground tabular-nums">
+                        {qtd}
+                      </span>
                     </div>
                   );
                 })}
@@ -186,13 +224,19 @@ export function ProfissionalAvaliacoes() {
               </div>
             )}
             {filtradas.map((a) => (
-              <article key={a.id} className="rounded-2xl bg-white border border-border p-5 shadow-sm">
+              <article
+                key={a.id}
+                className="rounded-2xl bg-white border border-border p-5 shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <div className="flex items-center gap-2">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
-                          <Star key={n} className={`h-4 w-4 ${n <= a.nota ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+                          <Star
+                            key={n}
+                            className={`h-4 w-4 ${n <= a.nota ? "fill-amber-400 text-amber-400" : "text-slate-200"}`}
+                          />
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground">
@@ -203,7 +247,12 @@ export function ProfissionalAvaliacoes() {
                     <p className="text-xs text-muted-foreground">{a.service_name}</p>
                   </div>
                   {!a.resposta_profissional && editing !== a.id && (
-                    <Button onClick={() => startEdit(a)} variant="outline" size="sm" className="rounded-full text-xs">
+                    <Button
+                      onClick={() => startEdit(a)}
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs"
+                    >
                       <MessageSquareReply className="h-3.5 w-3.5 mr-1" /> Responder
                     </Button>
                   )}
@@ -240,7 +289,9 @@ export function ProfissionalAvaliacoes() {
                       placeholder="Agradeça, esclareça pontos, mostre profissionalismo. Esta resposta será pública."
                       maxLength={500}
                     />
-                    <p className="text-[10px] text-muted-foreground text-right">{resposta.length}/500</p>
+                    <p className="text-[10px] text-muted-foreground text-right">
+                      {resposta.length}/500
+                    </p>
                     <div className="flex gap-2 justify-end">
                       <Button onClick={cancelEdit} variant="ghost" size="sm" disabled={saving}>
                         <X className="h-3.5 w-3.5 mr-1" /> Cancelar
@@ -251,7 +302,11 @@ export function ProfissionalAvaliacoes() {
                         disabled={saving}
                         className="bg-brand hover:bg-brand-700 text-white rounded-full"
                       >
-                        {saving ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                        {saving ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                        )}
                         Publicar
                       </Button>
                     </div>

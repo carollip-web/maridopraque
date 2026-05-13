@@ -34,7 +34,10 @@ export function AvaliacaoForm({ orcamentoId, clienteId, profissionalId }: Props)
         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
         <div className="flex">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className={`h-3.5 w-3.5 ${i < enviada.nota ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+            <Star
+              key={i}
+              className={`h-3.5 w-3.5 ${i < enviada.nota ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+            />
           ))}
         </div>
         <span className="text-muted-foreground">Avaliado</span>
@@ -80,7 +83,9 @@ export function AvaliacaoForm({ orcamentoId, clienteId, profissionalId }: Props)
               className="p-0.5"
               aria-label={`Dar ${v} estrelas`}
             >
-              <Star className={`h-5 w-5 transition-colors ${active ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+              <Star
+                className={`h-5 w-5 transition-colors ${active ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+              />
             </button>
           );
         })}
@@ -93,7 +98,12 @@ export function AvaliacaoForm({ orcamentoId, clienteId, profissionalId }: Props)
         rows={2}
         maxLength={500}
       />
-      <Button onClick={submit} disabled={loading || nota < 1} size="sm" className="rounded-full bg-brand text-brand-foreground font-bold">
+      <Button
+        onClick={submit}
+        disabled={loading || nota < 1}
+        size="sm"
+        className="rounded-full bg-brand text-brand-foreground font-bold"
+      >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar avaliação"}
       </Button>
     </div>

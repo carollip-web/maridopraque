@@ -1,12 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Hammer, Wrench, Scale, ArrowRight, CheckCircle2,
-  Drill, Lightbulb, ShowerHead, PaintRoller, FileText, HardHat, Clock, ListChecks, Info,
+  Hammer,
+  Wrench,
+  Scale,
+  ArrowRight,
+  CheckCircle2,
+  Drill,
+  Lightbulb,
+  ShowerHead,
+  PaintRoller,
+  FileText,
+  HardHat,
+  Clock,
+  ListChecks,
+  Info,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,9 +30,16 @@ export const Route = createFileRoute("/servicos")({
   head: () => ({
     meta: [
       { title: "Serviços — Montagem, Reparos e Engenharia | Marido pra Quê?" },
-      { name: "description", content: "Catálogo completo: montagem de móveis, reparos elétricos e hidráulicos, pintura, legalização de obras e segurança do trabalho. Preços tabelados." },
+      {
+        name: "description",
+        content:
+          "Catálogo completo: montagem de móveis, reparos elétricos e hidráulicos, pintura, legalização de obras e segurança do trabalho. Preços tabelados.",
+      },
       { property: "og:title", content: "Catálogo de Serviços — Marido pra Quê?" },
-      { property: "og:description", content: "Tudo o que sua casa precisa, com preço tabelado e profissionais verificados." },
+      {
+        property: "og:description",
+        content: "Tudo o que sua casa precisa, com preço tabelado e profissionais verificados.",
+      },
     ],
   }),
   component: Servicos,
@@ -34,9 +57,11 @@ type CategoryMeta = {
 
 const categorias: CategoryMeta[] = [
   {
-    slug: "montagem", nome: "montagem",
+    slug: "montagem",
+    nome: "montagem",
     titulo: "Montagem e Instalação",
-    subtitulo: "Móveis novos ou de mudança, suportes, prateleiras, cortinas — tudo no lugar com nivelamento profissional.",
+    subtitulo:
+      "Móveis novos ou de mudança, suportes, prateleiras, cortinas — tudo no lugar com nivelamento profissional.",
     icon: Hammer,
     beneficios: [
       "Ferramenta própria e bucha certa pra cada parede",
@@ -49,9 +74,11 @@ const categorias: CategoryMeta[] = [
     ],
   },
   {
-    slug: "reparos", nome: "reparos",
+    slug: "reparos",
+    nome: "reparos",
     titulo: "Reparos e Manutenção",
-    subtitulo: "Pequenos reparos resolvidos com técnica e segurança — elétrica, hidráulica, pintura e gesso.",
+    subtitulo:
+      "Pequenos reparos resolvidos com técnica e segurança — elétrica, hidráulica, pintura e gesso.",
     icon: Wrench,
     beneficios: [
       "Garantia de 30 dias em qualquer reparo",
@@ -64,9 +91,11 @@ const categorias: CategoryMeta[] = [
     ],
   },
   {
-    slug: "engenharia", nome: "engenharia",
+    slug: "engenharia",
+    nome: "engenharia",
     titulo: "Engenharia e Legalização",
-    subtitulo: "Aprovação de projetos, alvarás, laudos técnicos e segurança do trabalho com responsável técnico.",
+    subtitulo:
+      "Aprovação de projetos, alvarás, laudos técnicos e segurança do trabalho com responsável técnico.",
     icon: Scale,
     beneficios: [
       "Engenheiros responsáveis com ART/RRT",
@@ -81,8 +110,12 @@ const categorias: CategoryMeta[] = [
 ];
 
 type Servico = {
-  id: string; nome: string; categoria: string;
-  preco_min: number | null; preco_max: number | null; descricao: string | null;
+  id: string;
+  nome: string;
+  categoria: string;
+  preco_min: number | null;
+  preco_max: number | null;
+  descricao: string | null;
 };
 
 const brl = (v: number) => `R$ ${v.toFixed(0)}`;
@@ -91,7 +124,8 @@ function iconFor(nome: string) {
   const n = nome.toLowerCase();
   if (/furo|fixa|parafus|broca/.test(n)) return Drill;
   if (/lâmpada|lampada|elétric|eletric|tomada|interrupt|lustre/.test(n)) return Lightbulb;
-  if (/torneir|hidráulic|hidraulic|chuveir|vazament|descarga|pia|sifão|sifao/.test(n)) return ShowerHead;
+  if (/torneir|hidráulic|hidraulic|chuveir|vazament|descarga|pia|sifão|sifao/.test(n))
+    return ShowerHead;
   if (/pintur|gesso|parede|retoque/.test(n)) return PaintRoller;
   if (/projeto|alvará|alvara|habite|legaliza|regulariza/.test(n)) return FileText;
   if (/segurança|seguranca|nr-?\d|laudo|treinament/.test(n)) return HardHat;
@@ -109,7 +143,8 @@ function estimarTempo(min: number | null, max: number | null) {
   return `≈ ${Math.round(horas)} h`;
 }
 
-const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
+const WHATSAPP =
+  "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
 
 function Servicos() {
   const [servicos, setServicos] = useState<Servico[] | null>(null);
@@ -126,12 +161,15 @@ function Servicos() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-20 md:py-24">
       <div className="mb-16">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Catálogo Completo</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          Catálogo Completo
+        </span>
         <h1 className="mt-3 text-balance text-5xl font-bold tracking-tight md:text-6xl">
           Nossos Serviços Especializados.
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Cada categoria tem preço tabelado. Escolha o serviço no seletor da categoria e peça seu orçamento em segundos.
+          Cada categoria tem preço tabelado. Escolha o serviço no seletor da categoria e peça seu
+          orçamento em segundos.
         </p>
       </div>
 
@@ -152,15 +190,22 @@ function Servicos() {
       <div className="mt-24 rounded-3xl bg-foreground p-10 text-center text-background md:p-16">
         <h2 className="text-3xl font-bold md:text-4xl">Ficou com alguma dúvida?</h2>
         <p className="mx-auto mt-4 max-w-md text-background/70">
-          Nossa equipe técnica está pronta para analisar seu caso específico e propor a melhor solução.
+          Nossa equipe técnica está pronta para analisar seu caso específico e propor a melhor
+          solução.
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <a href={WHATSAPP} target="_blank" rel="noreferrer"
-             className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105">
+          <a
+            href={WHATSAPP}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
+          >
             Chamar no WhatsApp
           </a>
-          <Link to="/ajuda"
-                className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10">
+          <Link
+            to="/ajuda"
+            className="rounded-full border border-background/20 px-10 py-4 font-bold text-background transition hover:bg-background/10"
+          >
             Ver Central de Ajuda
           </Link>
         </div>
@@ -170,8 +215,14 @@ function Servicos() {
 }
 
 function CategoriaSection({
-  cat, servicos, loading,
-}: { cat: CategoryMeta; servicos: Servico[]; loading: boolean }) {
+  cat,
+  servicos,
+  loading,
+}: {
+  cat: CategoryMeta;
+  servicos: Servico[];
+  loading: boolean;
+}) {
   const Icon = cat.icon;
   const [selectedId, setSelectedId] = useState<string>("");
 
@@ -185,7 +236,9 @@ function CategoriaSection({
   const max = selected?.preco_max != null ? Number(selected.preco_max) : null;
   const priceLabel =
     min != null && max != null
-      ? min === max ? brl(min) : `${brl(min)} – ${brl(max)}`
+      ? min === max
+        ? brl(min)
+        : `${brl(min)} – ${brl(max)}`
       : "Sob consulta";
 
   return (
@@ -196,12 +249,17 @@ function CategoriaSection({
           <Icon className="h-8 w-8" />
         </div>
         <div>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Categoria</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+            Categoria
+          </span>
           <h2 className="mt-2 text-3xl font-bold tracking-tight md:text-4xl">{cat.titulo}</h2>
           <p className="mt-3 max-w-2xl text-muted-foreground">{cat.subtitulo}</p>
           <ul className="mt-5 grid gap-2 sm:grid-cols-3">
             {cat.beneficios.map((b) => (
-              <li key={b} className="flex items-start gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+              <li
+                key={b}
+                className="flex items-start gap-2 rounded-xl border border-border bg-card p-3 text-sm"
+              >
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
                 <span>{b}</span>
               </li>
@@ -217,7 +275,9 @@ function CategoriaSection({
           {loading ? (
             <p className="text-sm text-muted-foreground">Carregando serviços…</p>
           ) : servicos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado nesta categoria.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhum serviço cadastrado nesta categoria.
+            </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {servicos.map((s) => {
@@ -226,7 +286,9 @@ function CategoriaSection({
                 const sMax = s.preco_max != null ? Number(s.preco_max) : null;
                 const label =
                   sMin != null && sMax != null
-                    ? sMin === sMax ? brl(sMin) : `${brl(sMin)} – ${brl(sMax)}`
+                    ? sMin === sMax
+                      ? brl(sMin)
+                      : `${brl(sMin)} – ${brl(sMax)}`
                     : "Sob consulta";
                 const active = s.id === selectedId;
                 return (
@@ -235,7 +297,9 @@ function CategoriaSection({
                     type="button"
                     onClick={() => setSelectedId(s.id)}
                     className={`flex items-start gap-3 rounded-2xl border bg-card p-4 text-left transition ${
-                      active ? "border-brand shadow-soft" : "border-border hover:border-brand/40 hover:shadow-soft"
+                      active
+                        ? "border-brand shadow-soft"
+                        : "border-border hover:border-brand/40 hover:shadow-soft"
                     }`}
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
@@ -244,10 +308,14 @@ function CategoriaSection({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-sm font-semibold truncate">{s.nome}</h3>
-                        <span className="text-xs font-bold text-brand whitespace-nowrap">{label}</span>
+                        <span className="text-xs font-bold text-brand whitespace-nowrap">
+                          {label}
+                        </span>
                       </div>
                       {s.descricao && (
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{s.descricao}</p>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                          {s.descricao}
+                        </p>
                       )}
                     </div>
                   </button>
@@ -333,7 +401,12 @@ function CategoriaSection({
                 to="/orcamentos"
                 search={
                   selected
-                    ? { new: 1, serviceId: selected.id, categoria: cat.nome, serviceName: selected.nome }
+                    ? {
+                        new: 1,
+                        serviceId: selected.id,
+                        categoria: cat.nome,
+                        serviceName: selected.nome,
+                      }
                     : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
                 }
               >

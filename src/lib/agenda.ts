@@ -23,8 +23,10 @@ export function slotsDoDia(opts: {
   for (const j of doDia) {
     const [hi, mi] = j.hora_inicio.split(":").map(Number);
     const [hf, mf] = j.hora_fim.split(":").map(Number);
-    const inicio = new Date(data); inicio.setHours(hi, mi, 0, 0);
-    const fim = new Date(data); fim.setHours(hf, mf, 0, 0);
+    const inicio = new Date(data);
+    inicio.setHours(hi, mi, 0, 0);
+    const fim = new Date(data);
+    fim.setHours(hf, mf, 0, 0);
 
     let cursor = new Date(inicio);
     while (cursor.getTime() + duracaoMin * 60000 <= fim.getTime()) {
@@ -54,10 +56,25 @@ export function slotsDoDia(opts: {
 
 export async function carregarAgendaProfissional(profissionalId: string) {
   const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }] = await Promise.all([
-    supabase.from("profissional_disponibilidade").select("dia_semana, hora_inicio, hora_fim").eq("user_id", profissionalId),
-    supabase.from("profissional_bloqueios").select("data_inicio, data_fim").eq("user_id", profissionalId),
-    supabase.from("orcamentos").select("data_agendada").eq("profissional_id", profissionalId).not("data_agendada", "is", null).in("status", ["aprovado", "pago"]),
-    supabase.from("profissional_perfil").select("duracao_padrao_min").eq("user_id", profissionalId).maybeSingle(),
+    supabase
+      .from("profissional_disponibilidade")
+      .select("dia_semana, hora_inicio, hora_fim")
+      .eq("user_id", profissionalId),
+    supabase
+      .from("profissional_bloqueios")
+      .select("data_inicio, data_fim")
+      .eq("user_id", profissionalId),
+    supabase
+      .from("orcamentos")
+      .select("data_agendada")
+      .eq("profissional_id", profissionalId)
+      .not("data_agendada", "is", null)
+      .in("status", ["aprovado", "pago"]),
+    supabase
+      .from("profissional_perfil")
+      .select("duracao_padrao_min")
+      .eq("user_id", profissionalId)
+      .maybeSingle(),
   ]);
   return {
     janelas: (jans ?? []) as Janela[],

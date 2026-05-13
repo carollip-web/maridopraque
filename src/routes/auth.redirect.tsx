@@ -15,7 +15,9 @@ function AuthRedirectPage() {
     let cancelled = false;
 
     const decide = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (cancelled) return;
 
       if (!session?.user) {
@@ -39,7 +41,9 @@ function AuthRedirectPage() {
     };
 
     decide();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   return (

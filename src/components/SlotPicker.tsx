@@ -14,12 +14,15 @@ interface SlotPickerProps {
 export function SlotPicker({ profissionalId, value, onChange }: SlotPickerProps) {
   const [data, setData] = useState<Date | undefined>(value ?? undefined);
   const [loading, setLoading] = useState(true);
-  const [agenda, setAgenda] = useState<Awaited<ReturnType<typeof carregarAgendaProfissional>> | null>(null);
+  const [agenda, setAgenda] = useState<Awaited<
+    ReturnType<typeof carregarAgendaProfissional>
+  > | null>(null);
 
   useEffect(() => {
     setLoading(true);
     carregarAgendaProfissional(profissionalId).then((a) => {
-      setAgenda(a); setLoading(false);
+      setAgenda(a);
+      setLoading(false);
     });
   }, [profissionalId]);
 
@@ -29,11 +32,19 @@ export function SlotPicker({ profissionalId, value, onChange }: SlotPickerProps)
   }, [data, agenda]);
 
   if (loading) {
-    return <div className="py-8 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-brand" /></div>;
+    return (
+      <div className="py-8 grid place-items-center">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
+      </div>
+    );
   }
 
   if (!agenda || agenda.janelas.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-6">Este profissional ainda não cadastrou horários disponíveis.</p>;
+    return (
+      <p className="text-sm text-muted-foreground text-center py-6">
+        Este profissional ainda não cadastrou horários disponíveis.
+      </p>
+    );
   }
 
   return (

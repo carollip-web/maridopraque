@@ -13,27 +13,30 @@ Suite Playwright que valida login dos 3 perfis (cliente, profissional, admin) e 
 ## Como rodar
 
 Contra o site publicado (default):
+
 ```bash
 bun run test:e2e
 ```
 
 Contra o preview/local:
+
 ```bash
 BASE_URL=http://localhost:5173 bun run test:e2e
 ```
 
 Com UI interativa:
+
 ```bash
 bunx playwright test --ui
 ```
 
 ## Scripts disponíveis
 
-| Comando | O que faz |
-|---|---|
-| `bun run test:e2e` | Roda toda a suite |
-| `bun run test:e2e:auth` | Só os testes de login |
-| `bun run test:e2e:fluxo` | Só o fluxo completo |
+| Comando                  | O que faz             |
+| ------------------------ | --------------------- |
+| `bun run test:e2e`       | Roda toda a suite     |
+| `bun run test:e2e:auth`  | Só os testes de login |
+| `bun run test:e2e:fluxo` | Só o fluxo completo   |
 
 ## Estrutura
 

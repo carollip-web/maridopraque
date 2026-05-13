@@ -5,9 +5,16 @@ export const Route = createFileRoute("/profissionais")({
   head: () => ({
     meta: [
       { title: "Nossos Profissionais — Mulher, Homem ou com Acompanhante" },
-      { name: "description", content: "Escolha o tipo de atendimento: profissional mulher, homem ou homem com acompanhante feminina. Todos verificados e treinados." },
+      {
+        name: "description",
+        content:
+          "Escolha o tipo de atendimento: profissional mulher, homem ou homem com acompanhante feminina. Todos verificados e treinados.",
+      },
       { property: "og:title", content: "Nossos Profissionais — Marido pra Quê?" },
-      { property: "og:description", content: "Atendimento do jeito que faz sentido pra você, com segurança." },
+      {
+        property: "og:description",
+        content: "Atendimento do jeito que faz sentido pra você, com segurança.",
+      },
     ],
   }),
   component: Profissionais,
@@ -19,63 +26,84 @@ const professionalDetails = [
     title: "Profissional Mulher",
     icon: UserRound,
     description: "Atendimento feito por uma profissional mulher do início ao fim.",
-    longDesc: "Ideal para mulheres que moram sozinhas, idosas ou qualquer pessoa que prefira a presença feminina para serviços de reparos e montagem. Nossas profissionais são treinadas e equipadas com ferramentas de alta performance para garantir um serviço impecável.",
+    longDesc:
+      "Ideal para mulheres que moram sozinhas, idosas ou qualquer pessoa que prefira a presença feminina para serviços de reparos e montagem. Nossas profissionais são treinadas e equipadas com ferramentas de alta performance para garantir um serviço impecável.",
     benefits: [
       "Máxima tranquilidade e identificação",
       "Cuidado e capricho nos detalhes",
       "Ambiente de total segurança e respeito",
-      "Especialista em pequenos reparos e montagens"
+      "Especialista em pequenos reparos e montagens",
     ],
-    observation: "Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto."
+    observation:
+      "Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.",
   },
   {
     id: "homem",
     title: "Profissional Homem",
     icon: Wrench,
     description: "Equipe masculina qualificada, verificada e educada.",
-    longDesc: "Nossos profissionais homens são selecionados não apenas pela habilidade técnica, mas pelo comportamento exemplar. São especialistas em serviços que exigem maior força física, instalações complexas de TV ou manutenções de engenharia pesada.",
+    longDesc:
+      "Nossos profissionais homens são selecionados não apenas pela habilidade técnica, mas pelo comportamento exemplar. São especialistas em serviços que exigem maior força física, instalações complexas de TV ou manutenções de engenharia pesada.",
     benefits: [
       "Especialistas em serviços de força e complexidade",
       "Conduta e educação rigorosamente avaliadas",
       "Treinamento técnico para grandes reparos",
-      "Equipamentos de proteção e segurança (EPIs)"
-    ]
+      "Equipamentos de proteção e segurança (EPIs)",
+    ],
   },
   {
     id: "acompanhante",
     title: "Homem + Acompanhante Feminina",
     icon: HeartHandshake,
     description: "Segurança em dobro: o técnico pesado com apoio feminino.",
-    longDesc: "Nossa modalidade exclusiva e mais escolhida. O técnico realiza o serviço pesado enquanto uma colaboradora mulher acompanha todo o processo, auxiliando na organização, limpeza e garantindo que você se sinta 100% confortável e segura dentro da sua própria casa.",
+    longDesc:
+      "Nossa modalidade exclusiva e mais escolhida. O técnico realiza o serviço pesado enquanto uma colaboradora mulher acompanha todo o processo, auxiliando na organização, limpeza e garantindo que você se sinta 100% confortável e segura dentro da sua própria casa.",
     benefits: [
       "Você nunca fica sozinha com o técnico",
       "Apoio feminino na organização pós-serviço",
       "Protocolo rígido de conduta e discrição",
-      "Paz de espírito total para quem mora sozinha"
+      "Paz de espírito total para quem mora sozinha",
     ],
-    highlight: true
-  }
+    highlight: true,
+  },
 ];
 
 function Profissionais() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="mb-20">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Nossa Equipe</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          Nossa Equipe
+        </span>
         <h1 className="mt-3 text-balance text-5xl font-bold tracking-tight md:text-6xl">
           Quem entrará na sua casa?
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          Acreditamos que a competência técnica deve vir acompanhada de respeito e segurança. Por isso, deixamos você escolher quem te atende.
+          Acreditamos que a competência técnica deve vir acompanhada de respeito e segurança. Por
+          isso, deixamos você escolher quem te atende.
         </p>
       </div>
 
       <div className="space-y-24">
         {professionalDetails.map((prof) => (
-          <section id={prof.id} key={prof.title} className={"relative scroll-mt-32 rounded-[3rem] p-8 md:p-16 border transition " + (prof.highlight ? "border-brand/20 bg-brand-soft/50 shadow-soft" : "border-border bg-card")}>
+          <section
+            id={prof.id}
+            key={prof.title}
+            className={
+              "relative scroll-mt-32 rounded-[3rem] p-8 md:p-16 border transition " +
+              (prof.highlight
+                ? "border-brand/20 bg-brand-soft/50 shadow-soft"
+                : "border-border bg-card")
+            }
+          >
             <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
               <div>
-                <div className={"flex h-16 w-16 items-center justify-center rounded-2xl mb-8 " + (prof.highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")}>
+                <div
+                  className={
+                    "flex h-16 w-16 items-center justify-center rounded-2xl mb-8 " +
+                    (prof.highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")
+                  }
+                >
                   <prof.icon className="h-8 w-8" />
                 </div>
                 {prof.highlight && (
@@ -87,9 +115,7 @@ function Profissionais() {
                 <p className="mt-6 text-lg text-muted-foreground leading-relaxed italic">
                   "{prof.description}"
                 </p>
-                <p className="mt-6 text-muted-foreground leading-relaxed">
-                  {prof.longDesc}
-                </p>
+                <p className="mt-6 text-muted-foreground leading-relaxed">{prof.longDesc}</p>
                 {prof.observation && (
                   <p className="mt-6 text-sm font-medium text-brand/80 leading-relaxed">
                     * {prof.observation}
@@ -117,14 +143,24 @@ function Profissionais() {
         <div className="space-y-8">
           <h2 className="text-4xl font-bold tracking-tight">Nosso Selo de Verificação</h2>
           <p className="text-lg text-muted-foreground">
-            A segurança não é opcional. Todo profissional que veste nossa camisa passa por um funil de seleção que exclui 90% dos candidatos.
+            A segurança não é opcional. Todo profissional que veste nossa camisa passa por um funil
+            de seleção que exclui 90% dos candidatos.
           </p>
           <div className="grid gap-6">
             {[
-              { t: "Identidade Validada", d: "Documentação completa e comprovante de residência verificados." },
-              { t: "Sem Antecedentes", d: "Certidões negativas criminais atualizadas periodicamente." },
-              { t: "Referência Técnica", d: "Prova de competência e checagem de serviços anteriores." }
-            ].map(item => (
+              {
+                t: "Identidade Validada",
+                d: "Documentação completa e comprovante de residência verificados.",
+              },
+              {
+                t: "Sem Antecedentes",
+                d: "Certidões negativas criminais atualizadas periodicamente.",
+              },
+              {
+                t: "Referência Técnica",
+                d: "Prova de competência e checagem de serviços anteriores.",
+              },
+            ].map((item) => (
               <div key={item.t} className="flex gap-4">
                 <div className="h-2 w-2 rounded-full bg-brand mt-2" />
                 <div>
@@ -136,14 +172,20 @@ function Profissionais() {
           </div>
         </div>
         <div className="relative aspect-square rounded-[3rem] bg-cream flex items-center justify-center p-12 text-center overflow-hidden">
-           <Star className="absolute -right-10 -top-10 h-40 w-40 text-brand/10 rotate-12" fill="currentColor" />
-           <div className="relative z-10">
-              <Star className="h-12 w-12 text-brand mx-auto mb-6" fill="currentColor" />
-              <blockquote className="text-2xl font-medium leading-tight">
-                "Não é apenas sobre consertar uma torneira, é sobre poder abrir a porta de casa sem medo."
-              </blockquote>
-              <p className="mt-6 font-bold text-brand uppercase tracking-wider text-sm">Missão Marido pra Quê?</p>
-           </div>
+          <Star
+            className="absolute -right-10 -top-10 h-40 w-40 text-brand/10 rotate-12"
+            fill="currentColor"
+          />
+          <div className="relative z-10">
+            <Star className="h-12 w-12 text-brand mx-auto mb-6" fill="currentColor" />
+            <blockquote className="text-2xl font-medium leading-tight">
+              "Não é apenas sobre consertar uma torneira, é sobre poder abrir a porta de casa sem
+              medo."
+            </blockquote>
+            <p className="mt-6 font-bold text-brand uppercase tracking-wider text-sm">
+              Missão Marido pra Quê?
+            </p>
+          </div>
         </div>
       </div>
     </div>

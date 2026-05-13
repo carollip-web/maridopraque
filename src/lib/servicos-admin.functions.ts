@@ -34,7 +34,8 @@ export const salvarServico = createServerFn({ method: "POST" })
       if ((data.preco_fixo ?? 0) <= 0) throw new Error("Preço fixo deve ser maior que zero");
     }
     if (data.tipo_preco === "range") {
-      if ((data.preco_max ?? 0) < (data.preco_min ?? 0)) throw new Error("Preço máximo deve ser >= mínimo");
+      if ((data.preco_max ?? 0) < (data.preco_min ?? 0))
+        throw new Error("Preço máximo deve ser >= mínimo");
     }
 
     const payload = {
@@ -49,12 +50,19 @@ export const salvarServico = createServerFn({ method: "POST" })
     };
     if (data.id) {
       const { data: row, error } = await supabase
-        .from("services_catalog").update(payload).eq("id", data.id).select().single();
+        .from("services_catalog")
+        .update(payload)
+        .eq("id", data.id)
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       return { servico: row };
     }
     const { data: row, error } = await supabase
-      .from("services_catalog").insert(payload).select().single();
+      .from("services_catalog")
+      .insert(payload)
+      .select()
+      .single();
     if (error) throw new Error(error.message);
     return { servico: row };
   });
@@ -67,7 +75,9 @@ export const toggleServicoAtivo = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
     const { error } = await supabase
-      .from("services_catalog").update({ ativo: data.ativo }).eq("id", data.id);
+      .from("services_catalog")
+      .update({ ativo: data.ativo })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -47,18 +47,70 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-
-
 const services = [
-  { categoryId: "montagem", q: "Guarda-roupa", icon: Hammer, title: "Montagem de móveis", desc: "Guarda-roupas, estantes, camas e planejados." },
-  { categoryId: "montagem", q: "Kit fixação", icon: Drill, title: "Furos e fixação", desc: "Quadros, prateleiras, suportes de TV e cortinas." },
-  { categoryId: "reparos", q: "tomada", icon: Lightbulb, title: "Elétrica básica", desc: "Tomadas, lustres, lâmpadas e interruptores." },
-  { categoryId: "reparos", q: "vazamento", icon: ShowerHead, title: "Hidráulica", desc: "Vazamentos, torneiras, sifões e descargas." },
-  { categoryId: "reparos", q: "chuveiro", icon: PaintRoller, title: "Resistência de chuveiro", desc: "Troca de resistência, lustres e ventilador de teto." },
-  { categoryId: "reparos", q: "descarga", icon: Wrench, title: "Reparos em geral", desc: "Descargas, dobradiças, gavetas e janelas." },
-  { categoryId: "engenharia", q: "Legalização", icon: Scale, title: "Legalização de projetos", desc: "Assessoria completa para aprovação de projetos arquitetônicos." },
-  { categoryId: "engenharia", q: "Legalização", icon: FileText, title: "Regularização de obras", desc: "Habite-se, alvarás e regularização junto à prefeitura." },
-  { categoryId: "engenharia", q: "Legalização", icon: HardHat, title: "Engenharia em geral", desc: "Laudos, projetos e acompanhamento técnico especializado." },
+  {
+    categoryId: "montagem",
+    q: "Guarda-roupa",
+    icon: Hammer,
+    title: "Montagem de móveis",
+    desc: "Guarda-roupas, estantes, camas e planejados.",
+  },
+  {
+    categoryId: "montagem",
+    q: "Kit fixação",
+    icon: Drill,
+    title: "Furos e fixação",
+    desc: "Quadros, prateleiras, suportes de TV e cortinas.",
+  },
+  {
+    categoryId: "reparos",
+    q: "tomada",
+    icon: Lightbulb,
+    title: "Elétrica básica",
+    desc: "Tomadas, lustres, lâmpadas e interruptores.",
+  },
+  {
+    categoryId: "reparos",
+    q: "vazamento",
+    icon: ShowerHead,
+    title: "Hidráulica",
+    desc: "Vazamentos, torneiras, sifões e descargas.",
+  },
+  {
+    categoryId: "reparos",
+    q: "chuveiro",
+    icon: PaintRoller,
+    title: "Resistência de chuveiro",
+    desc: "Troca de resistência, lustres e ventilador de teto.",
+  },
+  {
+    categoryId: "reparos",
+    q: "descarga",
+    icon: Wrench,
+    title: "Reparos em geral",
+    desc: "Descargas, dobradiças, gavetas e janelas.",
+  },
+  {
+    categoryId: "engenharia",
+    q: "Legalização",
+    icon: Scale,
+    title: "Legalização de projetos",
+    desc: "Assessoria completa para aprovação de projetos arquitetônicos.",
+  },
+  {
+    categoryId: "engenharia",
+    q: "Legalização",
+    icon: FileText,
+    title: "Regularização de obras",
+    desc: "Habite-se, alvarás e regularização junto à prefeitura.",
+  },
+  {
+    categoryId: "engenharia",
+    q: "Legalização",
+    icon: HardHat,
+    title: "Engenharia em geral",
+    desc: "Laudos, projetos e acompanhamento técnico especializado.",
+  },
 ];
 
 const professionals = [
@@ -85,26 +137,49 @@ const professionals = [
 
 const reasons = [
   { icon: Clock, title: "Atendimento ágil", desc: "Agendamento no mesmo dia, com pontualidade." },
-  { icon: ShieldCheck, title: "Equipe verificada", desc: "Documentos checados, conduta avaliada e referências reais." },
+  {
+    icon: ShieldCheck,
+    title: "Equipe verificada",
+    desc: "Documentos checados, conduta avaliada e referências reais.",
+  },
   { icon: Star, title: "Garantia de 30 dias", desc: "Se algo não ficou bom, voltamos sem custo." },
 ];
 
 const paymentMethods = [
   { icon: QrCode, title: "Pix", desc: "Aprovação instantânea e 5% de desconto no valor total." },
-  { icon: CreditCard, title: "Cartão de Crédito", desc: "Aceitamos todas as bandeiras em até 10x sem juros." },
-  { icon: Wallet, title: "Cartão de Débito", desc: "Pagamento presencial rápido através de maquininha." },
+  {
+    icon: CreditCard,
+    title: "Cartão de Crédito",
+    desc: "Aceitamos todas as bandeiras em até 10x sem juros.",
+  },
+  {
+    icon: Wallet,
+    title: "Cartão de Débito",
+    desc: "Pagamento presencial rápido através de maquininha.",
+  },
 ];
 
 const testimonials = [
-  { name: "Camila R.", text: "Pedi atendimento com acompanhante feminina e me senti super segura.", role: "Vila Mariana" },
-  { name: "Rafael M.", text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.", role: "Pinheiros" },
-  { name: "Júlia A.", text: "Profissional pontual, educada e caprichosa. Virou meu contato fixo.", role: "Moema" },
+  {
+    name: "Camila R.",
+    text: "Pedi atendimento com acompanhante feminina e me senti super segura.",
+    role: "Vila Mariana",
+  },
+  {
+    name: "Rafael M.",
+    text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.",
+    role: "Pinheiros",
+  },
+  {
+    name: "Júlia A.",
+    text: "Profissional pontual, educada e caprichosa. Virou meu contato fixo.",
+    role: "Moema",
+  },
 ];
 
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-
       {/* Hero */}
       <section className="relative">
         <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 md:grid-cols-[1.1fr_1fr] md:py-28">
@@ -114,11 +189,12 @@ function Index() {
               Atendendo hoje em toda a cidade
             </span>
             <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight md:text-[4rem]">
-              Você não precisa de marido. <span className="text-brand">Precisa de quem resolve.</span>
+              Você não precisa de marido.{" "}
+              <span className="text-brand">Precisa de quem resolve.</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              De pequenos reparos à regularização de obras com agilidade e capricho.
-              Você escolhe o profissional — inclusive a opção com acompanhante feminina.
+              De pequenos reparos à regularização de obras com agilidade e capricho. Você escolhe o
+              profissional — inclusive a opção com acompanhante feminina.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="brand" size="xl">
@@ -131,9 +207,15 @@ function Index() {
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Sem taxa de visita</div>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Garantia de 30 dias</div>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand" /> Pagamento facilitado</div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-brand" /> Sem taxa de visita
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-brand" /> Garantia de 30 dias
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-brand" /> Pagamento facilitado
+              </div>
             </div>
           </div>
           <div className="relative">
@@ -155,12 +237,19 @@ function Index() {
       <section id="porque" className="border-y border-border bg-brand-soft/30 py-24">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Nossos Diferenciais</span>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">O que nos torna únicos.</h2>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+              Nossos Diferenciais
+            </span>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-5xl">
+              O que nos torna únicos.
+            </h2>
           </div>
           <div className="grid gap-10 md:grid-cols-3">
             {reasons.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-2xl border border-border bg-card p-8 transition hover:shadow-soft">
+              <div
+                key={title}
+                className="rounded-2xl border border-border bg-card p-8 transition hover:shadow-soft"
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-brand-foreground mb-6">
                   <Icon className="h-6 w-6" />
                 </div>
@@ -177,15 +266,17 @@ function Index() {
         <div className="mx-auto max-w-6xl px-4 py-24">
           <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-end">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Você escolhe</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+                Você escolhe
+              </span>
               <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
                 Atendimento do jeito que faz sentido pra você.
               </h2>
             </div>
             <p className="text-muted-foreground md:text-lg">
-              Sabemos que receber alguém em casa exige confiança. Por isso oferecemos três
-              opções de atendimento — incluindo acompanhante feminina para clientes que moram
-              sozinhas e preferem mais segurança.
+              Sabemos que receber alguém em casa exige confiança. Por isso oferecemos três opções de
+              atendimento — incluindo acompanhante feminina para clientes que moram sozinhas e
+              preferem mais segurança.
             </p>
           </div>
 
@@ -195,9 +286,7 @@ function Index() {
                 key={label}
                 className={
                   "relative flex flex-col rounded-2xl border p-7 transition hover:-translate-y-0.5 " +
-                  (highlight
-                    ? "border-brand/30 bg-brand-soft"
-                    : "border-border bg-card")
+                  (highlight ? "border-brand/30 bg-brand-soft" : "border-border bg-card")
                 }
               >
                 {highlight && (
@@ -205,10 +294,12 @@ function Index() {
                     Diferencial
                   </span>
                 )}
-                <div className={
-                  "flex h-11 w-11 items-center justify-center rounded-xl " +
-                  (highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")
-                }>
+                <div
+                  className={
+                    "flex h-11 w-11 items-center justify-center rounded-xl " +
+                    (highlight ? "bg-brand text-brand-foreground" : "bg-muted text-foreground")
+                  }
+                >
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-5 text-lg font-semibold">{label}</h3>
@@ -229,14 +320,17 @@ function Index() {
               <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
               <p>
                 <span className="font-medium text-foreground">Política de segurança.</span> Todos os
-                profissionais e acompanhantes passam por verificação de documentos, antecedentes
-                e avaliação contínua dos clientes.
+                profissionais e acompanhantes passam por verificação de documentos, antecedentes e
+                avaliação contínua dos clientes.
               </p>
             </div>
             <div className="flex items-start gap-3 text-sm text-muted-foreground border-t border-border pt-4">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
               <p>
-                <span className="font-medium text-foreground">Disponibilidade.</span> Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.
+                <span className="font-medium text-foreground">Disponibilidade.</span> Prefere
+                atendimento por uma profissional mulher? Sem problema! Vamos verificar a
+                disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de
+                uma acompanhante para sua segurança e conforto.
               </p>
             </div>
           </div>
@@ -247,14 +341,16 @@ function Index() {
       <section id="servicos" className="mx-auto max-w-6xl px-4 py-24">
         <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-end">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Serviços</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+              Serviços
+            </span>
             <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
               Tudo o que sua casa pediu.
             </h2>
           </div>
           <p className="text-muted-foreground md:text-lg">
-            Da montagem do guarda-roupa ao vazamento da pia. Resolvemos rápido e do jeito certo,
-            com ferramentas próprias e zero bagunça.
+            Da montagem do guarda-roupa ao vazamento da pia. Resolvemos rápido e do jeito certo, com
+            ferramentas próprias e zero bagunça.
           </p>
         </div>
 
@@ -275,10 +371,12 @@ function Index() {
             </Link>
           ))}
         </div>
-        
+
         <div className="mt-12 flex justify-center">
           <Button asChild variant="outline" className="rounded-full">
-            <Link to="/servicos">Ver todos os serviços <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link to="/servicos">
+              Ver todos os serviços <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
         </div>
       </section>
@@ -286,8 +384,12 @@ function Index() {
       {/* Depoimentos */}
       <section className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Depoimentos</span>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Quem chama, recomenda.</h2>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+            Depoimentos
+          </span>
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
+            Quem chama, recomenda.
+          </h2>
         </div>
         <div className="mt-14 grid gap-5 md:grid-cols-3">
           {testimonials.map((t) => (
@@ -310,14 +412,23 @@ function Index() {
       {/* Métodos de Pagamento */}
       <section id="pagamento" className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
         <div className="text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Pagamento</span>
-          <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">Formas de pagamento seguras.</h2>
-          <p className="mt-4 text-muted-foreground md:text-lg">O pagamento é feito apenas após a realização do serviço.</p>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+            Pagamento
+          </span>
+          <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
+            Formas de pagamento seguras.
+          </h2>
+          <p className="mt-4 text-muted-foreground md:text-lg">
+            O pagamento é feito apenas após a realização do serviço.
+          </p>
         </div>
 
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {paymentMethods.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex flex-col items-center text-center p-8 rounded-2xl border border-border bg-card transition hover:shadow-soft">
+            <div
+              key={title}
+              className="flex flex-col items-center text-center p-8 rounded-2xl border border-border bg-card transition hover:shadow-soft"
+            >
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand mb-6">
                 <Icon className="h-6 w-6" />
               </div>
@@ -327,7 +438,6 @@ function Index() {
           ))}
         </div>
       </section>
-
     </div>
   );
 }

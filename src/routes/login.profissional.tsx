@@ -92,12 +92,8 @@ function LoginProfissionalPage() {
           .eq("user_id", userId)
           .maybeSingle();
         if (!perfil) {
-          await supabase
-            .from("profissional_perfil")
-            .insert({ user_id: userId, ativo: false });
-          setInfo(
-            "Bem-vindo! Complete seu perfil profissional para receber pedidos.",
-          );
+          await supabase.from("profissional_perfil").insert({ user_id: userId, ativo: false });
+          setInfo("Bem-vindo! Complete seu perfil profissional para receber pedidos.");
         }
       } catch {
         // silencioso — usuário pode completar manualmente
@@ -135,12 +131,8 @@ function LoginProfissionalPage() {
             <Briefcase className="h-3.5 w-3.5" />
             Acesso Profissional
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Painel do Profissional
-          </h1>
-          <p className="text-white/70 mt-2">
-            Entre para acessar seus orçamentos, agenda e ganhos.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Painel do Profissional</h1>
+          <p className="text-white/70 mt-2">Entre para acessar seus orçamentos, agenda e ganhos.</p>
         </div>
 
         <div className="bg-white rounded-[2.5rem] border border-border p-8 shadow-2xl">
@@ -190,8 +182,7 @@ function LoginProfissionalPage() {
                 onClick={async () => {
                   setError(null);
                   setInfo(null);
-                  if (!email)
-                    return setError("Digite seu e-mail acima primeiro.");
+                  if (!email) return setError("Digite seu e-mail acima primeiro.");
                   const { error } = await supabase.auth.resetPasswordForEmail(email, {
                     redirectTo: `${window.location.origin}/reset-password`,
                   });
@@ -204,12 +195,8 @@ function LoginProfissionalPage() {
               </button>
             </div>
 
-            {error && (
-              <p className="text-sm text-red-600 font-medium">{error}</p>
-            )}
-            {info && (
-              <p className="text-sm text-green-700 font-medium">{info}</p>
-            )}
+            {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+            {info && <p className="text-sm text-green-700 font-medium">{info}</p>}
 
             <Button
               type="submit"
@@ -217,11 +204,7 @@ function LoginProfissionalPage() {
               size="lg"
               className="w-full h-14 rounded-full bg-brand text-brand-foreground hover:bg-brand/90 font-bold shadow-lg mt-2"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Entrar no Painel"
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar no Painel"}
             </Button>
           </form>
 

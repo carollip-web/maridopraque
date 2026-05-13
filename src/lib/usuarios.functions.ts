@@ -2,10 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-import {
-  requireAdminLevel,
-  requireSuperAdmin,
-} from "./admin-permissions.server";
+import { requireAdminLevel, requireSuperAdmin } from "./admin-permissions.server";
 
 const userSchema = z.object({
   nome: z.string().min(2),
@@ -26,14 +23,16 @@ export const criarUsuarioAdmin = createServerFn({ method: "POST" })
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!SUPABASE_URL || !SERVICE_ROLE) {
-      throw new Error("Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.",
+      );
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     });
 
     // 1. Criar usuário no Auth
@@ -41,7 +40,7 @@ export const criarUsuarioAdmin = createServerFn({ method: "POST" })
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { nome: data.nome }
+      user_metadata: { nome: data.nome },
     });
 
     if (authError) throw new Error(`Erro no Auth: ${authError.message}`);
@@ -54,7 +53,7 @@ export const criarUsuarioAdmin = createServerFn({ method: "POST" })
       .from("profiles")
       .update({ nome: data.nome })
       .eq("id", newUserId);
-    
+
     if (profileError) {
       console.warn("Erro ao atualizar nome no perfil, tentando inserir...", profileError);
       // Às vezes o trigger demora ou falha, tentamos upsert
@@ -92,31 +91,33 @@ export const excluirUsuarioAdmin = createServerFn({ method: "POST" })
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!SUPABASE_URL || !SERVICE_ROLE) {
-      throw new Error("Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.",
+      );
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     });
 
     // 1. Remover do Auth (isso deve disparar os triggers de limpeza no DB, se existirem)
     // Se não existirem triggers ON DELETE CASCADE em todas as tabelas, precisamos limpar manualmente.
-    
+
     // Limpeza manual preventiva para garantir integridade (especialmente tabelas que o CASCADE pode falhar)
     await admin.from("user_roles").delete().eq("user_id", data.targetUserId);
     await admin.from("profissional_perfil").delete().eq("user_id", data.targetUserId);
-    
+
     // 2. Deletar o usuário no Auth
     const { error: deleteError } = await admin.auth.admin.deleteUser(data.targetUserId);
 
     if (deleteError) {
-        // Se der erro de FK, tentamos limpar profiles antes (embora auth.users seja o pai)
-        await admin.from("profiles").delete().eq("id", data.targetUserId);
-        const { error: retryError } = await admin.auth.admin.deleteUser(data.targetUserId);
-        if (retryError) throw new Error(`Erro ao excluir usuário do Auth: ${retryError.message}`);
+      // Se der erro de FK, tentamos limpar profiles antes (embora auth.users seja o pai)
+      await admin.from("profiles").delete().eq("id", data.targetUserId);
+      const { error: retryError } = await admin.auth.admin.deleteUser(data.targetUserId);
+      if (retryError) throw new Error(`Erro ao excluir usuário do Auth: ${retryError.message}`);
     }
 
     return { ok: true };
@@ -140,7 +141,9 @@ export const convidarAdminFn = createServerFn({ method: "POST" })
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!SUPABASE_URL || !SERVICE_ROLE) {
-      throw new Error("Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.",
+      );
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {

@@ -46,14 +46,20 @@ export function PanicButton({ orcamentoId }: { orcamentoId?: string }) {
 
       {open && (
         <div className="fixed inset-0 z-[200] grid place-items-center p-4 animate-in fade-in">
-          <div className="absolute inset-0 bg-black/60" onClick={() => !sending && setOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => !sending && setOpen(false)}
+          />
           <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl">
             <div className="flex items-center gap-2 text-red-600 font-black text-lg mb-2">
               <AlertTriangle className="h-5 w-5" /> Alerta de emergência
             </div>
             <p className="text-sm text-slate-700 mb-4">
-              Em caso de risco imediato, ligue para <a href="tel:190" className="text-red-600 font-bold underline">190</a>.
-              Vamos registrar sua localização e avisar a equipe de segurança.
+              Em caso de risco imediato, ligue para{" "}
+              <a href="tel:190" className="text-red-600 font-bold underline">
+                190
+              </a>
+              . Vamos registrar sua localização e avisar a equipe de segurança.
             </p>
             <textarea
               value={obs}
@@ -62,8 +68,19 @@ export function PanicButton({ orcamentoId }: { orcamentoId?: string }) {
               className="w-full h-20 p-3 rounded-xl border border-border bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30"
             />
             <div className="grid grid-cols-2 gap-2 mt-4">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={sending} className="rounded-full">Cancelar</Button>
-              <Button onClick={disparar} disabled={sending} className="bg-red-600 hover:bg-red-700 text-white rounded-full font-bold">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={sending}
+                className="rounded-full"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={disparar}
+                disabled={sending}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-full font-bold"
+              >
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Disparar alerta"}
               </Button>
             </div>

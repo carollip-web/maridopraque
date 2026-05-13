@@ -39,7 +39,9 @@ export function SLABadge({ createdAt, prazoHoras }: Props) {
   const Icon = atrasado ? AlertTriangle : urgente ? Clock : CheckCircle2;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${cls}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border ${cls}`}
+    >
       <Icon className="h-3 w-3" />
       SLA · {formatar(restanteMin)}
     </span>

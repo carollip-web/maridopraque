@@ -20,7 +20,11 @@ export const atualizarPrecoMaterialMarketplace = createServerFn({ method: "POST"
       .single();
     if (e1 || !mat) throw new Error(e1?.message ?? "Material não encontrado");
 
-    const quote = await fetchMarketplacePrice(mat.nome, Number(mat.preco_base), mat.marketplace_url);
+    const quote = await fetchMarketplacePrice(
+      mat.nome,
+      Number(mat.preco_base),
+      mat.marketplace_url,
+    );
 
     const { data: updated, error: e2 } = await supabase
       .from("materiais")

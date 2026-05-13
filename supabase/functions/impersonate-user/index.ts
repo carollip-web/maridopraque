@@ -3,8 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { preflight, ensureOrigin, jsonResponse, logAudit } from "../_shared/security.ts";
 
 Deno.serve(async (req) => {
-  const pf = preflight(req); if (pf) return pf;
-  const originGuard = ensureOrigin(req); if (originGuard) return originGuard;
+  const pf = preflight(req);
+  if (pf) return pf;
+  const originGuard = ensureOrigin(req);
+  if (originGuard) return originGuard;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -19,7 +21,9 @@ Deno.serve(async (req) => {
     const { data: userData } = await userClient.auth.getUser();
     if (!userData.user) return jsonResponse(req, { error: "Não autenticado" }, 401);
     const { data: roles } = await userClient
-      .from("user_roles").select("role, admin_level").eq("user_id", userData.user.id);
+      .from("user_roles")
+      .select("role, admin_level")
+      .eq("user_id", userData.user.id);
     const isSuperAdmin = (roles ?? []).some(
       (r: any) => r.role === "admin" && r.admin_level === "super_admin",
     );
@@ -32,7 +36,10 @@ Deno.serve(async (req) => {
 
     // Validar que alvo é conta de teste (segurança)
     const { data: targetProfile } = await admin
-      .from("profiles").select("email, is_test").eq("id", target_user_id).maybeSingle();
+      .from("profiles")
+      .select("email, is_test")
+      .eq("id", target_user_id)
+      .maybeSingle();
     if (!targetProfile) return jsonResponse(req, { error: "Usuário não encontrado" }, 404);
     if (!targetProfile.is_test) {
       return jsonResponse(req, { error: "Apenas contas de teste podem ser impersonadas" }, 403);
@@ -53,7 +60,11 @@ Deno.serve(async (req) => {
       details: { target_email: targetProfile.email },
     });
 
-    return jsonResponse(req, { ok: true, action_link: link.properties?.action_link, email: targetProfile.email });
+    return jsonResponse(req, {
+      ok: true,
+      action_link: link.properties?.action_link,
+      email: targetProfile.email,
+    });
   } catch (e: any) {
     console.error("impersonate-user error:", e?.message);
     return jsonResponse(req, { error: e?.message ?? "Erro interno" }, 500);
