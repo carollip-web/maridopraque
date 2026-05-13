@@ -606,6 +606,98 @@ export type Database = {
         }
         Relationships: []
       }
+      proposta_materiais: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          nome_snapshot: string
+          preco_unitario: number
+          proposta_id: string
+          quantidade: number
+          subtotal: number | null
+          unidade_snapshot: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          nome_snapshot: string
+          preco_unitario?: number
+          proposta_id: string
+          quantidade?: number
+          subtotal?: number | null
+          unidade_snapshot?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          nome_snapshot?: string
+          preco_unitario?: number
+          proposta_id?: string
+          quantidade?: number
+          subtotal?: number | null
+          unidade_snapshot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposta_materiais_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposta_materiais_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      propostas: {
+        Row: {
+          created_at: string
+          id: string
+          observacoes: string | null
+          orcamento_id: string
+          profissional_id: string
+          status: string
+          updated_at: string
+          valor_servico: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          orcamento_id: string
+          profissional_id: string
+          status?: string
+          updated_at?: string
+          valor_servico: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          orcamento_id?: string
+          profissional_id?: string
+          status?: string
+          updated_at?: string
+          valor_servico?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_materiais: {
         Row: {
           created_at: string
