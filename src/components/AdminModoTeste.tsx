@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Database, RotateCcw, Copy, Check, Play, UserPlus, LogIn } from "lucide-react";
+import { Loader2, Database, RotateCcw, Copy, Check, Play, LogIn } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const TEST_EMAIL_DOMAIN = "teste.maridopraque.local";

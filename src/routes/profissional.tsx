@@ -5,7 +5,6 @@ import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoe
 import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
-import { TermoAdesaoDialog } from "@/components/TermoAdesaoDialog";
 import { Chat } from "@/components/Chat";
 import { NivelBadge } from "@/components/NivelBadge";
 import { PanicButton } from "@/components/PanicButton";

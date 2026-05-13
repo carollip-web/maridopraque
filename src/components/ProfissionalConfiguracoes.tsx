@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, ShieldCheck, MapPin, Briefcase, Camera, Loader2, Info } from "lucide-react";
+import { User, ShieldCheck, Briefcase, Camera, Loader2, Info } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 const profileSchema = z.object({
