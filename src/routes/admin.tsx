@@ -2481,7 +2481,7 @@ function AdminEquipe() {
         <h3 className="font-bold mb-1 flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
         </h3>
-        <p className="text-sm text-slate-500 mb-6">O usuário já precisa ter uma conta no sistema.</p>
+        <p className="text-sm text-slate-500 mb-6">Se o e-mail ainda não tiver conta, criamos automaticamente com uma senha temporária.</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="email"
