@@ -41,7 +41,7 @@ import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { criarUsuarioAdmin, excluirUsuarioAdmin, convidarAdminFn } from "@/lib/usuarios.functions";
 import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -2227,8 +2227,9 @@ void Trash2;
 /* ============== EQUIPE ADMIN ============== */
 
 function AdminEquipe() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const qc = useQueryClient();
+  const convidarFn = useServerFn(convidarAdminFn);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLevel, setInviteLevel] = useState<NonNullable<AdminLevel>>("suporte");
   const [inviting, setInviting] = useState(false);
@@ -2256,43 +2257,32 @@ function AdminEquipe() {
   });
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
+    const email = inviteEmail.trim();
+    if (!email) return;
     setInviting(true);
     try {
-      // 1. Look up user by email in profiles
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", inviteEmail.trim())
-        .maybeSingle();
-
-      if (!profile) {
-        toast.error("Usuário não encontrado", { description: "O e-mail precisa ter uma conta no sistema." });
-        return;
-      }
-
-      // 2. Check if already admin
-      const { data: existing } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", profile.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (existing) {
-        toast.error("Este usuário já é administrador.");
-        return;
-      }
-
-      // 3. Upsert role
-      const { error } = await supabase.from("user_roles").insert({
-        user_id: profile.id,
-        role: "admin",
-        admin_level: inviteLevel,
+      const result = await convidarFn({
+        data: {
+          email,
+          admin_level: inviteLevel,
+          redirectTo: `${window.location.origin}/auth/redirect`,
+        },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      if (error) throw error;
-      toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
+      if (result.alreadyAdmin) {
+        toast.success("Nível atualizado", {
+          description: `${email} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
+        });
+      } else if (result.invited) {
+        toast.success("Convite enviado!", {
+          description: `Enviamos um e-mail para ${email} definir a senha. Acesso já como ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
+        });
+      } else {
+        toast.success("Administrador adicionado!", {
+          description: `${email} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
+        });
+      }
       setInviteEmail("");
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
@@ -2362,7 +2352,7 @@ function AdminEquipe() {
         <h3 className="font-bold mb-1 flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
         </h3>
-        <p className="text-sm text-slate-500 mb-6">O usuário já precisa ter uma conta no sistema.</p>
+        <p className="text-sm text-slate-500 mb-6">Se ainda não tem conta, enviamos um convite por e-mail para definir a senha.</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="email"
