@@ -92,6 +92,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -103,14 +104,23 @@ const queryClient = new QueryClient({
 });
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Painéis com chrome próprio (sidebar/header internos) não usam Header/Footer públicos
+  const isAppShell =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/profissional") ||
+    pathname.startsWith("/cliente") ||
+    pathname.startsWith("/materiais-admin") ||
+    pathname.startsWith("/servicos-admin");
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex flex-col min-h-screen">
-        <Header />
+        {!isAppShell && <Header />}
         <main className="flex-1">
           <Outlet />
         </main>
-        <Footer />
+        {!isAppShell && <Footer />}
         <Toaster richColors position="top-right" />
       </div>
     </QueryClientProvider>
