@@ -229,6 +229,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }
 };
 
 function AdminPedidos() {
+  const { session } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const excluirPedidoFn = useServerFn(excluirPedidoAdmin);
