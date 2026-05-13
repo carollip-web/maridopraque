@@ -51,9 +51,7 @@ export const salvarMaterial = createServerFn({ method: "POST" })
   .inputValidator((input) => upsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: roles } = await supabase
-      .from("user_roles").select("role").eq("user_id", userId);
-    if (!roles?.some((r) => r.role === "admin")) throw new Error("Apenas admin");
+    await requireWritableAdminSection(supabase, userId, "servicos");
 
     if (data.id) {
       const { data: row, error } = await supabase
