@@ -66,7 +66,7 @@ type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notific
 
 function ClienteArea() {
   const { tab: activeTab } = Route.useSearch();
-  const { session, logout, userData, isProfissional, isAdmin, user } = useAuth();
+  const { session, logout, userData, isProfissional, isAdmin, user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
