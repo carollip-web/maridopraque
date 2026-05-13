@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/checkout")({
-  component: Checkout,
+  component: CheckoutGuard,
   validateSearch: (search: Record<string, unknown>) => {
     return {
       service: (search.service as string) || "Serviço Geral",
@@ -32,6 +32,40 @@ export const Route = createFileRoute("/checkout")({
     };
   },
 });
+
+function CheckoutGuard() {
+  const enabled = import.meta.env.VITE_ENABLE_CHECKOUT === "true";
+  if (!enabled) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4 py-16">
+        <div className="max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Checkout online em breve
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            O pagamento online ainda não está disponível. Acompanhe seus pedidos ou
+            solicite um orçamento — o pagamento é combinado diretamente com o profissional.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/servicos"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
+            >
+              Ver serviços
+            </Link>
+            <Link
+              to="/cliente"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-border bg-background px-5 text-sm font-medium text-foreground"
+            >
+              Meus pedidos
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <Checkout />;
+}
 
 function Checkout() {
   const { service, price: basePrice, step } = Route.useSearch();
