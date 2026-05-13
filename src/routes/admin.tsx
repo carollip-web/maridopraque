@@ -2393,35 +2393,29 @@ function AdminEquipe() {
     },
   });
 
+  const convidarAdminFn = useServerFn(convidarAdmin);
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      // 1. Look up user by email in profiles
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", inviteEmail.trim())
-        .maybeSingle();
-
-      if (!profile) {
-        toast.error("Usuário não encontrado", { description: "O e-mail precisa ter uma conta no sistema." });
-        return;
+      const result: any = await convidarAdminFn({
+        data: { email: inviteEmail.trim(), admin_level: inviteLevel },
+      });
+      if (result?.created && result?.tempPassword) {
+        toast.success("Conta criada e admin atribuído!", {
+          description: `Senha temporária: ${result.tempPassword} — envie para ${inviteEmail} e peça para trocar no primeiro login.`,
+          duration: 20000,
+        });
+      } else {
+        toast.success("Administrador adicionado!", {
+          description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.`,
+        });
       }
-
-      // 2. Upsert role (allow updating if already exists)
-      const { error } = await supabase.from("user_roles").upsert({
-        user_id: profile.id,
-        role: "admin",
-        admin_level: inviteLevel,
-      }, { onConflict: "user_id,role" });
-
-      if (error) throw error;
-      toast.success("Administrador adicionado!", { description: `${inviteEmail} agora é ${ADMIN_LEVEL_LABELS[inviteLevel].label}.` });
       setInviteEmail("");
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
-      toast.error("Erro ao convidar", { description: e.message });
+      toast.error("Erro ao convidar", { description: e?.message || "Falha ao adicionar admin." });
     } finally {
       setInviting(false);
     }
