@@ -96,8 +96,21 @@ const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementT
 
 function AdminArea() {
   const { isLoggedIn, isAdmin, isSuperAdmin, adminLevel, loading, profile, user, logout, canAccess, allowedTabs } = useAuth();
-  const [activeTab, setActiveTab] = useState<AdminSection>("dashboard");
+  const search = useSearch({ from: "/admin" }) as any;
+  const [activeTab, setActiveTab] = useState<AdminSection>(search.tab || "dashboard");
   const navigate = useNavigate();
+
+  // Sync activeTab with URL search param 'tab'
+  useEffect(() => {
+    if (search.tab && search.tab !== activeTab) {
+      setActiveTab(search.tab);
+    }
+  }, [search.tab]);
+
+  // Sync URL with activeTab when changed via sidebar
+  useEffect(() => {
+    navigate({ search: (old: any) => ({ ...old, tab: activeTab }) as any, replace: true });
+  }, [activeTab]);
 
   useEffect(() => {
     if (loading) return;
