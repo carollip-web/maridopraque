@@ -1064,11 +1064,11 @@ function AdminProfissionais() {
     if (!confirm("Tem certeza que deseja excluir este profissional? Esta ação é irreversível e removerá todos os dados do usuário.")) return;
     setIsDeleting(true);
     try {
-      const { ok, error } = await excluirUsuarioFn({
+      const { ok } = await excluirUsuarioFn({
         data: { targetUserId: id },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao excluir profissional");
+      if (!ok) throw new Error("Erro ao excluir profissional");
       
       toast.success("Profissional excluído!");
       setSelected(null);
