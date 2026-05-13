@@ -99,10 +99,11 @@ function ClienteArea() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
     if (!session && !user) {
       navigate({ to: "/login" });
     }
-  }, [session, user, navigate]);
+  }, [authLoading, session, user, navigate]);
 
   useEffect(() => {
     if (!user?.id) return;
