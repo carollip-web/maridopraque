@@ -1755,15 +1755,30 @@ function AdminClientes() {
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <div className="relative max-w-sm w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Filtrar por nome ou e-mail..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all"
-          />
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative max-w-sm w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Filtrar por nome ou e-mail..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+            <Checkbox 
+              id="select-all-clients"
+              checked={filtered.length > 0 && selectedIds.length === filtered.length}
+              onCheckedChange={toggleSelectAll}
+              className="border-slate-300"
+            />
+            <label htmlFor="select-all-clients" className="text-xs font-bold text-slate-500 cursor-pointer select-none">
+              Selecionar Todos
+            </label>
+          </div>
         </div>
+
         <Button variant="ghost" size="sm" onClick={() => refetch()} className="text-slate-500 gap-2">
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
@@ -1798,8 +1813,13 @@ function AdminClientes() {
       
       <div className="divide-y divide-slate-100">
         {!isLoading && filtered.map((c) => (
-          <div key={c.id} className="flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors group px-2 -mx-2 rounded-xl">
+          <div key={c.id} className={`flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors group px-4 -mx-4 rounded-2xl ${selectedIds.includes(c.id) ? 'bg-brand-soft/20' : ''}`}>
             <div className="flex items-center gap-4 min-w-0">
+              <Checkbox 
+                checked={selectedIds.includes(c.id)}
+                onCheckedChange={() => toggleSelect(c.id)}
+                className="border-slate-300"
+              />
               <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-base shrink-0">
                 {c.nome?.[0]?.toUpperCase() || "?"}
               </div>
