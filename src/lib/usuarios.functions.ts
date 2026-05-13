@@ -134,16 +134,8 @@ export const convidarAdminFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    // Apenas super_admin pode adicionar membros à equipe
-    const { data: myRole } = await supabase
-      .from("user_roles")
-      .select("role, admin_level")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!myRole || myRole.admin_level !== "super_admin") {
-      throw new Error("Apenas super admins podem gerenciar a equipe administrativa.");
-    }
+    // Apenas super_admin pode gerenciar a equipe administrativa.
+    await requireSuperAdmin(supabase, userId);
 
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
