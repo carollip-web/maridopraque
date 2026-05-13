@@ -1519,11 +1519,11 @@ function AdminClientes() {
     }
     setIsCreating(true);
     try {
-      const { ok, error } = await criarUsuarioFn({
+      const { ok } = await criarUsuarioFn({
         data: { ...newClient, role: "cliente" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao criar cliente");
+      if (!ok) throw new Error("Erro ao criar cliente");
       
       toast.success("Cliente criado com sucesso!");
       setIsDialogOpen(false);
