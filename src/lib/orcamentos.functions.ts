@@ -341,11 +341,11 @@ export const cancelarPedido = createServerFn({ method: "POST" })
     const { supabase: userClient, userId } = context;
 
     try {
-      const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
       
       if (!SUPABASE_URL || !SERVICE_ROLE) {
-        console.error("[cancelarPedido] Erro: Variáveis de ambiente Supabase ausentes no servidor.");
+        console.error("[cancelarPedido] Erro: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY ausentes no servidor.");
         return { ok: false, error: "Erro de configuração do servidor. Contate o administrador." };
       }
 
