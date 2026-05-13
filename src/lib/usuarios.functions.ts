@@ -125,3 +125,44 @@ export const excluirUsuarioAdmin = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const promoverSuperAdminsEmergencia = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      throw new Error("Configuração do servidor ausente (SERVICE_ROLE).");
+    }
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+
+    const emails = ["carol.lip@gmail.com", "engenheirodonald@yahoo.com"];
+    let results = [];
+
+    for (const email of emails) {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (profile) {
+        const { error } = await admin
+          .from("user_roles")
+          .upsert({ 
+            user_id: profile.id, 
+            role: "admin", 
+            admin_level: "super_admin" 
+          }, { onConflict: "user_id,role" });
+        
+        results.push(`${email}: ${error ? "Erro" : "Sucesso"}`);
+      } else {
+        results.push(`${email}: Não encontrado`);
+      }
+    }
+
+    return { ok: true, message: results.join(" | ") };
+  });
