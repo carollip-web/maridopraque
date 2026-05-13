@@ -1043,11 +1043,11 @@ function AdminProfissionais() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const { ok, error } = await criarUsuarioFn({
+      const { ok } = await criarUsuarioFn({
         data: { ...newPro, role: "profissional" },
         headers: { Authorization: `Bearer ${session?.access_token}` }
       });
-      if (!ok) throw new Error(error || "Erro ao criar profissional");
+      if (!ok) throw new Error("Erro ao criar profissional");
       
       toast.success("Profissional criado com sucesso!");
       setShowAddModal(false);
