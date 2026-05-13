@@ -121,7 +121,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // Instead of updating the order and claiming it, we submit a proposal
-    const { data: row, error } = await (supabase as any)
+    const { data: row, error } = await supabase
       .from("propostas")
       .insert({
         orcamento_id: data.orcamentoId,
@@ -158,7 +158,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .filter((x): x is NonNullable<typeof x> => x !== null);
 
       if (items.length > 0) {
-        const { error: e3 } = await (supabase as any).from("proposta_materiais").insert(items);
+        const { error: e3 } = await supabase.from("proposta_materiais").insert(items);
         if (e3) throw new Error(e3.message);
       }
     }
@@ -223,7 +223,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Pedido não está mais aberto para propostas.");
 
     // Update the specific proposta to aceita, ensuring it belongs to the correct budget
-    const { data: prop, error: e1 } = await (supabase as any)
+    const { data: prop, error: e1 } = await supabase
       .from("propostas")
       .update({ status: "aceita" })
       .eq("id", data.propostaId)
@@ -236,14 +236,14 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     console.info(
       `Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`,
     );
-    await (supabase as any)
+    await supabase
       .from("propostas")
       .update({ status: "recusada" })
       .eq("orcamento_id", data.orcamentoId)
       .neq("id", data.propostaId);
 
     // Copy materials from proposta_materiais to orcamento_materiais
-    const { data: pMats } = await (supabase as any)
+    const { data: pMats } = await supabase
       .from("proposta_materiais")
       .select("*")
       .eq("proposta_id", prop.id);
@@ -252,7 +252,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
       // Insert new ones
       await supabase.from("orcamento_materiais").insert(
-        pMats.map((m: any) => ({
+        pMats.map((m) => ({
           orcamento_id: data.orcamentoId,
           material_id: m.material_id,
           nome_snapshot: m.nome_snapshot,
@@ -422,7 +422,7 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         .select("id")
         .eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
-        const propIds = props.map((p: any) => p.id);
+        const propIds = props.map((p: { id: string }) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
         await admin.from("propostas").delete().in("id", propIds);
         console.info(`[cancelarPedido] Propostas (${props.length}) limpas.`);
@@ -489,7 +489,7 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
         .select("id")
         .eq("orcamento_id", data.orcamentoId);
       if (props && props.length > 0) {
-        const propIds = props.map((p: any) => p.id);
+        const propIds = props.map((p: { id: string }) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
         await admin.from("propostas").delete().in("id", propIds);
       }
