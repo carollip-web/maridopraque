@@ -636,7 +636,13 @@ function MeusOrcamentos() {
             message: orcamentoError.message,
             details: orcamentoError.details,
             hint: orcamentoError.hint,
-            insertPayload,
+          });
+          console.error(
+            "[orcamentos.handleNew] payload enviado",
+            JSON.stringify(insertPayload, null, 2),
+          );
+          toast.error("Não foi possível criar o pedido", {
+            description: `${orcamentoError.code || ""} ${orcamentoError.message || ""}`.trim(),
           });
           throw orcamentoError;
         }
