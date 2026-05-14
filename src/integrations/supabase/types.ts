@@ -433,53 +433,65 @@ export type Database = {
         Row: {
           checkout_url: string | null
           cliente_id: string
-          created_at: string | null
+          created_at: string
           gateway: string | null
           gateway_payment_id: string | null
+          gateway_preference_id: string | null
+          gateway_status: string | null
           id: string
-          metadata: Json | null
+          metadata: Json
           metodo: string | null
           orcamento_id: string
+          paid_at: string | null
           profissional_id: string | null
           status: string
-          updated_at: string | null
-          valor_restante: number | null
-          valor_sinal: number | null
+          updated_at: string
+          valor_restante: number
+          valor_sinal: number
           valor_total: number
+          webhook_last_received_at: string | null
         }
         Insert: {
           checkout_url?: string | null
           cliente_id: string
-          created_at?: string | null
+          created_at?: string
           gateway?: string | null
           gateway_payment_id?: string | null
+          gateway_preference_id?: string | null
+          gateway_status?: string | null
           id?: string
-          metadata?: Json | null
+          metadata?: Json
           metodo?: string | null
           orcamento_id: string
+          paid_at?: string | null
           profissional_id?: string | null
           status?: string
-          updated_at?: string | null
-          valor_restante?: number | null
-          valor_sinal?: number | null
+          updated_at?: string
+          valor_restante?: number
+          valor_sinal?: number
           valor_total: number
+          webhook_last_received_at?: string | null
         }
         Update: {
           checkout_url?: string | null
           cliente_id?: string
-          created_at?: string | null
+          created_at?: string
           gateway?: string | null
           gateway_payment_id?: string | null
+          gateway_preference_id?: string | null
+          gateway_status?: string | null
           id?: string
-          metadata?: Json | null
+          metadata?: Json
           metodo?: string | null
           orcamento_id?: string
+          paid_at?: string | null
           profissional_id?: string | null
           status?: string
-          updated_at?: string | null
-          valor_restante?: number | null
-          valor_sinal?: number | null
+          updated_at?: string
+          valor_restante?: number
+          valor_sinal?: number
           valor_total?: number
+          webhook_last_received_at?: string | null
         }
         Relationships: [
           {

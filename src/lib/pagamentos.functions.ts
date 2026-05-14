@@ -13,7 +13,6 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // 1. Buscar orçamento e validar posse/status
-    // Usamos any para evitar erros de tipagem com o join orcamento_materiais
     const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
       .select("*, orcamento_materiais(*)")
@@ -30,7 +29,6 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       throw new Error("Sem permissão para este orçamento.");
     }
     
-    // Status pagáveis: 'aprovado' (quando aceitou proposta), 'fixo_auto'
     const statusPagaveis = ["aprovado", "fixo_auto"];
     if (!statusPagaveis.includes(orc.status)) {
       throw new Error(`Orçamento em status "${orc.status}" não está pronto para pagamento.`);
@@ -43,62 +41,100 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       0
     );
     const valorTotal = valorServico + valorMateriais;
-    
-    // Regra: 50% de sinal sobre o total
     const valorSinal = valorTotal * 0.5;
     const valorRestante = valorTotal - valorSinal;
 
     if (valorTotal <= 0) {
-      throw new Error("O valor total do orçamento deve ser maior que zero para iniciar o pagamento.");
+      throw new Error("O valor total do orçamento deve ser maior que zero.");
     }
 
-    // 3. Verificar se já existe pagamento pendente para evitar duplicidade
-    const { data: existing } = await supabase
-      .from("pagamentos")
-      .select("id, status")
-      .eq("orcamento_id", data.orcamentoId)
-      .in("status", ["pending", "checkout_created"])
-      .maybeSingle();
+    // 3. Integração com Mercado Pago
+    const ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const APP_URL = process.env.APP_URL || "https://maridopraque.lovable.app";
 
-    if (existing) {
-      console.info("[iniciarPagamentoOrcamento] Reutilizando pagamento existente:", existing.id);
+    if (!ACCESS_TOKEN) {
+      console.error("[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado.");
       return { 
-        ok: true, 
-        pagamentoId: existing.id, 
-        message: "Checkout online em implantação. Nenhuma cobrança real foi realizada." 
+        ok: false, 
+        message: "O sistema de pagamentos está em configuração. Por favor, utilize o pagamento direto com o profissional por enquanto." 
       };
     }
 
-    // 4. Criar registro de pagamento (Preparação para Gateway)
-    const { data: pag, error: e2 } = await supabase
-      .from("pagamentos")
-      .insert({
-        orcamento_id: orc.id,
-        cliente_id: userId,
-        profissional_id: orc.profissional_id,
-        valor_total: valorTotal,
-        valor_sinal: valorSinal,
-        valor_restante: valorRestante,
-        status: "checkout_created",
-        gateway: "mercado_pago",
-        metadata: {
-          service_name: orc.service_name,
-          initiated_at: new Date().toISOString()
-        }
-      })
-      .select()
-      .single() as any;
+    try {
+      console.info(`[Mercado Pago] Gerando preferência para Orçamento ${orc.id}...`);
+      const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              id: orc.id,
+              title: `Sinal: ${orc.service_name}`,
+              description: "Reserva de serviço via Marido Pra Quê",
+              quantity: 1,
+              currency_id: "BRL",
+              unit_price: valorSinal,
+            },
+          ],
+          external_reference: orc.id,
+          notification_url: `${APP_URL}/api/mercado-pago-webhook`, // Webhook a ser criado
+          back_urls: {
+            success: `${APP_URL}/cliente?tab=pedidos&payment=success`,
+            failure: `${APP_URL}/cliente?tab=pedidos&payment=failure`,
+            pending: `${APP_URL}/cliente?tab=pedidos&payment=pending`,
+          },
+          auto_return: "approved",
+          statement_descriptor: "MARIDO PRA QUE",
+          expires: true,
+          expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
+        }),
+      });
 
-    if (e2) {
-      console.error("[iniciarPagamentoOrcamento] Erro ao inserir pagamento:", e2);
-      throw new Error(`Erro ao criar pagamento: ${e2.message}`);
+      const mpData = await mpResponse.json();
+      if (!mpResponse.ok) {
+        console.error("[Mercado Pago] Erro API:", mpData);
+        throw new Error(mpData.message || "Erro na comunicação com Mercado Pago.");
+      }
+
+      const checkoutUrl = mpData.init_point;
+      const preferenceId = mpData.id;
+
+      // 4. Criar registro de pagamento
+      const { data: pag, error: e2 } = await supabase
+        .from("pagamentos")
+        .insert({
+          orcamento_id: orc.id,
+          cliente_id: userId,
+          profissional_id: orc.profissional_id,
+          valor_total: valorTotal,
+          valor_sinal: valorSinal,
+          valor_restante: valorRestante,
+          status: "checkout_created",
+          gateway: "mercado_pago",
+          gateway_preference_id: preferenceId,
+          checkout_url: checkoutUrl,
+          metadata: {
+            service_name: orc.service_name,
+            mp_preference_id: preferenceId,
+            initiated_at: new Date().toISOString()
+          }
+        })
+        .select()
+        .single() as any;
+
+      if (e2) throw new Error(`Erro ao salvar registro de pagamento: ${e2.message}`);
+
+      return { 
+        ok: true, 
+        checkoutUrl: checkoutUrl,
+        pagamentoId: pag.id
+      };
+
+    } catch (err: any) {
+      console.error("[iniciarPagamentoOrcamento] Falha crítica:", err);
+      throw new Error(err.message || "Falha ao processar pagamento.");
     }
-
-    console.info(`[iniciarPagamentoOrcamento] Checkout iniciado: Pedido=${orc.id}, User=${userId}, Sinal=R$${valorSinal.toFixed(2)}`);
-
-    return { 
-      ok: true, 
-      pagamentoId: pag.id,
-      message: "Checkout online em implantação. Nenhuma cobrança real foi realizada."
-    };
   });
