@@ -188,14 +188,30 @@ function MeusOrcamentos() {
 
       const { data: props } = await supabase
         .from("propostas")
-        .select("*, profiles(nome)")
+        .select("*")
         .in(
           "orcamento_id",
           rows.map((r) => r.id),
         );
+      
+      const pRows = props ?? [];
+      const profIds = Array.from(new Set(pRows.map(p => p.profissional_id).filter(Boolean)));
+      
+      const profsMap: Record<string, string> = {};
+      if (profIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, nome")
+          .in("id", profIds);
+        (profs ?? []).forEach(pf => {
+          profsMap[pf.id] = pf.nome;
+        });
+      }
+
       const propGrouped: Record<string, any[]> = {};
-      (props ?? []).forEach((p: any) => {
-        (propGrouped[p.orcamento_id] ||= []).push(p);
+      pRows.forEach((p: any) => {
+        const profNome = profsMap[p.profissional_id] || "Profissional";
+        (propGrouped[p.orcamento_id] ||= []).push({ ...p, profNome });
       });
       setPropostas(propGrouped);
     }
@@ -1361,7 +1377,7 @@ function MeusOrcamentos() {
                           className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3"
                         >
                           <div>
-                            <p className="text-sm font-bold">{p.profiles?.nome || "Profissional"}</p>
+                            <p className="text-sm font-bold">{p.profNome || "Profissional"}</p>
                             <p className="text-lg font-black text-foreground">
                               {brl(Number(p.valor_servico))}
                             </p>
