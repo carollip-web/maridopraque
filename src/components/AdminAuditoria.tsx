@@ -4,7 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, RefreshCw } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2,
+  ShieldCheck,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface AuditRow {
   id: string;
@@ -20,6 +33,16 @@ interface ProfileLite {
   nome: string | null;
   email: string | null;
 }
+
+const PAGE_SIZE = 50;
+
+const KNOWN_ACTIONS = [
+  "impersonate_user",
+  "create_professional",
+  "delete_professional",
+  "reset_test_data",
+  "seed_test_data",
+] as const;
 
 const FORBIDDEN_KEYS = [
   "password",
@@ -40,42 +63,71 @@ function sanitizeDetails(d: unknown): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(d as Record<string, unknown>)) {
     if (FORBIDDEN_KEYS.some((f) => k.toLowerCase().includes(f))) continue;
-    out[k] = v;
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      out[k] = sanitizeDetails(v);
+    } else {
+      out[k] = v;
+    }
   }
   return out;
 }
 
+function formatValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return JSON.stringify(v);
+}
+
 export function AdminAuditoria() {
-  const [filterAction, setFilterAction] = useState("");
+  const [filterAction, setFilterAction] = useState<string>("all");
   const [filterActor, setFilterActor] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [page, setPage] = useState(0);
+
+  const queryKey = [
+    "admin-audit-log",
+    filterAction,
+    filterActor,
+    filterDate,
+    page,
+  ];
 
   const {
-    data: rows,
+    data,
     isLoading,
     error,
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["admin-audit-log", filterAction, filterActor, filterDate],
+    queryKey,
     queryFn: async () => {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("admin_audit_log")
-        .select("id, created_at, actor_user_id, action, target_user_id, details")
+        .select(
+          "id, created_at, actor_user_id, action, target_user_id, details",
+          { count: "exact" },
+        )
         .order("created_at", { ascending: false })
-        .limit(100);
-      if (filterAction.trim()) q = q.ilike("action", `%${filterAction.trim()}%`);
+        .range(from, to);
+      if (filterAction !== "all") q = q.eq("action", filterAction);
       if (filterActor.trim()) q = q.eq("actor_user_id", filterActor.trim());
       if (filterDate) {
         const start = new Date(filterDate + "T00:00:00").toISOString();
         const end = new Date(filterDate + "T23:59:59.999").toISOString();
         q = q.gte("created_at", start).lte("created_at", end);
       }
-      const { data, error } = await q;
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as AuditRow[];
+      return { rows: (data ?? []) as AuditRow[], count: count ?? 0 };
     },
   });
+
+  const rows = data?.rows;
+  const total = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const userIds = useMemo(() => {
     const set = new Set<string>();
@@ -108,6 +160,8 @@ export function AdminAuditoria() {
     return p.nome || p.email || id.slice(0, 8) + "…";
   };
 
+  const resetPage = () => setPage(0);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -116,7 +170,7 @@ export function AdminAuditoria() {
             <ShieldCheck className="h-6 w-6 text-brand" /> Auditoria administrativa
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Últimos 100 eventos registrados em <code>admin_audit_log</code>. Somente leitura.
+            Eventos registrados em <code>admin_audit_log</code>. Somente leitura.
           </p>
         </div>
         <Button
@@ -132,13 +186,26 @@ export function AdminAuditoria() {
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="f-action" className="text-xs">Ação contém</Label>
-          <Input
-            id="f-action"
-            placeholder="ex: impersonate"
+          <Label htmlFor="f-action" className="text-xs">Ação</Label>
+          <Select
             value={filterAction}
-            onChange={(e) => setFilterAction(e.target.value)}
-          />
+            onValueChange={(v) => {
+              setFilterAction(v);
+              resetPage();
+            }}
+          >
+            <SelectTrigger id="f-action">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {KNOWN_ACTIONS.map((a) => (
+                <SelectItem key={a} value={a}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="f-actor" className="text-xs">Actor user_id (UUID exato)</Label>
@@ -146,7 +213,10 @@ export function AdminAuditoria() {
             id="f-actor"
             placeholder="00000000-0000-..."
             value={filterActor}
-            onChange={(e) => setFilterActor(e.target.value)}
+            onChange={(e) => {
+              setFilterActor(e.target.value);
+              resetPage();
+            }}
           />
         </div>
         <div className="space-y-1.5">
@@ -155,7 +225,10 @@ export function AdminAuditoria() {
             id="f-date"
             type="date"
             value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
+            onChange={(e) => {
+              setFilterDate(e.target.value);
+              resetPage();
+            }}
           />
         </div>
       </div>
@@ -188,7 +261,7 @@ export function AdminAuditoria() {
               <tbody className="divide-y divide-slate-100">
                 {rows.map((r) => {
                   const safe = sanitizeDetails(r.details);
-                  const hasDetails = Object.keys(safe).length > 0;
+                  const entries = Object.entries(safe);
                   return (
                     <tr key={r.id} className="hover:bg-slate-50 align-top">
                       <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
@@ -218,10 +291,17 @@ export function AdminAuditoria() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {hasDetails ? (
-                          <pre className="text-[11px] text-slate-600 bg-slate-50 rounded p-2 max-w-md overflow-x-auto whitespace-pre-wrap break-words">
-                            {JSON.stringify(safe, null, 2)}
-                          </pre>
+                        {entries.length > 0 ? (
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs max-w-md">
+                            {entries.map(([k, v]) => (
+                              <div key={k} className="contents">
+                                <dt className="text-slate-500 font-medium">{k}</dt>
+                                <dd className="text-slate-700 break-words">
+                                  {formatValue(v)}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
                         ) : (
                           <span className="text-slate-400 text-xs">—</span>
                         )}
@@ -231,6 +311,36 @@ export function AdminAuditoria() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {rows && rows.length > 0 && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-600">
+            <div>
+              Mostrando {page * PAGE_SIZE + 1}–
+              {Math.min((page + 1) * PAGE_SIZE, total)} de {total}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0 || isFetching}
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+              </Button>
+              <span className="px-2">
+                Página {page + 1} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page + 1 >= totalPages || isFetching}
+              >
+                Próxima <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         )}
       </div>
