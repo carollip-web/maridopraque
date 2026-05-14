@@ -163,6 +163,13 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
+    // Update budget status to 'enviado' if it was still pending
+    await supabase
+      .from("orcamentos")
+      .update({ status: "enviado" })
+      .eq("id", data.orcamentoId)
+      .in("status", ["customizado_pendente"]);
+
     return { proposta: row };
   });
 
@@ -186,6 +193,18 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
 
     if (!orcCheck || orcCheck.cliente_id !== userId) {
       throw new Error("Sem permissão para decidir sobre este orçamento.");
+    }
+
+    if (data.decisao === "aprovado") {
+      const { data: fullOrc } = await supabase
+        .from("orcamentos")
+        .select("profissional_id, valor_servico")
+        .eq("id", data.orcamentoId)
+        .single();
+      
+      if (!fullOrc?.profissional_id || !fullOrc?.valor_servico) {
+        throw new Error("Não é possível aprovar este orçamento diretamente sem um profissional ou valor definido. Utilize o fluxo de aceitar propostas.");
+      }
     }
 
     const { data: row, error } = await supabase

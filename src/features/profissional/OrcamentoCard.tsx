@@ -83,18 +83,17 @@ export function OrcamentoCard({
     }
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("orcamentos")
-        .update({
-          valor_servico: v,
-          valor: v,
-          observacoes_profissional: obs || null,
-          profissional_id: o.profissional_id ?? userId,
-          status: "enviado",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", o.id);
-      if (error) throw error;
+      // Use the server function to create a proposal
+      const mats = Object.entries(picked).map(([id, qty]) => ({ materialId: id, quantidade: qty }));
+      await enviar({
+        data: {
+          orcamentoId: o.id,
+          valorServico: v,
+          observacoes: obs || null,
+          materiais: mats,
+        },
+      });
+      
       toast.success("Proposta enviada ao cliente!");
       if (mode === "revisar") setEditing(false);
       refresh?.();

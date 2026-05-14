@@ -102,13 +102,13 @@ type OrcMaterial = {
 };
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
-  customizado_pendente: { label: "Aguardando profissional", cls: "bg-amber-50 text-amber-700" },
-  fixo_auto: { label: "Pronto para aprovar", cls: "bg-blue-50 text-blue-700" },
-  enviado: { label: "Aguardando sua aprovação", cls: "bg-blue-50 text-blue-700" },
-  aprovado: { label: "Aprovado — pague para agendar", cls: "bg-green-50 text-green-700" },
+  customizado_pendente: { label: "Em Análise", cls: "bg-amber-50 text-amber-700" },
+  fixo_auto: { label: "Aprovação Automática", cls: "bg-blue-50 text-blue-700" },
+  enviado: { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" },
+  aprovado: { label: "Aprovado", cls: "bg-green-50 text-green-700" },
   recusado: { label: "Recusado", cls: "bg-red-50 text-red-700" },
   pago: { label: "Pago", cls: "bg-green-50 text-green-700" },
-  cancelado: { label: "Cancelado", cls: "bg-slate-100 text-slate-600" },
+  cancelado: { label: "Cancelado", cls: "bg-slate-50 text-slate-700" },
 };
 
 const brl = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -996,10 +996,13 @@ function MeusOrcamentos() {
           </div>
         )}
         {list.map((o) => {
-          const s = statusLabel[o.status] ?? {
-            label: o.status,
-            cls: "bg-slate-100 text-slate-700",
-          };
+          const hasProps = propostas[o.id] && propostas[o.id].length > 0;
+          const s = (o.status === "customizado_pendente" && hasProps)
+            ? { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" }
+            : (statusLabel[o.status] ?? {
+                label: o.status,
+                cls: "bg-slate-100 text-slate-700",
+              });
           const podeAprovar = o.status === "enviado" || o.status === "fixo_auto";
           const mats = orcMats[o.id] ?? [];
           const isOpen = !!expanded[o.id];

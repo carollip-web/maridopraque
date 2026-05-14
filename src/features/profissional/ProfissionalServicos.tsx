@@ -20,6 +20,8 @@ interface ProfissionalServicosProps {
   userId: string;
   enviar: any;
   refresh: () => void;
+  minhasPropostas?: any[];
+  propostasMateriais?: any[];
 }
 
 export function ProfissionalServicos({
@@ -35,6 +37,8 @@ export function ProfissionalServicos({
   userId,
   enviar,
   refresh,
+  minhasPropostas,
+  propostasMateriais,
 }: ProfissionalServicosProps) {
   return (
     <div className="space-y-8">
@@ -75,6 +79,8 @@ export function ProfissionalServicos({
             mode="info"
             enviar={enviar}
             refresh={refresh}
+            minhasPropostas={minhasPropostas}
+            propostasMateriais={propostasMateriais}
             emptyMsg="Você não possui nenhum serviço em andamento."
             emptyIcon={CheckCircle2}
           />
@@ -91,6 +97,8 @@ export function ProfissionalServicos({
             mode="info"
             enviar={enviar}
             refresh={refresh}
+            minhasPropostas={minhasPropostas}
+            propostasMateriais={propostasMateriais}
             emptyMsg="Nenhum histórico de orçamentos encerrados."
             emptyIcon={XCircle}
           />

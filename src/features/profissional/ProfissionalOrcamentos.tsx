@@ -28,6 +28,8 @@ interface ProfissionalOrcamentosProps {
   refresh: () => void;
   recusarOrcamento: (id: string) => Promise<void>;
   handleGenerateTestOrder: () => void;
+  minhasPropostas?: any[];
+  propostasMateriais?: any[];
 }
 
 export function ProfissionalOrcamentos({
@@ -47,6 +49,8 @@ export function ProfissionalOrcamentos({
   refresh,
   recusarOrcamento,
   handleGenerateTestOrder,
+  minhasPropostas,
+  propostasMateriais,
 }: ProfissionalOrcamentosProps) {
   return (
     <div className="space-y-6">
@@ -132,6 +136,8 @@ export function ProfissionalOrcamentos({
                   enviar={enviar}
                   refresh={refresh}
                   onRecusar={recusarOrcamento}
+                  minhasPropostas={minhasPropostas}
+                  propostasMateriais={propostasMateriais}
                   emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento."
                   emptyIcon={Clock}
                 />
@@ -148,6 +154,8 @@ export function ProfissionalOrcamentos({
                   mode="enviar"
                   enviar={enviar}
                   refresh={refresh}
+                  minhasPropostas={minhasPropostas}
+                  propostasMateriais={propostasMateriais}
                   emptyMsg="Você ainda não possui pedidos reservados para elaborar."
                   emptyIcon={Pencil}
                 />
@@ -164,6 +172,8 @@ export function ProfissionalOrcamentos({
                   mode="revisar"
                   enviar={enviar}
                   refresh={refresh}
+                  minhasPropostas={minhasPropostas}
+                  propostasMateriais={propostasMateriais}
                   emptyMsg="Nenhuma proposta enviada aguardando resposta."
                   emptyIcon={Send}
                 />

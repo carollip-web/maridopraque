@@ -126,11 +126,13 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             ? "Aguardando Aprovação"
             : o.status === "customizado_pendente"
               ? "Em Análise"
-              : o.status === "enviado" || o.status === "fixo_auto"
+              : o.status === "enviado"
                 ? "Aguardando Aprovação"
-                : o.status === "aprovado"
-                  ? "Agendado"
-                  : o.status;
+                : o.status === "fixo_auto"
+                  ? "Aprovação Automática"
+                  : o.status === "aprovado"
+                    ? "Agendado"
+                    : o.status;
         return {
           propostas: propsForOrc,
           ...o,
@@ -303,6 +305,56 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   )}
                 </div>
               </div>
+
+              {/* Proposals Received Section */}
+              {(sp.status === "Aguardando Aprovação" || sp.status === "Em Análise") &&
+                sp.propostas &&
+                sp.propostas.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-brand" /> Propostas Recebidas
+                    </h4>
+                    <div className="grid gap-4">
+                      {sp.propostas.map((prop: any) => (
+                        <div
+                          key={prop.id}
+                          className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-full bg-slate-200" />
+                            <div>
+                              <p className="font-bold">{prop.profNome}</p>
+                              {prop.observacoes && (
+                                <p className="text-xs text-muted-foreground">"{prop.observacoes}"</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
+                                Valor
+                              </p>
+                              <p className="font-bold text-slate-800">
+                                R$ {Number(prop.valor_servico).toFixed(2)}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="rounded-full bg-brand text-white font-bold px-6"
+                              onClick={() => {
+                                setSelectedProposta(prop);
+                                setDataAgendada(null);
+                                setApprovalStep("schedule");
+                              }}
+                            >
+                              Aceitar Proposta
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="space-y-6">

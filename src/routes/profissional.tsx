@@ -110,11 +110,30 @@ function ProfissionalArea() {
   const [orcMats, setOrcMats] = useState<Record<string, OrcMat[]>>({});
 
   const refresh = async () => {
+    if (!user) return;
+    
+    // 1. Get budgets where I have a proposal
+    const { data: myProps } = await supabase
+      .from("propostas")
+      .select("orcamento_id")
+      .eq("profissional_id", user.id);
+    const propOrcIds = (myProps ?? []).map(p => p.orcamento_id);
+    
+    // 2. Build the query to include:
+    // - Budgets without professional (radar)
+    // - Budgets where I am the professional (ativos/concluidos)
+    // - Budgets where I sent a proposal (even if not accepted)
+    let queryStr = `profissional_id.is.null,profissional_id.eq.${user.id}`;
+    if (propOrcIds.length > 0) {
+      queryStr += `,id.in.(${propOrcIds.join(",")})`;
+    }
+
     const { data, error } = await supabase
       .from("orcamentos")
       .select("*")
-      .or(`profissional_id.is.null,profissional_id.eq.${user?.id}`)
+      .or(queryStr)
       .order("created_at", { ascending: false });
+
     if (error) {
       toast.error("Erro ao carregar orçamentos", { description: error.message });
       setLoadingList(false);
@@ -236,6 +255,15 @@ function ProfissionalArea() {
         .in("orcamento_id", orcIds);
       setMinhasPropostas(propsData || []);
 
+      const propIds = (propsData || []).map((p: any) => p.id);
+      if (propIds.length > 0) {
+        const { data: pmData } = await supabase
+          .from("proposta_materiais")
+          .select("*")
+          .in("proposta_id", propIds);
+        setPropostasMateriais(pmData || []);
+      }
+
       const { data: oms } = await supabase
         .from("orcamento_materiais")
         .select("orcamento_id, nome_snapshot, unidade_snapshot, quantidade, subtotal")
@@ -326,7 +354,11 @@ function ProfissionalArea() {
         return true;
       }
       if (type === "elaboracao") {
-        return false;
+        return (
+          o.profissional_id === user?.id &&
+          o.status === "customizado_pendente" &&
+          !minhasPropostas.some((p) => p.orcamento_id === o.id)
+        );
       }
       if (type === "enviados") {
         return (
@@ -576,6 +608,8 @@ function ProfissionalArea() {
                 userId={user?.id ?? ""}
                 enviar={enviar}
                 refresh={refresh}
+                minhasPropostas={minhasPropostas}
+                propostasMateriais={propostasMateriais}
               />
             )}
             {tab === "orcamentos" && (
@@ -596,6 +630,8 @@ function ProfissionalArea() {
                 refresh={refresh}
                 recusarOrcamento={recusarOrcamento}
                 handleGenerateTestOrder={handleGenerateTestOrder}
+                minhasPropostas={minhasPropostas}
+                propostasMateriais={propostasMateriais}
               />
             )}
             {tab === "pedidos" && (
