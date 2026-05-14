@@ -237,7 +237,7 @@ export function OrcamentoCard({
                 Investimento
               </p>
               <p className="text-xl font-black text-slate-800">
-                {o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir"}
+                {initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir"}
               </p>
             </div>
             <div className="flex gap-2">

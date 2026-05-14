@@ -7,6 +7,9 @@ interface ProfissionalHeaderProps {
   counts: {
     oportunidades: number;
     elaboracao: number;
+    enviados: number;
+    ativos: number;
+    finalizados: number;
   };
   metrics: {
     ganhosMes: number;
@@ -55,9 +58,11 @@ export function ProfissionalHeader({
           <p className="mt-2 text-sm text-white/85 max-w-md">
             {counts.oportunidades > 0
               ? `Você tem ${counts.oportunidades} oportunidade${counts.oportunidades > 1 ? "s" : ""} esperando no radar.`
-              : counts.elaboracao > 0
-                ? `${counts.elaboracao} orçamento${counts.elaboracao > 1 ? "s" : ""} aguardando você enviar a proposta.`
-                : "Tudo em dia por aqui. Continue acompanhando seus pedidos."}
+              : counts.ativos > 0
+                ? `Você tem ${counts.ativos} serviço${counts.ativos > 1 ? "s" : ""} em andamento para hoje.`
+                : counts.elaboracao > 0
+                  ? `${counts.elaboracao} orçamento${counts.elaboracao > 1 ? "s" : ""} aguardando você enviar a proposta.`
+                  : "Tudo em dia por aqui. Continue acompanhando seus pedidos."}
           </p>
         </div>
         <Button

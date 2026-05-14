@@ -14,6 +14,7 @@ interface ProfissionalDashboardProps {
   counts: {
     oportunidades: number;
     elaboracao: number;
+    enviados: number;
     ativos: number;
     finalizados: number;
   };

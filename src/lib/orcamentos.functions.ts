@@ -120,18 +120,52 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       throw new Error("Apenas profissionais podem enviar orçamentos.");
     }
 
-    // Instead of updating the order and claiming it, we submit a proposal
-    const { data: row, error } = await supabase
+    // Check for existing pending proposal from this professional
+    const { data: existingProp } = await supabase
       .from("propostas")
-      .insert({
-        orcamento_id: data.orcamentoId,
-        profissional_id: userId,
-        valor_servico: data.valorServico,
-        observacoes: data.observacoes ?? null,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+      .select("id")
+      .eq("orcamento_id", data.orcamentoId)
+      .eq("profissional_id", userId)
+      .eq("status", "pendente")
+      .maybeSingle();
+
+    let proposalId: string;
+    let propRow: any;
+
+    if (existingProp) {
+      // Update existing proposal
+      const { data: updated, error: uErr } = await supabase
+        .from("propostas")
+        .update({
+          valor_servico: data.valorServico,
+          observacoes: data.observacoes ?? null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingProp.id)
+        .select()
+        .single();
+      if (uErr) throw new Error(uErr.message);
+      proposalId = updated.id;
+      propRow = updated;
+      
+      // Delete old materials for this proposal
+      await supabase.from("proposta_materiais").delete().eq("proposta_id", proposalId);
+    } else {
+      // Insert new proposal
+      const { data: row, error } = await supabase
+        .from("propostas")
+        .insert({
+          orcamento_id: data.orcamentoId,
+          profissional_id: userId,
+          valor_servico: data.valorServico,
+          observacoes: data.observacoes ?? null,
+        })
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      proposalId = row.id;
+      propRow = row;
+    }
 
     // Process proposal materials if provided
     if (data.materiais && data.materiais.length > 0) {
@@ -147,7 +181,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           const mat = mats?.find((x) => x.id === m.materialId);
           if (!mat) return null;
           return {
-            proposta_id: row.id,
+            proposta_id: proposalId,
             material_id: mat.id,
             nome_snapshot: mat.nome,
             unidade_snapshot: mat.unidade,
@@ -163,14 +197,17 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
-    // Update budget status to 'enviado' if it was still pending
+    // Update budget status to 'enviado' if it was still pending or already sent
     await supabase
       .from("orcamentos")
-      .update({ status: "enviado" })
+      .update({ 
+        status: "enviado",
+        updated_at: new Date().toISOString()
+      })
       .eq("id", data.orcamentoId)
-      .in("status", ["customizado_pendente"]);
+      .in("status", ["customizado_pendente", "enviado"]);
 
-    return { proposta: row };
+    return { proposta: propRow };
   });
 
 const decisaoSchema = z.object({

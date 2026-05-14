@@ -208,11 +208,22 @@ function MeusOrcamentos() {
     });
 
     const ch = supabase
-      .channel("cli-orc")
+      .channel("cli-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orcamentos", filter: `cliente_id=eq.${user.id}` },
         () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { 
+          event: "*", 
+          schema: "public", 
+          table: "propostas"
+        },
+        () => {
+          refresh();
+        }
       )
       .subscribe();
     return () => {

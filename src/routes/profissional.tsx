@@ -112,19 +112,22 @@ function ProfissionalArea() {
   const refresh = async () => {
     if (!user) return;
     
-    // 1. Get budgets where I have a proposal
+    // 1. Get ALL my proposals first to know which budgets to fetch
     const { data: myProps } = await supabase
       .from("propostas")
-      .select("orcamento_id")
+      .select("*, orcamento_id")
       .eq("profissional_id", user.id);
-    const propOrcIds = (myProps ?? []).map(p => p.orcamento_id);
+    const propsList = myProps || [];
+    setMinhasPropostas(propsList);
+    const propOrcIds = propsList.map(p => p.orcamento_id);
     
     // 2. Build the query to include:
     // - Budgets without professional (radar)
     // - Budgets where I am the professional (ativos/concluidos)
-    // - Budgets where I sent a proposal (even if not accepted)
+    // - Budgets where I sent a proposal (even if not accepted/assigned)
     let queryStr = `profissional_id.is.null,profissional_id.eq.${user.id}`;
     if (propOrcIds.length > 0) {
+      // Split into chunks if too many, but for now just one list
       queryStr += `,id.in.(${propOrcIds.join(",")})`;
     }
 
@@ -239,7 +242,7 @@ function ProfissionalArea() {
     if (serviceIds.length) {
       const { data: cats } = await supabase
         .from("services_catalog")
-        .select("id, preco_min, preco_max")
+        .select("id, preco_min, preco_max, categoria")
         .in("id", serviceIds);
       const cmap: Record<string, ServicoCat> = {};
       (cats ?? []).forEach((c: any) => (cmap[c.id] = c));
@@ -282,10 +285,16 @@ function ProfissionalArea() {
     if (!user) return;
     refresh();
     const channel = supabase
-      .channel("prof-orc")
+      .channel("prof-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orcamentos" }, () =>
         refresh(),
       )
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "propostas",
+        filter: `profissional_id=eq.${user.id}`
+      }, () => refresh())
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -340,14 +349,31 @@ function ProfissionalArea() {
   ) => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
+        const isTestOrder = o.service_name.includes("Teste");
+        const cat = o.service_id ? catalog[o.service_id]?.categoria : null;
+        
+        // Flexible matching
+        const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const serviceNorm = norm(o.service_name);
+        const catNorm = cat ? norm(cat) : "";
+        
+        const matchesSpecialty =
+          especialidades.length === 0 ||
+          isTestOrder ||
+          especialidades.some(e => {
+            const eNorm = norm(e);
+            return serviceNorm.includes(eNorm) || eNorm.includes(serviceNorm) || (catNorm && (catNorm.includes(eNorm) || eNorm.includes(catNorm)));
+          });
+
         if (
           !(
-            o.status === "customizado_pendente" &&
+            (o.status === "customizado_pendente" || o.status === "enviado") &&
             !minhasPropostas.some((p) => p.orcamento_id === o.id) &&
-            especialidades.includes(o.service_name)
+            matchesSpecialty
           )
         )
           return false;
+
         if (recusados.has(o.id)) return false;
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
@@ -387,7 +413,7 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo]);
+  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados]);
 
   if (loading) {
     return (
@@ -632,6 +658,7 @@ function ProfissionalArea() {
                 handleGenerateTestOrder={handleGenerateTestOrder}
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
+                especialidades={especialidades}
               />
             )}
             {tab === "pedidos" && (

@@ -157,6 +157,35 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const getPedidoStatus = (id: string, defaultStatus: string) =>
     pedidoStatuses[id] ?? defaultStatus;
 
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = supabase
+      .channel("cliente-pedidos-realtime")
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "orcamentos",
+        filter: `cliente_id=eq.${user.id}`
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+      })
+      .on("postgres_changes", { 
+        event: "*", 
+        schema: "public", 
+        table: "propostas"
+      }, () => {
+        // We can't filter by cliente_id on propostas easily without a join in RLS or similar,
+        // so we refresh on any proposal change. 
+        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
+
   const handleApprove = async () => {
     if (!selectedPedido) return;
     setApprovalStep("processing");

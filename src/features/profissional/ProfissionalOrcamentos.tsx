@@ -30,6 +30,7 @@ interface ProfissionalOrcamentosProps {
   handleGenerateTestOrder: () => void;
   minhasPropostas?: any[];
   propostasMateriais?: any[];
+  especialidades?: string[];
 }
 
 export function ProfissionalOrcamentos({
@@ -51,6 +52,7 @@ export function ProfissionalOrcamentos({
   handleGenerateTestOrder,
   minhasPropostas,
   propostasMateriais,
+  especialidades = [],
 }: ProfissionalOrcamentosProps) {
   return (
     <div className="space-y-6">
@@ -124,6 +126,17 @@ export function ProfissionalOrcamentos({
           ) : (
             <>
               <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
+                {especialidades.length === 0 && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <Clock className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Você ainda não configurou suas especialidades.</p>
+                      <p className="mt-1">
+                        Vá em <strong>Configurações</strong> para selecionar os serviços que você realiza e começar a receber oportunidades compatíveis.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <ProfissionalGrid
                   items={filterBy("oportunidades")}
                   profiles={profiles}
@@ -138,7 +151,9 @@ export function ProfissionalOrcamentos({
                   onRecusar={recusarOrcamento}
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
-                  emptyMsg="Nenhuma oportunidade disponível para suas especialidades no momento."
+                  emptyMsg={especialidades.length === 0 
+                    ? "Configure suas especialidades para ver oportunidades."
+                    : "Nenhuma oportunidade disponível para suas especialidades no momento."}
                   emptyIcon={Clock}
                 />
               </TabsContent>

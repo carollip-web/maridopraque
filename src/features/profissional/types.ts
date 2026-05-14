@@ -29,7 +29,12 @@ export type Orcamento = {
   checkout_em?: string | null;
 };
 
-export type ServicoCat = { id: string; preco_min: number | null; preco_max: number | null };
+export type ServicoCat = {
+  id: string;
+  preco_min: number | null;
+  preco_max: number | null;
+  categoria?: string;
+};
 export type OrcMat = {
   orcamento_id: string;
   nome_snapshot: string;
