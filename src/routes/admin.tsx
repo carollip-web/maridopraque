@@ -36,6 +36,7 @@ import {
   FileUp,
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
+import { AdminAuditoria } from "@/components/AdminAuditoria";
 import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
