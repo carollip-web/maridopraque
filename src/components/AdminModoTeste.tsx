@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Database, RotateCcw, Copy, Check, Play, LogIn } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { criarCenarioTestePagamento } from "@/lib/orcamentos.functions";
 
 const TEST_EMAIL_DOMAIN = "teste.maridopraque.local";
 
@@ -11,8 +13,11 @@ export function AdminModoTeste() {
   const qc = useQueryClient();
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [creatingScenario, setCreatingScenario] = useState(false);
   const [advancing, setAdvancing] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  const criarTeste = useServerFn(criarCenarioTestePagamento);
 
   const { data: contas } = useQuery({
     queryKey: ["test-accounts"],
@@ -143,6 +148,30 @@ export function AdminModoTeste() {
             <RotateCcw className="h-4 w-4" />
           )}
           Apagar dados de teste
+        </Button>
+        <Button 
+          onClick={async () => {
+            setCreatingScenario(true);
+            try {
+              const r = await criarTeste();
+              toast.success("Cenário de pagamento criado! Verifique 'Meus Orçamentos' no modo Cliente.");
+              qc.invalidateQueries({ queryKey: ["test-orcamentos"] });
+            } catch (e: any) {
+              toast.error(e.message);
+            } finally {
+              setCreatingScenario(false);
+            }
+          }} 
+          disabled={creatingScenario}
+          variant="outline" 
+          className="gap-2 border-brand text-brand hover:bg-brand/5"
+        >
+          {creatingScenario ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+          Criar cenário: Pagamento Real
         </Button>
       </div>
 

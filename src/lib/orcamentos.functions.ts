@@ -504,3 +504,50 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
       return { ok: false, error: message };
     }
   });
+
+export const criarCenarioTestePagamento = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+
+    // 1. Verificar se usuário é admin
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    // 2. Buscar um profissional de teste
+    const { data: proRole } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "profissional")
+      .limit(1)
+      .single();
+
+    if (!proRole) throw new Error("Nenhum profissional encontrado para teste.");
+
+    const proId = proRole.user_id;
+
+    // 3. Criar orçamento aprovado
+    const { data: orc, error } = await supabase
+      .from("orcamentos")
+      .insert({
+        cliente_id: userId,
+        profissional_id: proId,
+        service_name: "🔧 Teste de Pagamento Real",
+        descricao: "⚠️ Pedido gerado automaticamente para validar o checkout Mercado Pago.",
+        status: "aprovado",
+        valor_servico: 100.00,
+        valor: 100.00,
+        data_aprovacao: new Date().toISOString(),
+        is_test: true
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { ok: true, orcamentoId: orc.id };
+  });

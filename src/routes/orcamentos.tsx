@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
+import { aceitarProposta, decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import {
   Loader2,
@@ -26,6 +26,7 @@ import {
   Save,
   Pencil,
   Trash2,
+  Send,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
@@ -140,6 +141,9 @@ function MeusOrcamentos() {
 
   const editar = useServerFn(editarOrcamento);
   const decidir = useServerFn(decidirOrcamento);
+  const aceitarProp = useServerFn(aceitarProposta);
+
+  const [propostas, setPropostas] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -168,6 +172,19 @@ function MeusOrcamentos() {
         (grouped[m.orcamento_id] ||= []).push(m as OrcMaterial);
       });
       setOrcMats(grouped);
+
+      const { data: props } = await supabase
+        .from("propostas")
+        .select("*, profiles(nome)")
+        .in(
+          "orcamento_id",
+          rows.map((r) => r.id),
+        );
+      const propGrouped: Record<string, any[]> = {};
+      (props ?? []).forEach((p: any) => {
+        (propGrouped[p.orcamento_id] ||= []).push(p);
+      });
+      setPropostas(propGrouped);
     }
   };
 
@@ -1047,6 +1064,54 @@ function MeusOrcamentos() {
                   <CheckCircle2 className="h-3 w-3" /> Aprovado automaticamente (cliente recorrente)
                 </p>
               )}
+
+              {/* Proposals List */}
+              {(o.status === "customizado_pendente" || o.status === "enviado") &&
+                propostas[o.id] &&
+                propostas[o.id].length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-dashed border-border">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                      <Send className="h-3 w-3" /> Propostas Recebidas ({propostas[o.id].length})
+                    </h4>
+                    <div className="space-y-2">
+                      {propostas[o.id].map((p) => (
+                        <div
+                          key={p.id}
+                          className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3"
+                        >
+                          <div>
+                            <p className="text-sm font-bold">{p.profiles?.nome || "Profissional"}</p>
+                            <p className="text-lg font-black text-foreground">
+                              {brl(Number(p.valor_servico))}
+                            </p>
+                            {p.observacoes && (
+                              <p className="text-xs text-muted-foreground italic mt-1">
+                                "{p.observacoes}"
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await aceitarProp({
+                                  data: { orcamentoId: o.id, propostaId: p.id },
+                                });
+                                toast.success("Proposta aceita! Agora você pode pagar.");
+                                refresh();
+                              } catch (err: any) {
+                                toast.error(err.message);
+                              }
+                            }}
+                            className="bg-brand text-brand-foreground rounded-full font-bold"
+                          >
+                            Aceitar Proposta
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
                 {podeAprovar && (
