@@ -36,6 +36,7 @@ import {
   FileUp,
 } from "lucide-react";
 import { AdminModoTeste } from "@/components/AdminModoTeste";
+import { AdminAuditoria } from "@/components/AdminAuditoria";
 import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,7 @@ const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementT
   { id: "config", label: "Configurações", icon: Settings },
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "modo_teste", label: "Modo Teste", icon: TestTube },
+  { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
 ];
 
 function AdminArea() {
@@ -250,6 +252,7 @@ function AdminArea() {
           {activeTab === "config" && canAccess("config") && <AdminConfig />}
           {activeTab === "equipe" && isSuperAdmin && <AdminEquipe />}
           {activeTab === "modo_teste" && isSuperAdmin && <AdminModoTeste />}
+          {activeTab === "auditoria" && isSuperAdmin && <AdminAuditoria />}
         </div>
       </main>
     </div>
