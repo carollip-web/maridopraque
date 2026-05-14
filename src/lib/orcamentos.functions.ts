@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireAdminLevel } from "./admin-permissions.server";
 
 const materialItemSchema = z.object({
@@ -199,39 +200,37 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
-    // Update budget status to 'enviado' using RPC to bypass potential RLS update blocks
-    console.info("[enviarOrcamento] Calling RPC marcar_orcamento_enviado", { orcamentoId: data.orcamentoId });
-    const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc("marcar_orcamento_enviado", {
-      _orcamento_id: data.orcamentoId
+    // 3. Update budget status to 'enviado' using Service Role to bypass RLS blocks
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+
+    if (!SERVICE_KEY || !SUPABASE_URL) {
+      console.error("[enviarOrcamento] Missing environment variables for Service Role");
+      throw new Error("Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL");
+    }
+
+    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+      auth: { persistSession: false }
     });
 
-    if (rpcErr) {
-      console.error("[enviarOrcamento] RPC Status Update Error:", rpcErr);
-      throw new Error(`Proposta salva (ID: ${proposalId}), mas erro na RPC de status: ${rpcErr.message}`);
-    }
-
-    const res = rpcRes as { ok: boolean; error?: string; status?: string };
-    console.info("[enviarOrcamento] RPC Result:", res);
-    if (!res || !res.ok) {
-      throw new Error(`Falha ao atualizar status do pedido: ${res?.error || "Erro desconhecido"}`);
-    }
-
-    // Fetch the updated orcamento row to return it
-    const { data: updatedOrc, error: fetchError } = await supabase
+    console.info("[enviarOrcamento] Updating status via Service Role", { orcamentoId: data.orcamentoId });
+    const { data: updatedOrc, error: updateError } = await serviceClient
       .from("orcamentos")
-      .select("id, status, service_name, valor_servico")
+      .update({ 
+        status: "enviado",
+        updated_at: new Date().toISOString()
+      })
       .eq("id", data.orcamentoId)
+      .in("status", ["customizado_pendente", "enviado"])
+      .select("id, status, service_name, valor_servico")
       .single();
 
-    console.info("[enviarOrcamento] Final budget state:", updatedOrc);
-
-    if (fetchError || !updatedOrc) {
-        throw new Error("Proposta enviada, mas erro ao verificar estado final do pedido.");
+    if (updateError || !updatedOrc) {
+      console.error("[enviarOrcamento] Status Update Error:", updateError);
+      throw new Error("Pedido não encontrado ou status atual não permite receber proposta.");
     }
 
-    if (updatedOrc.status !== "enviado") {
-        throw new Error(`CRÍTICO: O status do pedido deveria ser 'enviado', mas está '${updatedOrc.status}'.`);
-    }
+    console.info("[enviarOrcamento] Success", { orcamentoId: data.orcamentoId, status: updatedOrc.status });
 
     return { proposta: propRow, orcamento: updatedOrc };
   });
