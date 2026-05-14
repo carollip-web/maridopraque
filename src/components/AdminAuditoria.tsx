@@ -17,7 +17,9 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  FileDown,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface AuditRow {
   id: string;
@@ -188,6 +190,121 @@ export function AdminAuditoria() {
 
   const resetPage = () => setPage(0);
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      let q = supabase
+        .from("admin_audit_log")
+        .select("id, created_at, actor_user_id, action, target_user_id, details")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (filterAction !== "all") q = q.eq("action", filterAction);
+
+      if (filterActor.trim()) {
+        const term = filterActor.trim();
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            term,
+          );
+        if (isUuid) {
+          q = q.eq("actor_user_id", term);
+        } else {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id")
+            .or(`nome.ilike.%${term}%,email.ilike.%${term}%`);
+          const ids = (profiles ?? []).map((p) => p.id);
+          if (ids.length === 0) {
+            toast.error("Nenhum ator encontrado para exportação.");
+            setIsExporting(false);
+            return;
+          }
+          q = q.in("actor_user_id", ids);
+        }
+      }
+
+      if (filterDate) {
+        const start = new Date(filterDate + "T00:00:00").toISOString();
+        const end = new Date(filterDate + "T23:59:59.999").toISOString();
+        q = q.gte("created_at", start).lte("created_at", end);
+      }
+
+      const { data: exportRows, error: exportError } = await q;
+      if (exportError) throw exportError;
+
+      if (!exportRows || exportRows.length === 0) {
+        toast.info("Nenhum registro encontrado para exportar.");
+        setIsExporting(false);
+        return;
+      }
+
+      // Fetch profiles for names/emails
+      const uids = new Set<string>();
+      exportRows.forEach((r) => {
+        if (r.actor_user_id) uids.add(r.actor_user_id);
+        if (r.target_user_id) uids.add(r.target_user_id);
+      });
+
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, nome, email")
+        .in("id", Array.from(uids));
+
+      const pMap = new Map<string, ProfileLite>();
+      (profs ?? []).forEach((p) => pMap.set(p.id, p as ProfileLite));
+
+      const headers = [
+        "Data/Hora",
+        "Ação",
+        "Actor ID",
+        "Actor Nome",
+        "Actor Email",
+        "Target ID",
+        "Detalhes Sanitizados",
+      ];
+
+      const csvContent = [
+        headers.join(","),
+        ...exportRows.map((r) => {
+          const actor = pMap.get(r.actor_user_id);
+          const details = JSON.stringify(sanitizeDetails(r.details));
+          return [
+            new Date(r.created_at).toLocaleString("pt-BR"),
+            r.action,
+            r.actor_user_id,
+            actor?.nome ?? "",
+            actor?.email ?? "",
+            r.target_user_id ?? "",
+            details,
+          ]
+            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+            .join(",");
+        }),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `admin_audit_log_${new Date().toISOString().split("T")[0]}.csv`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`${exportRows.length} registros exportados.`);
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast.error("Erro ao exportar CSV.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -199,17 +316,32 @@ export function AdminAuditoria() {
             Eventos registrados em <code>admin_audit_log</code>. Somente leitura.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          <RefreshCw
-            className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-          />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <FileDown className="h-3.5 w-3.5" />
+            )}
+            Exportar CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
