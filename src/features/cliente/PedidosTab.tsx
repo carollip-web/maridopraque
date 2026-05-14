@@ -131,6 +131,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 : o.status === "fixo_auto"
                   ? "Aprovação Automática"
                   : o.status === "aprovado"
+                    ? "Aguardando Pagamento"
+                  : o.status === "pago"
                     ? "Agendado"
                     : o.status;
         return {
@@ -661,37 +663,40 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   <div className="h-24 w-24 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6 animate-in zoom-in duration-500">
                     <CheckCircle2 className="h-12 w-12 text-green-500" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">Orçamento Aprovado!</h3>
+                  <h3 className="text-2xl font-bold mb-2">Proposta aceita!</h3>
                   <p className="text-muted-foreground text-sm mb-2">
                     <span className="font-bold text-slate-700">{sp.prof}</span> foi notificado e seu
-                    serviço está confirmado.
+                    pedido está pronto para o pagamento.
                   </p>
                   <div className="bg-green-50 rounded-2xl p-4 my-6 text-left space-y-2">
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       <span className="text-sm font-medium text-green-800">
-                        Status atualizado → <strong>Agendado</strong>
+                        Status atualizado → <strong>Aguardando Pagamento</strong>
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       <span className="text-sm font-medium text-green-800">
-                        Profissional notificado via WhatsApp
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      <span className="text-sm font-medium text-green-800">
-                        Confirmação enviada para seu e-mail
+                        Próximo passo: pagamento do sinal (50%)
                       </span>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => setApprovalStep(null)}
-                    className="w-full bg-[#1a1513] text-white rounded-full h-14 font-bold shadow-lg"
-                  >
-                    Perfeito, obrigada!
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={() => navigate({ to: `/checkout?orcamentoId=${selectedPedido.id}` })}
+                      className="w-full bg-brand text-white rounded-full h-14 font-bold shadow-lg"
+                    >
+                      Ir para pagamento seguro
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setApprovalStep(null)}
+                      className="w-full rounded-full h-12 font-bold text-muted-foreground"
+                    >
+                      Depois
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -848,18 +853,19 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 </div>
                 <div className="flex items-center gap-3">
                   {(p.rawStatus === "enviado" || p.status === "Aguardando Aprovação") && (
-                    <Button
-                      size="sm"
-                      className="bg-brand text-white rounded-full px-6 font-bold shadow-md hover:scale-105 transition-transform"
+                    <Button className="rounded-full bg-brand hover:bg-brand/90 text-white font-bold h-11 px-6 shadow-md shadow-brand/20">
+                      Ver Proposta
+                    </Button>
+                  )}
+                  {p.rawStatus === "aprovado" && (
+                    <Button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate({
-                          to: "/cliente",
-                          search: (prev: any) => ({ ...prev, pedidoId: p.id }),
-                        });
+                        navigate({ to: `/checkout?orcamentoId=${p.id}` });
                       }}
+                      className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 shadow-md shadow-emerald-200"
                     >
-                      Aprovar
+                      Pagar
                     </Button>
                   )}
                   <button
