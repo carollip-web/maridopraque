@@ -96,7 +96,7 @@ export function OrcamentoCard({
         data: {
           orcamentoId: o.id,
           valorServico: v,
-          observacoes: obs || null,
+          observacoes: obs.trim() || undefined,
           materiais: mats,
         },
         headers: {
