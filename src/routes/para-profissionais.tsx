@@ -350,7 +350,7 @@ function ParaProfissionaisPage() {
                 className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
               >
                 <Link to="/login/profissional">
-                  Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
+                  Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             )}
