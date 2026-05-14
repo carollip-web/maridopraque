@@ -34,8 +34,31 @@ import {
   Moon,
   Sunrise,
   Coffee,
+  Info,
 } from "lucide-react";
 
+export const Route = createFileRoute("/orcamentos")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new === "1" || s.new === 1 || s.new === true ? 1 : undefined,
+    serviceName: typeof s.serviceName === "string" ? s.serviceName : undefined,
+    serviceId: typeof s.serviceId === "string" ? s.serviceId : undefined,
+    categoria: typeof s.categoria === "string" ? s.categoria : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Meus Orçamentos — Solicitar online | Marido pra Quê?" },
+      {
+        name: "description",
+        content:
+          "Solicite orçamento online em 5 etapas: escolha o serviço, atendimento, agenda, materiais opcionais e confirme.",
+      },
+      { property: "og:title", content: "Orçamento online — Marido pra Quê?" },
+      {
+        property: "og:description",
+        content: "Preço tabelado, atendimento, agenda e acompanhamento em tempo real.",
+      },
+    ],
+  }),
   errorComponent: ({ error }) => {
     return (
       <div className="p-12 text-center space-y-4 max-w-2xl mx-auto">
