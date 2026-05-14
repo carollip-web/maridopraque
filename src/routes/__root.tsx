@@ -115,7 +115,8 @@ const queryClient = new QueryClient({
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Header/Footer públicos ficam ocultos nos painéis privados (admin, cliente, profissional).
+  // Header global aparece em todas as rotas. Footer fica oculto nos painéis privados
+  // para evitar poluição visual (admin, cliente, profissional, materiais-admin, servicos-admin).
   const isAppShell =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/cliente") ||
@@ -126,7 +127,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex flex-col min-h-screen">
-        {!isAppShell && <Header />}
+        <Header />
         <main className="flex-1">
           <Outlet />
         </main>
