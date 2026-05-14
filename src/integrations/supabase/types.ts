@@ -271,68 +271,6 @@ export type Database = {
           },
         ]
       }
-      pagamentos: {
-        Row: {
-          checkout_url: string | null
-          cliente_id: string
-          created_at: string
-          gateway: string | null
-          gateway_payment_id: string | null
-          id: string
-          metadata: Json
-          metodo: string | null
-          orcamento_id: string
-          profissional_id: string | null
-          status: string
-          updated_at: string
-          valor_restante: number
-          valor_sinal: number
-          valor_total: number
-        }
-        Insert: {
-          checkout_url?: string | null
-          cliente_id: string
-          created_at?: string
-          gateway?: string | null
-          gateway_payment_id?: string | null
-          id?: string
-          metadata?: Json
-          metodo?: string | null
-          orcamento_id: string
-          profissional_id?: string | null
-          status?: string
-          updated_at?: string
-          valor_restante?: number
-          valor_sinal?: number
-          valor_total: number
-        }
-        Update: {
-          checkout_url?: string | null
-          cliente_id?: string
-          created_at?: string
-          gateway?: string | null
-          gateway_payment_id?: string | null
-          id?: string
-          metadata?: Json
-          metodo?: string | null
-          orcamento_id?: string
-          profissional_id?: string | null
-          status?: string
-          updated_at?: string
-          valor_restante?: number
-          valor_sinal?: number
-          valor_total?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pagamentos_orcamento_id_fkey"
-            columns: ["orcamento_id"]
-            isOneToOne: false
-            referencedRelation: "orcamentos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orcamento_materiais: {
         Row: {
           created_at: string
