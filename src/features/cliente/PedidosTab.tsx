@@ -136,6 +136,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         return {
           propostas: propsForOrc,
           ...o,
+          rawStatus: o.status,
           title: o.service_name,
           description: o.descricao ?? "",
           uiStatus,
@@ -163,19 +164,19 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         schema: "public", 
         table: "orcamentos",
         filter: `cliente_id=eq.${user.id}`
-      }, () => {
-        console.info("[PedidosTab] Realtime Update - orcamentos");
-        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
-        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
+      }, async () => {
+        console.info("[PedidosTab] Realtime Update - orcamentos", { userId: user.id });
+        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
+        await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
       })
       .on("postgres_changes", { 
         event: "*", 
         schema: "public", 
         table: "propostas"
-      }, () => {
+      }, async () => {
         console.info("[PedidosTab] Realtime Update - propostas");
-        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
-        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
+        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
+        await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
       })
       .subscribe();
       
@@ -215,12 +216,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       return;
     }
 
-    queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+    queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+    await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
     setApprovalStep("success");
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
-  const selectedPedidoWithStatus = selectedPedido;
 
   useEffect(() => {
     if (chat === "1" && selectedPedido?.profissional_id) {
@@ -252,8 +253,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     return matchesSearch && matchesFilter;
   });
 
-  if (selectedPedidoWithStatus && selectedPedido) {
-    const sp = selectedPedidoWithStatus;
+  if (selectedPedido) {
+    const sp = selectedPedido;
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
         <button
@@ -842,7 +843,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   <p className="text-xl font-bold text-slate-800">{p.displayPrice}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {p.status === "enviado" && (
+                  {(p.rawStatus === "enviado" || p.status === "Aguardando Aprovação") && (
                     <Button
                       size="sm"
                       className="bg-brand text-white rounded-full px-6 font-bold shadow-md hover:scale-105 transition-transform"
