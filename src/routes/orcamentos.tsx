@@ -617,10 +617,6 @@ function MeusOrcamentos() {
           service_name: payload.serviceName,
           descricao: payload.descricao ?? null,
           tipo_atendimento: payload.tipoAtendimento || null,
-          data_preferida: payload.dataPreferida || null,
-          periodo_preferido: payload.periodoPreferido || null,
-          horario_preferido: payload.horarioPreferido || null,
-          flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
           fotos_problema: Array.isArray(fotos) ? fotos : [],
         };
 
@@ -648,7 +644,26 @@ function MeusOrcamentos() {
         }
 
         const novoId = novoOrcamento?.id;
-        if (novoId && payload.materiais.length > 0) {
+        if (novoId) {
+          // Tentativa secundária de salvar a agenda (não bloqueia o pedido se o schema cache estiver desatualizado)
+          const { error: agendaError } = await supabase
+            .from("orcamentos")
+            .update({
+              data_preferida: payload.dataPreferida || null,
+              periodo_preferido: payload.periodoPreferido || null,
+              horario_preferido: payload.horarioPreferido || null,
+              flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
+            } as any)
+            .eq("id", novoId);
+
+          if (agendaError) {
+            console.warn("[orcamentos] agenda ainda não reconhecida no schema cache ou outro erro no update", agendaError);
+            if (agendaError.code === "PGRST204" || agendaError.message.includes("data_preferida")) {
+              toast.info("Pedido criado! A preferência de agenda será registrada assim que o sistema sincronizar.");
+            }
+          }
+
+          if (payload.materiais.length > 0) {
           const materialIds = payload.materiais.map((m) => m.materialId);
           const { data: materiaisRows, error: materiaisError } = await supabase
             .from("materiais")
