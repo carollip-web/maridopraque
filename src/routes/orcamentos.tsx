@@ -133,12 +133,12 @@ type OrcMaterial = {
 };
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
-  customizado_pendente: { label: "Em Análise", cls: "bg-amber-50 text-amber-700" },
-  fixo_auto: { label: "Aprovação Automática", cls: "bg-blue-50 text-blue-700" },
-  enviado: { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" },
-  aprovado: { label: "Aprovado", cls: "bg-green-50 text-green-700" },
+  customizado_pendente: { label: "Aguardando proposta", cls: "bg-amber-50 text-amber-700" },
+  fixo_auto: { label: "Aguardando aprovação", cls: "bg-blue-50 text-blue-700" },
+  enviado: { label: "Aguardando aprovação", cls: "bg-blue-50 text-blue-700" },
+  aprovado: { label: "Aguardando pagamento", cls: "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm" },
   recusado: { label: "Recusado", cls: "bg-red-50 text-red-700" },
-  pago: { label: "Pago", cls: "bg-green-50 text-green-700" },
+  pago: { label: "Pagamento confirmado", cls: "bg-green-50 text-green-700" },
   cancelado: { label: "Cancelado", cls: "bg-slate-50 text-slate-700" },
 };
 
@@ -685,7 +685,8 @@ function MeusOrcamentos() {
         }
       }
       resetForm();
-      navigate({ to: "/cliente", search: { tab: "pedidos" } });
+      setShowNew(false); // Volta para a tela de acompanhamento
+      refresh();
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível salvar.");
     } finally {
@@ -1364,6 +1365,34 @@ function MeusOrcamentos() {
                     </div>
                   </div>
 
+                  {/* Bloco de Pagamento Seguro */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 space-y-4">
+                    <div className="flex items-center gap-2 text-slate-800">
+                      <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <h4 className="font-bold text-sm tracking-tight">Pagamento seguro</h4>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Você só paga depois que o profissional enviar a proposta final e você aprovar. O pagamento será feito pela plataforma, em ambiente seguro.
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        "Envie sua solicitação",
+                        "Receba a proposta do profissional",
+                        "Aprove o orçamento",
+                        "Pague com segurança"
+                      ].map((txt, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                          <div className="h-4 w-4 rounded-full bg-slate-200 text-[8px] flex items-center justify-center font-bold text-slate-500 shrink-0">
+                            {i + 1}
+                          </div>
+                          <span className="text-[10px] font-medium text-slate-600">{txt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
                     <Info className="h-5 w-5 text-amber-600 shrink-0" />
                     <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
@@ -1526,15 +1555,26 @@ function MeusOrcamentos() {
                     </Button>
                   </>
                 )}
-                {o.status === "aprovado" && o.valor && (
-                  <Button asChild className="bg-brand text-brand-foreground rounded-full font-bold">
-                    <Link
-                      to="/checkout"
-                      search={{ orcamentoId: o.id } as any}
-                    >
-                      Pagar agora
-                    </Link>
-                  </Button>
+                {o.status === "aprovado" && (
+                  <div className="w-full bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-emerald-900">Orçamento Aprovado!</p>
+                        <p className="text-xs text-emerald-700">Tudo pronto para começar seu serviço.</p>
+                      </div>
+                    </div>
+                    <Button asChild className="w-full sm:w-auto bg-brand text-brand-foreground rounded-full font-bold h-11 px-6 shadow-lg shadow-brand/20">
+                      <Link
+                        to="/checkout"
+                        search={{ orcamentoId: o.id } as any}
+                      >
+                        Ir para pagamento seguro <ChevronRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
+                  </div>
                 )}
                 {o.status === "customizado_pendente" && (
                   <>
