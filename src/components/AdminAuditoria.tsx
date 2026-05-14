@@ -112,13 +112,41 @@ export function AdminAuditoria() {
         )
         .order("created_at", { ascending: false })
         .range(from, to);
+
       if (filterAction !== "all") q = q.eq("action", filterAction);
-      if (filterActor.trim()) q = q.eq("actor_user_id", filterActor.trim());
+
+      if (filterActor.trim()) {
+        const term = filterActor.trim();
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            term,
+          );
+
+        if (isUuid) {
+          q = q.eq("actor_user_id", term);
+        } else {
+          // Busca em profiles por nome ou email
+          const { data: profiles, error: pError } = await supabase
+            .from("profiles")
+            .select("id")
+            .or(`nome.ilike.%${term}%,email.ilike.%${term}%`);
+
+          if (pError) throw pError;
+
+          const ids = (profiles ?? []).map((p) => p.id);
+          if (ids.length === 0) {
+            return { rows: [], count: 0 };
+          }
+          q = q.in("actor_user_id", ids);
+        }
+      }
+
       if (filterDate) {
         const start = new Date(filterDate + "T00:00:00").toISOString();
         const end = new Date(filterDate + "T23:59:59.999").toISOString();
         q = q.gte("created_at", start).lte("created_at", end);
       }
+
       const { data, error, count } = await q;
       if (error) throw error;
       return { rows: (data ?? []) as AuditRow[], count: count ?? 0 };
@@ -154,10 +182,8 @@ export function AdminAuditoria() {
   });
 
   const fmtUser = (id: string | null) => {
-    if (!id) return "—";
-    const p = profilesById?.get(id);
-    if (!p) return id.slice(0, 8) + "…";
-    return p.nome || p.email || id.slice(0, 8) + "…";
+    if (!id) return null;
+    return profilesById?.get(id) || null;
   };
 
   const resetPage = () => setPage(0);
@@ -179,14 +205,18 @@ export function AdminAuditoria() {
           onClick={() => refetch()}
           disabled={isFetching}
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+          />
           Atualizar
         </Button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="f-action" className="text-xs">Ação</Label>
+          <Label htmlFor="f-action" className="text-xs">
+            Ação
+          </Label>
           <Select
             value={filterAction}
             onValueChange={(v) => {
@@ -208,10 +238,12 @@ export function AdminAuditoria() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="f-actor" className="text-xs">Actor user_id (UUID exato)</Label>
+          <Label htmlFor="f-actor" className="text-xs">
+            Actor: nome, e-mail ou UUID
+          </Label>
           <Input
             id="f-actor"
-            placeholder="00000000-0000-..."
+            placeholder="Buscar por nome, e-mail ou ID..."
             value={filterActor}
             onChange={(e) => {
               setFilterActor(e.target.value);
@@ -220,7 +252,9 @@ export function AdminAuditoria() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="f-date" className="text-xs">Data</Label>
+          <Label htmlFor="f-date" className="text-xs">
+            Data
+          </Label>
           <Input
             id="f-date"
             type="date"
@@ -273,20 +307,54 @@ export function AdminAuditoria() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="text-slate-700">{fmtUser(r.actor_user_id)}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          {r.actor_user_id}
-                        </div>
+                        {(() => {
+                          const p = fmtUser(r.actor_user_id);
+                          if (!p) return (
+                            <div className="text-[10px] text-slate-400 font-mono">
+                              {r.actor_user_id}
+                            </div>
+                          );
+                          return (
+                            <div className="space-y-0.5">
+                              <div className="text-slate-700 font-medium leading-none">
+                                {p.nome || "Sem nome"}
+                              </div>
+                              {p.email && (
+                                <div className="text-[10px] text-slate-500 leading-none">
+                                  {p.email}
+                                </div>
+                              )}
+                              <div className="text-[10px] text-slate-400 font-mono leading-none">
+                                {r.actor_user_id}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">
-                        {r.target_user_id ? (
-                          <>
-                            <div className="text-slate-700">{fmtUser(r.target_user_id)}</div>
+                        {r.target_user_id ? (() => {
+                          const p = fmtUser(r.target_user_id);
+                          if (!p) return (
                             <div className="text-[10px] text-slate-400 font-mono">
                               {r.target_user_id}
                             </div>
-                          </>
-                        ) : (
+                          );
+                          return (
+                            <div className="space-y-0.5">
+                              <div className="text-slate-700 font-medium leading-none">
+                                {p.nome || "Sem nome"}
+                              </div>
+                              {p.email && (
+                                <div className="text-[10px] text-slate-500 leading-none">
+                                  {p.email}
+                                </div>
+                              )}
+                              <div className="text-[10px] text-slate-400 font-mono leading-none">
+                                {r.target_user_id}
+                              </div>
+                            </div>
+                          );
+                        })() : (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
