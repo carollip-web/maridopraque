@@ -167,7 +167,7 @@ export function Header() {
             to="/para-profissionais"
             className="text-muted-foreground transition hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold"
           >
-            Trabalhe conosco
+            Para profissionais
           </Link>
         </nav>
 
