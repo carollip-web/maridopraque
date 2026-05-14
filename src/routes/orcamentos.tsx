@@ -27,6 +27,8 @@ import {
   Pencil,
   Trash2,
   Send,
+  User,
+  Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
@@ -87,6 +89,7 @@ type OrcamentoRow = {
   status: string;
   auto_aprovado: boolean;
   observacoes_profissional: string | null;
+  tipo_atendimento: string | null;
   created_at: string;
 };
 
@@ -129,10 +132,11 @@ function MeusOrcamentos() {
 
   const [selServiceId, setSelServiceId] = useState<string>("");
   const [descricao, setDescricao] = useState("");
+  const [tipoAtendimento, setTipoAtendimento] = useState<string>("");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [fotos, setFotos] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
@@ -156,7 +160,7 @@ function MeusOrcamentos() {
       .select("*")
       .eq("cliente_id", user.id)
       .order("created_at", { ascending: false });
-    const rows = (data ?? []) as OrcamentoRow[];
+    const rows = (data as any ?? []) as OrcamentoRow[];
     setList(rows);
 
     if (rows.length > 0) {
@@ -366,6 +370,7 @@ function MeusOrcamentos() {
   const novoSchema = z.object({
     serviceId: z.string().uuid({ message: "Selecione um serviço válido." }),
     descricao: z.string().trim().max(2000, "Descrição muito longa.").optional(),
+    tipoAtendimento: z.string().min(1, "Selecione o tipo de atendimento."),
     materiais: z
       .array(
         z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }),
@@ -376,6 +381,7 @@ function MeusOrcamentos() {
   const resetForm = () => {
     setSelServiceId("");
     setDescricao("");
+    setTipoAtendimento("");
     setPicked({});
     setFotos([]);
     setStep(1);
@@ -401,14 +407,14 @@ function MeusOrcamentos() {
       try {
         window.localStorage.setItem(
           draftKey,
-          JSON.stringify({ selServiceId, descricao, picked, step, savedAt: Date.now() }),
+          JSON.stringify({ selServiceId, descricao, tipoAtendimento, picked, step, savedAt: Date.now() }),
         );
         setDraftSavedAt(Date.now());
         setHasDraft(true);
       } catch {}
     }, 500);
     return () => window.clearTimeout(t);
-  }, [draftKey, showNew, editingId, selServiceId, descricao, picked, step]);
+  }, [draftKey, showNew, editingId, selServiceId, descricao, tipoAtendimento, picked, step]);
 
   const carregarRascunho = () => {
     if (!draftKey || typeof window === "undefined") return;
@@ -418,11 +424,13 @@ function MeusOrcamentos() {
       const d = JSON.parse(raw) as {
         selServiceId?: string;
         descricao?: string;
+        tipoAtendimento?: string;
         picked?: Record<string, number>;
-        step?: 1 | 2 | 3;
+        step?: 1 | 2 | 3 | 4;
       };
       setSelServiceId(d.selServiceId ?? "");
       setDescricao(d.descricao ?? "");
+      setTipoAtendimento(d.tipoAtendimento ?? "");
       setPicked(d.picked ?? {});
       setStep(d.step ?? 1);
       setEditingId(null);
@@ -489,6 +497,7 @@ function MeusOrcamentos() {
       serviceId: selServico.id,
       serviceName: selServico.nome,
       descricao: descricao.trim() || undefined,
+      tipoAtendimento,
       materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
         materialId,
         quantidade,
@@ -522,6 +531,7 @@ function MeusOrcamentos() {
             service_id: payload.serviceId,
             service_name: payload.serviceName,
             descricao: payload.descricao ?? null,
+            tipo_atendimento: payload.tipoAtendimento,
             fotos_problema: fotos,
           } as any)
           .select("id")
@@ -641,25 +651,23 @@ function MeusOrcamentos() {
               <Save className="h-3 w-3" /> Rascunho salvo automaticamente
             </p>
           )}
-          {/* Stepper */}
-          <ol className="flex items-center gap-2 text-xs font-semibold">
+          <ol className="flex flex-wrap items-center gap-2 text-xs font-semibold">
             {[
               { n: 1, label: "Serviço", icon: Wrench },
-              { n: 2, label: "Materiais", icon: Package },
-              { n: 3, label: "Confirmar", icon: ClipboardCheck },
+              { n: 2, label: "Atendimento", icon: User },
+              { n: 3, label: "Materiais", icon: Package },
+              { n: 4, label: "Confirmar", icon: ClipboardCheck },
             ].map((s, i) => {
               const Icon = s.icon;
               const active = step === s.n;
               const done = step > s.n;
-              // Pode navegar para passos já visitados/concluídos, ou para o atual.
-              // Avançar exige Serviço selecionado.
               const canGo =
-                s.n <= step || (s.n === 2 && !!selServiceId) || (s.n === 3 && !!selServiceId);
+                s.n <= step || (s.n > step && !!selServiceId);
               return (
-                <li key={s.n} className="flex items-center gap-2 flex-1">
+                <li key={s.n} className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => canGo && setStep(s.n as 1 | 2 | 3)}
+                    onClick={() => canGo && setStep(s.n as 1 | 2 | 3 | 4)}
                     disabled={!canGo}
                     aria-current={active ? "step" : undefined}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
@@ -675,7 +683,7 @@ function MeusOrcamentos() {
                       {s.n}. {s.label}
                     </span>
                   </button>
-                  {i < 2 && <div className="flex-1 h-px bg-border" />}
+                  {i < 3 && <div className="hidden sm:block w-4 h-px bg-border" />}
                 </li>
               );
             })}
@@ -790,7 +798,7 @@ function MeusOrcamentos() {
 
               <div className="flex justify-end">
                 <Button
-                  onClick={goToStep2}
+                  onClick={() => setStep(2)}
                   disabled={!selServiceId}
                   className="rounded-full bg-foreground text-background font-bold gap-2"
                 >
@@ -799,8 +807,90 @@ function MeusOrcamentos() {
               </div>
             </div>
           )}
-          {/* Step 2: Materiais */}
+
+          {/* Step 2: Atendimento */}
           {step === 2 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-slate-800">Escolha o tipo de atendimento</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Selecione a opção que deixa você mais confortável para receber o serviço.
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                {[
+                  {
+                    id: "mulher",
+                    title: "Profissional mulher",
+                    desc: "Prefere ser atendida por uma profissional mulher? Vamos verificar a disponibilidade na sua região. Caso não haja agenda disponível, você ainda poderá contar com a opção de apoio feminino durante a visita.",
+                    icon: <User className="h-5 w-5" />,
+                    color: "bg-pink-50 text-pink-600 border-pink-100",
+                    activeColor: "ring-pink-500 bg-pink-50/50 border-pink-200",
+                  },
+                  {
+                    id: "homem",
+                    title: "Profissional homem",
+                    desc: "Atendimento com profissional homem selecionado pela habilidade técnica, postura e comportamento. Indicado para serviços que exigem força física, instalações complexas ou manutenções mais pesadas.",
+                    icon: <User className="h-5 w-5" />,
+                    color: "bg-blue-50 text-blue-600 border-blue-100",
+                    activeColor: "ring-blue-500 bg-blue-50/50 border-blue-200",
+                  },
+                  {
+                    id: "homem_com_apoio_feminino",
+                    title: "Profissional + apoio feminino",
+                    desc: "Nossa modalidade mais escolhida. O técnico realiza o serviço enquanto uma mulher de apoio acompanha a visita, auxiliando na organização e trazendo mais conforto e segurança dentro da sua casa.",
+                    icon: <Users className="h-5 w-5" />,
+                    color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+                    activeColor: "ring-emerald-500 bg-emerald-50/50 border-emerald-200",
+                  },
+                ].map((opt) => (
+                  <label
+                    key={opt.id}
+                    className={`relative flex flex-col p-5 rounded-3xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                      tipoAtendimento === opt.id
+                        ? `ring-2 ${opt.activeColor}`
+                        : "border-slate-100 bg-white"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tipoAtendimento"
+                      value={opt.id}
+                      checked={tipoAtendimento === opt.id}
+                      onChange={(e) => setTipoAtendimento(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${opt.color}`}>
+                        {opt.icon}
+                      </div>
+                      <span className="font-bold text-slate-800">{opt.title}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-13">
+                      {opt.desc}
+                    </p>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex justify-between gap-2 pt-2">
+                <Button variant="outline" onClick={() => setStep(1)} className="rounded-full gap-2">
+                  <ChevronLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!tipoAtendimento}
+                  className="rounded-full bg-foreground text-background font-bold gap-2"
+                >
+                  Continuar <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Materiais */}
+          {step === 3 && (
             <div className="space-y-4">
               {sugeridos.length > 0 ? (
                 <div className="rounded-2xl bg-slate-50 border border-border p-4">
@@ -889,11 +979,11 @@ function MeusOrcamentos() {
               )}
 
               <div className="flex justify-between gap-2">
-                <Button variant="outline" onClick={() => setStep(1)} className="rounded-full gap-2">
+                <Button variant="outline" onClick={() => setStep(2)} className="rounded-full gap-2">
                   <ChevronLeft className="h-4 w-4" /> Voltar
                 </Button>
                 <Button
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(4)}
                   className="rounded-full bg-foreground text-background font-bold gap-2"
                 >
                   Continuar <ChevronRight className="h-4 w-4" />
@@ -902,8 +992,8 @@ function MeusOrcamentos() {
             </div>
           )}
 
-          {/* Step 3: Confirmar */}
-          {step === 3 && selServico && (
+          {/* Step 4: Confirmar */}
+          {step === 4 && selServico && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-border bg-card overflow-hidden">
                 {descricao.trim() && (
@@ -914,6 +1004,24 @@ function MeusOrcamentos() {
                     <p className="mt-1 text-sm text-foreground whitespace-pre-line">{descricao}</p>
                   </div>
                 )}
+
+                <div className="px-5 py-4 border-b border-border bg-slate-50/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Atendimento
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs ${
+                      tipoAtendimento === "mulher" ? "bg-pink-100 text-pink-600" :
+                      tipoAtendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+                    }`}>
+                      {tipoAtendimento === "homem_com_apoio_feminino" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      {tipoAtendimento === "mulher" ? "Profissional mulher" :
+                       tipoAtendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
+                    </span>
+                  </div>
+                </div>
 
                 {Object.keys(picked).length > 0 && (
                   <div className="px-5 py-4 border-b border-border">
@@ -972,7 +1080,7 @@ function MeusOrcamentos() {
               <div className="flex justify-between gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(3)}
                   className="rounded-full gap-2"
                   disabled={saving}
                 >

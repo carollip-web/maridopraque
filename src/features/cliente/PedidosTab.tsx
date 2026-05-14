@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   MessageCircle,
   Phone,
+  User,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -298,6 +299,16 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 </span>
                 <h2 className="text-3xl font-bold">{sp.title}</h2>
                 <p className="text-muted-foreground mt-2">{sp.description}</p>
+                {(sp as any).tipo_atendimento && (
+                  <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-brand-soft/20 text-brand w-fit mt-3">
+                    <User className="h-3.5 w-3.5" />
+                    Atendimento: {
+                      (sp as any).tipo_atendimento === "mulher" ? "Profissional mulher" :
+                      (sp as any).tipo_atendimento === "homem" ? "Profissional homem" : 
+                      "Profissional + apoio feminino"
+                    }
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-right">

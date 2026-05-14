@@ -234,6 +234,16 @@ export function OrcamentoCard({
             </span>
           )}
         </div>
+        {(o as any).tipo_atendimento && (
+          <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 w-fit">
+            <User className="h-3.5 w-3.5" />
+            Atendimento: {
+              (o as any).tipo_atendimento === "mulher" ? "Profissional mulher" :
+              (o as any).tipo_atendimento === "homem" ? "Profissional homem" : 
+              "Profissional + apoio feminino"
+            }
+          </div>
+        )}
         {o.descricao && (
           <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">{o.descricao}</p>
         )}

@@ -706,6 +706,15 @@ export function AdminPedidos() {
                                 .join(", ")}
                             </span>
                           )}
+                          {o.tipo_atendimento && (
+                            <span className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded w-fit ${
+                              o.tipo_atendimento === "mulher" ? "bg-pink-100 text-pink-600" :
+                              o.tipo_atendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+                            }`}>
+                              {o.tipo_atendimento === "mulher" ? "Profissional mulher" :
+                               o.tipo_atendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">

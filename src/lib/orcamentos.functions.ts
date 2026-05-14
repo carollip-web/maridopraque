@@ -15,6 +15,7 @@ const solicitarSchema = z.object({
   serviceName: z.string().trim().min(1).max(200),
   descricao: z.string().trim().max(2000).optional(),
   materiais: z.array(materialItemSchema).max(30).optional(),
+  tipoAtendimento: z.string().optional(),
 });
 
 export const solicitarOrcamento = createServerFn({ method: "POST" })
@@ -30,7 +31,8 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
         service_id: data.serviceId,
         service_name: data.serviceName,
         descricao: data.descricao ?? null,
-      })
+        tipo_atendimento: data.tipoAtendimento ?? null,
+      } as any)
       .select()
       .single();
     if (error) {
