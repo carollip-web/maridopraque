@@ -649,28 +649,28 @@ function MeusOrcamentos() {
   if (!user) return null;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-[1040px] mx-auto px-4 sm:px-6 py-12">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Meus Orçamentos</h1>
           <p className="text-muted-foreground mt-1">Preço tabelado e materiais opcionais.</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
           {hasDraft && !showNew && (
-            <>
-              <Button onClick={carregarRascunho} variant="outline" className="rounded-full gap-2">
-                <Save className="h-4 w-4" /> Retomar rascunho
+            <div className="flex items-center bg-slate-50 p-1 rounded-full border border-slate-100">
+              <Button onClick={carregarRascunho} variant="ghost" size="sm" className="rounded-full text-xs gap-2 font-bold text-slate-600">
+                <Save className="h-3.5 w-3.5" /> Retomar rascunho
               </Button>
               <Button
                 onClick={limparRascunho}
                 variant="ghost"
                 size="icon"
-                className="rounded-full"
+                className="rounded-full h-8 w-8 text-slate-400 hover:text-red-500"
                 aria-label="Descartar rascunho"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
-            </>
+            </div>
           )}
           <Button
             onClick={() => {
@@ -680,9 +680,12 @@ function MeusOrcamentos() {
                 setShowNew(true);
               }
             }}
-            className="rounded-full bg-brand text-brand-foreground gap-2"
+            variant={showNew ? "ghost" : "default"}
+            size={showNew ? "sm" : "default"}
+            className={`rounded-full gap-2 font-bold ${showNew ? "text-red-500 hover:bg-red-50" : "bg-brand text-brand-foreground shadow-md"}`}
           >
-            <Plus className="h-4 w-4" /> {showNew ? "Cancelar" : "Nova solicitação"}
+            {showNew ? <XCircle className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {showNew ? "Cancelar pedido" : "Nova solicitação"}
           </Button>
         </div>
       </div>
@@ -700,6 +703,7 @@ function MeusOrcamentos() {
               <Save className="h-3 w-3" /> Rascunho salvo automaticamente
             </p>
           )}
+          <ul className="flex flex-wrap items-center justify-center gap-y-3 gap-x-2 md:gap-x-4 py-2 border-b border-slate-50 pb-8">
             {[
               { n: 1, label: "Serviço", icon: Wrench },
               { n: 2, label: "Atendimento", icon: User },
@@ -719,23 +723,24 @@ function MeusOrcamentos() {
                     onClick={() => canGo && setStep(s.n as 1 | 2 | 3 | 4 | 5)}
                     disabled={!canGo}
                     aria-current={active ? "step" : undefined}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+                    className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border transition-all duration-300 ${
                       active
-                        ? "bg-brand text-brand-foreground border-brand"
+                        ? "bg-brand text-brand-foreground border-brand shadow-md scale-105"
                         : done
                           ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                           : "bg-slate-50 text-muted-foreground border-border hover:bg-slate-100"
                     } ${canGo ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>
+                    <Icon className={`h-3.5 w-3.5 ${active ? "animate-pulse" : ""}`} />
+                    <span className="text-[11px] md:text-xs font-bold whitespace-nowrap">
                       {s.n}. {s.label}
                     </span>
                   </button>
-                  {i < 4 && <div className="hidden xl:block w-4 h-px bg-border" />}
+                  {i < 4 && <div className="hidden lg:block w-3 md:w-6 h-px bg-slate-200" />}
                 </li>
               );
             })}
+          </ul>
 
           {/* Resumo dinâmico — atualiza com serviço selecionado e materiais */}
           {selServico &&
@@ -1145,135 +1150,174 @@ function MeusOrcamentos() {
 
           {/* Step 5: Confirmar */}
           {step === 5 && selServico && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                {descricao.trim() && (
-                  <div className="px-5 py-4 border-b border-border">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Descrição
-                    </p>
-                    <p className="mt-1 text-sm text-foreground whitespace-pre-line">{descricao}</p>
-                  </div>
-                )}
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Revise sua solicitação</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Confira os detalhes abaixo antes de enviar para os profissionais.
+                </p>
+              </div>
 
-                <div className="px-5 py-4 border-b border-border bg-slate-50/50">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Atendimento
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs ${
-                      tipoAtendimento === "mulher" ? "bg-pink-100 text-pink-600" :
-                      tipoAtendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
-                    }`}>
-                      {tipoAtendimento === "homem_com_apoio_feminino" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {tipoAtendimento === "mulher" ? "Profissional mulher" :
-                       tipoAtendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="px-5 py-4 border-b border-border bg-slate-50/50">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Agenda Desejada
-                  </p>
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-xl bg-brand-soft flex items-center justify-center text-brand">
-                      <Calendar className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">
-                        {dataPreferida ? new Date(dataPreferida + 'T00:00:00').toLocaleDateString('pt-BR', { dateStyle: 'long' }) : "Não informada"}
+              <div className="grid gap-6 lg:grid-cols-5">
+                {/* Coluna Esquerda: Detalhes */}
+                <div className="lg:col-span-3 space-y-4">
+                  <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+                    {/* Resumo do Serviço */}
+                    <div className="px-6 py-5 border-b border-slate-50">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                        O que será feito
                       </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        {periodoPreferido === 'manha' && <><Sunrise className="h-3 w-3" /> Manhã</>}
-                        {periodoPreferido === 'tarde' && <><Sun className="h-3 w-3" /> Tarde</>}
-                        {periodoPreferido === 'noite' && <><Moon className="h-3 w-3" /> Noite</>}
-                        {periodoPreferido === 'horario_especifico' && <><Clock className="h-3 w-3" /> às {horarioPreferido}</>}
-                        {" · "}
-                        {flexibilidadeAgenda === 'flexivel' ? 'Horário flexível' : 'Horário exato'}
-                      </p>
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-2xl bg-brand/5 flex items-center justify-center text-brand shrink-0">
+                          <Wrench className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-800 leading-tight">{selServico.nome}</h4>
+                          {descricao.trim() && (
+                            <p className="mt-2 text-xs text-muted-foreground line-clamp-3 italic">
+                              "{descricao}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {Object.keys(picked).length > 0 && (
-                  <div className="px-5 py-4 border-b border-border">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Materiais ({Object.keys(picked).length})
-                    </p>
-                    <ul className="mt-2 text-sm divide-y divide-border/60">
-                      {Object.entries(picked).map(([id, qty]) => {
-                        const m = materiais.find((x) => x.id === id);
-                        if (!m) return null;
-                        return (
-                          <li key={id} className="flex justify-between py-1.5">
-                            <span className="text-foreground">
-                              {m.nome}
+                    {/* Atendimento e Agenda em grid */}
+                    <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-50">
+                      <div className="px-6 py-5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                          Atendimento
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs ${
+                            tipoAtendimento === "mulher" ? "bg-pink-100 text-pink-600" :
+                            tipoAtendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+                          }`}>
+                            {tipoAtendimento === "homem_com_apoio_feminino" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                          </div>
+                          <span className="text-xs font-bold text-slate-700">
+                            {tipoAtendimento === "mulher" ? "Profissional mulher" :
+                             tipoAtendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="px-6 py-5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                          Agenda Desejada
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-xl bg-brand-soft flex items-center justify-center text-brand">
+                            <Calendar className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-700">
+                              {dataPreferida ? new Date(dataPreferida + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : "---"}
+                              {" · "}
                               <span className="text-muted-foreground">
-                                {" "}
-                                · {qty} {m.unidade}
+                                {periodoPreferido === 'manha' && 'Manhã'}
+                                {periodoPreferido === 'tarde' && 'Tarde'}
+                                {periodoPreferido === 'noite' && 'Noite'}
+                                {periodoPreferido === 'horario_especifico' && horarioPreferido}
                               </span>
-                            </span>
-                            <span className="font-medium tabular-nums text-foreground">
-                              {brl(Number(m.preco_atual) * qty)}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                {selServico.preco_min != null && selServico.preco_max != null && (
-                  <div className="px-5 py-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Mão de obra</span>
-                      <span className="tabular-nums">
-                        {brl(Number(selServico.preco_min))} – {brl(Number(selServico.preco_max))}
+                    {/* Materiais se houver */}
+                    {Object.keys(picked).length > 0 && (
+                      <div className="px-6 py-5 border-t border-slate-50 bg-slate-50/30">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+                          Materiais Selecionados ({Object.keys(picked).length})
+                        </p>
+                        <ul className="space-y-2">
+                          {Object.entries(picked).slice(0, 3).map(([id, qty]) => {
+                            const m = materiais.find((x) => x.id === id);
+                            if (!m) return null;
+                            return (
+                              <li key={id} className="flex justify-between text-xs">
+                                <span className="text-slate-600 truncate mr-4">
+                                  {m.nome} <span className="opacity-50">· {qty} {m.unidade}</span>
+                                </span>
+                                <span className="font-bold tabular-nums text-slate-800">
+                                  {brl(Number(m.preco_atual) * qty)}
+                                </span>
+                              </li>
+                            );
+                          })}
+                          {Object.keys(picked).length > 3 && (
+                            <li className="text-[10px] text-brand font-bold">
+                              + {Object.keys(picked).length - 3} outros itens
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coluna Direita: Preço e CTA */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="bg-brand text-brand-foreground rounded-3xl p-6 shadow-lg shadow-brand/20">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">
+                      Investimento Estimado
+                    </p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black tabular-nums">
+                        {brl(Number(selServico.preco_min) + subtotalMat)}
                       </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Materiais</span>
-                      <span className="tabular-nums">{brl(subtotalMat)}</span>
-                    </div>
-                    <div className="flex justify-between items-baseline pt-3 mt-1 border-t border-border">
-                      <span className="font-semibold">Total estimado</span>
-                      <span className="text-base font-semibold tabular-nums">
-                        {brl(Number(selServico.preco_min) + subtotalMat)} –{" "}
+                      <span className="text-lg opacity-60 font-bold">até</span>
+                      <span className="text-3xl font-black tabular-nums">
                         {brl(Number(selServico.preco_max) + subtotalMat)}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground pt-1 leading-relaxed">
-                      O valor final será confirmado pelo profissional após avaliação no local.
+                    
+                    <div className="mt-6 space-y-3 pt-6 border-t border-brand-foreground/20">
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-70">Mão de obra</span>
+                        <span className="font-bold">{brl(Number(selServico.preco_min))} - {brl(Number(selServico.preco_max))}</span>
+                      </div>
+                      {subtotalMat > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="opacity-70">Materiais</span>
+                          <span className="font-bold">{brl(subtotalMat)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-8 flex flex-col gap-3">
+                      <Button
+                        onClick={handleNew}
+                        disabled={saving}
+                        className="w-full bg-white text-brand hover:bg-slate-50 rounded-2xl h-14 font-black text-base gap-3 shadow-xl"
+                      >
+                        {saving ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <>
+                            Enviar solicitação <Send className="h-5 w-5" />
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setStep(4)}
+                        className="w-full text-brand-foreground/80 hover:text-white hover:bg-brand-foreground/10 rounded-xl"
+                        disabled={saving}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-2" /> Revisar materiais
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
+                    <Info className="h-5 w-5 text-amber-600 shrink-0" />
+                    <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                      O valor final e a disponibilidade da agenda serão confirmados pelo profissional no chat após o recebimento deste pedido.
                     </p>
                   </div>
-                )}
-              </div>
-
-              <div className="flex justify-between gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(4)}
-                  className="rounded-full gap-2"
-                  disabled={saving}
-                >
-                  <ChevronLeft className="h-4 w-4" /> Voltar
-                </Button>
-                <Button
-                  onClick={handleNew}
-                  disabled={saving}
-                  className="bg-foreground text-background rounded-full font-bold gap-2"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <ClipboardCheck className="h-4 w-4" /> Enviar solicitação
-                    </>
-                  )}
-                </Button>
+                </div>
               </div>
             </div>
           )}
