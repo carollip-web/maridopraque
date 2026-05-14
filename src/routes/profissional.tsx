@@ -349,34 +349,22 @@ function ProfissionalArea() {
   ) => {
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        const isTestOrder = o.service_name.includes("Teste");
-        const cat = o.service_id ? catalog[o.service_id]?.categoria : null;
-        
-        // Flexible matching
-        const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const serviceNorm = norm(o.service_name);
-        const catNorm = cat ? norm(cat) : "";
-        
-        const matchesSpecialty =
-          especialidades.length === 0 ||
-          isTestOrder ||
-          especialidades.some(e => {
-            const eNorm = norm(e);
-            return serviceNorm.includes(eNorm) || eNorm.includes(serviceNorm) || (catNorm && (catNorm.includes(eNorm) || eNorm.includes(catNorm)));
-          });
-
+        // PERMISSIVE: Show all opportunities to avoid "vanishing" bugs.
+        // We only hide if the professional already sent a proposal or refused.
         if (
           !(
             (o.status === "customizado_pendente" || o.status === "enviado") &&
-            !minhasPropostas.some((p) => p.orcamento_id === o.id) &&
-            matchesSpecialty
+            !minhasPropostas.some((p) => p.orcamento_id === o.id)
           )
         )
           return false;
 
         if (recusados.has(o.id)) return false;
+        
+        // Radius filter is still active as it's a hard constraint for logistics
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
+        
         return true;
       }
       if (type === "elaboracao") {
