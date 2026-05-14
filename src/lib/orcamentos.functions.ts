@@ -197,17 +197,29 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
-    // Update budget status to 'enviado' if it was still pending or already sent
-    await supabase
-      .from("orcamentos")
-      .update({ 
-        status: "enviado",
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", data.orcamentoId)
-      .in("status", ["customizado_pendente", "enviado"]);
+    // Update budget status to 'enviado' using RPC to bypass potential RLS update blocks
+    const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc("marcar_orcamento_enviado", {
+      _orcamento_id: data.orcamentoId
+    });
 
-    return { proposta: propRow };
+    if (rpcErr) {
+      console.error("RPC Status Update Error:", rpcErr);
+      throw new Error(`Proposta salva (ID: ${proposalId}), mas erro na RPC de status: ${rpcErr.message}`);
+    }
+
+    const res = rpcRes as { ok: boolean; error?: string; status?: string };
+    if (!res || !res.ok) {
+      throw new Error(`Falha ao atualizar status do pedido: ${res?.error || "Erro desconhecido"}`);
+    }
+
+    // Fetch the updated orcamento row to return it
+    const { data: updatedOrc } = await supabase
+      .from("orcamentos")
+      .select("id, status, service_name, valor_servico")
+      .eq("id", data.orcamentoId)
+      .single();
+
+    return { proposta: propRow, orcamento: updatedOrc };
   });
 
 const decisaoSchema = z.object({
