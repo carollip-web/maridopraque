@@ -82,6 +82,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => enviarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
     // valida range do catálogo
     const { data: orc } = await supabase
@@ -198,26 +199,38 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // Update budget status to 'enviado' using RPC to bypass potential RLS update blocks
+    console.info("[enviarOrcamento] Calling RPC marcar_orcamento_enviado", { orcamentoId: data.orcamentoId });
     const { data: rpcRes, error: rpcErr } = await (supabase as any).rpc("marcar_orcamento_enviado", {
       _orcamento_id: data.orcamentoId
     });
 
     if (rpcErr) {
-      console.error("RPC Status Update Error:", rpcErr);
+      console.error("[enviarOrcamento] RPC Status Update Error:", rpcErr);
       throw new Error(`Proposta salva (ID: ${proposalId}), mas erro na RPC de status: ${rpcErr.message}`);
     }
 
     const res = rpcRes as { ok: boolean; error?: string; status?: string };
+    console.info("[enviarOrcamento] RPC Result:", res);
     if (!res || !res.ok) {
       throw new Error(`Falha ao atualizar status do pedido: ${res?.error || "Erro desconhecido"}`);
     }
 
     // Fetch the updated orcamento row to return it
-    const { data: updatedOrc } = await supabase
+    const { data: updatedOrc, error: fetchError } = await supabase
       .from("orcamentos")
       .select("id, status, service_name, valor_servico")
       .eq("id", data.orcamentoId)
       .single();
+
+    console.info("[enviarOrcamento] Final budget state:", updatedOrc);
+
+    if (fetchError || !updatedOrc) {
+        throw new Error("Proposta enviada, mas erro ao verificar estado final do pedido.");
+    }
+
+    if (updatedOrc.status !== "enviado") {
+        throw new Error(`CRÍTICO: O status do pedido deveria ser 'enviado', mas está '${updatedOrc.status}'.`);
+    }
 
     return { proposta: propRow, orcamento: updatedOrc };
   });

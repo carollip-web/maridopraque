@@ -85,7 +85,7 @@ export function OrcamentoCard({
     try {
       // Use the server function to create a proposal
       const mats = Object.entries(picked).map(([id, qty]) => ({ materialId: id, quantidade: qty }));
-      await enviar({
+      const res = await enviar({
         data: {
           orcamentoId: o.id,
           valorServico: v,
@@ -94,11 +94,16 @@ export function OrcamentoCard({
         },
       });
       
-      toast.success("Proposta enviada ao cliente!");
+      const finalStatus = res?.orcamento?.status || "enviado";
+      toast.success(`Proposta enviada! Status do pedido: ${finalStatus}`);
+      
       if (mode === "revisar") setEditing(false);
       refresh?.();
     } catch (e: any) {
-      toast.error("Falha ao salvar", { description: e?.message });
+      console.error("Erro ao enviar proposta:", e);
+      toast.error("Falha ao enviar", { 
+        description: e?.message || "Ocorreu um erro inesperado." 
+      });
     } finally {
       setSaving(false);
     }
