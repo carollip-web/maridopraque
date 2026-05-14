@@ -429,6 +429,68 @@ export type Database = {
           },
         ]
       }
+      pagamentos: {
+        Row: {
+          checkout_url: string | null
+          cliente_id: string
+          created_at: string | null
+          gateway: string | null
+          gateway_payment_id: string | null
+          id: string
+          metadata: Json | null
+          metodo: string | null
+          orcamento_id: string
+          profissional_id: string | null
+          status: string
+          updated_at: string | null
+          valor_restante: number | null
+          valor_sinal: number | null
+          valor_total: number
+        }
+        Insert: {
+          checkout_url?: string | null
+          cliente_id: string
+          created_at?: string | null
+          gateway?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metodo?: string | null
+          orcamento_id: string
+          profissional_id?: string | null
+          status?: string
+          updated_at?: string | null
+          valor_restante?: number | null
+          valor_sinal?: number | null
+          valor_total: number
+        }
+        Update: {
+          checkout_url?: string | null
+          cliente_id?: string
+          created_at?: string | null
+          gateway?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metodo?: string | null
+          orcamento_id?: string
+          profissional_id?: string | null
+          status?: string
+          updated_at?: string | null
+          valor_restante?: number | null
+          valor_sinal?: number | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panico_eventos: {
         Row: {
           created_at: string
