@@ -41,7 +41,7 @@ const faqs = [
       },
       {
         q: "Posso escolher uma profissional mulher?",
-        a: "Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.",
+        a: "Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de apoio feminino durante a visita para sua segurança e conforto.",
       },
       {
         q: "Atendem aos finais de semana?",
@@ -58,7 +58,7 @@ const faqs = [
         a: "Todos passam por checagem de antecedentes criminais, verificação de documentos e referências técnicas. Só enviamos profissionais com 100% de aprovação.",
       },
       {
-        q: "O que é o serviço com acompanhante feminina?",
+        q: "O que é o serviço com apoio feminino durante a visita?",
         a: "É um protocolo onde o técnico homem realiza o serviço pesado enquanto uma colaboradora mulher acompanha todo o processo para garantir seu conforto e segurança.",
       },
     ],

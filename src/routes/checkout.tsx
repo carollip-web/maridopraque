@@ -256,8 +256,8 @@ function Checkout() {
                   {
                     id: "acompanhante",
                     icon: HeartHandshake,
-                    title: "Homem + acompanhante feminina",
-                    desc: "Pensado para quem mora sozinha: o profissional vem com uma acompanhante mulher.",
+                    title: "Profissional + apoio feminino",
+                    desc: "Pensado para quem mora sozinha: o profissional vem com uma mulher de apoio durante a visita.",
                     color: "bg-brand-soft text-brand",
                     highlight: true,
                   },
@@ -513,7 +513,7 @@ function Checkout() {
               <Info className="h-3.5 w-3.5 text-brand shrink-0" />
               Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a
               disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de
-              uma acompanhante para sua segurança e conforto.
+              apoio feminino durante a visita para sua segurança e conforto.
             </div>
           </div>
         </div>
@@ -535,7 +535,7 @@ function Checkout() {
                 disponibilidade na sua região.
                 <br />
                 <br />
-                Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua
+                Caso não haja, você ainda pode contar com a opção de apoio feminino durante a visita para sua
                 segurança e conforto.
               </p>
               <Button

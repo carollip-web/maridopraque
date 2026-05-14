@@ -52,13 +52,13 @@ export const Route = createRootRoute({
       { property: "og:title", content: "Marido pra Quê? — Reparos e Montagens" },
       {
         property: "og:description",
-        content: "Profissionais verificados, orçamento online e opção com acompanhante feminina.",
+        content: "Profissionais verificados, orçamento online e opção com apoio feminino durante a visita.",
       },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Marido pra Quê? — Reparos e Montagens" },
       {
         name: "twitter:description",
-        content: "Profissionais verificados, orçamento online e opção com acompanhante feminina.",
+        content: "Profissionais verificados, orçamento online e opção com apoio feminino durante a visita.",
       },
       { name: "theme-color", content: "#FF6B35" },
       { name: "mobile-web-app-capable", content: "yes" },
