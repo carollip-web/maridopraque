@@ -152,10 +152,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
 
-  const [pedidoStatuses, setPedidoStatuses] = useState<Record<string, string>>({});
-
-  const getPedidoStatus = (id: string, defaultStatus: string) =>
-    pedidoStatuses[id] ?? defaultStatus;
 
   useEffect(() => {
     if (!user) return;
@@ -168,16 +164,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         table: "orcamentos",
         filter: `cliente_id=eq.${user.id}`
       }, () => {
+        console.info("[PedidosTab] Realtime Update - orcamentos");
         queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
       })
       .on("postgres_changes", { 
         event: "*", 
         schema: "public", 
         table: "propostas"
       }, () => {
-        // We can't filter by cliente_id on propostas easily without a join in RLS or similar,
-        // so we refresh on any proposal change. 
+        console.info("[PedidosTab] Realtime Update - propostas");
         queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
+        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
       })
       .subscribe();
       
@@ -217,15 +215,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       return;
     }
 
-    setPedidoStatuses((prev) => ({ ...prev, [selectedPedido.id]: "Agendado" }));
     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos"] });
     setApprovalStep("success");
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
-  const selectedPedidoWithStatus = selectedPedido
-    ? { ...selectedPedido, status: getPedidoStatus(selectedPedido.id, selectedPedido.status) }
-    : null;
+  const selectedPedidoWithStatus = selectedPedido;
 
   useEffect(() => {
     if (chat === "1" && selectedPedido?.profissional_id) {

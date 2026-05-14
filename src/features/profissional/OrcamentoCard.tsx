@@ -20,6 +20,7 @@ interface OrcamentoCardProps {
   refresh?: () => void;
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
+  onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
   disableChat?: boolean;
   minhaProposta?: any;
   materiaisCat?: any[];
@@ -38,6 +39,7 @@ export function OrcamentoCard({
   refresh,
   userId,
   onRecusar,
+  onProposalSent,
   disableChat = false,
   minhaProposta,
   materiaisCat,
@@ -97,6 +99,14 @@ export function OrcamentoCard({
       const finalStatus = res?.orcamento?.status || "enviado";
       toast.success(`Proposta enviada! Status do pedido: ${finalStatus}`);
       
+      if (onProposalSent && res?.proposta && res?.orcamento) {
+        onProposalSent({
+          orcamentoId: o.id,
+          proposta: res.proposta,
+          orcamento: res.orcamento
+        });
+      }
+
       if (mode === "revisar") setEditing(false);
       refresh?.();
     } catch (e: any) {

@@ -17,6 +17,7 @@ interface ProfissionalGridProps {
   profGeo: { lat: number | null; lng: number | null; raio: number };
   userId: string;
   onRecusar?: (id: string) => Promise<void>;
+  onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
   disableChat?: boolean;
   minhasPropostas?: any[];
   materiaisCat?: any[];
@@ -37,6 +38,7 @@ export function ProfissionalGrid({
   profGeo,
   userId,
   onRecusar,
+  onProposalSent,
   disableChat = false,
   minhasPropostas,
   materiaisCat,
@@ -76,6 +78,7 @@ export function ProfissionalGrid({
           refresh={refresh}
           userId={userId}
           onRecusar={onRecusar}
+          onProposalSent={onProposalSent}
           minhaProposta={minhasPropostas?.find((p: any) => p.orcamento_id === o.id)}
           materiaisCat={materiaisCat}
           propostaMateriais={propostasMateriais?.filter(

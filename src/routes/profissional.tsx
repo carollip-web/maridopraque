@@ -280,6 +280,25 @@ function ProfissionalArea() {
     setLoadingList(false);
   };
 
+  const handleProposalSent = ({ orcamentoId, proposta, orcamento }: { orcamentoId: string; proposta: any; orcamento: any }) => {
+    console.info("[ProfissionalArea] handleProposalSent - Optimistic Update", { orcamentoId });
+    
+    // 1. Update orcamentos status locally
+    setOrcamentos(prev => prev.map(o => o.id === orcamentoId ? { ...o, ...orcamento } : o));
+    
+    // 2. Add or update proposal in minhasPropostas locally
+    setMinhasPropostas(prev => {
+      const exists = prev.some(p => p.id === proposta.id);
+      if (exists) {
+        return prev.map(p => p.id === proposta.id ? proposta : p);
+      }
+      return [proposta, ...prev];
+    });
+
+    // 3. Trigger background refresh to stay in sync with server
+    refresh();
+  };
+
   useEffect(() => {
     if (!user) return;
     refresh();
@@ -646,6 +665,7 @@ function ProfissionalArea() {
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
                 especialidades={especialidades}
+                onProposalSent={handleProposalSent}
               />
             )}
             {tab === "pedidos" && (
