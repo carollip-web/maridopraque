@@ -27,6 +27,11 @@ export type Orcamento = {
   fotos_concluido: string[] | null;
   checkin_em?: string | null;
   checkout_em?: string | null;
+  tipo_atendimento?: string | null;
+  data_preferida?: string | null;
+  periodo_preferido?: string | null;
+  horario_preferido?: string | null;
+  flexibilidade_agenda?: string | null;
 };
 
 export type ServicoCat = {

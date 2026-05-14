@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { User, MapPin, Camera } from "lucide-react";
+import { User, MapPin, Camera, Calendar, Clock, CheckCircle2, AlertCircle, Sunrise, Sun, Moon } from "lucide-react";
+import { isAgendaCompativel } from "@/lib/agenda";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SLABadge } from "@/components/SLABadge";
@@ -25,26 +25,33 @@ interface OrcamentoCardProps {
   minhaProposta?: any;
   materiaisCat?: any[];
   propostaMateriais?: any[];
+  minhaAgenda?: any;
 }
 
 export function OrcamentoCard({
   o,
-  cliente,
-  clienteCidade,
-  distanciaKm: distKm,
-  range,
-  materiais,
-  mode,
-  enviar,
-  refresh,
-  userId,
-  onRecusar,
-  onProposalSent,
-  disableChat = false,
-  minhaProposta,
-  materiaisCat,
-  propostaMateriais,
-}: OrcamentoCardProps) {
+export function OrcamentoCard(props: OrcamentoCardProps) {
+  const {
+    o,
+    cliente,
+    clienteCidade,
+    distanciaKm: distKm,
+    range,
+    materiais,
+    mode,
+    enviar,
+  } = props;
+  const refresh = props.refresh;
+  const userId = props.userId;
+  const onRecusar = props.onRecusar;
+  const onProposalSent = props.onProposalSent;
+  const disableChat = props.disableChat;
+  const minhaProposta = props.minhaProposta;
+  const materiaisCat = props.materiaisCat;
+  const propostaMateriais = props.propostaMateriais;
+  const minhaAgenda = props.minhaAgenda;
+
+  const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
   const isOportunidade = !minhaProposta && mode === "pegar";
   const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
   const [editing, setEditing] = useState(isOportunidade);
@@ -242,6 +249,39 @@ export function OrcamentoCard({
               (o as any).tipo_atendimento === "homem" ? "Profissional homem" : 
               "Profissional + apoio feminino"
             }
+          </div>
+        )}
+
+        {o.data_preferida && (
+          <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <Calendar className="h-3.5 w-3.5 text-brand" />
+                {new Date(o.data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
+                {" · "}
+                <span className="flex items-center gap-1 opacity-70">
+                  {o.periodo_preferido === 'manha' && <><Sunrise className="h-3 w-3" /> Manhã</>}
+                  {o.periodo_preferido === 'tarde' && <><Sun className="h-3 w-3" /> Tarde</>}
+                  {o.periodo_preferido === 'noite' && <><Moon className="h-3 w-3" /> Noite</>}
+                  {o.periodo_preferido === 'horario_especifico' && <><Clock className="h-3 w-3" /> {o.horario_preferido?.slice(0, 5)}</>}
+                </span>
+              </div>
+              
+              {agendaResult && (
+                <div className={`flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                  agendaResult.compativel ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                }`} title={agendaResult.motivo}>
+                  {agendaResult.compativel ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                  {agendaResult.compativel ? "Compatível" : "Verificar Agenda"}
+                </div>
+              )}
+            </div>
+            
+            {agendaResult && !agendaResult.compativel && (
+              <p className="text-[10px] text-amber-600 font-medium">
+                {agendaResult.motivo}
+              </p>
+            )}
           </div>
         )}
         {o.descricao && (

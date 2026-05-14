@@ -26,8 +26,8 @@ import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
 import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import { distanceKm } from "@/lib/geo";
+import { carregarAgendaProfissional } from "@/lib/agenda";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
@@ -63,6 +63,7 @@ function ProfissionalArea() {
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
   const [sheetOrcamentoId, setSheetOrcamentoId] = useState<string | null>(null);
   const [servicosSubTab, setServicosSubTab] = useState<string>("ativos");
+  const [minhaAgenda, setMinhaAgenda] = useState<any>(null);
   const enviar = useServerFn(enviarOrcamento);
   const {
     notifications: profNotificationsAll,
@@ -143,6 +144,9 @@ function ProfissionalArea() {
 
     setMinhasPropostas(propsList);
     setOrcamentos(list);
+    
+    const agenda = await carregarAgendaProfissional(user.id);
+    setMinhaAgenda(agenda);
 
     const meus = list.filter((o) => o.profissional_id === user?.id);
     const pagos = meus.filter((o) => o.status === "pago" || o.status === "concluido");
@@ -577,6 +581,8 @@ function ProfissionalArea() {
                     search: (prev: any) => ({ ...prev, orcamentoId: undefined }),
                   });
                 }}
+                propostasMateriais={propostasMateriais}
+                minhaAgenda={minhaAgenda}
                 disableChat
               />
             )}
@@ -642,6 +648,7 @@ function ProfissionalArea() {
                 refresh={refresh}
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
+                minhaAgenda={minhaAgenda}
               />
             )}
             {tab === "orcamentos" && (
@@ -666,6 +673,7 @@ function ProfissionalArea() {
                 propostasMateriais={propostasMateriais}
                 especialidades={especialidades}
                 onProposalSent={handleProposalSent}
+                minhaAgenda={minhaAgenda}
               />
             )}
             {tab === "pedidos" && (

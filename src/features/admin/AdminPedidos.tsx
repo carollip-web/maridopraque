@@ -711,9 +711,20 @@ export function AdminPedidos() {
                               o.tipo_atendimento === "mulher" ? "bg-pink-100 text-pink-600" :
                               o.tipo_atendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
                             }`}>
-                              {o.tipo_atendimento === "mulher" ? "Profissional mulher" :
+                               {o.tipo_atendimento === "mulher" ? "Profissional mulher" :
                                o.tipo_atendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
                             </span>
+                          )}
+                          {o.data_preferida && (
+                            <div className="flex items-center gap-1.5 mt-1 text-[9px] text-slate-500 font-medium">
+                              <Calendar className="h-2.5 w-2.5" />
+                              {new Date(o.data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              {" · "}
+                              {o.periodo_preferido === 'manha' && 'Manhã'}
+                              {o.periodo_preferido === 'tarde' && 'Tarde'}
+                              {o.periodo_preferido === 'noite' && 'Noite'}
+                              {o.periodo_preferido === 'horario_especifico' && o.horario_preferido?.slice(0, 5)}
+                            </div>
                           )}
                         </div>
                       </td>

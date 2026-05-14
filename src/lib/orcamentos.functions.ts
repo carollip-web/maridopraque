@@ -16,6 +16,10 @@ const solicitarSchema = z.object({
   descricao: z.string().trim().max(2000).optional(),
   materiais: z.array(materialItemSchema).max(30).optional(),
   tipoAtendimento: z.string().optional(),
+  dataPreferida: z.string().optional(),
+  periodoPreferido: z.string().optional(),
+  horarioPreferido: z.string().optional(),
+  flexibilidadeAgenda: z.string().optional(),
 });
 
 export const solicitarOrcamento = createServerFn({ method: "POST" })
@@ -32,6 +36,10 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
         service_name: data.serviceName,
         descricao: data.descricao ?? null,
         tipo_atendimento: data.tipoAtendimento ?? null,
+        data_preferida: data.dataPreferida ?? null,
+        periodo_preferido: data.periodoPreferido ?? null,
+        horario_preferido: data.horarioPreferido ?? null,
+        flexibilidade_agenda: data.flexibilidadeAgenda ?? 'flexivel',
       } as any)
       .select()
       .single();
@@ -298,7 +306,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     // First verify if the orcamento belongs to the user and is still open
     const { data: orc } = await supabase
       .from("orcamentos")
-      .select("cliente_id, status")
+      .select("cliente_id, status, data_preferida, horario_preferido")
       .eq("id", data.orcamentoId)
       .single();
     if (!orc || orc.cliente_id !== userId) throw new Error("Sem permissão");
@@ -317,7 +325,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     // Reject other proposals
     console.info(
-      `Cliente ${userId} aceitou proposta ${data.propostaId} para o pedido ${data.orcamentoId}`,
+      `Cliente ${userId} aceitou proposta ${data.propostaId} for pedido ${data.orcamentoId}`,
     );
     await supabase
       .from("propostas")
@@ -347,15 +355,25 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     }
 
     // Update orcamento
+    const updateData: any = {
+      profissional_id: prop.profissional_id,
+      valor_servico: prop.valor_servico,
+      observacoes_profissional: prop.observacoes,
+      status: "aprovado",
+      data_aprovacao: new Date().toISOString(),
+    };
+
+    if (orc.data_preferida) {
+      const dt = orc.data_preferida;
+      const hr = orc.horario_preferido || "09:00:00";
+      // Ensure hr is in HH:mm:ss format
+      const fullHr = hr.split(':').length === 2 ? `${hr}:00` : hr;
+      updateData.data_agendada = `${dt}T${fullHr}`;
+    }
+
     const { data: row, error } = await supabase
       .from("orcamentos")
-      .update({
-        profissional_id: prop.profissional_id,
-        valor_servico: prop.valor_servico,
-        observacoes_profissional: prop.observacoes,
-        status: "aprovado",
-        data_aprovacao: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", data.orcamentoId)
       .select()
       .single();

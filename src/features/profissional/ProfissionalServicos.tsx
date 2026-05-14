@@ -22,6 +22,7 @@ interface ProfissionalServicosProps {
   refresh: () => void;
   minhasPropostas?: any[];
   propostasMateriais?: any[];
+  minhaAgenda?: any;
 }
 
 export function ProfissionalServicos({
@@ -81,6 +82,7 @@ export function ProfissionalServicos({
             refresh={refresh}
             minhasPropostas={minhasPropostas}
             propostasMateriais={propostasMateriais}
+            minhaAgenda={minhaAgenda}
             emptyMsg="Você não possui nenhum serviço em andamento."
             emptyIcon={CheckCircle2}
           />
@@ -99,7 +101,8 @@ export function ProfissionalServicos({
             refresh={refresh}
             minhasPropostas={minhasPropostas}
             propostasMateriais={propostasMateriais}
-            emptyMsg="Nenhum histórico de orçamentos encerrados."
+            minhaAgenda={minhaAgenda}
+            emptyMsg="Seu histórico de atendimentos está vazio."
             emptyIcon={XCircle}
           />
         </TabsContent>

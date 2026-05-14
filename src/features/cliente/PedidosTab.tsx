@@ -309,6 +309,17 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     }
                   </div>
                 )}
+                {(sp as any).data_preferida && (
+                  <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 w-fit mt-2">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Agenda: {new Date((sp as any).data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    {" · "}
+                    {(sp as any).periodo_preferido === 'manha' && 'Manhã'}
+                    {(sp as any).periodo_preferido === 'tarde' && 'Tarde'}
+                    {(sp as any).periodo_preferido === 'noite' && 'Noite'}
+                    {(sp as any).periodo_preferido === 'horario_especifico' && (sp as any).horario_preferido?.slice(0, 5)}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-right">

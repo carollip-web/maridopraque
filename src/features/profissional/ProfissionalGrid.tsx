@@ -22,6 +22,7 @@ interface ProfissionalGridProps {
   minhasPropostas?: any[];
   materiaisCat?: any[];
   propostasMateriais?: any[];
+  minhaAgenda?: any;
 }
 
 export function ProfissionalGrid({
@@ -85,6 +86,7 @@ export function ProfissionalGrid({
             (pm: any) =>
               pm.proposta_id === minhasPropostas?.find((p: any) => p.orcamento_id === o.id)?.id,
           )}
+          minhaAgenda={minhaAgenda}
         />
       ))}
     </div>

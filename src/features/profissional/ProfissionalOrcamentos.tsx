@@ -31,6 +31,7 @@ interface ProfissionalOrcamentosProps {
   minhasPropostas?: any[];
   propostasMateriais?: any[];
   especialidades?: string[];
+  minhaAgenda?: any;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
 }
 
@@ -154,6 +155,7 @@ export function ProfissionalOrcamentos({
                   onProposalSent={onProposalSent}
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
+                  minhaAgenda={minhaAgenda}
                   emptyMsg={especialidades.length === 0 
                     ? "Configure suas especialidades para ver oportunidades."
                     : "Nenhuma oportunidade disponível para suas especialidades no momento."}
@@ -175,6 +177,7 @@ export function ProfissionalOrcamentos({
                   onProposalSent={onProposalSent}
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
+                  minhaAgenda={minhaAgenda}
                   emptyMsg="Você ainda não possui pedidos reservados para elaborar."
                   emptyIcon={Pencil}
                 />
@@ -194,6 +197,7 @@ export function ProfissionalOrcamentos({
                   onProposalSent={onProposalSent}
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
+                  minhaAgenda={minhaAgenda}
                   emptyMsg="Nenhuma proposta enviada aguardando resposta."
                   emptyIcon={Send}
                 />

@@ -29,6 +29,11 @@ import {
   Send,
   User,
   Users,
+  Calendar,
+  Sun,
+  Moon,
+  Sunrise,
+  Coffee,
 } from "lucide-react";
 
 export const Route = createFileRoute("/orcamentos")({
@@ -133,10 +138,14 @@ function MeusOrcamentos() {
   const [selServiceId, setSelServiceId] = useState<string>("");
   const [descricao, setDescricao] = useState("");
   const [tipoAtendimento, setTipoAtendimento] = useState<string>("");
+  const [dataPreferida, setDataPreferida] = useState<string>("");
+  const [periodoPreferido, setPeriodoPreferido] = useState<string>("manha");
+  const [horarioPreferido, setHorarioPreferido] = useState<string>("");
+  const [flexibilidadeAgenda, setFlexibilidadeAgenda] = useState<string>("flexivel");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [fotos, setFotos] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
@@ -371,6 +380,10 @@ function MeusOrcamentos() {
     serviceId: z.string().uuid({ message: "Selecione um serviço válido." }),
     descricao: z.string().trim().max(2000, "Descrição muito longa.").optional(),
     tipoAtendimento: z.string().min(1, "Selecione o tipo de atendimento."),
+    dataPreferida: z.string().min(1, "Selecione a data desejada."),
+    periodoPreferido: z.string().min(1, "Selecione o período."),
+    horarioPreferido: z.string().optional(),
+    flexibilidadeAgenda: z.string().optional(),
     materiais: z
       .array(
         z.object({ materialId: z.string().uuid(), quantidade: z.number().int().min(1).max(1000) }),
@@ -382,6 +395,10 @@ function MeusOrcamentos() {
     setSelServiceId("");
     setDescricao("");
     setTipoAtendimento("");
+    setDataPreferida("");
+    setPeriodoPreferido("manha");
+    setHorarioPreferido("");
+    setFlexibilidadeAgenda("flexivel");
     setPicked({});
     setFotos([]);
     setStep(1);
@@ -407,14 +424,14 @@ function MeusOrcamentos() {
       try {
         window.localStorage.setItem(
           draftKey,
-          JSON.stringify({ selServiceId, descricao, tipoAtendimento, picked, step, savedAt: Date.now() }),
+          JSON.stringify({ selServiceId, descricao, tipoAtendimento, dataPreferida, periodoPreferido, horarioPreferido, flexibilidadeAgenda, picked, step, savedAt: Date.now() }),
         );
         setDraftSavedAt(Date.now());
         setHasDraft(true);
       } catch {}
     }, 500);
     return () => window.clearTimeout(t);
-  }, [draftKey, showNew, editingId, selServiceId, descricao, tipoAtendimento, picked, step]);
+  }, [draftKey, showNew, editingId, selServiceId, descricao, tipoAtendimento, dataPreferida, periodoPreferido, horarioPreferido, flexibilidadeAgenda, picked, step]);
 
   const carregarRascunho = () => {
     if (!draftKey || typeof window === "undefined") return;
@@ -425,12 +442,20 @@ function MeusOrcamentos() {
         selServiceId?: string;
         descricao?: string;
         tipoAtendimento?: string;
+        dataPreferida?: string;
+        periodoPreferido?: string;
+        horarioPreferido?: string;
+        flexibilidadeAgenda?: string;
         picked?: Record<string, number>;
-        step?: 1 | 2 | 3 | 4;
+        step?: 1 | 2 | 3 | 4 | 5;
       };
       setSelServiceId(d.selServiceId ?? "");
       setDescricao(d.descricao ?? "");
       setTipoAtendimento(d.tipoAtendimento ?? "");
+      setDataPreferida(d.dataPreferida ?? "");
+      setPeriodoPreferido(d.periodoPreferido ?? "manha");
+      setHorarioPreferido(d.horarioPreferido ?? "");
+      setFlexibilidadeAgenda(d.flexibilidadeAgenda ?? "flexivel");
       setPicked(d.picked ?? {});
       setStep(d.step ?? 1);
       setEditingId(null);
@@ -498,6 +523,10 @@ function MeusOrcamentos() {
       serviceName: selServico.nome,
       descricao: descricao.trim() || undefined,
       tipoAtendimento,
+      dataPreferida,
+      periodoPreferido,
+      horarioPreferido: horarioPreferido || undefined,
+      flexibilidadeAgenda,
       materiais: Object.entries(picked).map(([materialId, quantidade]) => ({
         materialId,
         quantidade,
@@ -532,6 +561,10 @@ function MeusOrcamentos() {
             service_name: payload.serviceName,
             descricao: payload.descricao ?? null,
             tipo_atendimento: payload.tipoAtendimento,
+            data_preferida: payload.dataPreferida,
+            periodo_preferido: payload.periodoPreferido,
+            horario_preferido: payload.horarioPreferido,
+            flexibilidade_agenda: payload.flexibilidadeAgenda,
             fotos_problema: fotos,
           } as any)
           .select("id")
@@ -651,12 +684,12 @@ function MeusOrcamentos() {
               <Save className="h-3 w-3" /> Rascunho salvo automaticamente
             </p>
           )}
-          <ol className="flex flex-wrap items-center gap-2 text-xs font-semibold">
             {[
               { n: 1, label: "Serviço", icon: Wrench },
               { n: 2, label: "Atendimento", icon: User },
-              { n: 3, label: "Materiais", icon: Package },
-              { n: 4, label: "Confirmar", icon: ClipboardCheck },
+              { n: 3, label: "Agenda", icon: Calendar },
+              { n: 4, label: "Materiais", icon: Package },
+              { n: 5, label: "Confirmar", icon: ClipboardCheck },
             ].map((s, i) => {
               const Icon = s.icon;
               const active = step === s.n;
@@ -667,7 +700,7 @@ function MeusOrcamentos() {
                 <li key={s.n} className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => canGo && setStep(s.n as 1 | 2 | 3 | 4)}
+                    onClick={() => canGo && setStep(s.n as 1 | 2 | 3 | 4 | 5)}
                     disabled={!canGo}
                     aria-current={active ? "step" : undefined}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
@@ -683,11 +716,10 @@ function MeusOrcamentos() {
                       {s.n}. {s.label}
                     </span>
                   </button>
-                  {i < 3 && <div className="hidden sm:block w-4 h-px bg-border" />}
+                  {i < 4 && <div className="hidden xl:block w-4 h-px bg-border" />}
                 </li>
               );
             })}
-          </ol>
 
           {/* Resumo dinâmico — atualiza com serviço selecionado e materiais */}
           {selServico &&
@@ -889,8 +921,111 @@ function MeusOrcamentos() {
             </div>
           )}
 
-          {/* Step 3: Materiais */}
+          {/* Step 3: Agenda */}
           {step === 3 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-slate-800">Quando você prefere receber o serviço?</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Vamos buscar profissionais disponíveis na sua região e no melhor horário para você.
+                </p>
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2">
+                    <Calendar className="h-3 w-3" /> Data desejada
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={dataPreferida}
+                    onChange={(e) => setDataPreferida(e.target.value)}
+                    className="w-full px-4 py-3 rounded-2xl border border-border bg-slate-50 focus:ring-2 focus:ring-brand/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2">
+                    <Clock className="h-3 w-3" /> Flexibilidade
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: "flexivel", label: "Flexível" },
+                      { id: "exato", label: "Preciso desse dia/hora" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setFlexibilidadeAgenda(opt.id)}
+                        className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all ${
+                          flexibilidadeAgenda === opt.id
+                            ? "bg-brand/10 border-brand text-brand shadow-sm"
+                            : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs uppercase font-bold text-muted-foreground">Período de preferência</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { id: "manha", label: "Manhã", icon: Sunrise, color: "text-amber-500 bg-amber-50" },
+                    { id: "tarde", label: "Tarde", icon: Sun, color: "text-orange-500 bg-orange-50" },
+                    { id: "noite", label: "Noite", icon: Moon, color: "text-indigo-500 bg-indigo-50" },
+                    { id: "horario_especifico", label: "Hora exata", icon: Clock, color: "text-brand bg-brand-soft" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPeriodoPreferido(p.id)}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 ${
+                        periodoPreferido === p.id
+                          ? "border-brand ring-2 ring-brand/10 bg-white shadow-md scale-[1.02]"
+                          : "border-slate-100 bg-slate-50/50 grayscale hover:grayscale-0 hover:border-slate-200"
+                      }`}
+                    >
+                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${p.color}`}>
+                        <p.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">{p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {periodoPreferido === "horario_especifico" && (
+                <div className="space-y-2 animate-in zoom-in-95 duration-200">
+                  <label className="text-xs uppercase font-bold text-muted-foreground">Selecione o horário</label>
+                  <input
+                    type="time"
+                    value={horarioPreferido}
+                    onChange={(e) => setHorarioPreferido(e.target.value)}
+                    className="w-full max-w-[200px] px-4 py-3 rounded-2xl border border-border bg-slate-50 focus:ring-2 focus:ring-brand/20 outline-none transition-all"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-between gap-2 pt-2">
+                <Button variant="outline" onClick={() => setStep(2)} className="rounded-full gap-2">
+                  <ChevronLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  onClick={() => setStep(4)}
+                  disabled={!dataPreferida || (periodoPreferido === "horario_especifico" && !horarioPreferido)}
+                  className="rounded-full bg-foreground text-background font-bold gap-2"
+                >
+                  Continuar <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Materiais */}
+          {step === 4 && (
             <div className="space-y-4">
               {sugeridos.length > 0 ? (
                 <div className="rounded-2xl bg-slate-50 border border-border p-4">
@@ -979,11 +1114,11 @@ function MeusOrcamentos() {
               )}
 
               <div className="flex justify-between gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="rounded-full gap-2">
+                <Button variant="outline" onClick={() => setStep(3)} className="rounded-full gap-2">
                   <ChevronLeft className="h-4 w-4" /> Voltar
                 </Button>
                 <Button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(5)}
                   className="rounded-full bg-foreground text-background font-bold gap-2"
                 >
                   Continuar <ChevronRight className="h-4 w-4" />
@@ -992,8 +1127,8 @@ function MeusOrcamentos() {
             </div>
           )}
 
-          {/* Step 4: Confirmar */}
-          {step === 4 && selServico && (
+          {/* Step 5: Confirmar */}
+          {step === 5 && selServico && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-border bg-card overflow-hidden">
                 {descricao.trim() && (
@@ -1020,6 +1155,30 @@ function MeusOrcamentos() {
                       {tipoAtendimento === "mulher" ? "Profissional mulher" :
                        tipoAtendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
                     </span>
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 border-b border-border bg-slate-50/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Agenda Desejada
+                  </p>
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-brand-soft flex items-center justify-center text-brand">
+                      <Calendar className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-700">
+                        {dataPreferida ? new Date(dataPreferida + 'T00:00:00').toLocaleDateString('pt-BR', { dateStyle: 'long' }) : "Não informada"}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        {periodoPreferido === 'manha' && <><Sunrise className="h-3 w-3" /> Manhã</>}
+                        {periodoPreferido === 'tarde' && <><Sun className="h-3 w-3" /> Tarde</>}
+                        {periodoPreferido === 'noite' && <><Moon className="h-3 w-3" /> Noite</>}
+                        {periodoPreferido === 'horario_especifico' && <><Clock className="h-3 w-3" /> às {horarioPreferido}</>}
+                        {" · "}
+                        {flexibilidadeAgenda === 'flexivel' ? 'Horário flexível' : 'Horário exato'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1080,7 +1239,7 @@ function MeusOrcamentos() {
               <div className="flex justify-between gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(4)}
                   className="rounded-full gap-2"
                   disabled={saving}
                 >
