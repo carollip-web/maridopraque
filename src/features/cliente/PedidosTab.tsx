@@ -192,7 +192,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (selectedProposta) {
         await aceitarPropostaFn({
           data: { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id },
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
         });
+
         if (dataAgendada) {
           await supabase
             .from("orcamentos")

@@ -107,7 +107,13 @@ function Checkout() {
 
     setIsProcessing(true);
     try {
-      const res = await startPayment({ data: { orcamentoId } });
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await startPayment({ 
+        data: { orcamentoId },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      });
       if (res.ok && res.checkoutUrl) {
         toast.success("Redirecionando para pagamento seguro...");
         window.location.href = res.checkoutUrl;

@@ -85,6 +85,11 @@ export function OrcamentoCard({
     }
     setSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Sua sessão expirou. Por favor, faça login novamente.");
+      }
+
       // Use the server function to create a proposal
       const mats = Object.entries(picked).map(([id, qty]) => ({ materialId: id, quantidade: qty }));
       const res = await enviar({
@@ -93,6 +98,9 @@ export function OrcamentoCard({
           valorServico: v,
           observacoes: obs || null,
           materiais: mats,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
       
