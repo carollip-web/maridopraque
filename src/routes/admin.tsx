@@ -95,6 +95,7 @@ const ALL_SIDEBAR_ITEMS: { id: AdminSection; label: string; icon: React.ElementT
   { id: "config", label: "Configurações", icon: Settings },
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "modo_teste", label: "Modo Teste", icon: TestTube },
+  { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
 ];
 
 function AdminArea() {
