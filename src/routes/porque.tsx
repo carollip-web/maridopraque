@@ -8,7 +8,7 @@ export const Route = createFileRoute("/porque")({
       {
         name: "description",
         content:
-          "Pontualidade, garantia de 30 dias, profissionais verificados e atendimento com acompanhante feminina. Conheça nossos diferenciais.",
+          "Pontualidade, garantia de 30 dias, profissionais verificados e atendimento com apoio feminino durante a visita. Conheça nossos diferenciais.",
       },
       { property: "og:title", content: "Por que escolher a Marido pra Quê?" },
       {
@@ -47,7 +47,7 @@ function PorqueNos() {
             {
               icon: ShieldCheck,
               title: "Segurança Certificada",
-              desc: "Fomos pioneiros no modelo de atendimento com acompanhante feminina, pensando especificamente na tranquilidade de quem mora sozinha.",
+              desc: "Fomos pioneiros no modelo de atendimento com apoio feminino durante a visita, pensando especificamente na tranquilidade de quem mora sozinha.",
             },
             {
               icon: Star,
@@ -118,7 +118,7 @@ function PorqueNos() {
               name: "Beatriz Santos",
               role: "Mora sozinha",
               content:
-                "A opção de vir com acompanhante feminina me deu muita paz de espírito. O serviço foi rápido e deixaram tudo limpinho.",
+                "A opção de vir com apoio feminino me deu muita paz de espírito. O serviço foi rápido e deixaram tudo limpinho.",
             },
             {
               name: "Carla Ferreira",

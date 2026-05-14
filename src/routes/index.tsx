@@ -40,7 +40,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Você não precisa de marido — precisa de quem resolve. Escolha entre profissional mulher, homem ou homem com acompanhante.",
+          "Você não precisa de marido — precisa de quem resolve. Escolha entre profissional mulher, homem ou profissional com apoio feminino.",
       },
     ],
   }),
@@ -129,8 +129,8 @@ const professionals = [
   {
     id: "acompanhante",
     icon: HeartHandshake,
-    label: "Homem + acompanhante feminina",
-    desc: "Pensado para quem mora sozinha: o profissional vem com uma acompanhante mulher.",
+    label: "Profissional + apoio feminino",
+    desc: "Pensado para quem mora sozinha: o profissional vem com uma mulher de apoio durante a visita.",
     highlight: true,
   },
 ];
@@ -162,7 +162,7 @@ const paymentMethods = [
 const testimonials = [
   {
     name: "Camila R.",
-    text: "Pedi atendimento com acompanhante feminina e me senti super segura.",
+    text: "Pedi atendimento com apoio feminino e me senti super segura.",
     role: "Vila Mariana",
   },
   {
@@ -194,7 +194,7 @@ function Index() {
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
               De pequenos reparos à regularização de obras com agilidade e capricho. Você escolhe o
-              profissional — inclusive a opção com acompanhante feminina.
+              profissional — inclusive a opção com apoio feminino durante a visita.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="brand" size="xl">
@@ -275,7 +275,7 @@ function Index() {
             </div>
             <p className="text-muted-foreground md:text-lg">
               Sabemos que receber alguém em casa exige confiança. Por isso oferecemos três opções de
-              atendimento — incluindo acompanhante feminina para clientes que moram sozinhas e
+              atendimento — incluindo apoio feminino durante a visita para clientes que moram sozinhas e
               preferem mais segurança.
             </p>
           </div>
@@ -320,7 +320,7 @@ function Index() {
               <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
               <p>
                 <span className="font-medium text-foreground">Política de segurança.</span> Todos os
-                profissionais e acompanhantes passam por verificação de documentos, antecedentes e
+                profissionais e mulheres de apoio passam por verificação de documentos, antecedentes e
                 avaliação contínua dos clientes.
               </p>
             </div>
@@ -330,7 +330,7 @@ function Index() {
                 <span className="font-medium text-foreground">Disponibilidade.</span> Prefere
                 atendimento por uma profissional mulher? Sem problema! Vamos verificar a
                 disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de
-                uma acompanhante para sua segurança e conforto.
+                apoio feminino durante a visita para sua segurança e conforto.
               </p>
             </div>
           </div>

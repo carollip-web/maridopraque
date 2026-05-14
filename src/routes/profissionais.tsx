@@ -4,11 +4,11 @@ import { UserRound, Wrench, HeartHandshake, ShieldCheck, Star } from "lucide-rea
 export const Route = createFileRoute("/profissionais")({
   head: () => ({
     meta: [
-      { title: "Nossos Profissionais — Mulher, Homem ou com Acompanhante" },
+      { title: "Nossos Profissionais — Mulher, Homem ou com Apoio Feminino" },
       {
         name: "description",
         content:
-          "Escolha o tipo de atendimento: profissional mulher, homem ou homem com acompanhante feminina. Todos verificados e treinados.",
+          "Escolha o tipo de atendimento: profissional mulher, homem ou profissional com apoio feminino durante a visita. Todos verificados e treinados.",
       },
       { property: "og:title", content: "Nossos Profissionais — Marido pra Quê?" },
       {
@@ -35,7 +35,7 @@ const professionalDetails = [
       "Especialista em pequenos reparos e montagens",
     ],
     observation:
-      "Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de uma acompanhante para sua segurança e conforto.",
+      "Prefere atendimento por uma profissional mulher? Sem problema! Vamos verificar a disponibilidade na sua região. Caso não haja, você ainda pode contar com a opção de apoio feminino durante a visita para sua segurança e conforto.",
   },
   {
     id: "homem",
@@ -53,11 +53,11 @@ const professionalDetails = [
   },
   {
     id: "acompanhante",
-    title: "Homem + Acompanhante Feminina",
+    title: "Profissional + Apoio Feminino",
     icon: HeartHandshake,
     description: "Segurança em dobro: o técnico pesado com apoio feminino.",
     longDesc:
-      "Nossa modalidade exclusiva e mais escolhida. O técnico realiza o serviço pesado enquanto uma colaboradora mulher acompanha todo o processo, auxiliando na organização, limpeza e garantindo que você se sinta 100% confortável e segura dentro da sua própria casa.",
+      "Nossa modalidade exclusiva e mais escolhida. O técnico realiza o serviço pesado enquanto uma mulher de apoio acompanha todo o processo, auxiliando na organização, limpeza e garantindo que você se sinta 100% confortável e segura dentro da sua própria casa.",
     benefits: [
       "Você nunca fica sozinha com o técnico",
       "Apoio feminino na organização pós-serviço",
