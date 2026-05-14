@@ -36,28 +36,28 @@ import {
   Coffee,
 } from "lucide-react";
 
-export const Route = createFileRoute("/orcamentos")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    new: s.new === "1" || s.new === 1 || s.new === true ? 1 : undefined,
-    serviceName: typeof s.serviceName === "string" ? s.serviceName : undefined,
-    serviceId: typeof s.serviceId === "string" ? s.serviceId : undefined,
-    categoria: typeof s.categoria === "string" ? s.categoria : undefined,
-  }),
-  head: () => ({
-    meta: [
-      { title: "Meus Orçamentos — Solicitar online | Marido pra Quê?" },
-      {
-        name: "description",
-        content:
-          "Solicite orçamento online em 3 etapas: escolha o serviço, marque os materiais opcionais e envie. Resposta rápida do profissional.",
-      },
-      { property: "og:title", content: "Orçamento online — Marido pra Quê?" },
-      {
-        property: "og:description",
-        content: "Preço tabelado, materiais opcionais e acompanhamento em tempo real.",
-      },
-    ],
-  }),
+  errorComponent: ({ error }) => {
+    return (
+      <div className="p-12 text-center space-y-4 max-w-2xl mx-auto">
+        <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100">
+          <XCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <h2 className="text-2xl font-black tracking-tight mb-2">Ops! Algo deu errado.</h2>
+          <p className="text-sm font-medium opacity-80 mb-6">Ocorreu um erro inesperado ao carregar seus orçamentos.</p>
+          <Button onClick={() => window.location.reload()} variant="outline" className="rounded-full border-red-200 hover:bg-red-100">
+            Tentar novamente
+          </Button>
+        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="text-left mt-8 p-4 bg-slate-900 text-slate-300 rounded-2xl overflow-auto text-[10px] font-mono leading-relaxed shadow-xl border border-slate-800">
+            <p className="text-red-400 font-bold mb-2">DEV ERROR LOG:</p>
+            {error.message}
+            {"\n\n"}
+            {error.stack}
+          </div>
+        )}
+      </div>
+    );
+  },
   component: MeusOrcamentos,
 });
 
@@ -164,56 +164,75 @@ function MeusOrcamentos() {
 
   const refresh = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("orcamentos")
-      .select("*")
-      .eq("cliente_id", user.id)
-      .order("created_at", { ascending: false });
-    const rows = (data as any ?? []) as OrcamentoRow[];
-    setList(rows);
-
-    if (rows.length > 0) {
-      const { data: mats } = await supabase
-        .from("orcamento_materiais")
+    try {
+      const { data, error: orcError } = await supabase
+        .from("orcamentos")
         .select("*")
-        .in(
-          "orcamento_id",
-          rows.map((r) => r.id),
-        );
-      const grouped: Record<string, OrcMaterial[]> = {};
-      (mats ?? []).forEach((m: any) => {
-        (grouped[m.orcamento_id] ||= []).push(m as OrcMaterial);
-      });
-      setOrcMats(grouped);
-
-      const { data: props } = await supabase
-        .from("propostas")
-        .select("*")
-        .in(
-          "orcamento_id",
-          rows.map((r) => r.id),
-        );
+        .eq("cliente_id", user.id)
+        .order("created_at", { ascending: false });
       
-      const pRows = props ?? [];
-      const profIds = Array.from(new Set(pRows.map(p => p.profissional_id).filter(Boolean)));
-      
-      const profsMap: Record<string, string> = {};
-      if (profIds.length > 0) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, nome")
-          .in("id", profIds);
-        (profs ?? []).forEach(pf => {
-          profsMap[pf.id] = pf.nome;
-        });
+      if (orcError) {
+        console.error("[orcamentos.refresh] erro ao buscar orçamentos", orcError);
+        toast.error("Não foi possível carregar seus orçamentos.");
+        return;
       }
 
-      const propGrouped: Record<string, any[]> = {};
-      pRows.forEach((p: any) => {
-        const profNome = profsMap[p.profissional_id] || "Profissional";
-        (propGrouped[p.orcamento_id] ||= []).push({ ...p, profNome });
-      });
-      setPropostas(propGrouped);
+      const rows = (data as any ?? []) as OrcamentoRow[];
+      setList(rows);
+
+      if (rows.length > 0) {
+        const { data: mats, error: matsError } = await supabase
+          .from("orcamento_materiais")
+          .select("*")
+          .in(
+            "orcamento_id",
+            rows.map((r) => r.id),
+          );
+        
+        if (matsError) console.error("[orcamentos.refresh] erro ao buscar materiais", matsError);
+
+        const grouped: Record<string, OrcMaterial[]> = {};
+        (mats ?? []).forEach((m: any) => {
+          (grouped[m.orcamento_id] ||= []).push(m as OrcMaterial);
+        });
+        setOrcMats(grouped);
+
+        const { data: props, error: propsError } = await supabase
+          .from("propostas")
+          .select("*")
+          .in(
+            "orcamento_id",
+            rows.map((r) => r.id),
+          );
+        
+        if (propsError) console.error("[orcamentos.refresh] erro ao buscar propostas", propsError);
+        
+        const pRows = props ?? [];
+        const profIds = Array.from(new Set(pRows.map(p => p.profissional_id).filter(Boolean)));
+        
+        const profsMap: Record<string, string> = {};
+        if (profIds.length > 0) {
+          const { data: profs, error: profsError } = await supabase
+            .from("profiles")
+            .select("id, nome")
+            .in("id", profIds);
+          
+          if (profsError) console.error("[orcamentos.refresh] erro ao buscar perfis", profsError);
+
+          (profs ?? []).forEach(pf => {
+            profsMap[pf.id] = pf.nome;
+          });
+        }
+
+        const propGrouped: Record<string, any[]> = {};
+        pRows.forEach((p: any) => {
+          const profNome = profsMap[p.profissional_id] || "Profissional";
+          (propGrouped[p.orcamento_id] ||= []).push({ ...p, profNome });
+        });
+        setPropostas(propGrouped);
+      }
+    } catch (err) {
+      console.error("[orcamentos.refresh] erro inesperado", err);
     }
   };
 
@@ -569,24 +588,35 @@ function MeusOrcamentos() {
           .eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
+        const insertPayload = {
+          cliente_id: userId,
+          service_id: payload.serviceId,
+          service_name: payload.serviceName,
+          descricao: payload.descricao ?? null,
+          tipo_atendimento: payload.tipoAtendimento || null,
+          data_preferida: payload.dataPreferida || null,
+          periodo_preferido: payload.periodoPreferido || null,
+          horario_preferido: payload.horarioPreferido || null,
+          flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
+          fotos_problema: Array.isArray(fotos) ? fotos : [],
+        };
+
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
-          .insert({
-            cliente_id: userId,
-            service_id: payload.serviceId,
-            service_name: payload.serviceName,
-            descricao: payload.descricao ?? null,
-            tipo_atendimento: payload.tipoAtendimento,
-            data_preferida: payload.dataPreferida,
-            periodo_preferido: payload.periodoPreferido,
-            horario_preferido: payload.horarioPreferido,
-            flexibilidade_agenda: payload.flexibilidadeAgenda,
-            fotos_problema: fotos,
-          } as any)
+          .insert(insertPayload as any)
           .select("id")
           .single();
 
-        if (orcamentoError) throw orcamentoError;
+        if (orcamentoError) {
+          console.error("[orcamentos.handleNew] erro ao criar orçamento", {
+            code: orcamentoError.code,
+            message: orcamentoError.message,
+            details: orcamentoError.details,
+            hint: orcamentoError.hint,
+            insertPayload,
+          });
+          throw orcamentoError;
+        }
 
         const novoId = novoOrcamento?.id;
         if (novoId && payload.materiais.length > 0) {
@@ -703,7 +733,7 @@ function MeusOrcamentos() {
               <Save className="h-3 w-3" /> Rascunho salvo automaticamente
             </p>
           )}
-          <ul className="flex flex-wrap items-center justify-center gap-y-3 gap-x-2 md:gap-x-4 py-2 border-b border-slate-50 pb-8">
+          <ol className="flex flex-wrap items-center justify-center gap-y-3 gap-x-2 md:gap-x-4 py-2 border-b border-slate-50 pb-8">
             {[
               { n: 1, label: "Serviço", icon: Wrench },
               { n: 2, label: "Atendimento", icon: User },
@@ -740,7 +770,7 @@ function MeusOrcamentos() {
                 </li>
               );
             })}
-          </ul>
+          </ol>
 
           {/* Resumo dinâmico — atualiza com serviço selecionado e materiais */}
           {selServico &&
@@ -1334,7 +1364,8 @@ function MeusOrcamentos() {
           </div>
         )}
         {list.map((o) => {
-          const hasProps = propostas[o.id] && propostas[o.id].length > 0;
+          const propsForO = propostas[o.id] || [];
+          const hasProps = propsForO.length > 0;
           const s = (o.status === "customizado_pendente" && hasProps)
             ? { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" }
             : (statusLabel[o.status] ?? {
