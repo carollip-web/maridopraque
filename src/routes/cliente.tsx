@@ -53,11 +53,11 @@ export const Route = createFileRoute("/cliente")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
       tab: (search.tab as Tab) || "inicio",
-      id: search.id != null ? String(search.id) : undefined,
-      pedidoId: search.pedidoId != null ? String(search.pedidoId) : undefined,
-      chat: search.chat != null ? String(search.chat) : undefined,
-      details: search.details === "true" || search.details === true,
-    };
+      id: search.id ? String(search.id) : undefined,
+      pedidoId: search.pedidoId ? String(search.pedidoId) : undefined,
+      chat: search.chat ? String(search.chat) : undefined,
+      details: search.details === "true" || search.details === true ? true : undefined,
+    } as any;
   },
   component: ClienteArea,
 });
