@@ -73,7 +73,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
 const enviarSchema = z.object({
   orcamentoId: z.string().uuid(),
   valorServico: z.number().positive().max(100000),
-  observacoes: z.string().trim().max(2000).optional(),
+  observacoes: z.string().trim().max(2000).nullish(),
   materiais: z.array(materialItemSchema).max(30).optional(),
 });
 
@@ -82,6 +82,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => enviarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const observacoes = data.observacoes?.trim() || null;
     console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
     // valida range do catálogo
@@ -139,7 +140,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .from("propostas")
         .update({
           valor_servico: data.valorServico,
-          observacoes: data.observacoes ?? null,
+          observacoes: observacoes,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existingProp.id)
@@ -159,7 +160,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           orcamento_id: data.orcamentoId,
           profissional_id: userId,
           valor_servico: data.valorServico,
-          observacoes: data.observacoes ?? null,
+          observacoes: observacoes,
         })
         .select()
         .single();
