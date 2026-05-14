@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { User, MapPin, Camera, Calendar, Clock, CheckCircle2, AlertCircle, Sunrise, Sun, Moon } from "lucide-react";
 import { isAgendaCompativel } from "@/lib/agenda";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,8 +29,6 @@ interface OrcamentoCardProps {
   minhaAgenda?: any;
 }
 
-export function OrcamentoCard({
-  o,
 export function OrcamentoCard(props: OrcamentoCardProps) {
   const {
     o,
@@ -40,16 +39,16 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     materiais,
     mode,
     enviar,
+    refresh,
+    userId,
+    onRecusar,
+    onProposalSent,
+    disableChat = false,
+    minhaProposta,
+    materiaisCat,
+    propostaMateriais,
+    minhaAgenda,
   } = props;
-  const refresh = props.refresh;
-  const userId = props.userId;
-  const onRecusar = props.onRecusar;
-  const onProposalSent = props.onProposalSent;
-  const disableChat = props.disableChat;
-  const minhaProposta = props.minhaProposta;
-  const materiaisCat = props.materiaisCat;
-  const propostaMateriais = props.propostaMateriais;
-  const minhaAgenda = props.minhaAgenda;
 
   const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
   const isOportunidade = !minhaProposta && mode === "pegar";
