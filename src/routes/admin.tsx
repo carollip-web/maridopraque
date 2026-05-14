@@ -252,6 +252,7 @@ function AdminArea() {
           {activeTab === "config" && canAccess("config") && <AdminConfig />}
           {activeTab === "equipe" && isSuperAdmin && <AdminEquipe />}
           {activeTab === "modo_teste" && isSuperAdmin && <AdminModoTeste />}
+          {activeTab === "auditoria" && isSuperAdmin && <AdminAuditoria />}
         </div>
       </main>
     </div>
