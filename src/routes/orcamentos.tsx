@@ -1432,7 +1432,7 @@ function MeusOrcamentos() {
                   <Button asChild className="bg-brand text-brand-foreground rounded-full font-bold">
                     <Link
                       to="/checkout"
-                      search={{ service: o.service_name, price: Number(o.valor), step: 1 } as any}
+                      search={{ orcamentoId: o.id } as any}
                     >
                       Pagar agora
                     </Link>
