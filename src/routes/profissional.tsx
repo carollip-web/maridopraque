@@ -112,37 +112,36 @@ function ProfissionalArea() {
   const refresh = async () => {
     if (!user) return;
     
-    // 1. Get ALL my proposals first to know which budgets to fetch
-    const { data: myProps } = await supabase
-      .from("propostas")
-      .select("*, orcamento_id")
-      .eq("profissional_id", user.id);
-    const propsList = myProps || [];
-    setMinhasPropostas(propsList);
+    // 1. Fetch EVERYTHING in parallel to ensure consistent state
+    const [propsRes, orcsRes] = await Promise.all([
+      supabase
+        .from("propostas")
+        .select("*, orcamento_id")
+        .eq("profissional_id", user.id),
+      supabase
+        .from("orcamentos")
+        .select("*")
+        .or(`profissional_id.is.null,profissional_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+    ]);
+
+    const propsList = propsRes.data || [];
     const propOrcIds = propsList.map(p => p.orcamento_id);
     
-    // 2. Build the query to include:
-    // - Budgets without professional (radar)
-    // - Budgets where I am the professional (ativos/concluidos)
-    // - Budgets where I sent a proposal (even if not accepted/assigned)
-    let queryStr = `profissional_id.is.null,profissional_id.eq.${user.id}`;
-    if (propOrcIds.length > 0) {
-      // Split into chunks if too many, but for now just one list
-      queryStr += `,id.in.(${propOrcIds.join(",")})`;
+    // If there are budgets where I sent a proposal but I'm NOT the assigned professional,
+    // we need to fetch those too.
+    const missingOrcIds = propOrcIds.filter(id => !orcsRes.data?.some(o => o.id === id));
+    
+    let list = (orcsRes.data || []) as Orcamento[];
+    if (missingOrcIds.length > 0) {
+      const { data: missingOrcs } = await supabase
+        .from("orcamentos")
+        .select("*")
+        .in("id", missingOrcIds);
+      if (missingOrcs) list = [...list, ...(missingOrcs as Orcamento[])];
     }
 
-    const { data, error } = await supabase
-      .from("orcamentos")
-      .select("*")
-      .or(queryStr)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Erro ao carregar orçamentos", { description: error.message });
-      setLoadingList(false);
-      return;
-    }
-    const list = (data ?? []) as Orcamento[];
+    setMinhasPropostas(propsList);
     setOrcamentos(list);
 
     const meus = list.filter((o) => o.profissional_id === user?.id);

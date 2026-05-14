@@ -1,38 +1,43 @@
-
--- RPC para garantir atualização de status pós-proposta ignorando RLS restritiva de update direto
+-- RPC simplificada e robusta para garantir transição de status pós-proposta
 CREATE OR REPLACE FUNCTION public.marcar_orcamento_enviado(_orcamento_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
-SECURITY DEFINER -- Bypasses RLS to allow status update if logic matches
+SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
   v_exists boolean;
   v_updated_id uuid;
   v_status text;
+  v_prof_id uuid;
 BEGIN
-  -- 1. Valida que o usuário autenticado enviou uma proposta para este orçamento
+  v_prof_id := auth.uid();
+  
+  -- 1. Valida que o profissional autenticado enviou uma proposta para este orçamento
   SELECT EXISTS (
     SELECT 1 FROM public.propostas 
     WHERE orcamento_id = _orcamento_id 
-    AND profissional_id = auth.uid()
-    AND status = 'pendente'
+    AND profissional_id = v_prof_id
   ) INTO v_exists;
 
   IF NOT v_exists THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'Proposta pendente não encontrada para este profissional.');
+    RETURN jsonb_build_object('ok', false, 'error', 'Você precisa enviar uma proposta primeiro.');
   END IF;
 
   -- 2. Atualiza o status do orçamento para 'enviado'
-  -- Apenas se estiver em um estado que permita receber propostas
+  -- Permitimos transição se estiver pendente ou se já for enviado (idempotência)
   UPDATE public.orcamentos
-  SET status = 'enviado', updated_at = now()
+  SET 
+    status = 'enviado', 
+    updated_at = now()
   WHERE id = _orcamento_id
   AND status IN ('customizado_pendente', 'enviado')
   RETURNING id, status INTO v_updated_id, v_status;
 
   IF v_updated_id IS NULL THEN
-    RETURN jsonb_build_object('ok', false, 'error', 'Pedido não encontrado ou status atual não permite transição para enviado.');
+    -- Verifica se já foi aprovado por outro ou cancelado
+    SELECT status INTO v_status FROM public.orcamentos WHERE id = _orcamento_id;
+    RETURN jsonb_build_object('ok', false, 'error', 'Pedido em status "' || COALESCE(v_status, 'desconhecido') || '" não permite novas propostas.');
   END IF;
 
   RETURN jsonb_build_object('ok', true, 'status', v_status);
