@@ -31,6 +31,7 @@ const PERMISSIONS: Record<AdminLevel, AdminSection[]> = {
     "config",
     "equipe",
     "modo_teste",
+    "auditoria",
   ],
   admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
   financeiro: ["dashboard", "financeiro"],
