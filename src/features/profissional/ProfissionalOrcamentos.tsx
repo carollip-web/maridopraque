@@ -55,6 +55,7 @@ export function ProfissionalOrcamentos({
   minhasPropostas,
   propostasMateriais,
   especialidades = [],
+  minhaAgenda,
   onProposalSent,
 }: ProfissionalOrcamentosProps) {
   return (

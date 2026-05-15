@@ -360,6 +360,11 @@ export type Database = {
           updated_at: string
           valor: number | null
           valor_servico: number | null
+          tipo_atendimento: string | null
+          data_preferida: string | null
+          periodo_preferido: string | null
+          horario_preferido: string | null
+          flexibilidade_agenda: string | null
         }
         Insert: {
           auto_aprovado?: boolean
@@ -389,6 +394,11 @@ export type Database = {
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
+          tipo_atendimento?: string | null
+          data_preferida?: string | null
+          periodo_preferido?: string | null
+          horario_preferido?: string | null
+          flexibilidade_agenda?: string | null
         }
         Update: {
           auto_aprovado?: boolean
@@ -418,6 +428,11 @@ export type Database = {
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
+          tipo_atendimento?: string | null
+          data_preferida?: string | null
+          periodo_preferido?: string | null
+          horario_preferido?: string | null
+          flexibilidade_agenda?: string | null
         }
         Relationships: [
           {

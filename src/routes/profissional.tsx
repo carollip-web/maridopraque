@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Loader2 } from "lucide-react";
+import { enviarOrcamento } from "@/lib/orcamentos.functions";
 
 // Feature modules
 import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo, ProfissionalTab } from "@/features/profissional/types";
@@ -581,7 +582,7 @@ function ProfissionalArea() {
                     search: (prev: any) => ({ ...prev, orcamentoId: undefined }),
                   });
                 }}
-                propostasMateriais={propostasMateriais}
+                propostaMateriais={propostasMateriais}
                 minhaAgenda={minhaAgenda}
                 disableChat
               />

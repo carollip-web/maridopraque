@@ -40,6 +40,7 @@ export function ProfissionalServicos({
   refresh,
   minhasPropostas,
   propostasMateriais,
+  minhaAgenda,
 }: ProfissionalServicosProps) {
   return (
     <div className="space-y-8">

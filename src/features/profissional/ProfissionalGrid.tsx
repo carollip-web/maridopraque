@@ -44,6 +44,7 @@ export function ProfissionalGrid({
   minhasPropostas,
   materiaisCat,
   propostasMateriais,
+  minhaAgenda,
 }: ProfissionalGridProps) {
   if (items.length === 0) {
     return (
