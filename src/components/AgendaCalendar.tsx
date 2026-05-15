@@ -14,6 +14,15 @@ type Agendamento = {
   status: string;
   duracao_min: number;
 };
+type ReservaAgenda = {
+  id: string;
+  orcamento_id: string | null;
+  inicio: string;
+  fim: string;
+  status: string;
+  motivo: string | null;
+  expires_at: string | null;
+};
 
 const HOUR_START = 7;
 const HOUR_END = 21;
