@@ -23,6 +23,8 @@ interface ProfissionalServicosProps {
   minhasPropostas?: any[];
   propostasMateriais?: any[];
   minhaAgenda?: any;
+  profGenero?: string | null;
+  profApoioFeminino?: boolean;
 }
 
 export function ProfissionalServicos({
@@ -41,6 +43,8 @@ export function ProfissionalServicos({
   minhasPropostas,
   propostasMateriais,
   minhaAgenda,
+  profGenero,
+  profApoioFeminino,
 }: ProfissionalServicosProps) {
   return (
     <div className="space-y-8">
@@ -84,6 +88,8 @@ export function ProfissionalServicos({
             minhasPropostas={minhasPropostas}
             propostasMateriais={propostasMateriais}
             minhaAgenda={minhaAgenda}
+            profGenero={profGenero}
+            profApoioFeminino={profApoioFeminino}
             emptyMsg="Você não possui nenhum serviço em andamento."
             emptyIcon={CheckCircle2}
           />
@@ -103,6 +109,8 @@ export function ProfissionalServicos({
             minhasPropostas={minhasPropostas}
             propostasMateriais={propostasMateriais}
             minhaAgenda={minhaAgenda}
+            profGenero={profGenero}
+            profApoioFeminino={profApoioFeminino}
             emptyMsg="Seu histórico de atendimentos está vazio."
             emptyIcon={XCircle}
           />

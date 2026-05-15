@@ -29,6 +29,7 @@ import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { distanceKm } from "@/lib/geo";
 import { carregarAgendaProfissional } from "@/lib/agenda";
+import { isProfissionalCompativelComTipoAtendimento } from "@/lib/atendimento.compat";
 
 export const Route = createFileRoute("/profissional")({
   validateSearch: z.object({
@@ -94,6 +95,8 @@ function ProfissionalArea() {
   const [slaMedioH, setSlaMedioH] = useState<string>("—");
   const [totalConcluidos, setTotalConcluidos] = useState(0);
   const [recusados, setRecusados] = useState<Set<string>>(new Set());
+  const [profGenero, setProfGenero] = useState<string | null>(null);
+  const [profApoioFeminino, setProfApoioFeminino] = useState(false);
 
   const recusarOrcamento = async (id: string) => {
     if (!user) return;
@@ -207,7 +210,7 @@ function ProfissionalArea() {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
         supabase
           .from("profissional_perfil")
-          .select("ativo, especialidades, lat, lng, raio_atendimento_km")
+          .select("ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino")
           .eq("user_id", user.id)
           .maybeSingle(),
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!),
@@ -220,6 +223,8 @@ function ProfissionalArea() {
           lng: perfil.lng ?? null,
           raio: perfil.raio_atendimento_km ?? 15,
         });
+        setProfGenero((perfil as any).genero ?? null);
+        setProfApoioFeminino(Boolean((perfil as any).oferece_apoio_feminino));
       }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
@@ -399,6 +404,15 @@ function ProfissionalArea() {
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
         
+        // Atendimento Compatibility filter
+        const compat = isProfissionalCompativelComTipoAtendimento({
+          tipoAtendimento: (o as any).tipo_atendimento,
+          genero: profGenero as any,
+          ofereceApoioFeminino: profApoioFeminino,
+        });
+
+        if (!compat.compatible && compat.blockProposal) return false;
+
         return true;
       }
       if (type === "elaboracao") {
@@ -595,6 +609,8 @@ function ProfissionalArea() {
                 }}
                 propostaMateriais={propostasMateriais}
                 minhaAgenda={minhaAgenda}
+                profGenero={profGenero}
+                profApoioFeminino={profApoioFeminino}
                 disableChat
               />
             )}
@@ -661,6 +677,8 @@ function ProfissionalArea() {
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
                 minhaAgenda={minhaAgenda}
+                profGenero={profGenero}
+                profApoioFeminino={profApoioFeminino}
               />
             )}
             {tab === "orcamentos" && (
@@ -686,6 +704,8 @@ function ProfissionalArea() {
                 especialidades={especialidades}
                 onProposalSent={handleProposalSent}
                 minhaAgenda={minhaAgenda}
+                profGenero={profGenero}
+                profApoioFeminino={profApoioFeminino}
               />
             )}
             {tab === "pedidos" && (

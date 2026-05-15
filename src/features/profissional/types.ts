@@ -32,7 +32,13 @@ export type Orcamento = {
   periodo_preferido?: string | null;
   horario_preferido?: string | null;
   flexibilidade_agenda?: string | null;
+  fotos_problema?: string[] | null;
+  descricao?: string | null;
+  genero?: string | null;
+  oferece_apoio_feminino?: boolean | null;
 };
+
+export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar";
 
 export type ServicoCat = {
   id: string;

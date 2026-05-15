@@ -19,6 +19,8 @@ const profileSchema = z.object({
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
   veiculo_proprio: z.boolean().optional(),
+  genero: z.enum(["homem", "mulher", "outro", "nao_informar"]).optional(),
+  oferece_apoio_feminino: z.boolean().optional(),
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
@@ -32,6 +34,8 @@ type ProfissionalPerfilData = {
   raio_atendimento_km?: number | null;
   atende_emergencias?: boolean | null;
   veiculo_proprio?: boolean | null;
+  genero?: string | null;
+  oferece_apoio_feminino?: boolean | null;
 };
 
 export function ProfissionalConfiguracoes() {
@@ -71,6 +75,8 @@ export function ProfissionalConfiguracoes() {
       raio_atendimento_km: 0,
       atende_emergencias: false,
       veiculo_proprio: false,
+      genero: "nao_informar",
+      oferece_apoio_feminino: false,
     },
   });
 
@@ -86,6 +92,8 @@ export function ProfissionalConfiguracoes() {
         raio_atendimento_km: profissionalPerfil.raio_atendimento_km ?? 0,
         atende_emergencias: profissionalPerfil.atende_emergencias ?? false,
         veiculo_proprio: profissionalPerfil.veiculo_proprio ?? false,
+        genero: (profissionalPerfil as any).genero ?? "nao_informar",
+        oferece_apoio_feminino: Boolean((profissionalPerfil as any).oferece_apoio_feminino),
       });
     }
   }, [profile, profissionalPerfil, reset]);
@@ -118,6 +126,8 @@ export function ProfissionalConfiguracoes() {
         raio_atendimento_km: values.raio_atendimento_km,
         atende_emergencias: values.atende_emergencias,
         veiculo_proprio: values.veiculo_proprio,
+        genero: values.genero ?? "nao_informar",
+        oferece_apoio_feminino: values.oferece_apoio_feminino ?? false,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
       } as any)
@@ -309,33 +319,47 @@ export function ProfissionalConfiguracoes() {
               />
             </div>
 
-            {/* Configurações Operacionais Avançadas */}
-            <div className="sm:col-span-2 grid gap-6 sm:grid-cols-2 mt-2 pt-6 border-t border-border/50">
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
-                <div>
-                  <p className="text-sm font-bold text-slate-800">Atendimento 24h / Urgência</p>
-                  <p className="text-xs text-muted-foreground">
-                    Aceita chamados de madrugada e finais de semana.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  {...register("atende_emergencias")}
-                  className="h-5 w-5 accent-brand cursor-pointer"
-                />
+            {/* Compatibilidade de Atendimento */}
+            <div className="sm:col-span-2 rounded-2xl border border-brand/10 bg-brand-soft/10 p-5">
+              <div className="mb-5">
+                <h4 className="text-sm font-bold text-slate-900">Compatibilidade de atendimento</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Essa informação ajuda a mostrar pedidos compatíveis com o tipo de atendimento escolhido pela cliente.
+                </p>
               </div>
-              <div className="flex items-center justify-between p-4 bg-slate-50 border border-border rounded-xl">
-                <div>
-                  <p className="text-sm font-bold text-slate-800">Veículo Próprio</p>
-                  <p className="text-xs text-muted-foreground">
-                    Utilizado para carregar materiais volumosos.
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Gênero para atendimento
+                  </label>
+                  <select
+                    {...register("genero")}
+                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                  >
+                    <option value="nao_informar">Prefiro não informar</option>
+                    <option value="mulher">Mulher</option>
+                    <option value="homem">Homem</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Usado apenas para compatibilidade operacional dos pedidos.
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  {...register("veiculo_proprio")}
-                  className="h-5 w-5 accent-brand cursor-pointer"
-                />
+
+                <label className="flex items-center justify-between gap-4 p-4 bg-white border border-border rounded-xl cursor-pointer">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Apoio feminino disponível</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Marque se você trabalha com uma mulher de apoio para visitas acompanhadas.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    {...register("oferece_apoio_feminino")}
+                    className="h-5 w-5 accent-brand cursor-pointer shrink-0"
+                  />
+                </label>
               </div>
             </div>
 

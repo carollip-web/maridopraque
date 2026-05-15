@@ -32,6 +32,8 @@ interface ProfissionalOrcamentosProps {
   propostasMateriais?: any[];
   especialidades?: string[];
   minhaAgenda?: any;
+  profGenero?: string | null;
+  profApoioFeminino?: boolean;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
 }
 
@@ -56,6 +58,8 @@ export function ProfissionalOrcamentos({
   propostasMateriais,
   especialidades = [],
   minhaAgenda,
+  profGenero,
+  profApoioFeminino,
   onProposalSent,
 }: ProfissionalOrcamentosProps) {
   return (
@@ -157,6 +161,8 @@ export function ProfissionalOrcamentos({
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
                   minhaAgenda={minhaAgenda}
+                  profGenero={profGenero}
+                  profApoioFeminino={profApoioFeminino}
                   emptyMsg={especialidades.length === 0 
                     ? "Configure suas especialidades para ver oportunidades."
                     : "Nenhuma oportunidade disponível para suas especialidades no momento."}
@@ -179,6 +185,8 @@ export function ProfissionalOrcamentos({
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
                   minhaAgenda={minhaAgenda}
+                  profGenero={profGenero}
+                  profApoioFeminino={profApoioFeminino}
                   emptyMsg="Você ainda não possui pedidos reservados para elaborar."
                   emptyIcon={Pencil}
                 />
@@ -199,6 +207,8 @@ export function ProfissionalOrcamentos({
                   minhasPropostas={minhasPropostas}
                   propostasMateriais={propostasMateriais}
                   minhaAgenda={minhaAgenda}
+                  profGenero={profGenero}
+                  profApoioFeminino={profApoioFeminino}
                   emptyMsg="Nenhuma proposta enviada aguardando resposta."
                   emptyIcon={Send}
                 />

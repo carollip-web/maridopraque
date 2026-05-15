@@ -8,6 +8,11 @@ import { PhotoUploader } from "@/components/PhotoUploader";
 import { Button } from "@/components/ui/button";
 import { Orcamento, Profile, ServicoCat, OrcMat } from "./types";
 import { STATUS_META } from "./constants";
+import {
+  isProfissionalCompativelComTipoAtendimento,
+  compatibilityBadgeClass,
+  tipoAtendimentoLabel,
+} from "@/lib/atendimento.compat";
 
 interface OrcamentoCardProps {
   o: Orcamento;
@@ -27,6 +32,8 @@ interface OrcamentoCardProps {
   materiaisCat?: any[];
   propostaMateriais?: any[];
   minhaAgenda?: any;
+  profGenero?: string | null;
+  profApoioFeminino?: boolean;
 }
 
 export function OrcamentoCard(props: OrcamentoCardProps) {
@@ -48,6 +55,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     materiaisCat,
     propostaMateriais,
     minhaAgenda,
+    profGenero,
+    profApoioFeminino,
   } = props;
 
   const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
@@ -98,14 +107,16 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
-  const tipoAtendimentoLabel =
-    (o as any).tipo_atendimento === "mulher"
-      ? "Profissional mulher"
-      : (o as any).tipo_atendimento === "homem"
-        ? "Profissional homem"
-        : (o as any).tipo_atendimento === "homem_com_apoio_feminino"
-          ? "Profissional + apoio feminino"
-          : "Não informado";
+  const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
+    tipoAtendimento: (o as any).tipo_atendimento,
+    genero: profGenero as any,
+    ofereceApoioFeminino: profApoioFeminino,
+  });
+
+  const atendimentoPedidoLabel = tipoAtendimentoLabel((o as any).tipo_atendimento);
+
+  const bloquearEnvioPorAtendimento =
+    !atendimentoCompat.compatible && atendimentoCompat.blockProposal;
 
   const periodoLabel =
     o.periodo_preferido === "manha"
@@ -275,6 +286,21 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         </div>
 
+        {(o as any).tipo_atendimento && (
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+              {atendimentoPedidoLabel}
+            </span>
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
+                atendimentoCompat.level,
+              )}`}
+            >
+              {atendimentoCompat.label}
+            </span>
+          </div>
+        )}
+
         <div className="text-sm space-y-2">
           <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
             <User className="h-4 w-4 shrink-0" />
@@ -326,12 +352,21 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             </div>
           )}
 
+          {bloquearEnvioPorAtendimento && (
+            <div className="mt-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+              <p className="font-bold">{atendimentoCompat.label}</p>
+              <p className="mt-1 text-[11px] leading-relaxed">
+                {atendimentoCompat.reason || "Este pedido exige um tipo de atendimento incompatível com seu perfil."}
+              </p>
+            </div>
+          )}
+
         {showDetails && (
           <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="grid gap-3 sm:grid-cols-2 text-xs">
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Tipo de Atendimento</p>
-                <p className="font-medium text-slate-700">{tipoAtendimentoLabel}</p>
+                <p className="font-medium text-slate-700">{atendimentoPedidoLabel}</p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Agenda Desejada</p>
@@ -408,7 +443,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 <>
                   <Button
                     onClick={handlePegar}
-                    disabled={saving}
+                    disabled={saving || bloquearEnvioPorAtendimento}
                     className="rounded-full bg-brand hover:bg-brand/90 text-white font-bold px-6 shadow-md"
                   >
                     {saving ? "Processando…" : "Pegar Pedido"}
@@ -510,7 +545,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             <div className="flex gap-2">
               <Button
                 onClick={handleEnviar}
-                disabled={saving}
+                disabled={saving || bloquearEnvioPorAtendimento}
                 className="flex-1 rounded-full bg-brand hover:bg-brand/90 text-white font-bold h-11 shadow-lg"
               >
                 {saving ? "Enviando…" : "Enviar Orçamento"}

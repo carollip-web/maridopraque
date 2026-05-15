@@ -23,6 +23,8 @@ interface ProfissionalGridProps {
   materiaisCat?: any[];
   propostasMateriais?: any[];
   minhaAgenda?: any;
+  profGenero?: string | null;
+  profApoioFeminino?: boolean;
 }
 
 export function ProfissionalGrid({
@@ -45,6 +47,8 @@ export function ProfissionalGrid({
   materiaisCat,
   propostasMateriais,
   minhaAgenda,
+  profGenero,
+  profApoioFeminino,
 }: ProfissionalGridProps) {
   if (items.length === 0) {
     return (
@@ -88,6 +92,8 @@ export function ProfissionalGrid({
               pm.proposta_id === minhasPropostas?.find((p: any) => p.orcamento_id === o.id)?.id,
           )}
           minhaAgenda={minhaAgenda}
+          profGenero={profGenero}
+          profApoioFeminino={profApoioFeminino}
         />
       ))}
     </div>

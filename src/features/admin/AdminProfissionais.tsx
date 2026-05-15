@@ -264,6 +264,8 @@ export function AdminProfissionais() {
           servicos: s.servicos,
           rating: s.n > 0 ? s.nota / s.n : null,
           avaliacoes: s.n,
+          genero: perfil?.genero || "nao_informar",
+          oferece_apoio_feminino: !!perfil?.oferece_apoio_feminino,
         };
       });
     },
@@ -647,6 +649,21 @@ export function AdminProfissionais() {
                     </p>
                   </div>
                 )}
+
+                <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Gênero</p>
+                    <p className="text-sm font-medium capitalize">
+                      {selected.genero === "nao_informar" ? "Não informado" : selected.genero}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Apoio Feminino</p>
+                    <p className="text-sm font-medium">
+                      {selected.oferece_apoio_feminino ? "✅ Sim" : "❌ Não"}
+                    </p>
+                  </div>
+                </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-3">

@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { requireAdminLevel } from "./admin-permissions.server";
+import { isProfissionalCompativelComTipoAtendimento } from "./atendimento.compat";
 
 const materialItemSchema = z.object({
   materialId: z.string().uuid(),
@@ -99,7 +100,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     // valida range do catálogo
     const { data: orc } = await supabase
       .from("orcamentos")
-      .select("service_id")
+      .select("service_id, tipo_atendimento")
       .eq("id", data.orcamentoId)
       .single();
 
@@ -131,6 +132,29 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
     if (!roleData) {
       throw new Error("Apenas profissionais podem enviar orçamentos.");
+    }
+
+    // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio)
+    const { data: perfilProfissional, error: perfilError } = await supabase
+      .from("profissional_perfil")
+      .select("genero, oferece_apoio_feminino")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (perfilError) {
+      console.warn("[enviarOrcamento] não foi possível validar perfil operacional", perfilError);
+    }
+
+    const compat = isProfissionalCompativelComTipoAtendimento({
+      tipoAtendimento: (orc as any).tipo_atendimento,
+      genero: perfilProfissional?.genero as any,
+      ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino,
+    });
+
+    if (!compat.compatible && compat.blockProposal) {
+      throw new Error(
+        compat.reason || "Este pedido exige um tipo de atendimento incompatível com seu perfil.",
+      );
     }
 
     // Check for existing pending proposal from this professional

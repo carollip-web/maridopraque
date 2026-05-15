@@ -75,6 +75,8 @@ type FormData = {
   foto_documento_frente: File | null;
   foto_documento_verso: File | null;
   foto_selfie: File | null;
+  genero: string;
+  oferece_apoio_feminino: boolean;
 };
 
 function emptyForm(): FormData {
@@ -99,6 +101,8 @@ function emptyForm(): FormData {
     foto_documento_frente: null,
     foto_documento_verso: null,
     foto_selfie: null,
+    genero: "nao_informar",
+    oferece_apoio_feminino: false,
   };
 }
 
@@ -289,6 +293,8 @@ function ProfissionalCadastro() {
         cadastro_completo: true,
         cadastro_submetido_em: new Date().toISOString(),
         ativo: false,
+        genero: form.genero || "nao_informar",
+        oferece_apoio_feminino: !!form.oferece_apoio_feminino,
       };
 
       const { error } = await (supabase.from("profissional_perfil") as any).upsert(payload);
@@ -479,6 +485,32 @@ function ProfissionalCadastro() {
                     readOnly
                     className="input-field mt-1.5 bg-slate-100 cursor-not-allowed"
                   />
+                </div>
+                <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Gênero para atendimento</label>
+                    <select
+                      value={form.genero}
+                      onChange={(e) => set("genero", e.target.value)}
+                      className="input-field mt-1.5"
+                    >
+                      <option value="nao_informar">Prefiro não informar</option>
+                      <option value="mulher">Mulher</option>
+                      <option value="homem">Homem</option>
+                      <option value="outro">Outro</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center">
+                    <label className="flex items-center gap-3 cursor-pointer mt-5">
+                      <input
+                        type="checkbox"
+                        checked={form.oferece_apoio_feminino}
+                        onChange={(e) => set("oferece_apoio_feminino", e.target.checked)}
+                        className="h-5 w-5 accent-brand rounded border-slate-300"
+                      />
+                      <span className="text-sm font-medium text-slate-700">Ofereço apoio feminino</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </>
