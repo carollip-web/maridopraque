@@ -548,22 +548,22 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     // 6. Agenda Reservation (Optional - don't crash if it fails)
     let reservaCriada = false;
-    if (orc.data_preferida) {
+    if (preferencias.data_preferida) {
       try {
-        const inicio = new Date(`${orc.data_preferida}T00:00:00`);
-        const fim = new Date(`${orc.data_preferida}T00:00:00`);
+        const inicio = new Date(`${preferencias.data_preferida}T00:00:00`);
+        const fim = new Date(`${preferencias.data_preferida}T00:00:00`);
 
-        if (orc.periodo_preferido === "manha") {
+        if (preferencias.periodo_preferido === "manha") {
           inicio.setHours(8, 0, 0);
           fim.setHours(12, 0, 0);
-        } else if (orc.periodo_preferido === "tarde") {
+        } else if (preferencias.periodo_preferido === "tarde") {
           inicio.setHours(13, 0, 0);
           fim.setHours(18, 0, 0);
-        } else if (orc.periodo_preferido === "noite") {
+        } else if (preferencias.periodo_preferido === "noite") {
           inicio.setHours(18, 0, 0);
           fim.setHours(21, 0, 0);
-        } else if (orc.periodo_preferido === "horario_especifico" && orc.horario_preferido) {
-          const [h, m] = orc.horario_preferido.split(":");
+        } else if (preferencias.periodo_preferido === "horario_especifico" && preferencias.horario_preferido) {
+          const [h, m] = preferencias.horario_preferido.split(":");
           inicio.setHours(parseInt(h), parseInt(m), 0);
           fim.setHours(parseInt(h) + 2, parseInt(m), 0);
         } else {
