@@ -627,31 +627,6 @@ function MeusOrcamentos() {
           fotos_problema: Array.isArray(fotos) ? fotos : [],
         };
 
-        const { data: novoOrcamento, error: orcamentoError } = await supabase
-          .from("orcamentos")
-          .insert(basePayload as any)
-          .select("id")
-          .single();
-
-        if (orcamentoError) {
-          console.error("[orcamentos.handleNew] erro ao criar orçamento base", {
-            code: orcamentoError.code,
-            message: orcamentoError.message,
-            details: orcamentoError.details,
-            hint: orcamentoError.hint,
-          });
-
-          toast.error("Não foi possível criar o pedido", {
-            description: orcamentoError.message,
-          });
-
-          throw orcamentoError;
-        }
-
-        const novoId = novoOrcamento?.id;
-        if (!novoId) throw new Error("Pedido criado sem ID retornado.");
-
-        // Update preferences (separate to handle schema cache issues)
         const preferenciasPayload = {
           tipo_atendimento: payload.tipoAtendimento || null,
           data_preferida: payload.dataPreferida || null,
@@ -660,33 +635,64 @@ function MeusOrcamentos() {
           flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
         };
 
-        const { error: preferenciasError } = await (supabase as any)
-          .from("orcamentos")
-          .update(preferenciasPayload)
-          .eq("id", novoId);
+        const insertPayload = {
+          ...basePayload,
+          ...preferenciasPayload,
+          status: "customizado_pendente",
+        };
 
-        if (preferenciasError) {
-          const detalhesPreferencias = [
-            preferenciasError.code ? `code: ${preferenciasError.code}` : null,
-            preferenciasError.message ? `message: ${preferenciasError.message}` : null,
-            preferenciasError.details ? `details: ${preferenciasError.details}` : null,
-            preferenciasError.hint ? `hint: ${preferenciasError.hint}` : null,
+        console.info("[orcamentos.handleNew] criando pedido", {
+          userId,
+          basePayload,
+          preferenciasPayload,
+        });
+
+        const { data: novoOrcamento, error: orcamentoError } = await supabase
+          .from("orcamentos")
+          .insert(insertPayload as any)
+          .select("*")
+          .single();
+
+        if (orcamentoError) {
+          const detalhes = [
+            orcamentoError.code ? `code: ${orcamentoError.code}` : null,
+            orcamentoError.message ? `message: ${orcamentoError.message}` : null,
+            orcamentoError.details ? `details: ${orcamentoError.details}` : null,
+            orcamentoError.hint ? `hint: ${orcamentoError.hint}` : null,
           ].filter(Boolean).join(" | ");
 
-          console.error("[orcamentos.handleNew] falha ao salvar preferências", {
-            code: preferenciasError.code,
-            message: preferenciasError.message,
-            details: preferenciasError.details,
-            hint: preferenciasError.hint,
-            payload: preferenciasPayload,
+          console.error("[orcamentos.handleNew] erro ao criar pedido", {
+            code: orcamentoError.code,
+            message: orcamentoError.message,
+            details: orcamentoError.details,
+            hint: orcamentoError.hint,
+            payload: insertPayload,
           });
 
-          toast.error("Falha ao salvar preferências do pedido", {
-            description: detalhesPreferencias || preferenciasError.message,
+          toast.error("Não foi possível criar o pedido", {
+            description: detalhes || orcamentoError.message,
           });
-          throw new Error(`Falha ao salvar preferências do pedido: ${detalhesPreferencias || preferenciasError.message}`);
-        } else {
-          console.info("[orcamentos.handleNew] preferências salvas", preferenciasPayload);
+
+          throw orcamentoError;
+        }
+
+        const novoId = novoOrcamento?.id;
+        if (!novoId) throw new Error("Pedido criado sem ID retornado.");
+
+        const { data: confirmacao, error: confirmacaoError } = await supabase
+          .from("orcamentos")
+          .select("id,service_name,status,tipo_atendimento,data_preferida,periodo_preferido,horario_preferido")
+          .eq("id", novoId)
+          .maybeSingle();
+
+        console.info("[orcamentos.handleNew] pedido confirmado no banco", confirmacao);
+
+        if (confirmacaoError || !confirmacao) {
+          console.error("[orcamentos.handleNew] confirmação falhou", confirmacaoError);
+          toast.error("Pedido não foi encontrado no banco após criação.", {
+            description: confirmacaoError?.message,
+          });
+          throw new Error("Confirmação do pedido falhou.");
         }
 
         if (payload.materiais.length > 0) {
