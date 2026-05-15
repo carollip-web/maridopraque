@@ -62,6 +62,7 @@ export function AgendaCalendar() {
   const [janelas, setJanelas] = useState<Janela[]>([]);
   const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [reservas, setReservas] = useState<ReservaAgenda[]>([]);
   const [duracao, setDuracao] = useState(60);
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
@@ -79,33 +80,56 @@ export function AgendaCalendar() {
     let alive = true;
     (async () => {
       setLoading(true);
-      const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }] = await Promise.all([
-        supabase
-          .from("profissional_disponibilidade")
-          .select("dia_semana,hora_inicio,hora_fim")
-          .eq("user_id", user.id),
-        supabase
-          .from("profissional_bloqueios")
-          .select("data_inicio,data_fim,motivo")
-          .eq("user_id", user.id)
-          .lt("data_inicio", weekEnd.toISOString())
-          .gt("data_fim", weekStart.toISOString()),
-        supabase
-          .from("orcamentos")
-          .select("id,service_name,data_agendada,status")
-          .eq("profissional_id", user.id)
-          .not("data_agendada", "is", null)
-          .gte("data_agendada", weekStart.toISOString())
-          .lt("data_agendada", weekEnd.toISOString()),
-        supabase
-          .from("profissional_perfil")
-          .select("duracao_padrao_min")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-      ]);
+      const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }, pbaRes] =
+        await Promise.all([
+          supabase
+            .from("profissional_disponibilidade")
+            .select("dia_semana,hora_inicio,hora_fim")
+            .eq("user_id", user.id),
+          supabase
+            .from("profissional_bloqueios")
+            .select("data_inicio,data_fim,motivo")
+            .eq("user_id", user.id)
+            .lt("data_inicio", weekEnd.toISOString())
+            .gt("data_fim", weekStart.toISOString()),
+          supabase
+            .from("orcamentos")
+            .select("id,service_name,data_agendada,status")
+            .eq("profissional_id", user.id)
+            .not("data_agendada", "is", null)
+            .gte("data_agendada", weekStart.toISOString())
+            .lt("data_agendada", weekEnd.toISOString()),
+          supabase
+            .from("profissional_perfil")
+            .select("duracao_padrao_min")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          (supabase as any)
+            .from("profissional_bloqueios_agenda")
+            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at")
+            .eq("profissional_id", user.id)
+            .in("status", ["temporario", "confirmado"])
+            .lt("inicio", weekEnd.toISOString())
+            .gt("fim", weekStart.toISOString()),
+        ]);
       if (!alive) return;
+      if (pbaRes.error) {
+        console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
+      }
+      const now = new Date();
+      const reservasValidas = ((pbaRes.data as ReservaAgenda[]) || []).filter((r) => {
+        if (r.status !== "temporario") return true;
+        if (!r.expires_at) return true;
+        return new Date(r.expires_at) > now;
+      });
+      console.info("[AgendaCalendar] semana visível e reservas", {
+        inicioSemana: weekStart.toISOString(),
+        fimSemana: weekEnd.toISOString(),
+        reservas: reservasValidas,
+      });
       setJanelas((jans as Janela[]) ?? []);
       setBloqueios((blocs as Bloqueio[]) ?? []);
+      setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
       setAgendamentos(((ags as any[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
