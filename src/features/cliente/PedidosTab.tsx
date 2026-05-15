@@ -263,211 +263,321 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   if (selectedPedido) {
     const sp = selectedPedido;
+    const primeiraProposta = sp.propostas?.[0] ?? null;
+    const temProposta = !!primeiraProposta;
+    const aguardandoAprovacao = sp.status === "Aguardando Aprovação";
+    const aguardandoPagamento =
+      sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
+    const pagoOuAgendado = sp.status === "Agendado" || sp.rawStatus === "pago";
+
+    const statusLabel = aguardandoAprovacao
+      ? "Aguardando sua aprovação"
+      : aguardandoPagamento
+        ? "Aguardando pagamento"
+        : pagoOuAgendado
+          ? "Serviço agendado"
+          : sp.status;
+
+    const statusClass = aguardandoAprovacao
+      ? "bg-amber-100 text-amber-700"
+      : aguardandoPagamento
+        ? "bg-emerald-100 text-emerald-700"
+        : pagoOuAgendado
+          ? "bg-green-100 text-green-700"
+          : "bg-slate-100 text-slate-600";
+
+    const propostaValor = primeiraProposta?.valor_servico
+      ? `R$ ${Number(primeiraProposta.valor_servico).toFixed(2)}`
+      : sp.price;
+
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
         <button
           onClick={closePedido}
-          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
+          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors"
         >
           <ChevronLeft className="h-4 w-4" /> Voltar para pedidos
         </button>
 
-        <section className="bg-white rounded-[2.5rem] border border-border p-8 md:p-12 shadow-soft">
-          <div className="flex flex-col md:flex-row justify-between gap-8 mb-12">
-            <div className="flex items-start gap-6">
-              <div
-                className={`h-20 w-20 rounded-3xl flex items-center justify-center font-bold text-xl shrink-0 ${
-                  sp.status === "Agendado"
-                    ? "bg-blue-50 text-blue-600"
-                    : sp.status === "Em Análise"
-                      ? "bg-slate-100 text-slate-600"
-                      : "bg-amber-50 text-amber-600"
-                }`}
-              >
-                {sp.id.slice(0, 4)}
+        <section className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-soft">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-bold text-slate-400 text-sm shrink-0">
+                #{sp.id.slice(0, 4)}
               </div>
               <div>
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-3 ${
-                    sp.status === "Agendado"
-                      ? "bg-green-100 text-green-700"
-                      : sp.status === "Em Análise"
-                        ? "bg-slate-100 text-slate-600"
-                        : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {sp.status}
-                </span>
-                <h2 className="text-3xl font-bold">{sp.title}</h2>
-                <p className="text-muted-foreground mt-2">{sp.description}</p>
-                {(sp as any).tipo_atendimento && (
-                  <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-brand-soft/20 text-brand w-fit mt-3">
-                    <User className="h-3.5 w-3.5" />
-                    Atendimento: {
-                      (sp as any).tipo_atendimento === "mulher" ? "Profissional mulher" :
-                      (sp as any).tipo_atendimento === "homem" ? "Profissional homem" : 
-                      "Profissional + apoio feminino"
-                    }
-                  </div>
-                )}
-                {(sp as any).data_preferida && (
-                  <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 w-fit mt-2">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Agenda: {new Date((sp as any).data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
-                    {" · "}
-                    {(sp as any).periodo_preferido === 'manha' && 'Manhã'}
-                    {(sp as any).periodo_preferido === 'tarde' && 'Tarde'}
-                    {(sp as any).periodo_preferido === 'noite' && 'Noite'}
-                    {(sp as any).periodo_preferido === 'horario_especifico' && (sp as any).horario_preferido?.slice(0, 5)}
-                  </div>
-                )}
+                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-1.5 ${statusClass}`}>
+                  {statusLabel}
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900">{sp.title}</h2>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">
+            <div className="text-left md:text-right w-full md:w-auto pt-4 md:pt-0 border-t md:border-0 border-slate-50">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-0.5">
                 Investimento
               </p>
-              <p className="text-3xl font-bold text-slate-800">{sp.price}</p>
+              <p className="text-2xl font-bold text-slate-900">{propostaValor}</p>
             </div>
           </div>
+        </section>
 
-          <div className="grid gap-12 lg:grid-cols-2">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h4 className="font-bold text-lg flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-brand" /> Timeline do Pedido
-                </h4>
-                <div className="space-y-6 pl-4 border-l-2 border-slate-100">
-                  <div className="relative pl-6">
-                    <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
-                    <p className="text-sm font-bold">Pedido solicitado</p>
-                    <p className="text-xs text-muted-foreground">{sp.date}</p>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+          {/* Coluna Esquerda: Detalhes e Timeline */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm">
+              <h4 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">
+                <Clock className="h-5 w-5 text-brand" /> Linha do tempo
+              </h4>
+              <div className="space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+                <div className="relative pl-8">
+                  <div className="absolute left-0 top-1 h-6 w-6 rounded-full bg-white border-2 border-brand flex items-center justify-center z-10">
+                    <div className="h-2 w-2 rounded-full bg-brand" />
                   </div>
-                  {sp.status !== "Em Análise" && (
-                    <div className="relative pl-6">
-                      <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-brand border-4 border-white shadow-sm" />
-                      <p className="text-sm font-bold">Orçamento enviado</p>
-                      <p className="text-xs text-muted-foreground">Há 1 dia</p>
+                  <p className="text-sm font-bold text-slate-900">Pedido solicitado</p>
+                  <p className="text-xs text-muted-foreground">{sp.date}</p>
+                </div>
+                
+                {(temProposta || sp.status !== "Em Análise") && (
+                  <div className="relative pl-8">
+                    <div className="absolute left-0 top-1 h-6 w-6 rounded-full bg-white border-2 border-brand flex items-center justify-center z-10">
+                      <div className="h-2 w-2 rounded-full bg-brand" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-900">Orçamento enviado</p>
+                    <p className="text-xs text-muted-foreground">Proposta recebida do profissional</p>
+                  </div>
+                )}
+
+                {aguardandoPagamento && (
+                  <div className="relative pl-8">
+                    <div className="absolute left-0 top-1 h-6 w-6 rounded-full bg-white border-2 border-brand flex items-center justify-center z-10">
+                      <div className="h-2 w-2 rounded-full bg-brand" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-900">Aguardando pagamento</p>
+                    <p className="text-xs text-muted-foreground">Aprovação confirmada</p>
+                  </div>
+                )}
+
+                {pagoOuAgendado && (
+                  <div className="relative pl-8">
+                    <div className="absolute left-0 top-1 h-6 w-6 rounded-full bg-green-500 border-2 border-green-500 flex items-center justify-center z-10">
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    </div>
+                    <p className="text-sm font-bold text-green-700">Serviço confirmado ✓</p>
+                    <p className="text-xs text-muted-foreground">Tudo pronto para a execução</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm">
+              <h4 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">
+                <FileText className="h-5 w-5 text-brand" /> Detalhes do pedido
+              </h4>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Descrição do problema</p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{sp.description || "Sem descrição adicional."}</p>
+                </div>
+                <div className="space-y-4">
+                  {sp.tipo_atendimento && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Preferência de atendimento</p>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <User className="h-3.5 w-3.5 text-brand" />
+                        {sp.tipo_atendimento === "mulher" ? "Profissional mulher" :
+                         sp.tipo_atendimento === "homem" ? "Profissional homem" : 
+                         "Profissional + apoio feminino"}
+                      </div>
                     </div>
                   )}
-                  {sp.status === "Agendado" && (
-                    <div className="relative pl-6">
-                      <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-green-500 border-4 border-white shadow-sm" />
-                      <p className="text-sm font-bold">Serviço agendado ✓</p>
-                      <p className="text-xs text-muted-foreground">{sp.date}</p>
+                  {sp.data_preferida && (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Agenda sugerida</p>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                        <Calendar className="h-3.5 w-3.5 text-brand" />
+                        {new Date(sp.data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        {" · "}
+                        {sp.periodo_preferido === 'manha' && 'Manhã'}
+                        {sp.periodo_preferido === 'tarde' && 'Tarde'}
+                        {sp.periodo_preferido === 'noite' && 'Noite'}
+                        {sp.periodo_preferido === 'horario_especifico' && sp.horario_preferido?.slice(0, 5)}
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Proposals Received Section */}
-              {(sp.status === "Aguardando Aprovação" || sp.status === "Em Análise") &&
-                sp.propostas &&
-                sp.propostas.length > 0 && (
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-lg flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-brand" /> Propostas Recebidas
-                    </h4>
-                    <div className="grid gap-4">
-                      {sp.propostas.map((prop: any) => (
-                        <div
-                          key={prop.id}
-                          className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-slate-200" />
-                            <div>
-                              <p className="font-bold">{prop.profNome}</p>
-                              {prop.observacoes && (
-                                <p className="text-xs text-muted-foreground">"{prop.observacoes}"</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-right">
-                              <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
-                                Valor
-                              </p>
-                              <p className="font-bold text-slate-800">
-                                R$ {Number(prop.valor_servico).toFixed(2)}
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="rounded-full bg-brand text-white font-bold px-6"
-                              onClick={() => {
-                                setSelectedProposta(prop);
-                                setDataAgendada(null);
-                                setApprovalStep("schedule");
-                              }}
-                            >
-                              Aceitar Proposta
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
             </div>
 
-            <div className="space-y-6">
-              {sp.prof !== "-" && (
-                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                    Profissional Responsável
-                  </h4>
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-slate-200" />
-                    <div>
-                      <p className="font-bold">{sp.prof}</p>
-                      <p className="text-xs text-muted-foreground">Especialista em Manutenção</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="ml-auto rounded-full text-xs font-bold hover:bg-slate-100"
-                      onClick={() => setShowConversar(true)}
-                    >
-                      Conversar
-                    </Button>
+            {sp.fotos_problema && sp.fotos_problema.length > 0 && (
+              <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm">
+                <h4 className="font-bold text-lg mb-6 flex items-center gap-2 text-slate-800">
+                  <Search className="h-5 w-5 text-brand" /> Anexos do problema
+                </h4>
+                <div className="flex flex-wrap gap-4">
+                  {sp.fotos_problema.map((url: string, idx: number) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt={`Anexo ${idx + 1}`}
+                      className="h-24 w-24 object-cover rounded-2xl border border-slate-100 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                      onClick={() => window.open(url, "_blank")}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Coluna Direita: Cards de Ação */}
+          <div className="space-y-6">
+            {aguardandoAprovacao && temProposta && (
+              <div className="bg-white rounded-[2rem] border-2 border-brand p-6 md:p-8 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <div className="bg-brand text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">
+                    Novo
                   </div>
                 </div>
-              )}
-              <div className="flex flex-wrap gap-4">
-                {sp.status === "Aguardando Aprovação" && (
+                <h4 className="font-bold text-xl mb-2 text-slate-900">Proposta recebida</h4>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Revise o valor enviado pelo profissional. Ao aceitar, você segue para o pagamento seguro pela plataforma.
+                </p>
+                
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-6">
+                   <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 rounded-full bg-slate-200 border border-white" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Profissional</p>
+                        <p className="font-bold text-slate-900">{primeiraProposta.profNome}</p>
+                      </div>
+                   </div>
+                   <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Valor final</p>
+                        <p className="text-2xl font-black text-brand">R$ {Number(primeiraProposta.valor_servico).toFixed(2)}</p>
+                      </div>
+                   </div>
+                   {primeiraProposta.observacoes && (
+                     <div className="mt-4 pt-4 border-t border-slate-200">
+                        <p className="text-xs text-muted-foreground italic">"{primeiraProposta.observacoes}"</p>
+                     </div>
+                   )}
+                </div>
+
+                <div className="space-y-3">
                   <Button
-                    className="flex-1 bg-brand text-white rounded-full font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
+                    className="w-full bg-brand text-white rounded-full font-bold h-14 shadow-lg shadow-brand/20 hover:scale-[1.02] transition-all"
                     onClick={() => {
+                      setSelectedProposta(primeiraProposta);
                       setDataAgendada(null);
                       setApprovalStep(sp.profissional_id ? "schedule" : "confirm");
                     }}
                   >
-                    Aprovar Orçamento
+                    Aceitar proposta
                   </Button>
-                )}
-                {(sp.status === "Agendado" || sp.status === "Aprovado") && (
                   <Button
                     variant="outline"
-                    className="flex-1 rounded-full font-bold h-12"
-                    onClick={async () => {
-                      const { toast } = await import("sonner");
-                      toast.success("Pedido de reagendamento enviado ao profissional");
-                    }}
+                    className="w-full rounded-full font-bold h-12 border-slate-200"
+                    onClick={() => setShowConversar(true)}
                   >
-                    Solicitar Reagendamento
+                    Conversar
                   </Button>
-                )}
+                </div>
+                <p className="text-[10px] text-center text-muted-foreground mt-4">
+                  Após aceitar, o próximo passo será o pagamento seguro.
+                </p>
+              </div>
+            )}
+
+            {aguardandoPagamento && (
+              <div className="bg-white rounded-[2rem] border-2 border-emerald-500 p-6 md:p-8 shadow-xl">
+                <h4 className="font-bold text-xl mb-2 text-slate-900">Pagamento pendente</h4>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Sua proposta foi aceita. Para confirmar o serviço, siga para o pagamento seguro.
+                </p>
+                <Button
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-full font-bold h-14 shadow-lg shadow-emerald-200"
+                  onClick={() => navigate({ to: `/checkout?orcamentoId=${sp.id}` })}
+                >
+                  Ir para pagamento seguro
+                </Button>
+              </div>
+            )}
+
+            {sp.status === "Em Análise" && (
+              <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm">
+                <h4 className="font-bold text-lg mb-2 text-slate-900">Aguardando proposta</h4>
+                <p className="text-sm text-muted-foreground">
+                  Seu pedido foi enviado aos profissionais. Assim que uma proposta chegar, ela aparecerá aqui.
+                </p>
+              </div>
+            )}
+
+            {pagoOuAgendado && (
+              <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm bg-green-50/30">
+                <h4 className="font-bold text-lg mb-2 text-green-800">Serviço confirmado</h4>
+                <p className="text-sm text-green-700/80 mb-6">
+                  Pagamento confirmado. Combine os detalhes finais com o profissional pelo chat.
+                </p>
+                <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-green-100">
+                    <div className="h-10 w-10 rounded-full bg-slate-200" />
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Profissional responsável</p>
+                      <p className="font-bold text-slate-900">{sp.prof}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto rounded-full font-bold border-slate-200"
+                      onClick={() => setShowConversar(true)}
+                    >
+                      Chat
+                    </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Outras Propostas (se houver mais de uma) */}
+            {sp.propostas && sp.propostas.length > 1 && (
+              <div className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-sm">
+                <h4 className="font-bold text-sm text-muted-foreground uppercase tracking-widest mb-4">Outras propostas</h4>
+                <div className="space-y-3">
+                  {sp.propostas.slice(1).map((prop: any) => (
+                    <div key={prop.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-4">
+                       <div>
+                         <p className="font-bold text-slate-900 text-sm">{prop.profNome}</p>
+                         <p className="text-xs text-brand font-black">R$ {Number(prop.valor_servico).toFixed(2)}</p>
+                       </div>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         className="rounded-full text-[10px] font-bold uppercase h-8"
+                         onClick={() => {
+                            setSelectedProposta(prop);
+                            setDataAgendada(null);
+                            setApprovalStep(sp.profissional_id ? "schedule" : "confirm");
+                         }}
+                       >
+                         Ver / Aceitar
+                       </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Ações Secundárias */}
+            <div className="p-2 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="flex-1 rounded-full font-bold h-12"
+                  className="rounded-full font-bold h-10 text-xs border-slate-200 text-slate-600"
                   onClick={() => window.open(WHATSAPP_LINK, "_blank")}
                 >
                   Suporte
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 rounded-full font-bold h-12"
+                  className="rounded-full font-bold h-10 text-xs border-slate-200 text-slate-600"
                   onClick={async () => {
                     try {
                       await gerarPdfOrcamento(sp.id);
@@ -476,27 +586,31 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     }
                   }}
                 >
-                  <Download className="h-4 w-4 mr-2" /> Baixar PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-full font-bold h-12 text-red-500 hover:bg-red-50 hover:border-red-200"
-                  disabled={
-                    isDeleting === sp.id || ["pago", "concluido"].includes(sp.status.toLowerCase())
-                  }
-                  onClick={() => handleDeleteOrder(sp.id, sp.title)}
-                >
-                  {isDeleting === sp.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Cancelar Pedido
+                  <Download className="h-3 w-3 mr-1.5" /> Baixar PDF
                 </Button>
               </div>
+              
+              <Button
+                variant="ghost"
+                className="w-full rounded-full font-bold h-10 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+                disabled={
+                  isDeleting === sp.id || ["pago", "concluido"].includes(sp.status.toLowerCase())
+                }
+                onClick={() => handleDeleteOrder(sp.id, sp.title)}
+              >
+                {isDeleting === sp.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3 mr-1.5" />
+                )}
+                Cancelar Pedido
+              </Button>
             </div>
           </div>
-        </section>
+        </div>
+      </div>
+    );
+  }
 
         {showConversar && selectedPedido && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -602,9 +716,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     <div className="h-16 w-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
                       <FileText className="h-8 w-8" />
                     </div>
-                    <h3 className="text-2xl font-bold">Confirmar Aprovação</h3>
+                    <h3 className="text-2xl font-bold">Aceitar proposta</h3>
                     <p className="text-muted-foreground mt-2 text-sm">
-                      Revise o orçamento antes de confirmar
+                      Revise o orçamento antes de aceitar
                     </p>
                   </div>
 
@@ -643,8 +757,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   </div>
 
                   <p className="text-xs text-muted-foreground text-center mb-8 leading-relaxed">
-                    Ao aprovar, você concorda com os termos do serviço. O profissional será
-                    notificado imediatamente.
+                    Ao aceitar, o profissional será notificado e o próximo passo será o pagamento seguro pela plataforma.
                   </p>
 
                   <div className="flex gap-3">
@@ -659,7 +772,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       onClick={handleApprove}
                       className="flex-1 bg-brand text-white rounded-full h-13 font-bold shadow-lg hover:scale-[1.02] transition-transform"
                     >
-                      ✓ Confirmar Aprovação
+                      ✓ Aceitar proposta
                     </Button>
                   </div>
                 </div>
