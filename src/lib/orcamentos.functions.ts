@@ -433,6 +433,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false },
     });
+    const serviceSupabase = serviceClient;
 
     // 1. Fetch proposal first - THIS IS THE SOURCE OF TRUTH
     const { data: prop, error: e_prop } = await serviceClient
@@ -601,7 +602,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
           preferencias.horario_preferido,
         );
 
-        const { data: reservaExistente } = await (serviceClient as any)
+        const { data: reservaExistente } = await (serviceSupabase as any)
           .from("profissional_bloqueios_agenda")
           .select("id")
           .eq("orcamento_id", orcamentoId)
@@ -623,7 +624,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
           console.info("[aceitarProposta] inserindo reserva temporária", payloadReserva);
 
-          const { data: reserva, error: reservaError } = await (serviceClient as any)
+          const { data: reserva, error: reservaError } = await (serviceSupabase as any)
             .from("profissional_bloqueios_agenda")
             .insert(payloadReserva)
             .select("*")
