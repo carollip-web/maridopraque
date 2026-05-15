@@ -220,6 +220,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             Authorization: `Bearer ${session.access_token}`,
           },
         });
+        console.info("[PedidosTab] resultado aceitarProposta", aceiteRes);
         const reservaStatus = (aceiteRes as { agendaReserva?: string } | undefined)?.agendaReserva;
         if (reservaStatus === "sem_data" || reservaStatus === "erro" || reservaStatus === "sem_profissional") {
           toast.info(
