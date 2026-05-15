@@ -301,133 +301,145 @@ export const aceitarProposta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => aceitarPropostaSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
 
-    // First verify if the orcamento belongs to the user and is still open
     console.info("[aceitarProposta] start", { propostaId: data.propostaId, orcamentoId: data.orcamentoId, userId });
 
-    const { data: orc } = await supabase
-      .from("orcamentos")
-      .select("id, cliente_id, status, data_preferida, horario_preferido")
-      .eq("id", data.orcamentoId)
-      .single();
-
-    console.info("[aceitarProposta] orcamento", { id: orc?.id, clienteId: orc?.cliente_id, status: orc?.status });
-
-    if (!orc || orc.cliente_id !== userId) {
-      console.warn("[aceitarProposta] Sem permissão: orcamento não encontrado ou cliente_id mismatch", { userId, orcClienteId: orc?.cliente_id });
-      throw new Error("Sem permissão");
-    }
-
-    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") {
-      throw new Error("Pedido não está mais aberto para propostas.");
-    }
-
-    // Update the specific proposta to aceita, ensuring it belongs to the correct budget
-    const { data: prop, error: e_prop } = await supabase
-      .from("propostas")
-      .select("*")
-      .eq("id", data.propostaId)
-      .eq("orcamento_id", data.orcamentoId)
-      .single();
-
-    if (e_prop || !prop) {
-      console.warn("[aceitarProposta] Proposta não encontrada", { e_prop, propostaId: data.propostaId });
-      throw new Error("Proposta inválida ou não pertence a este orçamento.");
-    }
-
-    if (prop.status !== "pendente") {
-      throw new Error("Essa proposta não está mais disponível.");
-    }
-
-    console.info("[aceitarProposta] proposta validated", { propostaId: prop.id, orcamentoId: prop.orcamento_id, profissionalId: prop.profissional_id });
-
-    // 4. Use service role for updates to bypass RLS if needed, but we ALREADY validated ownership above
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const SUPABASE_URL = process.env.SUPABASE_URL;
 
     if (!SERVICE_KEY || !SUPABASE_URL) {
       console.error("[aceitarProposta] Missing environment variables for Service Role");
-      throw new Error("Configuração do servidor ausente");
+      throw new Error("Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.");
     }
 
     const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
       auth: { persistSession: false }
     });
 
-    // Update the specific proposta to aceita
-    const { data: propUpdated, error: e1 } = await serviceClient
+    // 1. Fetch proposal with service client
+    const { data: prop, error: e_prop } = await serviceClient
       .from("propostas")
-      .update({ status: "aceita" })
+      .select("id, orcamento_id, profissional_id, valor_servico, observacoes, status")
+      .eq("id", data.propostaId)
+      .single();
+
+    if (e_prop || !prop) {
+      console.warn("[aceitarProposta] Proposta não encontrada", { e_prop, propostaId: data.propostaId });
+      throw new Error("Proposta não encontrada.");
+    }
+
+    if (prop.orcamento_id !== data.orcamentoId) {
+      throw new Error("Essa proposta não pertence a este pedido.");
+    }
+
+    if (prop.status !== "pendente") {
+      throw new Error("Essa proposta não está mais disponível.");
+    }
+
+    console.info("[aceitarProposta] proposta validada", { propostaId: prop.id, orcamentoId: prop.orcamento_id });
+
+    // 2. Fetch budget with service client (ONLY id, cliente_id, status)
+    const { data: orc, error: e_orc } = await serviceClient
+      .from("orcamentos")
+      .select("id, cliente_id, status")
+      .eq("id", data.orcamentoId)
+      .single();
+
+    if (e_orc || !orc) {
+      console.warn("[aceitarProposta] Orcamento não encontrado", { e_orc, orcamentoId: data.orcamentoId });
+      throw new Error("Pedido não encontrado.");
+    }
+
+    // 3. Ownership validation
+    if (orc.cliente_id !== userId) {
+      console.warn("[aceitarProposta] Sem permissão: cliente_id mismatch", { userId, orcClienteId: orc.cliente_id });
+      throw new Error("Você não tem permissão para aprovar esta proposta.");
+    }
+
+    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") {
+      console.warn("[aceitarProposta] Pedido com status invalido", { status: orc.status });
+      throw new Error("Pedido não está mais aberto para propostas.");
+    }
+
+    console.info("[aceitarProposta] orcamento validado", { orcamentoId: orc.id, status: orc.status });
+
+    // 4. Update the specific proposta to aceita
+    const { data: propUpdated, error: e_up } = await serviceClient
+      .from("propostas")
+      .update({ 
+        status: "aceita",
+        updated_at: new Date().toISOString()
+      } as any)
       .eq("id", data.propostaId)
       .select()
       .single();
 
-    if (e1) {
-      console.error("[aceitarProposta] error updating proposal", e1);
+    if (e_up) {
+      console.error("[aceitarProposta] error updating proposal", e_up);
       throw new Error("Erro ao atualizar proposta.");
     }
 
-    // Reject other proposals
-    console.info(
-      `Cliente ${userId} aceitou proposta ${data.propostaId} for pedido ${data.orcamentoId}`,
-    );
+    // 5. Reject other proposals
     await serviceClient
       .from("propostas")
       .update({ status: "recusada" })
       .eq("orcamento_id", data.orcamentoId)
       .neq("id", data.propostaId);
 
-    // Copy materials from proposta_materiais to orcamento_materiais
-    const { data: pMats } = await supabase
-      .from("proposta_materiais")
-      .select("*")
-      .eq("proposta_id", prop.id);
-    if (pMats && pMats.length > 0) {
-      // First clear existing orcamento_materiais if any
-      await supabase.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
-      // Insert new ones
-      await supabase.from("orcamento_materiais").insert(
-        pMats.map((m) => ({
-          orcamento_id: data.orcamentoId,
-          material_id: m.material_id,
-          nome_snapshot: m.nome_snapshot,
-          unidade_snapshot: m.unidade_snapshot,
-          quantidade: m.quantidade,
-          preco_unitario: m.preco_unitario,
-        })),
-      );
+    // 6. Copy materials
+    try {
+      const { data: pMats } = await serviceClient
+        .from("proposta_materiais")
+        .select("*")
+        .eq("proposta_id", prop.id);
+      
+      if (pMats && pMats.length > 0) {
+        await serviceClient.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
+        await serviceClient.from("orcamento_materiais").insert(
+          pMats.map((m) => ({
+            orcamento_id: data.orcamentoId,
+            material_id: m.material_id,
+            nome_snapshot: m.nome_snapshot,
+            unidade_snapshot: m.unidade_snapshot,
+            quantidade: m.quantidade,
+            preco_unitario: m.preco_unitario,
+          })),
+        );
+      }
+    } catch (e_mats) {
+      console.error("[aceitarProposta] erro ao copiar materiais (não fatal)", e_mats);
     }
 
-    // Update orcamento
-    const updateData: any = {
+    // 7. Update orcamento
+    const updatePayload: any = {
       profissional_id: prop.profissional_id,
       valor_servico: prop.valor_servico,
+      valor: prop.valor_servico, // Mantendo valor para exibição se o projeto usa
       observacoes_profissional: prop.observacoes,
       status: "aprovado",
       data_aprovacao: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
-    if (orc.data_preferida) {
-      const dt = orc.data_preferida;
-      const hr = orc.horario_preferido || "09:00:00";
-      // Ensure hr is in HH:mm:ss format
-      const fullHr = hr.split(':').length === 2 ? `${hr}:00` : hr;
-      updateData.data_agendada = `${dt}T${fullHr}`;
-    }
-
-    const { data: row, error } = await serviceClient
+    const { data: updatedOrc, error: e_orc_up } = await serviceClient
       .from("orcamentos")
-      .update(updateData)
+      .update(updatePayload)
       .eq("id", data.orcamentoId)
       .select()
       .single();
-    if (error) {
-      console.error("[aceitarProposta] error updating orcamento", error);
-      throw new Error(error.message);
+
+    if (e_orc_up) {
+      console.error("[aceitarProposta] error updating orcamento", e_orc_up);
+      throw new Error("Erro ao atualizar pedido.");
     }
 
-    return { orcamento: row };
+    console.info("[aceitarProposta] sucesso", { orcamentoId: updatedOrc.id, status: updatedOrc.status });
+
+    return { 
+      orcamento: updatedOrc, 
+      proposta: propUpdated 
+    };
   });
 
 const editarSchema = z.object({
