@@ -547,62 +547,119 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     }
 
     // 6. Agenda Reservation (Optional - don't crash if it fails)
-    let reservaCriada = false;
-    if (preferencias.data_preferida) {
+    let reservaStatus: "temporaria" | "ja_existia" | "erro" | "sem_data" | "sem_profissional" = "sem_data";
+
+    console.info("[aceitarProposta] dados para reserva", {
+      propostaId: prop.id,
+      orcamentoId: orc.id,
+      profissionalId: prop.profissional_id,
+      statusOrcamento: orc.status,
+      data_preferida: preferencias.data_preferida,
+      periodo_preferido: preferencias.periodo_preferido,
+      horario_preferido: preferencias.horario_preferido,
+    });
+
+    if (!prop.profissional_id) {
+      console.warn("[aceitarProposta] proposta sem profissional_id, reserva não criada", {
+        propostaId: prop.id,
+      });
+      reservaStatus = "sem_profissional";
+    } else if (preferencias.data_preferida) {
       try {
-        const inicio = new Date(`${preferencias.data_preferida}T00:00:00`);
-        const fim = new Date(`${preferencias.data_preferida}T00:00:00`);
+        const dataStr = String(preferencias.data_preferida);
+        // Build ISO with explicit BR timezone so reservation lands on the picked day,
+        // not at UTC offset (which would shift it back ~3h on Cloudflare workerd).
+        let inicioIso: string | null = null;
+        let fimIso: string | null = null;
+
+        const buildIso = (h: number, m: number) =>
+          `${dataStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00-03:00`;
 
         if (preferencias.periodo_preferido === "manha") {
-          inicio.setHours(8, 0, 0);
-          fim.setHours(12, 0, 0);
+          inicioIso = buildIso(8, 0);
+          fimIso = buildIso(12, 0);
         } else if (preferencias.periodo_preferido === "tarde") {
-          inicio.setHours(13, 0, 0);
-          fim.setHours(18, 0, 0);
+          inicioIso = buildIso(13, 0);
+          fimIso = buildIso(18, 0);
         } else if (preferencias.periodo_preferido === "noite") {
-          inicio.setHours(18, 0, 0);
-          fim.setHours(21, 0, 0);
-        } else if (preferencias.periodo_preferido === "horario_especifico" && preferencias.horario_preferido) {
-          const [h, m] = preferencias.horario_preferido.split(":");
-          inicio.setHours(parseInt(h), parseInt(m), 0);
-          fim.setHours(parseInt(h) + 2, parseInt(m), 0);
+          inicioIso = buildIso(18, 0);
+          fimIso = buildIso(21, 0);
+        } else if (
+          preferencias.periodo_preferido === "horario_especifico" &&
+          preferencias.horario_preferido
+        ) {
+          const [hStr, mStr] = String(preferencias.horario_preferido).split(":");
+          const h = parseInt(hStr, 10);
+          const m = parseInt(mStr ?? "0", 10);
+          const inicioDate = new Date(buildIso(h, m));
+          const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
+          inicioIso = inicioDate.toISOString();
+          fimIso = fimDate.toISOString();
         } else {
-          // Fallback se não houver período claro
-          inicio.setHours(9, 0, 0);
-          fim.setHours(11, 0, 0);
+          inicioIso = buildIso(9, 0);
+          fimIso = buildIso(11, 0);
         }
 
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 2);
-
-        const { error: e_reserva } = await (serviceClient as any)
+        const { data: reservaExistente } = await (serviceClient as any)
           .from("profissional_bloqueios_agenda")
-          .insert({
+          .select("id,status,inicio,fim,expires_at")
+          .eq("orcamento_id", orc.id)
+          .maybeSingle();
+
+        if (reservaExistente) {
+          console.info("[aceitarProposta] reserva já existia para orçamento", reservaExistente);
+          reservaStatus = "ja_existia";
+        } else {
+          const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+          const payload = {
             profissional_id: prop.profissional_id,
             orcamento_id: orc.id,
-            inicio: inicio.toISOString(),
-            fim: fim.toISOString(),
+            inicio: inicioIso,
+            fim: fimIso,
             status: "temporario",
             motivo: "Reserva temporária aguardando pagamento",
-            expires_at: expiresAt.toISOString(),
+            expires_at: expiresAt,
+          };
+
+          const { data: reserva, error: reservaError } = await (serviceClient as any)
+            .from("profissional_bloqueios_agenda")
+            .insert(payload)
+            .select("*")
+            .single();
+
+          console.info("[aceitarProposta] reserva temporária resultado", {
+            reserva,
+            reservaError,
           });
 
-        if (e_reserva) {
-          console.error("[aceitarProposta] erro ao criar reserva temporária", e_reserva);
-        } else {
-          reservaCriada = true;
-          console.info("[aceitarProposta] reserva temporária criada com sucesso");
+          if (reservaError) {
+            console.error("[aceitarProposta] erro ao criar reserva temporária", {
+              code: reservaError.code,
+              message: reservaError.message,
+              details: reservaError.details,
+              hint: reservaError.hint,
+              payload,
+            });
+            reservaStatus = "erro";
+          } else {
+            reservaStatus = "temporaria";
+          }
         }
       } catch (err) {
         console.error("[aceitarProposta] erro inesperado na lógica de reserva", err);
+        reservaStatus = "erro";
       }
+    } else {
+      console.warn("[aceitarProposta] reserva não criada: pedido sem data_preferida", {
+        orcamentoId: orc.id,
+      });
     }
 
     return {
       ok: true,
       orcamento: updatedOrc,
       propostaId: prop.id,
-      agendaReserva: reservaCriada ? "temporaria" : "nao_criada",
+      agendaReserva: reservaStatus,
     };
   });
 
