@@ -227,13 +227,24 @@ function ProfissionalArea() {
           console.error("[ProfissionalArea] erro ao carregar perfil básico", perfilBasicoError);
         }
 
-        perfil = perfilBasico
-          ? {
-              ...perfilBasico,
-              genero: null,
-              oferece_apoio_feminino: false,
-            }
-          : null;
+        if (
+          perfilBasico &&
+          typeof perfilBasico === "object" &&
+          !Array.isArray(perfilBasico)
+        ) {
+          const pb = perfilBasico as any;
+          perfil = {
+            ativo: pb.ativo,
+            especialidades: pb.especialidades || [],
+            lat: pb.lat ?? null,
+            lng: pb.lng ?? null,
+            raio_atendimento_km: pb.raio_atendimento_km ?? 15,
+            genero: null,
+            oferece_apoio_feminino: false,
+          };
+        } else {
+          perfil = null;
+        }
       } else {
         perfil = perfilCompleto;
       }

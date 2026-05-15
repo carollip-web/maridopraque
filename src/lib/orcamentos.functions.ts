@@ -115,11 +115,23 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .eq("id", data.orcamentoId)
         .maybeSingle();
 
-      if (orcBasicoError || !orcBasico) {
-        console.error("[enviarOrcamento] falha crítica ao localizar orçamento", orcBasicoError);
-        throw new Error("Não foi possível localizar o pedido solicitado.");
+      if (
+        orcBasico &&
+        typeof orcBasico === "object" &&
+        !Array.isArray(orcBasico)
+      ) {
+        const ob = orcBasico as any;
+        orc = {
+          id: ob.id,
+          status: ob.status,
+          cliente_id: ob.cliente_id,
+          service_id: ob.service_id ?? null,
+          service_name: ob.service_name ?? null,
+          tipo_atendimento: null,
+        };
+      } else {
+        orc = null;
       }
-      orc = { ...orcBasico, tipo_atendimento: null };
     } else {
       orc = orcCompleto;
     }
@@ -165,13 +177,23 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
     if (perfilError) {
       console.warn("[enviarOrcamento] perfil operacional indisponível (schema cache?), tentando básico", perfilError);
+      
       const { data: perfBasico } = await supabase
         .from("profissional_perfil")
         .select("id")
         .eq("user_id", userId)
         .maybeSingle();
-      
-      perfilProfissional = perfBasico ? { ...perfBasico, genero: null, oferece_apoio_feminino: false } : null;
+
+      if (perfBasico && typeof perfBasico === "object" && !Array.isArray(perfBasico)) {
+        const pb = perfBasico as any;
+        perfilProfissional = {
+          id: pb.id,
+          genero: null,
+          oferece_apoio_feminino: false,
+        };
+      } else {
+        perfilProfissional = null;
+      }
     } else {
       perfilProfissional = perfCompleto;
     }
