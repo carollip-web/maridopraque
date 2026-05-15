@@ -200,9 +200,22 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     setApprovalStep("processing");
     try {
       if (selectedProposta) {
-        console.info("[PedidosTab] Aceitando proposta", { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id });
+        if (!selectedProposta?.id) {
+          toast.error("Proposta inválida. Atualize a página e tente novamente.");
+          return;
+        }
+
+        console.info("[PedidosTab] Aceitando proposta", {
+          propostaId: selectedProposta.id,
+          propostaOrcamentoId: selectedProposta.orcamento_id,
+          selectedPedidoId: selectedPedido.id,
+        });
+
         await aceitarPropostaFn({
-          data: { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id },
+          data: {
+            propostaId: selectedProposta.id,
+            orcamentoId: selectedProposta.orcamento_id || selectedPedido.id,
+          },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },

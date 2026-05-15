@@ -376,8 +376,8 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
   });
 
 const aceitarPropostaSchema = z.object({
-  orcamentoId: z.string().uuid(),
   propostaId: z.string().uuid(),
+  orcamentoId: z.string().uuid().optional(),
 });
 
 export const aceitarProposta = createServerFn({ method: "POST" })
@@ -386,7 +386,11 @@ export const aceitarProposta = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
-    console.info("[aceitarProposta] start", { propostaId: data.propostaId, orcamentoId: data.orcamentoId, userId });
+    console.info("[aceitarProposta] start", {
+      propostaId: data.propostaId,
+      orcamentoIdRecebido: data.orcamentoId,
+      userId,
+    });
 
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -397,32 +401,42 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     }
 
     const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false }
+      auth: { persistSession: false },
     });
 
-    // 1. Fetch proposal with service client
+    // 1. Fetch proposal first - THIS IS THE SOURCE OF TRUTH
     const { data: prop, error: e_prop } = await serviceClient
       .from("propostas")
       .select("id, orcamento_id, profissional_id, valor_servico, observacoes, status")
       .eq("id", data.propostaId)
-      .single();
+      .maybeSingle();
 
-    if (e_prop || !prop) {
-      console.warn("[aceitarProposta] Proposta não encontrada", { e_prop, propostaId: data.propostaId });
+    if (e_prop) {
+      console.error("[aceitarProposta] erro ao buscar proposta", e_prop);
+      throw new Error(`Erro ao carregar proposta: ${e_prop.message}`);
+    }
+
+    if (!prop) {
       throw new Error("Proposta não encontrada.");
     }
 
-    if (prop.orcamento_id !== data.orcamentoId) {
-      throw new Error("Essa proposta não pertence a este pedido.");
+    const orcamentoId = prop.orcamento_id;
+    if (!orcamentoId) {
+      throw new Error("Proposta sem pedido vinculado.");
+    }
+
+    if (data.orcamentoId && data.orcamentoId !== orcamentoId) {
+      console.warn("[aceitarProposta] orcamentoId divergente, usando proposta.orcamento_id", {
+        recebido: data.orcamentoId,
+        real: orcamentoId,
+      });
     }
 
     if (prop.status !== "pendente") {
       throw new Error("Essa proposta não está mais disponível.");
     }
 
-    console.info("[aceitarProposta] proposta validada", { propostaId: prop.id, orcamentoId: prop.orcamento_id });
-
-    // 2. Fetch budget with service client (including agenda fields)
+    // 2. Fetch budget with service client
     const { data: orc, error: e_orc } = await (serviceClient as any)
       .from("orcamentos")
       .select(`
@@ -435,186 +449,142 @@ export const aceitarProposta = createServerFn({ method: "POST" })
         horario_preferido,
         flexibilidade_agenda
       `)
-      .eq("id", data.orcamentoId)
-      .single();
+      .eq("id", orcamentoId)
+      .maybeSingle();
 
-    if (e_orc || !orc) {
-      console.warn("[aceitarProposta] Orcamento não encontrado", { e_orc, orcamentoId: data.orcamentoId });
+    if (e_orc) {
+      console.error("[aceitarProposta] erro ao buscar orçamento", {
+        code: e_orc.code,
+        message: e_orc.message,
+        orcamentoId,
+      });
+      throw new Error(`Erro ao carregar pedido: ${e_orc.message}`);
+    }
+
+    if (!orc) {
       throw new Error("Pedido não encontrado.");
     }
 
     // 3. Ownership validation
     if (orc.cliente_id !== userId) {
-      console.warn("[aceitarProposta] Sem permissão: cliente_id mismatch", { userId, orcClienteId: orc.cliente_id });
+      console.warn("[aceitarProposta] Sem permissão: cliente_id mismatch", {
+        userId,
+        orcClienteId: orc.cliente_id,
+      });
       throw new Error("Você não tem permissão para aprovar esta proposta.");
     }
 
-    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") {
+    // Permitir se status estiver em aberto ou se já foi aprovado por esta mesma proposta (idempotência)
+    const isAllowedStatus = ["customizado_pendente", "enviado"].includes(orc.status);
+    const isAlreadyApprovedByMe =
+      orc.status === "aprovado" && orc.profissional_id === prop.profissional_id;
+
+    if (!isAllowedStatus && !isAlreadyApprovedByMe) {
       console.warn("[aceitarProposta] Pedido com status invalido", { status: orc.status });
       throw new Error("Pedido não está mais aberto para propostas.");
     }
 
-    console.info("[aceitarProposta] orcamento validado", {
-      orcamentoId: orc.id,
-      status: orc.status,
-      agenda: {
-        tipo: orc.tipo_atendimento,
-        data: orc.data_preferida,
-        periodo: orc.periodo_preferido,
-        horario: orc.horario_preferido,
-      }
-    });
-
-    // 4. Update the specific proposta to aceita
-    const { data: propUpdated, error: e_up } = await serviceClient
-      .from("propostas")
-      .update({
-        status: "aceita",
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", data.propostaId)
-      .select()
-      .single();
-
-    if (e_up) {
-      console.error("[aceitarProposta] error updating proposal", e_up);
-      throw new Error("Erro ao atualizar proposta.");
+    if (isAlreadyApprovedByMe) {
+      return { ok: true, message: "Proposta já estava aceita.", orcamento: orc };
     }
 
-    // 5. Reject other proposals
+    console.info("[aceitarProposta] dados validados, processando aceite", {
+      orcamentoId: orc.id,
+      profissionalId: prop.profissional_id,
+    });
+
+    // 4. Update proposals status
+    // Accept this one
+    await serviceClient
+      .from("propostas")
+      .update({ status: "aceita", updated_at: new Date().toISOString() })
+      .eq("id", prop.id);
+
+    // Reject others
     await serviceClient
       .from("propostas")
       .update({ status: "recusada" })
-      .eq("orcamento_id", data.orcamentoId)
-      .neq("id", data.propostaId);
+      .eq("orcamento_id", orc.id)
+      .neq("id", prop.id);
 
-    // 6. Copy materials
-    try {
-      const { data: pMats } = await serviceClient
-        .from("proposta_materiais")
-        .select("*")
-        .eq("proposta_id", prop.id);
-
-      if (pMats && pMats.length > 0) {
-        await serviceClient.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
-        await serviceClient.from("orcamento_materiais").insert(
-          pMats.map((m) => ({
-            orcamento_id: data.orcamentoId,
-            material_id: m.material_id,
-            nome_snapshot: m.nome_snapshot,
-            unidade_snapshot: m.unidade_snapshot,
-            quantidade: m.quantidade,
-            preco_unitario: m.preco_unitario,
-          })),
-        );
-      }
-    } catch (e_mats) {
-      console.error("[aceitarProposta] erro ao copiar materiais (não fatal)", e_mats);
-    }
-
-    // 7. Update orcamento
-    const updatePayload: any = {
-      profissional_id: prop.profissional_id,
-      valor_servico: prop.valor_servico,
-      valor: prop.valor_servico, // Mantendo valor para exibição se o projeto usa
-      observacoes_profissional: prop.observacoes,
-      status: "aprovado",
-      data_aprovacao: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const { data: updatedOrc, error: e_orc_up } = await serviceClient
+    // 5. Update Budget status and professional assignment
+    const { data: updatedOrc, error: e_up_orc } = await serviceClient
       .from("orcamentos")
-      .update(updatePayload)
-      .eq("id", data.orcamentoId)
-      .select("*, propostas!propostas_orcamento_id_fkey(*)")
+      .update({
+        status: "aprovado",
+        profissional_id: prop.profissional_id,
+        valor_servico: prop.valor_servico,
+        valor: prop.valor_servico, // Mantendo paridade se usado
+        observacoes_profissional: prop.observacoes,
+        data_aprovacao: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orc.id)
+      .select()
       .single();
 
-    if (e_orc_up) {
-      console.error("[aceitarProposta] error updating orcamento", e_orc_up);
-      throw new Error("Erro ao atualizar pedido.");
+    if (e_up_orc) {
+      console.error("[aceitarProposta] erro ao atualizar orçamento", e_up_orc);
+      throw new Error(`Falha ao atualizar pedido: ${e_up_orc.message}`);
     }
 
-    // 8. Implementar reserva temporária de agenda
-    let agendaReserva = "none";
-    if (updatedOrc.data_preferida) {
+    // 6. Agenda Reservation (Optional - don't crash if it fails)
+    let reservaCriada = false;
+    if (orc.data_preferida) {
       try {
-        const baseDate = updatedOrc.data_preferida;
-        let inicioStr = "";
-        let fimStr = "";
+        const inicio = new Date(`${orc.data_preferida}T00:00:00`);
+        const fim = new Date(`${orc.data_preferida}T00:00:00`);
 
-        if (updatedOrc.periodo_preferido === "manha") {
-          inicioStr = `${baseDate}T08:00:00Z`;
-          fimStr = `${baseDate}T12:00:00Z`;
-        } else if (updatedOrc.periodo_preferido === "tarde") {
-          inicioStr = `${baseDate}T13:00:00Z`;
-          fimStr = `${baseDate}T18:00:00Z`;
-        } else if (updatedOrc.periodo_preferido === "noite") {
-          inicioStr = `${baseDate}T18:00:00Z`;
-          fimStr = `${baseDate}T21:00:00Z`;
-        } else if (updatedOrc.periodo_preferido === "horario_especifico" && updatedOrc.horario_preferido) {
-          const h = updatedOrc.horario_preferido.length === 5 ? `${updatedOrc.horario_preferido}:00` : updatedOrc.horario_preferido;
-          inicioStr = `${baseDate}T${h}Z`;
-          const d = new Date(inicioStr);
-          d.setHours(d.getHours() + 2);
-          fimStr = d.toISOString();
+        if (orc.periodo_preferido === "manha") {
+          inicio.setHours(8, 0, 0);
+          fim.setHours(12, 0, 0);
+        } else if (orc.periodo_preferido === "tarde") {
+          inicio.setHours(13, 0, 0);
+          fim.setHours(18, 0, 0);
+        } else if (orc.periodo_preferido === "noite") {
+          inicio.setHours(18, 0, 0);
+          fim.setHours(21, 0, 0);
+        } else if (orc.periodo_preferido === "horario_especifico" && orc.horario_preferido) {
+          const [h, m] = orc.horario_preferido.split(":");
+          inicio.setHours(parseInt(h), parseInt(m), 0);
+          fim.setHours(parseInt(h) + 2, parseInt(m), 0);
+        } else {
+          // Fallback se não houver período claro
+          inicio.setHours(9, 0, 0);
+          fim.setHours(11, 0, 0);
         }
 
-        if (inicioStr && fimStr) {
-          const inicio = new Date(inicioStr).toISOString();
-          const fim = new Date(fimStr).toISOString();
-          const nowIso = new Date().toISOString();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 2);
 
-          // Verificar conflitos (não expirados)
-          const { data: conflitos } = await (serviceClient as any)
-            .from("profissional_bloqueios_agenda")
-            .select("id, status, expires_at")
-            .eq("profissional_id", prop.profissional_id)
-            .in("status", ["temporario", "confirmado"])
-            .lt("inicio", fim)
-            .gt("fim", inicio);
-
-          const conflitosValidos = (conflitos || []).filter((c: any) => {
-            if (c.status !== "temporario") return true;
-            if (!c.expires_at) return true;
-            return new Date(c.expires_at) > new Date();
+        const { error: e_reserva } = await (serviceClient as any)
+          .from("profissional_bloqueios_agenda")
+          .insert({
+            profissional_id: prop.profissional_id,
+            orcamento_id: orc.id,
+            inicio: inicio.toISOString(),
+            fim: fim.toISOString(),
+            status: "temporario",
+            motivo: "Reserva temporária aguardando pagamento",
+            expires_at: expiresAt.toISOString(),
           });
 
-          if (conflitosValidos.length > 0) {
-            console.warn("[aceitarProposta] conflito ao reservar agenda", { orcamentoId: updatedOrc.id, conflitosValidos });
-            agendaReserva = "conflito";
-          } else {
-            const { error: e_block } = await (serviceClient as any)
-              .from("profissional_bloqueios_agenda")
-              .insert({
-                profissional_id: prop.profissional_id,
-                orcamento_id: updatedOrc.id,
-                inicio,
-                fim,
-                status: "temporario",
-                motivo: "Reserva temporária aguardando pagamento",
-                expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2h
-              });
-
-            if (e_block) {
-              console.error("[aceitarProposta] erro ao criar bloqueio", e_block);
-              agendaReserva = "erro";
-            } else {
-              agendaReserva = "sucesso";
-              console.info("[aceitarProposta] reserva temporária criada com sucesso");
-            }
-          }
+        if (e_reserva) {
+          console.error("[aceitarProposta] erro ao criar reserva temporária", e_reserva);
+        } else {
+          reservaCriada = true;
+          console.info("[aceitarProposta] reserva temporária criada com sucesso");
         }
-      } catch (e_agenda) {
-        console.error("[aceitarProposta] erro inesperado ao processar agenda", e_agenda);
-        agendaReserva = "erro";
+      } catch (err) {
+        console.error("[aceitarProposta] erro inesperado na lógica de reserva", err);
       }
     }
 
     return {
+      ok: true,
       orcamento: updatedOrc,
-      proposta: propUpdated,
-      agendaReserva
+      propostaId: prop.id,
+      agendaReserva: reservaCriada ? "temporaria" : "nao_criada",
     };
   });
 
