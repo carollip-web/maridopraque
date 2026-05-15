@@ -332,6 +332,40 @@ export function AgendaCalendar() {
                         </div>
                       );
                     })}
+
+                  {/* Reservas (bloqueios_agenda) */}
+                  {reservas
+                    .filter((r) => {
+                      const ini = new Date(r.inicio);
+                      return ini >= dayStart && ini < dayEnd;
+                    })
+                    .map((r) => {
+                      const ini = new Date(r.inicio);
+                      const fim = new Date(r.fim);
+                      const startMin = ini.getHours() * 60 + ini.getMinutes();
+                      const endMin = fim.getHours() * 60 + fim.getMinutes();
+                      const top = (startMin / 60 - HOUR_START) * PX_PER_HOUR;
+                      const height = Math.max(28, ((endMin - startMin) / 60) * PX_PER_HOUR);
+                      const isPendente = r.status === "temporario";
+                      const cls = isPendente
+                        ? "bg-amber-100 border border-amber-400 text-amber-900"
+                        : "bg-emerald-100 border border-emerald-500 text-emerald-900";
+                      const label = isPendente ? "Reserva pendente" : "Confirmado";
+                      return (
+                        <div
+                          key={r.id}
+                          className={`absolute left-1 right-1 rounded-md px-1.5 py-1 shadow-sm overflow-hidden ${cls}`}
+                          style={{ top, height }}
+                          title={`${label} • ${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                        >
+                          <p className="text-[10px] font-bold leading-tight truncate">{label}</p>
+                          <p className="text-[10px] leading-tight truncate opacity-90">
+                            {ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            –{fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      );
+                    })}
                 </div>
               );
             })}
