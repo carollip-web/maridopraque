@@ -84,21 +84,20 @@ export function ProfissionalConfiguracoes() {
   });
 
   useEffect(() => {
-    if (profile && profissionalPerfil) {
-      reset({
-        nome: profile.nome ?? "",
-        whatsapp: profile.whatsapp ?? "",
-        bio: profissionalPerfil.bio ?? "",
-        cidade: profissionalPerfil.cidade ?? "",
-        chave_pix: profissionalPerfil.chave_pix ?? "",
-        anos_experiencia: profissionalPerfil.anos_experiencia ?? 0,
-        raio_atendimento_km: profissionalPerfil.raio_atendimento_km ?? 0,
-        atende_emergencias: profissionalPerfil.atende_emergencias ?? false,
-        veiculo_proprio: profissionalPerfil.veiculo_proprio ?? false,
-        genero: (profissionalPerfil as any).genero ?? "nao_informar",
-        oferece_apoio_feminino: Boolean((profissionalPerfil as any).oferece_apoio_feminino),
-      });
-    }
+    if (!profile) return;
+    reset({
+      nome: profile.nome ?? "",
+      whatsapp: profile.whatsapp ?? "",
+      bio: profissionalPerfil?.bio ?? "",
+      cidade: profissionalPerfil?.cidade ?? "",
+      chave_pix: profissionalPerfil?.chave_pix ?? "",
+      anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
+      raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
+      atende_emergencias: !!profissionalPerfil?.atende_emergencias,
+      veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
+      genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
+      oferece_apoio_feminino: !!profissionalPerfil?.oferece_apoio_feminino,
+    });
   }, [profile, profissionalPerfil, reset]);
 
   const handleSaveProfile = async (values: ProfileValues) => {
