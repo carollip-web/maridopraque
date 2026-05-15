@@ -211,7 +211,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           selectedPedidoId: selectedPedido.id,
         });
 
-        await aceitarPropostaFn({
+        const aceiteRes = await aceitarPropostaFn({
           data: {
             propostaId: selectedProposta.id,
             orcamentoId: selectedProposta.orcamento_id || selectedPedido.id,
@@ -220,6 +220,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             Authorization: `Bearer ${session.access_token}`,
           },
         });
+        const reservaStatus = (aceiteRes as { agendaReserva?: string } | undefined)?.agendaReserva;
+        if (reservaStatus === "sem_data" || reservaStatus === "erro" || reservaStatus === "sem_profissional") {
+          toast.info(
+            "Proposta aceita, mas a agenda não foi reservada automaticamente. Combine o horário pelo chat.",
+          );
+        }
 
         if (dataAgendada) {
           console.info("[PedidosTab] Atualizando data agendada", { data: dataAgendada });
