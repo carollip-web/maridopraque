@@ -124,54 +124,56 @@ export function ProfissionalConfiguracoes() {
         }
       }
 
-      // 3. Update profissional_perfil basic fields
-      const basicPayload = {
+      // 3. Upsert profissional_perfil (single payload, all fields)
+      const profissionalPayload = {
+        user_id: user.id,
         bio: values.bio || null,
         cidade: values.cidade || null,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: basicError } = await supabase
-        .from("profissional_perfil")
-        .update(basicPayload)
-        .eq("user_id", user.id);
-
-      if (basicError) throw basicError;
-
-      // 4. Update operational/advanced fields (Secondary block to avoid schema cache issues)
-      const advancedPayload = {
-        anos_experiencia: values.anos_experiencia ?? null,
-        raio_atendimento_km: values.raio_atendimento_km ?? null,
         chave_pix: values.chave_pix || null,
+        anos_experiencia: Number(values.anos_experiencia ?? 0),
+        raio_atendimento_km: Number(values.raio_atendimento_km ?? 15),
         atende_emergencias: !!values.atende_emergencias,
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        updated_at: new Date().toISOString(),
       };
 
-      const { error: advancedError } = await supabase
+      const { error: perfilError } = await supabase
         .from("profissional_perfil")
-        .update(advancedPayload as any)
-        .eq("user_id", user.id);
+        .upsert(profissionalPayload as any, { onConflict: "user_id" });
 
-      if (advancedError) {
-        console.warn("[ProfissionalConfiguracoes] advanced fields not saved", advancedError);
-        if (
-          advancedError.code === "PGRST204" ||
-          advancedError.message?.includes("schema cache")
-        ) {
-          toast.info(
-            "Perfil salvo. Alguns campos avançados serão sincronizados assim que o sistema atualizar."
-          );
-        } else {
-          toast.error("Perfil salvo, mas alguns campos avançados não foram atualizados.");
-        }
-      } else {
-        toast.success("Perfil atualizado com sucesso!");
+      if (perfilError) {
+        console.error("[ProfissionalConfiguracoes] erro ao salvar profissional_perfil", {
+          code: perfilError.code,
+          message: perfilError.message,
+          details: perfilError.details,
+          hint: perfilError.hint,
+          payload: profissionalPayload,
+        });
+        throw perfilError;
       }
 
+      // 4. Confirm persistence
+      const { data: savedPerfil } = await supabase
+        .from("profissional_perfil")
+        .select(
+          "genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      console.info("[ProfissionalConfiguracoes] perfil salvo confirmado", savedPerfil);
+
+      if (savedPerfil && (savedPerfil as any).genero !== profissionalPayload.genero) {
+        toast.error("Perfil enviado, mas os dados não foram confirmados no banco.");
+      } else {
+        toast.success("Perfil salvo com sucesso!");
+      }
+
+      await refetchPerfil();
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (error: any) {
