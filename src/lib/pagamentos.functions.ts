@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const checkoutSchema = z.object({
   orcamentoId: z.string().uuid(),
@@ -102,8 +104,19 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       const checkoutUrl = mpData.init_point;
       const preferenceId = mpData.id;
 
-      // 4. Criar registro de pagamento
-      const { data: pag, error: e2 } = await supabase
+      // 4. Criar registro de pagamento no servidor após validar posse/status.
+      const SUPABASE_URL = process.env.SUPABASE_URL;
+      const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      if (!SUPABASE_URL || !SERVICE_KEY) {
+        throw new Error("Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.");
+      }
+
+      const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+        auth: { persistSession: false },
+      });
+
+      const { data: pag, error: e2 } = await serviceClient
         .from("pagamentos")
         .insert({
           orcamento_id: orc.id,

@@ -436,19 +436,11 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Essa proposta não está mais disponível.");
     }
 
-    // 2. Fetch budget with service client
-    const { data: orc, error: e_orc } = await (serviceClient as any)
+    // 2. Fetch basic budget first. Keep this query free from newer columns so
+    // schema-cache issues never masquerade as "Pedido não encontrado".
+    const { data: orc, error: e_orc } = await serviceClient
       .from("orcamentos")
-      .select(`
-        id,
-        cliente_id,
-        status,
-        tipo_atendimento,
-        data_preferida,
-        periodo_preferido,
-        horario_preferido,
-        flexibilidade_agenda
-      `)
+      .select("id, cliente_id, status")
       .eq("id", orcamentoId)
       .maybeSingle();
 
@@ -474,18 +466,44 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Você não tem permissão para aprovar esta proposta.");
     }
 
-    // Permitir se status estiver em aberto ou se já foi aprovado por esta mesma proposta (idempotência)
-    const isAllowedStatus = ["customizado_pendente", "enviado"].includes(orc.status);
-    const isAlreadyApprovedByMe =
-      orc.status === "aprovado" && orc.profissional_id === prop.profissional_id;
+    let preferencias = {
+      tipo_atendimento: null as string | null,
+      data_preferida: null as string | null,
+      periodo_preferido: null as string | null,
+      horario_preferido: null as string | null,
+      flexibilidade_agenda: null as string | null,
+    };
 
-    if (!isAllowedStatus && !isAlreadyApprovedByMe) {
-      console.warn("[aceitarProposta] Pedido com status invalido", { status: orc.status });
-      throw new Error("Pedido não está mais aberto para propostas.");
+    const { data: pref, error: prefError } = await (serviceClient as any)
+      .from("orcamentos")
+      .select("tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,flexibilidade_agenda")
+      .eq("id", orcamentoId)
+      .maybeSingle();
+
+    if (prefError) {
+      console.warn(`[aceitarProposta] Erro ao carregar preferências do pedido: ${prefError.message}`, {
+        code: prefError.code,
+        message: prefError.message,
+        details: prefError.details,
+        hint: prefError.hint,
+        orcamentoId,
+      });
+    } else if (pref) {
+      preferencias = {
+        tipo_atendimento: pref.tipo_atendimento ?? null,
+        data_preferida: pref.data_preferida ?? null,
+        periodo_preferido: pref.periodo_preferido ?? null,
+        horario_preferido: pref.horario_preferido ?? null,
+        flexibilidade_agenda: pref.flexibilidade_agenda ?? null,
+      };
     }
 
-    if (isAlreadyApprovedByMe) {
-      return { ok: true, message: "Proposta já estava aceita.", orcamento: orc };
+    // Permitir somente pedidos em aberto para proposta.
+    const isAllowedStatus = ["customizado_pendente", "enviado"].includes(orc.status);
+
+    if (!isAllowedStatus) {
+      console.warn("[aceitarProposta] Pedido com status invalido", { status: orc.status });
+      throw new Error("Pedido não está mais aberto para propostas.");
     }
 
     console.info("[aceitarProposta] dados validados, processando aceite", {
@@ -530,22 +548,22 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     // 6. Agenda Reservation (Optional - don't crash if it fails)
     let reservaCriada = false;
-    if (orc.data_preferida) {
+    if (preferencias.data_preferida) {
       try {
-        const inicio = new Date(`${orc.data_preferida}T00:00:00`);
-        const fim = new Date(`${orc.data_preferida}T00:00:00`);
+        const inicio = new Date(`${preferencias.data_preferida}T00:00:00`);
+        const fim = new Date(`${preferencias.data_preferida}T00:00:00`);
 
-        if (orc.periodo_preferido === "manha") {
+        if (preferencias.periodo_preferido === "manha") {
           inicio.setHours(8, 0, 0);
           fim.setHours(12, 0, 0);
-        } else if (orc.periodo_preferido === "tarde") {
+        } else if (preferencias.periodo_preferido === "tarde") {
           inicio.setHours(13, 0, 0);
           fim.setHours(18, 0, 0);
-        } else if (orc.periodo_preferido === "noite") {
+        } else if (preferencias.periodo_preferido === "noite") {
           inicio.setHours(18, 0, 0);
           fim.setHours(21, 0, 0);
-        } else if (orc.periodo_preferido === "horario_especifico" && orc.horario_preferido) {
-          const [h, m] = orc.horario_preferido.split(":");
+        } else if (preferencias.periodo_preferido === "horario_especifico" && preferencias.horario_preferido) {
+          const [h, m] = preferencias.horario_preferido.split(":");
           inicio.setHours(parseInt(h), parseInt(m), 0);
           fim.setHours(parseInt(h) + 2, parseInt(m), 0);
         } else {
