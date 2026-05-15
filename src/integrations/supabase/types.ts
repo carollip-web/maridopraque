@@ -650,12 +650,18 @@ export type Database = {
           lat: number | null
           lng: number | null
           onboarding_completo: boolean
-          raio_atendimento_km: number
+          raio_atendimento_km: number | null
           slug: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
           updated_at: string
           user_id: string
+          anos_experiencia: number | null
+          chave_pix: string | null
+          atende_emergencias: boolean | null
+          veiculo_proprio: boolean | null
+          genero: string | null
+          oferece_apoio_feminino: boolean
         }
         Insert: {
           ativo?: boolean
@@ -668,12 +674,18 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           onboarding_completo?: boolean
-          raio_atendimento_km?: number
+          raio_atendimento_km?: number | null
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id: string
+          anos_experiencia?: number | null
+          chave_pix?: string | null
+          atende_emergencias?: boolean | null
+          veiculo_proprio?: boolean | null
+          genero?: string | null
+          oferece_apoio_feminino?: boolean
         }
         Update: {
           ativo?: boolean
@@ -686,12 +698,18 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           onboarding_completo?: boolean
-          raio_atendimento_km?: number
+          raio_atendimento_km?: number | null
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id?: string
+          anos_experiencia?: number | null
+          chave_pix?: string | null
+          atende_emergencias?: boolean | null
+          veiculo_proprio?: boolean | null
+          genero?: string | null
+          oferece_apoio_feminino?: boolean
         }
         Relationships: []
       }

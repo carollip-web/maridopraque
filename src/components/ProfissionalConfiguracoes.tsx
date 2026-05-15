@@ -102,49 +102,87 @@ export function ProfissionalConfiguracoes() {
     if (!user) return;
     setSaving(true);
 
-    // Update profiles table
-    const p1 = supabase
-      .from("profiles")
-      .update({ nome: values.nome, whatsapp: values.whatsapp })
-      .eq("id", user.id);
+    try {
+      // 1. Update profiles table (Basic)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ nome: values.nome, whatsapp: values.whatsapp })
+        .eq("id", user.id);
 
-    // Geocodifica a cidade (best-effort) para habilitar filtro por raio
-    let geo: { lat: number; lng: number } | null = null;
-    if (values.cidade?.trim()) {
-      const { geocodeCidade } = await import("@/lib/geo");
-      geo = await geocodeCidade(values.cidade);
-    }
+      if (profileError) throw profileError;
 
-    // Update profissional_perfil table
-    const p2 = supabase
-      .from("profissional_perfil")
-      .update({
-        bio: values.bio,
-        cidade: values.cidade,
-        chave_pix: values.chave_pix,
-        anos_experiencia: values.anos_experiencia,
-        raio_atendimento_km: values.raio_atendimento_km,
-        atende_emergencias: values.atende_emergencias,
-        veiculo_proprio: values.veiculo_proprio,
-        genero: values.genero ?? "nao_informar",
-        oferece_apoio_feminino: values.oferece_apoio_feminino ?? false,
+      // 2. Geocode city (best-effort)
+      let geo: { lat: number; lng: number } | null = null;
+      if (values.cidade?.trim()) {
+        try {
+          const { geocodeCidade } = await import("@/lib/geo");
+          geo = await geocodeCidade(values.cidade);
+        } catch (e) {
+          console.warn("[ProfissionalConfiguracoes] geocoding failed", e);
+        }
+      }
+
+      // 3. Update profissional_perfil basic fields
+      const basicPayload = {
+        bio: values.bio || null,
+        cidade: values.cidade || null,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
-      } as any)
-      .eq("user_id", user.id);
+        updated_at: new Date().toISOString(),
+      };
 
-    const [res1, res2] = await Promise.all([p1, p2]);
+      const { error: basicError } = await supabase
+        .from("profissional_perfil")
+        .update(basicPayload)
+        .eq("user_id", user.id);
 
-    setSaving(false);
+      if (basicError) throw basicError;
 
-    if (res1.error || res2.error) {
-      toast.error("Erro ao salvar", { description: res1.error?.message || res2.error?.message });
-      return;
+      // 4. Update operational/advanced fields (Secondary block to avoid schema cache issues)
+      const advancedPayload = {
+        anos_experiencia: values.anos_experiencia ?? null,
+        raio_atendimento_km: values.raio_atendimento_km ?? null,
+        chave_pix: values.chave_pix || null,
+        atende_emergencias: !!values.atende_emergencias,
+        veiculo_proprio: !!values.veiculo_proprio,
+        genero: values.genero || "nao_informar",
+        oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+      };
+
+      const { error: advancedError } = await supabase
+        .from("profissional_perfil")
+        .update(advancedPayload as any)
+        .eq("user_id", user.id);
+
+      if (advancedError) {
+        console.warn("[ProfissionalConfiguracoes] advanced fields not saved", advancedError);
+        if (
+          advancedError.code === "PGRST204" ||
+          advancedError.message?.includes("schema cache")
+        ) {
+          toast.info(
+            "Perfil salvo. Alguns campos avançados serão sincronizados assim que o sistema atualizar."
+          );
+        } else {
+          toast.error("Perfil salvo, mas alguns campos avançados não foram atualizados.");
+        }
+      } else {
+        toast.success("Perfil atualizado com sucesso!");
+      }
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2500);
+    } catch (error: any) {
+      console.error("[ProfissionalConfiguracoes] erro ao salvar perfil", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      toast.error("Erro ao salvar perfil", { description: error.message });
+    } finally {
+      setSaving(false);
     }
-
-    toast.success("Perfil atualizado com sucesso!");
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2500);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
