@@ -3,7 +3,9 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronLeft, Bell, MessageCircle, Phone } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
+import { NotificationDetailModal } from "@/components/NotificationDetailModal";
 import { Tab } from "./constants";
+import { toast } from "sonner";
 
 interface NotificacoesTabProps {
   setActiveTab: (tab: Tab) => void;
@@ -12,222 +14,49 @@ interface NotificacoesTabProps {
 export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
   const searchParams = useSearch({ strict: false }) as any;
-  const { id, details } = searchParams;
   const navigate = useNavigate();
+  
+  const [selectedNotification, setSelectedNotification] = React.useState<any | null>(null);
 
-  const selectedId = id ? String(id) : null;
-  const selectedNotification =
-    selectedId != null ? notifications.find((n) => n.id === selectedId) : null;
-  const showFullDetails = details === true;
+  const getNotificationTarget = (n: any) => {
+    const orcamentoId =
+      n.orcamento_id ||
+      n.pedido_id ||
+      n.metadata?.orcamento_id ||
+      n.metadata?.orcamentoId ||
+      n.metadata?.pedido_id ||
+      n.metadata?.pedidoId ||
+      n.data?.orcamento_id ||
+      n.data?.orcamentoId ||
+      n.data?.pedido_id ||
+      n.data?.pedidoId ||
+      n.pedidoId;
 
-  useEffect(() => {
-    if (selectedId != null) {
-      markAsRead(selectedId);
+    const status =
+      n.status ||
+      n.metadata?.status ||
+      n.data?.status;
+
+    return { orcamentoId, status };
+  };
+
+  const handleGoToTarget = (n: any) => {
+    const { orcamentoId } = getNotificationTarget(n);
+    if (orcamentoId) {
+      navigate({
+        to: "/cliente",
+        search: (prev: any) => ({
+          ...prev,
+          tab: "pedidos",
+          id: orcamentoId,
+          details: "1",
+        }),
+      });
+      setSelectedNotification(null);
+    } else {
+      toast.error("Não foi possível localizar o pedido desta notificação.");
     }
-  }, [selectedId, markAsRead]);
-
-  const openNotification = (notifId: string) => {
-    markAsRead(notifId);
-    navigate({
-      to: "/cliente",
-      search: (prev: any) => ({ ...prev, id: String(notifId), details: undefined }),
-    });
   };
-
-  const handleBackToList = () => {
-    navigate({
-      to: "/cliente",
-      search: (prev: any) => ({ ...prev, id: undefined, details: undefined }),
-    });
-  };
-
-  const openFullDetails = () => {
-    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, details: true }) });
-  };
-
-  const closeFullDetails = () => {
-    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, details: undefined }) });
-  };
-
-  if (selectedNotification) {
-    if (showFullDetails) {
-      return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-          <button
-            onClick={closeFullDetails}
-            className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
-          >
-            <ChevronLeft className="h-4 w-4" /> Voltar para a mensagem
-          </button>
-
-          <div className="bg-white rounded-[2rem] border border-border p-8 md:p-12 shadow-soft">
-            <h3 className="text-2xl font-bold text-slate-800 mb-8">Detalhamento Completo</h3>
-
-            <div className="space-y-10">
-              <div className="grid gap-8 md:grid-cols-2">
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Resumo do Serviço
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Tipo:</span>
-                      <span className="text-sm font-bold">{selectedNotification.title}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Protocolo:</span>
-                      <span className="text-sm font-bold">
-                        #2026-0{selectedNotification.id}X-88
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Data Solicitação:</span>
-                      <span className="text-sm font-bold">{selectedNotification.time}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Financeiro
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Mão de Obra:</span>
-                      <span className="text-sm font-bold">R$ 120,00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Taxa de Visita:</span>
-                      <span className="text-sm font-bold">R$ 30,00</span>
-                    </div>
-                    <div className="pt-2 border-t border-slate-200 flex justify-between">
-                      <span className="text-sm font-bold text-brand">Total Estimado:</span>
-                      <span className="text-sm font-bold text-brand">R$ 150,00</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Histórico de Alterações
-                </p>
-                <div className="space-y-4">
-                  {[
-                    { date: "Hoje, 14:00", text: "Orçamento aprovado pelo profissional" },
-                    { date: "Ontem, 09:30", text: "Profissional Ricardo M. aceitou o chamado" },
-                    { date: "Ontem, 08:00", text: "Pedido registrado no sistema" },
-                  ].map((h, i) => (
-                    <div key={i} className="flex gap-4 items-start">
-                      <div className="h-2 w-2 rounded-full bg-slate-300 mt-1.5 shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">{h.text}</p>
-                        <p className="text-[10px] text-muted-foreground">{h.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-border">
-              <Button
-                onClick={() => setActiveTab("pedidos")}
-                className="bg-brand text-white rounded-full px-8 font-bold h-12 shadow-lg"
-              >
-                Acessar Central de Pedidos
-              </Button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-        <button
-          onClick={handleBackToList}
-          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-brand transition-colors mb-4"
-        >
-          <ChevronLeft className="h-4 w-4" /> Voltar para notificações
-        </button>
-
-        <div className="bg-white rounded-[2rem] border border-border p-8 md:p-12 shadow-soft">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-14 w-14 rounded-2xl bg-[#fefaf9] flex items-center justify-center">
-              <Bell className="h-7 w-7 text-[#b85c45]" />
-            </div>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              {selectedNotification.time}
-            </p>
-          </div>
-
-          <h3 className="text-2xl font-bold text-slate-800 mb-4">{selectedNotification.title}</h3>
-          <div className="prose prose-slate max-w-none">
-            <p className="text-lg text-slate-600 leading-relaxed mb-8">
-              {selectedNotification.desc}
-            </p>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-              <p className="text-sm font-bold text-slate-500 uppercase tracking-widest text-[10px]">
-                Informações Adicionais
-              </p>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                    Protocolo
-                  </p>
-                  <p className="text-sm font-bold">#2026-0{selectedNotification.id}X-88</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                    Ação Necessária
-                  </p>
-                  <button
-                    onClick={openFullDetails}
-                    className="text-sm font-bold text-brand hover:underline block text-left"
-                  >
-                    Ver detalhes completos
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row gap-4">
-            <Button
-              onClick={() => {
-                if (selectedNotification.pedidoId) {
-                  navigate({
-                    to: "/cliente",
-                    search: () => ({
-                      tab: "pedidos" as Tab,
-                      pedidoId: selectedNotification.pedidoId,
-                      id: undefined,
-                      chat: undefined,
-                      details: false,
-                    }),
-                  });
-                } else {
-                  setActiveTab("pedidos");
-                }
-              }}
-              className="bg-[#1a1513] text-white rounded-full px-8 font-bold h-12 shadow-lg hover:scale-[1.02] transition-transform"
-            >
-              Ir para o Serviço
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full px-8 font-bold h-12 border-border"
-              onClick={handleBackToList}
-            >
-              Marcar como resolvido
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -254,7 +83,10 @@ export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
           notifications.map((n) => (
             <div
               key={n.id}
-              onClick={() => openNotification(n.id)}
+              onClick={() => {
+                markAsRead(n.id);
+                setSelectedNotification(n);
+              }}
               className={`p-6 md:p-8 flex gap-5 transition-all cursor-pointer group hover:bg-slate-50 ${n.read ? "bg-white" : "bg-[#fefaf9]"}`}
             >
               <div className="mt-1.5 shrink-0">
@@ -277,16 +109,37 @@ export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
                   {n.desc}
                 </p>
 
-                {!n.read && (
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-[#b85c45] mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Clique para abrir →
-                  </span>
-                )}
+                <div className="flex items-center justify-between mt-4">
+                  {!n.read && (
+                    <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-[#b85c45] opacity-0 group-hover:opacity-100 transition-opacity">
+                      Clique para abrir →
+                    </span>
+                  )}
+                  {getNotificationTarget(n).orcamentoId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGoToTarget(n);
+                      }}
+                      className="text-xs font-bold text-brand h-7 px-2"
+                    >
+                      Ver pedido →
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        onGoToTarget={handleGoToTarget}
+      />
     </div>
   );
 }

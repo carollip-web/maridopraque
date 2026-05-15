@@ -1,5 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Bell } from "lucide-react";
+import { NotificationDetailModal } from "@/components/NotificationDetailModal";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface ProfissionalNotificacoesProps {
   notifications: any[];
@@ -16,6 +20,54 @@ export function ProfissionalNotificacoes({
   markAllAsRead,
   onNavigateToPedido,
 }: ProfissionalNotificacoesProps) {
+  const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
+  const navigate = useNavigate();
+
+  const getNotificationTarget = (n: any) => {
+    const orcamentoId =
+      n.orcamento_id ||
+      n.pedido_id ||
+      n.metadata?.orcamento_id ||
+      n.metadata?.orcamentoId ||
+      n.metadata?.pedido_id ||
+      n.metadata?.pedidoId ||
+      n.data?.orcamento_id ||
+      n.data?.orcamentoId ||
+      n.data?.pedido_id ||
+      n.data?.pedidoId ||
+      n.pedidoId;
+
+    const status =
+      n.status ||
+      n.metadata?.status ||
+      n.data?.status;
+
+    return { orcamentoId, status };
+  };
+
+  const handleGoToTarget = (n: any) => {
+    const { orcamentoId, status } = getNotificationTarget(n);
+    if (orcamentoId) {
+      const tab =
+        status === "aprovado" ||
+        status === "pago" ||
+        status === "concluido"
+          ? "servicos"
+          : "orcamentos";
+
+      navigate({
+        to: "/profissional",
+        search: (prev: any) => ({
+          ...prev,
+          tab,
+          orcamentoId,
+        }),
+      });
+      setSelectedNotification(null);
+    } else {
+      toast.error("Não foi possível localizar o pedido desta notificação.");
+    }
+  };
   if (notifications.length === 0) {
     return (
       <div className="space-y-4 animate-in fade-in duration-700">
@@ -48,7 +100,10 @@ export function ProfissionalNotificacoes({
         {notifications.map((n) => (
           <div
             key={n.id}
-            onClick={() => onNavigateToPedido(n)}
+            onClick={() => {
+              markAsRead(n.id);
+              setSelectedNotification(n);
+            }}
             className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-sm ${
               n.read
                 ? "bg-white border-border opacity-60 hover:opacity-100"
@@ -74,16 +129,30 @@ export function ProfissionalNotificacoes({
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
                   {n.time}
                 </p>
-                {(n.pedidoId || n.link) && (
-                  <span className="text-[10px] font-bold text-brand uppercase tracking-wider flex items-center gap-1">
+                {getNotificationTarget(n).orcamentoId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGoToTarget(n);
+                    }}
+                    className="text-[10px] font-bold text-brand uppercase h-7 px-2"
+                  >
                     Ver pedido →
-                  </span>
+                  </Button>
                 )}
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <NotificationDetailModal
+        notification={selectedNotification}
+        onClose={() => setSelectedNotification(null)}
+        onGoToTarget={handleGoToTarget}
+      />
     </div>
   );
 }
