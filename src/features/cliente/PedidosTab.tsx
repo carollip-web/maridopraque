@@ -125,11 +125,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           .map((p) => ({ ...p, profNome: profsMap[p.profissional_id] || "Profissional" }));
         const uiStatus =
           o.status === "customizado_pendente" && propsForOrc.length > 0
-            ? "Aguardando Aprovação"
+            ? "Aguardando sua aprovação"
             : o.status === "customizado_pendente"
               ? "Em Análise"
               : o.status === "enviado"
-                ? "Aguardando Aprovação"
+                ? "Aguardando sua aprovação"
                 : o.status === "fixo_auto"
                   ? "Aprovação Automática"
                   : o.status === "aprovado"
@@ -155,7 +155,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     enabled: !!user,
   });
 
-  const filters = ["Todos", "Agendado", "Em Análise", "Aguardando Aprovação"];
+  const filters = ["Todos", "Agendado", "Em Análise", "Aguardando sua aprovação"];
 
 
   useEffect(() => {
@@ -265,7 +265,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     const sp = selectedPedido;
     const primeiraProposta = sp.propostas?.[0] ?? null;
     const temProposta = !!primeiraProposta;
-    const aguardandoAprovacao = sp.status === "Aguardando Aprovação";
+    const aguardandoAprovacao = sp.status === "Aguardando sua aprovação";
     const aguardandoPagamento =
       sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
     const pagoOuAgendado = sp.status === "Agendado" || sp.rawStatus === "pago";
@@ -988,7 +988,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   <p className="text-xl font-bold text-slate-800">{p.displayPrice}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {(p.rawStatus === "enviado" || p.status === "Aguardando Aprovação") && (
+                  {(p.rawStatus === "enviado" || p.status === "Aguardando sua aprovação") && (
                     <Button className="rounded-full bg-brand hover:bg-brand/90 text-white font-bold h-11 px-6 shadow-md shadow-brand/20">
                       Ver Proposta
                     </Button>
