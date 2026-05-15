@@ -666,6 +666,13 @@ function MeusOrcamentos() {
           .eq("id", novoId);
 
         if (preferenciasError) {
+          const detalhesPreferencias = [
+            preferenciasError.code ? `code: ${preferenciasError.code}` : null,
+            preferenciasError.message ? `message: ${preferenciasError.message}` : null,
+            preferenciasError.details ? `details: ${preferenciasError.details}` : null,
+            preferenciasError.hint ? `hint: ${preferenciasError.hint}` : null,
+          ].filter(Boolean).join(" | ");
+
           console.error("[orcamentos.handleNew] falha ao salvar preferências", {
             code: preferenciasError.code,
             message: preferenciasError.message,
@@ -674,9 +681,10 @@ function MeusOrcamentos() {
             payload: preferenciasPayload,
           });
 
-          toast.warning(
-            "Pedido criado, mas as preferências de atendimento/agenda não foram salvas. Tente editar o pedido ou aguarde sincronização."
-          );
+          toast.error("Falha ao salvar preferências do pedido", {
+            description: detalhesPreferencias || preferenciasError.message,
+          });
+          throw new Error(`Falha ao salvar preferências do pedido: ${detalhesPreferencias || preferenciasError.message}`);
         } else {
           console.info("[orcamentos.handleNew] preferências salvas", preferenciasPayload);
         }
