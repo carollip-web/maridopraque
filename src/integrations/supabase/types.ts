@@ -360,11 +360,6 @@ export type Database = {
           updated_at: string
           valor: number | null
           valor_servico: number | null
-          tipo_atendimento: string | null
-          data_preferida: string | null
-          periodo_preferido: string | null
-          horario_preferido: string | null
-          flexibilidade_agenda: string | null
         }
         Insert: {
           auto_aprovado?: boolean
@@ -394,11 +389,6 @@ export type Database = {
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
-          tipo_atendimento?: string | null
-          data_preferida?: string | null
-          periodo_preferido?: string | null
-          horario_preferido?: string | null
-          flexibilidade_agenda?: string | null
         }
         Update: {
           auto_aprovado?: boolean
@@ -428,11 +418,6 @@ export type Database = {
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
-          tipo_atendimento?: string | null
-          data_preferida?: string | null
-          periodo_preferido?: string | null
-          horario_preferido?: string | null
-          flexibilidade_agenda?: string | null
         }
         Relationships: [
           {
@@ -650,18 +635,12 @@ export type Database = {
           lat: number | null
           lng: number | null
           onboarding_completo: boolean
-          raio_atendimento_km: number | null
+          raio_atendimento_km: number
           slug: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
           updated_at: string
           user_id: string
-          anos_experiencia: number | null
-          chave_pix: string | null
-          atende_emergencias: boolean | null
-          veiculo_proprio: boolean | null
-          genero: string | null
-          oferece_apoio_feminino: boolean
         }
         Insert: {
           ativo?: boolean
@@ -674,18 +653,12 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           onboarding_completo?: boolean
-          raio_atendimento_km?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id: string
-          anos_experiencia?: number | null
-          chave_pix?: string | null
-          atende_emergencias?: boolean | null
-          veiculo_proprio?: boolean | null
-          genero?: string | null
-          oferece_apoio_feminino?: boolean
         }
         Update: {
           ativo?: boolean
@@ -698,68 +671,15 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           onboarding_completo?: boolean
-          raio_atendimento_km?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id?: string
-          anos_experiencia?: number | null
-          chave_pix?: string | null
-          atende_emergencias?: boolean | null
-          veiculo_proprio?: boolean | null
-          genero?: string | null
-          oferece_apoio_feminino?: boolean
         }
         Relationships: []
       }
-      profissional_bloqueios_agenda: {
-        Row: {
-          id: string;
-          profissional_id: string;
-          orcamento_id: string | null;
-          inicio: string;
-          fim: string;
-          status: string;
-          motivo: string | null;
-          expires_at: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          profissional_id: string;
-          orcamento_id?: string | null;
-          inicio: string;
-          fim: string;
-          status?: string;
-          motivo?: string | null;
-          expires_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          profissional_id?: string;
-          orcamento_id?: string | null;
-          inicio?: string;
-          fim?: string;
-          status?: string;
-          motivo?: string | null;
-          expires_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profissional_bloqueios_agenda_orcamento_id_fkey";
-            columns: ["orcamento_id"];
-            isOneToOne: false;
-            referencedRelation: "orcamentos";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       proposta_materiais: {
         Row: {
           created_at: string
