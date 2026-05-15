@@ -14,6 +14,15 @@ type Agendamento = {
   status: string;
   duracao_min: number;
 };
+type ReservaAgenda = {
+  id: string;
+  orcamento_id: string | null;
+  inicio: string;
+  fim: string;
+  status: string;
+  motivo: string | null;
+  expires_at: string | null;
+};
 
 const HOUR_START = 7;
 const HOUR_END = 21;
@@ -53,6 +62,7 @@ export function AgendaCalendar() {
   const [janelas, setJanelas] = useState<Janela[]>([]);
   const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [reservas, setReservas] = useState<ReservaAgenda[]>([]);
   const [duracao, setDuracao] = useState(60);
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
@@ -70,33 +80,56 @@ export function AgendaCalendar() {
     let alive = true;
     (async () => {
       setLoading(true);
-      const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }] = await Promise.all([
-        supabase
-          .from("profissional_disponibilidade")
-          .select("dia_semana,hora_inicio,hora_fim")
-          .eq("user_id", user.id),
-        supabase
-          .from("profissional_bloqueios")
-          .select("data_inicio,data_fim,motivo")
-          .eq("user_id", user.id)
-          .lt("data_inicio", weekEnd.toISOString())
-          .gt("data_fim", weekStart.toISOString()),
-        supabase
-          .from("orcamentos")
-          .select("id,service_name,data_agendada,status")
-          .eq("profissional_id", user.id)
-          .not("data_agendada", "is", null)
-          .gte("data_agendada", weekStart.toISOString())
-          .lt("data_agendada", weekEnd.toISOString()),
-        supabase
-          .from("profissional_perfil")
-          .select("duracao_padrao_min")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-      ]);
+      const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }, pbaRes] =
+        await Promise.all([
+          supabase
+            .from("profissional_disponibilidade")
+            .select("dia_semana,hora_inicio,hora_fim")
+            .eq("user_id", user.id),
+          supabase
+            .from("profissional_bloqueios")
+            .select("data_inicio,data_fim,motivo")
+            .eq("user_id", user.id)
+            .lt("data_inicio", weekEnd.toISOString())
+            .gt("data_fim", weekStart.toISOString()),
+          supabase
+            .from("orcamentos")
+            .select("id,service_name,data_agendada,status")
+            .eq("profissional_id", user.id)
+            .not("data_agendada", "is", null)
+            .gte("data_agendada", weekStart.toISOString())
+            .lt("data_agendada", weekEnd.toISOString()),
+          supabase
+            .from("profissional_perfil")
+            .select("duracao_padrao_min")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          (supabase as any)
+            .from("profissional_bloqueios_agenda")
+            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at")
+            .eq("profissional_id", user.id)
+            .in("status", ["temporario", "confirmado"])
+            .lt("inicio", weekEnd.toISOString())
+            .gt("fim", weekStart.toISOString()),
+        ]);
       if (!alive) return;
+      if (pbaRes.error) {
+        console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
+      }
+      const now = new Date();
+      const reservasValidas = ((pbaRes.data as ReservaAgenda[]) || []).filter((r) => {
+        if (r.status !== "temporario") return true;
+        if (!r.expires_at) return true;
+        return new Date(r.expires_at) > now;
+      });
+      console.info("[AgendaCalendar] semana visível e reservas", {
+        inicioSemana: weekStart.toISOString(),
+        fimSemana: weekEnd.toISOString(),
+        reservas: reservasValidas,
+      });
       setJanelas((jans as Janela[]) ?? []);
       setBloqueios((blocs as Bloqueio[]) ?? []);
+      setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
       setAgendamentos(((ags as any[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
@@ -160,6 +193,12 @@ export function AgendaCalendar() {
         </span>
         <span className="flex items-center gap-1">
           <i className="h-2 w-2 rounded-sm bg-brand" /> Agendamento
+        </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-amber-400" /> Reserva pendente
+        </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-emerald-500" /> Confirmado
         </span>
       </div>
 
@@ -289,6 +328,40 @@ export function AgendaCalendar() {
                           </p>
                           <p className="text-[10px] leading-tight truncate opacity-90">
                             {a.service_name}
+                          </p>
+                        </div>
+                      );
+                    })}
+
+                  {/* Reservas (bloqueios_agenda) */}
+                  {reservas
+                    .filter((r) => {
+                      const ini = new Date(r.inicio);
+                      return ini >= dayStart && ini < dayEnd;
+                    })
+                    .map((r) => {
+                      const ini = new Date(r.inicio);
+                      const fim = new Date(r.fim);
+                      const startMin = ini.getHours() * 60 + ini.getMinutes();
+                      const endMin = fim.getHours() * 60 + fim.getMinutes();
+                      const top = (startMin / 60 - HOUR_START) * PX_PER_HOUR;
+                      const height = Math.max(28, ((endMin - startMin) / 60) * PX_PER_HOUR);
+                      const isPendente = r.status === "temporario";
+                      const cls = isPendente
+                        ? "bg-amber-100 border border-amber-400 text-amber-900"
+                        : "bg-emerald-100 border border-emerald-500 text-emerald-900";
+                      const label = isPendente ? "Reserva pendente" : "Confirmado";
+                      return (
+                        <div
+                          key={r.id}
+                          className={`absolute left-1 right-1 rounded-md px-1.5 py-1 shadow-sm overflow-hidden ${cls}`}
+                          style={{ top, height }}
+                          title={`${label} • ${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                        >
+                          <p className="text-[10px] font-bold leading-tight truncate">{label}</p>
+                          <p className="text-[10px] leading-tight truncate opacity-90">
+                            {ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            –{fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </p>
                         </div>
                       );
