@@ -345,26 +345,26 @@ export type Database = {
           data_agendada: string | null
           data_aprovacao: string | null
           data_pagamento: string | null
+          data_preferida: string | null
           descricao: string | null
+          flexibilidade_agenda: string | null
           fotos_concluido: string[]
           fotos_problema: string[]
+          horario_preferido: string | null
           id: string
           is_test: boolean
           observacoes_profissional: string | null
+          periodo_preferido: string | null
           profissional_id: string | null
           reagendamento_solicitado: string | null
           service_id: string | null
           service_name: string
           status: Database["public"]["Enums"]["orcamento_status"]
           taxa_material: number
+          tipo_atendimento: string | null
           updated_at: string
           valor: number | null
           valor_servico: number | null
-          tipo_atendimento: string | null
-          data_preferida: string | null
-          periodo_preferido: string | null
-          horario_preferido: string | null
-          flexibilidade_agenda: string | null
         }
         Insert: {
           auto_aprovado?: boolean
@@ -379,26 +379,26 @@ export type Database = {
           data_agendada?: string | null
           data_aprovacao?: string | null
           data_pagamento?: string | null
+          data_preferida?: string | null
           descricao?: string | null
+          flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
           fotos_problema?: string[]
+          horario_preferido?: string | null
           id?: string
           is_test?: boolean
           observacoes_profissional?: string | null
+          periodo_preferido?: string | null
           profissional_id?: string | null
           reagendamento_solicitado?: string | null
           service_id?: string | null
           service_name: string
           status?: Database["public"]["Enums"]["orcamento_status"]
           taxa_material?: number
+          tipo_atendimento?: string | null
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
-          tipo_atendimento?: string | null
-          data_preferida?: string | null
-          periodo_preferido?: string | null
-          horario_preferido?: string | null
-          flexibilidade_agenda?: string | null
         }
         Update: {
           auto_aprovado?: boolean
@@ -413,26 +413,26 @@ export type Database = {
           data_agendada?: string | null
           data_aprovacao?: string | null
           data_pagamento?: string | null
+          data_preferida?: string | null
           descricao?: string | null
+          flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
           fotos_problema?: string[]
+          horario_preferido?: string | null
           id?: string
           is_test?: boolean
           observacoes_profissional?: string | null
+          periodo_preferido?: string | null
           profissional_id?: string | null
           reagendamento_solicitado?: string | null
           service_id?: string | null
           service_name?: string
           status?: Database["public"]["Enums"]["orcamento_status"]
           taxa_material?: number
+          tipo_atendimento?: string | null
           updated_at?: string
           valor?: number | null
           valor_servico?: number | null
-          tipo_atendimento?: string | null
-          data_preferida?: string | null
-          periodo_preferido?: string | null
-          horario_preferido?: string | null
-          flexibilidade_agenda?: string | null
         }
         Relationships: [
           {
@@ -611,6 +611,53 @@ export type Database = {
         }
         Relationships: []
       }
+      profissional_bloqueios_agenda: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          fim: string
+          id: string
+          inicio: string
+          motivo: string | null
+          orcamento_id: string | null
+          profissional_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          fim: string
+          id?: string
+          inicio: string
+          motivo?: string | null
+          orcamento_id?: string | null
+          profissional_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          fim?: string
+          id?: string
+          inicio?: string
+          motivo?: string | null
+          orcamento_id?: string | null
+          profissional_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profissional_bloqueios_agenda_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profissional_disponibilidade: {
         Row: {
           created_at: string
@@ -640,126 +687,79 @@ export type Database = {
       }
       profissional_perfil: {
         Row: {
+          anos_experiencia: number | null
+          atende_emergencias: boolean | null
           ativo: boolean
           bio: string | null
+          chave_pix: string | null
           cidade: string | null
           created_at: string
           duracao_padrao_min: number
           especialidades: string[] | null
           foto_url: string | null
+          genero: string | null
           lat: number | null
           lng: number | null
+          oferece_apoio_feminino: boolean
           onboarding_completo: boolean
-          raio_atendimento_km: number | null
+          raio_atendimento_km: number
           slug: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
           updated_at: string
           user_id: string
-          anos_experiencia: number | null
-          chave_pix: string | null
-          atende_emergencias: boolean | null
           veiculo_proprio: boolean | null
-          genero: string | null
-          oferece_apoio_feminino: boolean
         }
         Insert: {
+          anos_experiencia?: number | null
+          atende_emergencias?: boolean | null
           ativo?: boolean
           bio?: string | null
+          chave_pix?: string | null
           cidade?: string | null
           created_at?: string
           duracao_padrao_min?: number
           especialidades?: string[] | null
           foto_url?: string | null
+          genero?: string | null
           lat?: number | null
           lng?: number | null
+          oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
-          raio_atendimento_km?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id: string
-          anos_experiencia?: number | null
-          chave_pix?: string | null
-          atende_emergencias?: boolean | null
           veiculo_proprio?: boolean | null
-          genero?: string | null
-          oferece_apoio_feminino?: boolean
         }
         Update: {
+          anos_experiencia?: number | null
+          atende_emergencias?: boolean | null
           ativo?: boolean
           bio?: string | null
+          chave_pix?: string | null
           cidade?: string | null
           created_at?: string
           duracao_padrao_min?: number
           especialidades?: string[] | null
           foto_url?: string | null
+          genero?: string | null
           lat?: number | null
           lng?: number | null
+          oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
-          raio_atendimento_km?: number | null
+          raio_atendimento_km?: number
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
           user_id?: string
-          anos_experiencia?: number | null
-          chave_pix?: string | null
-          atende_emergencias?: boolean | null
           veiculo_proprio?: boolean | null
-          genero?: string | null
-          oferece_apoio_feminino?: boolean
         }
         Relationships: []
       }
-      profissional_bloqueios_agenda: {
-        Row: {
-          id: string;
-          profissional_id: string;
-          orcamento_id: string | null;
-          inicio: string;
-          fim: string;
-          status: string;
-          motivo: string | null;
-          expires_at: string | null;
-          created_at: string | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          profissional_id: string;
-          orcamento_id?: string | null;
-          inicio: string;
-          fim: string;
-          status?: string;
-          motivo?: string | null;
-          expires_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          profissional_id?: string;
-          orcamento_id?: string | null;
-          inicio?: string;
-          fim?: string;
-          status?: string;
-          motivo?: string | null;
-          expires_at?: string | null;
-          created_at?: string | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profissional_bloqueios_agenda_orcamento_id_fkey";
-            columns: ["orcamento_id"];
-            isOneToOne: false;
-            referencedRelation: "orcamentos";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       proposta_materiais: {
         Row: {
           created_at: string
