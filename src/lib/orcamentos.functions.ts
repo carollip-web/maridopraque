@@ -304,30 +304,75 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // First verify if the orcamento belongs to the user and is still open
+    console.info("[aceitarProposta] start", { propostaId: data.propostaId, orcamentoId: data.orcamentoId, userId });
+
     const { data: orc } = await supabase
       .from("orcamentos")
-      .select("cliente_id, status, data_preferida, horario_preferido")
+      .select("id, cliente_id, status, data_preferida, horario_preferido")
       .eq("id", data.orcamentoId)
       .single();
-    if (!orc || orc.cliente_id !== userId) throw new Error("Sem permissão");
-    if (orc.status !== "customizado_pendente" && orc.status !== "enviado")
+
+    console.info("[aceitarProposta] orcamento", { id: orc?.id, clienteId: orc?.cliente_id, status: orc?.status });
+
+    if (!orc || orc.cliente_id !== userId) {
+      console.warn("[aceitarProposta] Sem permissão: orcamento não encontrado ou cliente_id mismatch", { userId, orcClienteId: orc?.cliente_id });
+      throw new Error("Sem permissão");
+    }
+
+    if (orc.status !== "customizado_pendente" && orc.status !== "enviado") {
       throw new Error("Pedido não está mais aberto para propostas.");
+    }
 
     // Update the specific proposta to aceita, ensuring it belongs to the correct budget
-    const { data: prop, error: e1 } = await supabase
+    const { data: prop, error: e_prop } = await supabase
+      .from("propostas")
+      .select("*")
+      .eq("id", data.propostaId)
+      .eq("orcamento_id", data.orcamentoId)
+      .single();
+
+    if (e_prop || !prop) {
+      console.warn("[aceitarProposta] Proposta não encontrada", { e_prop, propostaId: data.propostaId });
+      throw new Error("Proposta inválida ou não pertence a este orçamento.");
+    }
+
+    if (prop.status !== "pendente") {
+      throw new Error("Essa proposta não está mais disponível.");
+    }
+
+    console.info("[aceitarProposta] proposta validated", { propostaId: prop.id, orcamentoId: prop.orcamento_id, profissionalId: prop.profissional_id });
+
+    // 4. Use service role for updates to bypass RLS if needed, but we ALREADY validated ownership above
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+
+    if (!SERVICE_KEY || !SUPABASE_URL) {
+      console.error("[aceitarProposta] Missing environment variables for Service Role");
+      throw new Error("Configuração do servidor ausente");
+    }
+
+    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+      auth: { persistSession: false }
+    });
+
+    // Update the specific proposta to aceita
+    const { data: propUpdated, error: e1 } = await serviceClient
       .from("propostas")
       .update({ status: "aceita" })
       .eq("id", data.propostaId)
-      .eq("orcamento_id", data.orcamentoId)
       .select()
       .single();
-    if (e1) throw new Error("Proposta inválida ou não pertence a este orçamento.");
+
+    if (e1) {
+      console.error("[aceitarProposta] error updating proposal", e1);
+      throw new Error("Erro ao atualizar proposta.");
+    }
 
     // Reject other proposals
     console.info(
       `Cliente ${userId} aceitou proposta ${data.propostaId} for pedido ${data.orcamentoId}`,
     );
-    await supabase
+    await serviceClient
       .from("propostas")
       .update({ status: "recusada" })
       .eq("orcamento_id", data.orcamentoId)
@@ -371,13 +416,16 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       updateData.data_agendada = `${dt}T${fullHr}`;
     }
 
-    const { data: row, error } = await supabase
+    const { data: row, error } = await serviceClient
       .from("orcamentos")
       .update(updateData)
       .eq("id", data.orcamentoId)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[aceitarProposta] error updating orcamento", error);
+      throw new Error(error.message);
+    }
 
     return { orcamento: row };
   });

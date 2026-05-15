@@ -191,17 +191,25 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const handleApprove = async () => {
     if (!selectedPedido) return;
+    
+    if (!session?.access_token) {
+      toast.error("Sua sessão expirou. Faça login novamente.");
+      return;
+    }
+
     setApprovalStep("processing");
     try {
       if (selectedProposta) {
+        console.info("[PedidosTab] Aceitando proposta", { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id });
         await aceitarPropostaFn({
           data: { orcamentoId: selectedPedido.id, propostaId: selectedProposta.id },
           headers: {
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
         });
 
         if (dataAgendada) {
+          console.info("[PedidosTab] Atualizando data agendada", { data: dataAgendada });
           await supabase
             .from("orcamentos")
             .update({ data_agendada: dataAgendada.toISOString() })
