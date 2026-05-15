@@ -146,6 +146,17 @@ function ProfissionalArea() {
     setMinhasPropostas(propsList);
     setOrcamentos(list);
     
+    console.info("[ProfissionalArea] detalhes agenda/atendimento", list?.map((o) => ({
+      id: o.id,
+      service_name: o.service_name,
+      status: o.status,
+      tipo_atendimento: o.tipo_atendimento,
+      data_preferida: o.data_preferida,
+      periodo_preferido: o.periodo_preferido,
+      horario_preferido: o.horario_preferido,
+      flexibilidade_agenda: o.flexibilidade_agenda,
+    })));
+
     const agenda = await carregarAgendaProfissional(user.id);
     setMinhaAgenda(agenda);
 

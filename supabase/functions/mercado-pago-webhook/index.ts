@@ -95,19 +95,76 @@ serve(async (req) => {
       console.warn(`[Webhook ${requestId}] Registro de pagamento não encontrado para Orçamento ${orcamentoId}`)
     }
 
-    // 5. Se aprovado, marcar orçamento como PAGO
+    // 5. Se aprovado, marcar orçamento como PAGO e confirmar reserva de agenda
     if (mpStatus === "approved") {
       console.log(`[Webhook ${requestId}] Marcando Orçamento ${orcamentoId} como PAGO...`)
-      const { error: orcError } = await supabase
+      const { data: updatedOrc, error: orcError } = await supabase
         .from("orcamentos")
         .update({
           status: "pago",
           data_pagamento: new Date().toISOString()
         })
         .eq("id", orcamentoId)
+        .select("id, profissional_id, data_preferida, periodo_preferido, horario_preferido")
+        .single()
       
       if (orcError) throw orcError
       console.log(`[Webhook ${requestId}] Orçamento ${orcamentoId} atualizado com sucesso.`)
+
+      // Confirmar reserva de agenda
+      console.log(`[Webhook ${requestId}] Atualizando reserva de agenda para Orçamento ${orcamentoId}...`)
+      const { data: existingBlocks, error: blockErr } = await supabase
+        .from("profissional_bloqueios_agenda")
+        .update({
+          status: "confirmado",
+          expires_at: null,
+          motivo: "Pagamento confirmado"
+        })
+        .eq("orcamento_id", orcamentoId)
+        .eq("status", "temporario")
+        .select()
+      
+      if (blockErr) {
+        console.error(`[Webhook ${requestId}] Erro ao atualizar reserva:`, blockErr)
+      }
+
+      if ((!existingBlocks || existingBlocks.length === 0) && updatedOrc.data_preferida) {
+        console.log(`[Webhook ${requestId}] Nenhuma reserva temporária encontrada. Criando bloqueio confirmado...`)
+        try {
+          const baseDate = updatedOrc.data_preferida;
+          let inicioStr = "";
+          let fimStr = "";
+
+          if (updatedOrc.periodo_preferido === "manha") {
+            inicioStr = `${baseDate}T08:00:00Z`;
+            fimStr = `${baseDate}T12:00:00Z`;
+          } else if (updatedOrc.periodo_preferido === "tarde") {
+            inicioStr = `${baseDate}T13:00:00Z`;
+            fimStr = `${baseDate}T18:00:00Z`;
+          } else if (updatedOrc.periodo_preferido === "noite") {
+            inicioStr = `${baseDate}T18:00:00Z`;
+            fimStr = `${baseDate}T21:00:00Z`;
+          } else if (updatedOrc.periodo_preferido === "horario_especifico" && updatedOrc.horario_preferido) {
+            inicioStr = `${baseDate}T${updatedOrc.horario_preferido}Z`;
+            const d = new Date(inicioStr);
+            d.setHours(d.getHours() + 2);
+            fimStr = d.toISOString();
+          }
+
+          if (inicioStr && fimStr) {
+            await supabase.from("profissional_bloqueios_agenda").insert({
+              profissional_id: updatedOrc.profissional_id,
+              orcamento_id: updatedOrc.id,
+              inicio: new Date(inicioStr).toISOString(),
+              fim: new Date(fimStr).toISOString(),
+              status: "confirmado",
+              motivo: "Pagamento confirmado (reserva direta)"
+            });
+          }
+        } catch (e_agenda) {
+          console.error(`[Webhook ${requestId}] Erro ao criar bloqueio confirmado:`, e_agenda)
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), { 

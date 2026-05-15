@@ -426,7 +426,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       .from("orcamentos")
       .update(updatePayload)
       .eq("id", data.orcamentoId)
-      .select()
+      .select("*, propostas!propostas_orcamento_id_fkey(*)")
       .single();
 
     if (e_orc_up) {
@@ -434,11 +434,79 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Erro ao atualizar pedido.");
     }
 
-    console.info("[aceitarProposta] sucesso", { orcamentoId: updatedOrc.id, status: updatedOrc.status });
+    // 8. Implementar reserva temporária de agenda
+    let agendaReserva = "none";
+    if (updatedOrc.data_preferida) {
+      try {
+        const baseDate = updatedOrc.data_preferida;
+        let inicioStr = "";
+        let fimStr = "";
+
+        if (updatedOrc.periodo_preferido === "manha") {
+          inicioStr = `${baseDate}T08:00:00Z`;
+          fimStr = `${baseDate}T12:00:00Z`;
+        } else if (updatedOrc.periodo_preferido === "tarde") {
+          inicioStr = `${baseDate}T13:00:00Z`;
+          fimStr = `${baseDate}T18:00:00Z`;
+        } else if (updatedOrc.periodo_preferido === "noite") {
+          inicioStr = `${baseDate}T18:00:00Z`;
+          fimStr = `${baseDate}T21:00:00Z`;
+        } else if (updatedOrc.periodo_preferido === "horario_especifico" && updatedOrc.horario_preferido) {
+          const h = updatedOrc.horario_preferido.length === 5 ? `${updatedOrc.horario_preferido}:00` : updatedOrc.horario_preferido;
+          inicioStr = `${baseDate}T${h}Z`;
+          const d = new Date(inicioStr);
+          d.setHours(d.getHours() + 2);
+          fimStr = d.toISOString();
+        }
+
+        if (inicioStr && fimStr) {
+          const inicio = new Date(inicioStr).toISOString();
+          const fim = new Date(fimStr).toISOString();
+
+          // Verificar conflitos
+          const { data: conflitos } = await serviceClient
+            .from("profissional_bloqueios_agenda")
+            .select("id")
+            .eq("profissional_id", prop.profissional_id)
+            .in("status", ["temporario", "confirmado"])
+            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+            .filter("inicio", "lt", fim)
+            .filter("fim", "gt", inicio);
+
+          if (conflitos && conflitos.length > 0) {
+            console.warn("[aceitarProposta] conflito ao reservar agenda", { orcamentoId: updatedOrc.id, conflitos });
+            agendaReserva = "conflito";
+          } else {
+            const { error: e_block } = await serviceClient
+              .from("profissional_bloqueios_agenda")
+              .insert({
+                profissional_id: prop.profissional_id,
+                orcamento_id: updatedOrc.id,
+                inicio,
+                fim,
+                status: "temporario",
+                motivo: "Reserva temporária aguardando pagamento",
+                expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2h
+              });
+            
+            if (e_block) {
+              console.error("[aceitarProposta] erro ao criar bloqueio", e_block);
+            } else {
+              agendaReserva = "sucesso";
+            }
+          }
+        }
+      } catch (e_agenda) {
+        console.error("[aceitarProposta] erro inesperado ao processar agenda", e_agenda);
+      }
+    }
+
+    console.info("[aceitarProposta] sucesso", { orcamentoId: updatedOrc.id, status: updatedOrc.status, agendaReserva });
 
     return { 
       orcamento: updatedOrc, 
-      proposta: propUpdated 
+      proposta: propUpdated,
+      agendaReserva
     };
   });
 

@@ -118,10 +118,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             ? o.horario_preferido?.slice(0, 5) || "Horário específico"
             : "A combinar";
 
-  const agendaLabel = o.data_preferida
-    ? `${new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${periodoLabel}`
-    : "A combinar";
-
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
     if (isNaN(v) || v < 0) {
@@ -240,72 +236,95 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
 
-  return (
-    <div
-      id={`orc-${o.id}`}
-      className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? "border-brand ring-2 ring-brand/30 shadow-lg" : isUrgent ? "border-red-200 shadow-red-50" : "border-border"}`}
-    >
-      {isUrgent && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
-          <p
-            className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
-          >
-            Solicitado em{" "}
-            {new Date(o.created_at).toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <span
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
-          >
-            {statusLabelOverride}
-          </span>
-          {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
-        </div>
-      </div>
+  const reserva = minhaAgenda?.bloqueiosAgenda?.find((b: any) => b.orcamento_id === o.id);
+  const isReservaTemporaria = reserva?.status === "temporario";
+  const isReservaConfirmada = reserva?.status === "confirmado";
 
-      <div className="text-sm space-y-2">
-        <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
-          <User className="h-4 w-4 shrink-0" />
-          <span className="truncate">{cliente?.nome || "Cliente"}</span>
-          {(clienteCidade || distKm != null) && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              {clienteCidade}
-              {distKm != null && ` · ${distKm.toFixed(1)} km`}
+  const agendaLabel = o.data_preferida
+    ? `${new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${periodoLabel}`
+    : "A combinar";
+
+    return (
+      <div
+        id={`orc-${o.id}`}
+        className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? "border-brand ring-2 ring-brand/30 shadow-lg" : isUrgent ? "border-red-200 shadow-red-50" : "border-border"}`}
+      >
+        {isUrgent && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
+            <p
+              className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
+            >
+              Solicitado em{" "}
+              {new Date(o.created_at).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <span
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
+            >
+              {statusLabelOverride}
             </span>
-          )}
+            {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
+          </div>
         </div>
-        {isAguardandoPagamento && (
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
-            <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
-              <Clock className="h-4 w-4" />
-              Reserva pendente
-            </div>
-            <p className="text-amber-700 text-xs leading-relaxed">
-              A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda.
-            </p>
-          </div>
-        )}
 
-        {isPagamentoConfirmado && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-              <CheckCircle2 className="h-4 w-4" />
-              Agenda confirmada
-            </div>
-            <p className="text-emerald-700 text-xs leading-relaxed">
-              Pagamento confirmado. Este serviço já pode ser considerado compromisso ativo em sua agenda para {agendaLabel}.
-            </p>
+        <div className="text-sm space-y-2">
+          <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
+            <User className="h-4 w-4 shrink-0" />
+            <span className="truncate">{cliente?.nome || "Cliente"}</span>
+            {(clienteCidade || distKm != null) && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                {clienteCidade}
+                {distKm != null && ` · ${distKm.toFixed(1)} km`}
+              </span>
+            )}
           </div>
-        )}
+          
+          {isAguardandoPagamento && (
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
+              <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+                <Clock className="h-4 w-4" />
+                {isReservaTemporaria ? "Reserva temporária ativa" : "Reserva pendente"}
+              </div>
+              <p className="text-amber-700 text-[11px] leading-relaxed">
+                {isReservaTemporaria 
+                  ? `Este horário (${agendaLabel}) está bloqueado na sua agenda por 2h aguardando o pagamento.`
+                  : "A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda."}
+              </p>
+              {isReservaTemporaria && reserva.expires_at && (
+                <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">
+                  Expira às {new Date(reserva.expires_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              )}
+              {!isReservaTemporaria && o.data_preferida && (
+                <p className="text-[10px] text-amber-600 font-bold italic mt-1">
+                  Não foi possível reservar automaticamente. Combine o horário pelo chat.
+                </p>
+              )}
+            </div>
+          )}
+
+          {isPagamentoConfirmado && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                {isReservaConfirmada ? "Agenda confirmada" : "Pagamento recebido"}
+              </div>
+              <p className="text-emerald-700 text-[11px] leading-relaxed">
+                {isReservaConfirmada
+                  ? `Este serviço está confirmado na sua agenda para ${agendaLabel}.`
+                  : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat."}
+              </p>
+            </div>
+          )}
 
         {showDetails && (
           <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">

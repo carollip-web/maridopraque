@@ -55,7 +55,7 @@ export function slotsDoDia(opts: {
 }
 
 export async function carregarAgendaProfissional(profissionalId: string) {
-  const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }] = await Promise.all([
+  const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }, { data: pba }] = await Promise.all([
     supabase
       .from("profissional_disponibilidade")
       .select("dia_semana, hora_inicio, hora_fim")
@@ -66,7 +66,7 @@ export async function carregarAgendaProfissional(profissionalId: string) {
       .eq("user_id", profissionalId),
     supabase
       .from("orcamentos")
-      .select("data_agendada")
+      .select("id, data_agendada")
       .eq("profissional_id", profissionalId)
       .not("data_agendada", "is", null)
       .in("status", ["aprovado", "pago"]),
@@ -75,13 +75,27 @@ export async function carregarAgendaProfissional(profissionalId: string) {
       .select("duracao_padrao_min")
       .eq("user_id", profissionalId)
       .maybeSingle(),
+    supabase
+      .from("profissional_bloqueios_agenda")
+      .select("id, orcamento_id, inicio, fim, status, expires_at")
+      .eq("profissional_id", profissionalId)
+      .in("status", ["temporario", "confirmado"])
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`),
   ]);
+
+  // Combine traditional blocks with new agenda blocks
+  const combinedBlocks = [
+    ...(blocs ?? []).map(b => ({ data_inicio: b.data_inicio, data_fim: b.data_fim })),
+    ...(pba ?? []).map(p => ({ data_inicio: p.inicio, data_fim: p.fim }))
+  ];
+
   return {
     janelas: (jans ?? []) as Janela[],
-    bloqueios: (blocs ?? []) as Bloqueio[],
+    bloqueios: combinedBlocks,
     agendados: (orcs ?? []).filter(
       (o: { data_agendada: string | null }) => o.data_agendada,
     ) as Agendado[],
+    bloqueiosAgenda: pba ?? [], // Keep raw data for detailed UI
     duracaoMin: perfil?.duracao_padrao_min ?? 60,
   };
 }

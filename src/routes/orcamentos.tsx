@@ -625,6 +625,11 @@ function MeusOrcamentos() {
           service_name: payload.serviceName,
           descricao: payload.descricao ?? null,
           fotos_problema: Array.isArray(fotos) ? fotos : [],
+          tipo_atendimento: payload.tipoAtendimento || null,
+          data_preferida: payload.dataPreferida || null,
+          periodo_preferido: payload.periodoPreferido || null,
+          horario_preferido: payload.horarioPreferido || null,
+          flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
         };
 
         const { data: novoOrcamento, error: orcamentoError } = await supabase
@@ -657,37 +662,6 @@ function MeusOrcamentos() {
 
         if (!novoId) {
           throw new Error("Pedido criado sem ID retornado.");
-        }
-
-        // Tentativa secundária de salvar a agenda e tipo_atendimento (não bloqueia o pedido se o schema cache estiver desatualizado)
-        const preferenciasPayload = {
-          tipo_atendimento: payload.tipoAtendimento || null,
-          data_preferida: payload.dataPreferida || null,
-          periodo_preferido: payload.periodoPreferido || null,
-          horario_preferido: payload.horarioPreferido || null,
-          flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
-        };
-
-        const { error: agendaError } = await supabase
-          .from("orcamentos")
-          .update(preferenciasPayload as any)
-          .eq("id", novoId);
-
-        if (agendaError) {
-          console.warn(
-            "[orcamentos] preferências não salvas por schema cache ou outro erro no update",
-            agendaError,
-          );
-
-          if (
-            agendaError.code === "PGRST204" ||
-            agendaError.message?.includes("data_preferida") ||
-            agendaError.message?.includes("tipo_atendimento")
-          ) {
-            toast.info(
-              "Pedido criado! Suas preferências serão sincronizadas assim que o sistema atualizar.",
-            );
-          }
         }
 
         if (payload.materiais.length > 0) {
