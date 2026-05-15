@@ -44,15 +44,18 @@ export function ProfissionalConfiguracoes() {
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { data: profissionalPerfil } = useQuery({
+  const { data: profissionalPerfil, refetch: refetchPerfil } = useQuery({
     queryKey: ["profissional_perfil", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profissional_perfil")
-        .select("*")
+        .select(
+          "user_id, bio, cidade, especialidades, chave_pix, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
+      if (error) console.error("[ProfissionalConfiguracoes] load perfil", error);
       return data as unknown as ProfissionalPerfilData | null;
     },
     enabled: !!user,
@@ -72,7 +75,7 @@ export function ProfissionalConfiguracoes() {
       cidade: "",
       chave_pix: "",
       anos_experiencia: 0,
-      raio_atendimento_km: 0,
+      raio_atendimento_km: 15,
       atende_emergencias: false,
       veiculo_proprio: false,
       genero: "nao_informar",
@@ -81,21 +84,20 @@ export function ProfissionalConfiguracoes() {
   });
 
   useEffect(() => {
-    if (profile && profissionalPerfil) {
-      reset({
-        nome: profile.nome ?? "",
-        whatsapp: profile.whatsapp ?? "",
-        bio: profissionalPerfil.bio ?? "",
-        cidade: profissionalPerfil.cidade ?? "",
-        chave_pix: profissionalPerfil.chave_pix ?? "",
-        anos_experiencia: profissionalPerfil.anos_experiencia ?? 0,
-        raio_atendimento_km: profissionalPerfil.raio_atendimento_km ?? 0,
-        atende_emergencias: profissionalPerfil.atende_emergencias ?? false,
-        veiculo_proprio: profissionalPerfil.veiculo_proprio ?? false,
-        genero: (profissionalPerfil as any).genero ?? "nao_informar",
-        oferece_apoio_feminino: Boolean((profissionalPerfil as any).oferece_apoio_feminino),
-      });
-    }
+    if (!profile) return;
+    reset({
+      nome: profile.nome ?? "",
+      whatsapp: profile.whatsapp ?? "",
+      bio: profissionalPerfil?.bio ?? "",
+      cidade: profissionalPerfil?.cidade ?? "",
+      chave_pix: profissionalPerfil?.chave_pix ?? "",
+      anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
+      raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
+      atende_emergencias: !!profissionalPerfil?.atende_emergencias,
+      veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
+      genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
+      oferece_apoio_feminino: !!profissionalPerfil?.oferece_apoio_feminino,
+    });
   }, [profile, profissionalPerfil, reset]);
 
   const handleSaveProfile = async (values: ProfileValues) => {
@@ -122,54 +124,56 @@ export function ProfissionalConfiguracoes() {
         }
       }
 
-      // 3. Update profissional_perfil basic fields
-      const basicPayload = {
+      // 3. Upsert profissional_perfil (single payload, all fields)
+      const profissionalPayload = {
+        user_id: user.id,
         bio: values.bio || null,
         cidade: values.cidade || null,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: basicError } = await supabase
-        .from("profissional_perfil")
-        .update(basicPayload)
-        .eq("user_id", user.id);
-
-      if (basicError) throw basicError;
-
-      // 4. Update operational/advanced fields (Secondary block to avoid schema cache issues)
-      const advancedPayload = {
-        anos_experiencia: values.anos_experiencia ?? null,
-        raio_atendimento_km: values.raio_atendimento_km ?? null,
         chave_pix: values.chave_pix || null,
+        anos_experiencia: Number(values.anos_experiencia ?? 0),
+        raio_atendimento_km: Number(values.raio_atendimento_km ?? 15),
         atende_emergencias: !!values.atende_emergencias,
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        updated_at: new Date().toISOString(),
       };
 
-      const { error: advancedError } = await supabase
+      const { error: perfilError } = await supabase
         .from("profissional_perfil")
-        .update(advancedPayload as any)
-        .eq("user_id", user.id);
+        .upsert(profissionalPayload as any, { onConflict: "user_id" });
 
-      if (advancedError) {
-        console.warn("[ProfissionalConfiguracoes] advanced fields not saved", advancedError);
-        if (
-          advancedError.code === "PGRST204" ||
-          advancedError.message?.includes("schema cache")
-        ) {
-          toast.info(
-            "Perfil salvo. Alguns campos avançados serão sincronizados assim que o sistema atualizar."
-          );
-        } else {
-          toast.error("Perfil salvo, mas alguns campos avançados não foram atualizados.");
-        }
-      } else {
-        toast.success("Perfil atualizado com sucesso!");
+      if (perfilError) {
+        console.error("[ProfissionalConfiguracoes] erro ao salvar profissional_perfil", {
+          code: perfilError.code,
+          message: perfilError.message,
+          details: perfilError.details,
+          hint: perfilError.hint,
+          payload: profissionalPayload,
+        });
+        throw perfilError;
       }
 
+      // 4. Confirm persistence
+      const { data: savedPerfil } = await supabase
+        .from("profissional_perfil")
+        .select(
+          "genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      console.info("[ProfissionalConfiguracoes] perfil salvo confirmado", savedPerfil);
+
+      if (savedPerfil && (savedPerfil as any).genero !== profissionalPayload.genero) {
+        toast.error("Perfil enviado, mas os dados não foram confirmados no banco.");
+      } else {
+        toast.success("Perfil salvo com sucesso!");
+      }
+
+      await refetchPerfil();
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (error: any) {
