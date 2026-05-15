@@ -571,11 +571,14 @@ function MeusOrcamentos() {
 
   const handleNew = async () => {
     if (!selServico) return;
+
     if (!user) {
       toast.error("Faça login para enviar uma solicitação.");
       return;
     }
+
     const userId = user.id;
+
     const payload = {
       serviceId: selServico.id,
       serviceName: selServico.nome,
@@ -590,12 +593,15 @@ function MeusOrcamentos() {
         quantidade,
       })),
     };
+
     const parsed = novoSchema.safeParse(payload);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos.");
       return;
     }
+
     setSaving(true);
+
     try {
       if (editingId) {
         await editar({
@@ -605,10 +611,12 @@ function MeusOrcamentos() {
             materiais: payload.materiais,
           },
         });
+
         await supabase
           .from("orcamentos")
           .update({ fotos_problema: fotos } as any)
           .eq("id", editingId);
+
         toast.success("Orçamento atualizado.");
       } else {
         const insertPayload = {
@@ -632,38 +640,55 @@ function MeusOrcamentos() {
             message: orcamentoError.message,
             details: orcamentoError.details,
             hint: orcamentoError.hint,
-            payload: insertPayload,
           });
+
+          console.error(
+            "[orcamentos.handleNew] payload enviado",
+            JSON.stringify(insertPayload, null, 2),
+          );
+
           toast.error("Não foi possível criar o pedido", {
             description: `${orcamentoError.code || ""} ${orcamentoError.message || ""}`.trim(),
           });
+
           throw orcamentoError;
         }
 
         const novoId = novoOrcamento?.id;
-        if (novoId) {
-          // Tentativa secundária de salvar a agenda (não bloqueia o pedido se o schema cache estiver desatualizado)
-          const agendaPayload = {
+
+        if (!novoId) {
+          throw new Error("Pedido criado sem ID retornado.");
+        }
+
+        const { error: agendaError } = await supabase
+          .from("orcamentos")
+          .update({
             data_preferida: payload.dataPreferida || null,
             periodo_preferido: payload.periodoPreferido || null,
             horario_preferido: payload.horarioPreferido || null,
             flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
-          };
+          } as any)
+          .eq("id", novoId);
 
-          const { error: agendaError } = await supabase
-            .from("orcamentos")
-            .update(agendaPayload as any)
-            .eq("id", novoId);
+        if (agendaError) {
+          console.warn(
+            "[orcamentos] agenda ainda não reconhecida no schema cache ou outro erro no update",
+            agendaError,
+          );
 
-          if (agendaError) {
-            console.warn("[orcamentos] agenda não salva por schema cache", agendaError);
-            if (agendaError.code === "PGRST204" || agendaError.message.includes("data_preferida")) {
-              toast.info("Pedido criado! A preferência de agenda será sincronizada em instantes.");
-            }
+          if (
+            agendaError.code === "PGRST204" ||
+            agendaError.message?.includes("data_preferida")
+          ) {
+            toast.info(
+              "Pedido criado! A preferência de agenda será registrada assim que o sistema sincronizar.",
+            );
           }
+        }
 
-          if (payload.materiais.length > 0) {
+        if (payload.materiais.length > 0) {
           const materialIds = payload.materiais.map((m) => m.materialId);
+
           const { data: materiaisRows, error: materiaisError } = await supabase
             .from("materiais")
             .select("id, nome, unidade, preco_atual")
@@ -675,6 +700,7 @@ function MeusOrcamentos() {
             .map((m) => {
               const material = materiaisRows?.find((row) => row.id === m.materialId);
               if (!material) return null;
+
               return {
                 orcamento_id: novoId,
                 material_id: material.id,
@@ -690,22 +716,26 @@ function MeusOrcamentos() {
             const { error: itensError } = await supabase
               .from("orcamento_materiais")
               .insert(materialItems);
+
             if (itensError) throw itensError;
           }
         }
+
         toast.success("Solicitação enviada! Aguarde a confirmação do profissional.");
         queryClient.invalidateQueries({ queryKey: ["cliente"] });
-        // limpa rascunho após envio bem-sucedido
+
         if (draftKey && typeof window !== "undefined") {
           try {
             window.localStorage.removeItem(draftKey);
           } catch {}
+
           setHasDraft(false);
           setDraftSavedAt(null);
         }
       }
+
       resetForm();
-      setShowNew(false); // Volta para a tela de acompanhamento
+      setShowNew(false);
       refresh();
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível salvar.");
