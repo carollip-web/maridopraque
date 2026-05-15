@@ -208,7 +208,7 @@ function ProfissionalArea() {
 
     if (user) {
       const [{ data: perfil }, { data: avs }] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("profissional_perfil")
           .select("ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino")
           .eq("user_id", user.id)
@@ -216,15 +216,16 @@ function ProfissionalArea() {
         supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!),
       ]);
       if (perfil) {
-        setAtivo(perfil.ativo);
-        setEspecialidades(perfil.especialidades || []);
+        const perfilAny = perfil as any;
+        setAtivo(perfilAny.ativo);
+        setEspecialidades(perfilAny.especialidades || []);
         setProfGeo({
-          lat: perfil.lat ?? null,
-          lng: perfil.lng ?? null,
-          raio: perfil.raio_atendimento_km ?? 15,
+          lat: perfilAny.lat ?? null,
+          lng: perfilAny.lng ?? null,
+          raio: perfilAny.raio_atendimento_km ?? 15,
         });
-        setProfGenero((perfil as any).genero ?? null);
-        setProfApoioFeminino(Boolean((perfil as any).oferece_apoio_feminino));
+        setProfGenero(perfilAny.genero ?? null);
+        setProfApoioFeminino(Boolean(perfilAny.oferece_apoio_feminino));
       }
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));

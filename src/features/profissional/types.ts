@@ -1,5 +1,7 @@
-export type Orcamento = {
+export interface Orcamento {
   id: string;
+  cliente_id: string;
+  profissional_id: string | null;
   service_id: string | null;
   service_name: string;
   descricao: string | null;
@@ -15,8 +17,6 @@ export type Orcamento = {
     | "pago"
     | "concluido"
     | "cancelado";
-  cliente_id: string;
-  profissional_id: string | null;
   observacoes_profissional: string | null;
   created_at: string;
   updated_at: string;
@@ -32,11 +32,9 @@ export type Orcamento = {
   periodo_preferido?: string | null;
   horario_preferido?: string | null;
   flexibilidade_agenda?: string | null;
-  fotos_problema?: string[] | null;
-  descricao?: string | null;
   genero?: string | null;
   oferece_apoio_feminino?: boolean | null;
-};
+}
 
 export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar";
 

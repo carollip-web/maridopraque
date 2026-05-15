@@ -135,7 +135,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio)
-    const { data: perfilProfissional, error: perfilError } = await supabase
+    const { data: perfilProfissional, error: perfilError } = await (supabase as any)
       .from("profissional_perfil")
       .select("genero, oferece_apoio_feminino")
       .eq("user_id", userId)
@@ -145,10 +145,12 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       console.warn("[enviarOrcamento] não foi possível validar perfil operacional", perfilError);
     }
 
+    const perfilAny = perfilProfissional as any;
+
     const compat = isProfissionalCompativelComTipoAtendimento({
       tipoAtendimento: (orc as any).tipo_atendimento,
-      genero: perfilProfissional?.genero as any,
-      ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino,
+      genero: perfilAny?.genero as any,
+      ofereceApoioFeminino: perfilAny?.oferece_apoio_feminino,
     });
 
     if (!compat.compatible && compat.blockProposal) {
