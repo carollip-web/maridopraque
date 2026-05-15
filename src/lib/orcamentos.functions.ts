@@ -580,13 +580,12 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     let reservaStatus: "temporaria" | "ja_existia" | "erro" | "sem_data" | "sem_profissional" = "sem_data";
 
     console.info("[aceitarProposta] dados para reserva", {
-      propostaId: prop.id,
-      orcamentoId: orc.id,
-      profissionalId: prop.profissional_id,
-      statusOrcamento: orc.status,
-      data_preferida: preferencias.data_preferida,
-      periodo_preferido: preferencias.periodo_preferido,
-      horario_preferido: preferencias.horario_preferido,
+      propostaId: prop?.id,
+      orcamentoId,
+      profissionalId: prop?.profissional_id,
+      data_preferida: preferencias?.data_preferida,
+      periodo_preferido: preferencias?.periodo_preferido,
+      horario_preferido: preferencias?.horario_preferido,
     });
 
     if (!prop.profissional_id) {
@@ -596,71 +595,39 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       reservaStatus = "sem_profissional";
     } else if (preferencias.data_preferida) {
       try {
-        const dataStr = String(preferencias.data_preferida);
-        // Build ISO with explicit BR timezone so reservation lands on the picked day,
-        // not at UTC offset (which would shift it back ~3h on Cloudflare workerd).
-        let inicioIso: string | null = null;
-        let fimIso: string | null = null;
-
-        const buildIso = (h: number, m: number) =>
-          `${dataStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00-03:00`;
-
-        if (preferencias.periodo_preferido === "manha") {
-          inicioIso = buildIso(8, 0);
-          fimIso = buildIso(12, 0);
-        } else if (preferencias.periodo_preferido === "tarde") {
-          inicioIso = buildIso(13, 0);
-          fimIso = buildIso(18, 0);
-        } else if (preferencias.periodo_preferido === "noite") {
-          inicioIso = buildIso(18, 0);
-          fimIso = buildIso(21, 0);
-        } else if (
-          preferencias.periodo_preferido === "horario_especifico" &&
-          preferencias.horario_preferido
-        ) {
-          const [hStr, mStr] = String(preferencias.horario_preferido).split(":");
-          const h = parseInt(hStr, 10);
-          const m = parseInt(mStr ?? "0", 10);
-          const inicioDate = new Date(buildIso(h, m));
-          const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
-          inicioIso = inicioDate.toISOString();
-          fimIso = fimDate.toISOString();
-        } else {
-          inicioIso = buildIso(9, 0);
-          fimIso = buildIso(11, 0);
-        }
+        const intervalo = calcularIntervaloReserva(
+          preferencias.data_preferida,
+          preferencias.periodo_preferido,
+          preferencias.horario_preferido,
+        );
 
         const { data: reservaExistente } = await (serviceClient as any)
           .from("profissional_bloqueios_agenda")
-          .select("id,status,inicio,fim,expires_at")
-          .eq("orcamento_id", orc.id)
+          .select("id")
+          .eq("orcamento_id", orcamentoId)
           .maybeSingle();
 
         if (reservaExistente) {
           console.info("[aceitarProposta] reserva já existia para orçamento", reservaExistente);
           reservaStatus = "ja_existia";
         } else {
-          const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-          const payload = {
+          const payloadReserva = {
             profissional_id: prop.profissional_id,
-            orcamento_id: orc.id,
-            inicio: inicioIso,
-            fim: fimIso,
+            orcamento_id: orcamentoId,
+            inicio: intervalo.inicio,
+            fim: intervalo.fim,
             status: "temporario",
             motivo: "Reserva temporária aguardando pagamento",
-            expires_at: expiresAt,
+            expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
           };
+
+          console.info("[aceitarProposta] inserindo reserva temporária", payloadReserva);
 
           const { data: reserva, error: reservaError } = await (serviceClient as any)
             .from("profissional_bloqueios_agenda")
-            .insert(payload)
+            .insert(payloadReserva)
             .select("*")
             .single();
-
-          console.info("[aceitarProposta] reserva temporária resultado", {
-            reserva,
-            reservaError,
-          });
 
           if (reservaError) {
             console.error("[aceitarProposta] erro ao criar reserva temporária", {
@@ -668,10 +635,11 @@ export const aceitarProposta = createServerFn({ method: "POST" })
               message: reservaError.message,
               details: reservaError.details,
               hint: reservaError.hint,
-              payload,
+              payload: payloadReserva,
             });
             reservaStatus = "erro";
           } else {
+            console.info("[aceitarProposta] reserva temporária criada", reserva);
             reservaStatus = "temporaria";
           }
         }
