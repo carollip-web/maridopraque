@@ -75,7 +75,7 @@ export function ProfissionalConfiguracoes() {
       cidade: "",
       chave_pix: "",
       anos_experiencia: 0,
-      raio_atendimento_km: 0,
+      raio_atendimento_km: 15,
       atende_emergencias: false,
       veiculo_proprio: false,
       genero: "nao_informar",
