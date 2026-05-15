@@ -207,26 +207,51 @@ function ProfissionalArea() {
     setTicketMedio(ticket);
 
     if (user) {
-      const [{ data: perfil }, { data: avs }] = await Promise.all([
-        (supabase as any)
+      let perfil: any = null;
+      const { data: perfilCompleto, error: perfilCompletoError } = await (supabase as any)
+        .from("profissional_perfil")
+        .select("ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (perfilCompletoError) {
+        console.warn("[ProfissionalArea] perfil completo indisponível, tentando básico", perfilCompletoError);
+
+        const { data: perfilBasico, error: perfilBasicoError } = await (supabase as any)
           .from("profissional_perfil")
-          .select("ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino")
+          .select("ativo, especialidades, lat, lng, raio_atendimento_km")
           .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!),
-      ]);
-      if (perfil) {
-        const perfilAny = perfil as any;
-        setAtivo(perfilAny.ativo);
-        setEspecialidades(perfilAny.especialidades || []);
-        setProfGeo({
-          lat: perfilAny.lat ?? null,
-          lng: perfilAny.lng ?? null,
-          raio: perfilAny.raio_atendimento_km ?? 15,
-        });
-        setProfGenero(perfilAny.genero ?? null);
-        setProfApoioFeminino(Boolean(perfilAny.oferece_apoio_feminino));
+          .maybeSingle();
+
+        if (perfilBasicoError) {
+          console.error("[ProfissionalArea] erro ao carregar perfil básico", perfilBasicoError);
+        }
+
+        perfil = perfilBasico
+          ? {
+              ...perfilBasico,
+              genero: null,
+              oferece_apoio_feminino: false,
+            }
+          : null;
+      } else {
+        perfil = perfilCompleto;
       }
+
+      const { data: avs } = await supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!);
+
+      if (perfil) {
+        setAtivo(perfil.ativo);
+        setEspecialidades(perfil.especialidades || []);
+        setProfGeo({
+          lat: perfil.lat ?? null,
+          lng: perfil.lng ?? null,
+          raio: perfil.raio_atendimento_km ?? 15,
+        });
+        setProfGenero(perfil.genero ?? null);
+        setProfApoioFeminino(Boolean(perfil.oferece_apoio_feminino));
+      }
+      
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }

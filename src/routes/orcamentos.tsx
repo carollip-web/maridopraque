@@ -675,7 +675,7 @@ function MeusOrcamentos() {
           });
 
           toast.warning(
-            "Pedido criado, mas as preferências de atendimento/agenda não foram salvas. Tente editar o pedido."
+            "Pedido criado, mas as preferências de atendimento/agenda não foram salvas. Tente editar o pedido ou aguarde sincronização."
           );
         } else {
           console.info("[orcamentos.handleNew] preferências salvas", preferenciasPayload);

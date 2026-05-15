@@ -55,33 +55,42 @@ export function slotsDoDia(opts: {
 }
 
 export async function carregarAgendaProfissional(profissionalId: string) {
-  const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }, { data: pbaRaw }] =
-    await Promise.all([
-      supabase
-        .from("profissional_disponibilidade")
-        .select("dia_semana, hora_inicio, hora_fim")
-        .eq("user_id", profissionalId),
-      supabase
-        .from("profissional_bloqueios")
-        .select("data_inicio, data_fim")
-        .eq("user_id", profissionalId),
-      supabase
-        .from("orcamentos")
-        .select("id, data_agendada")
-        .eq("profissional_id", profissionalId)
-        .not("data_agendada", "is", null)
-        .in("status", ["aprovado", "pago"]),
-      supabase
-        .from("profissional_perfil")
-        .select("duracao_padrao_min")
-        .eq("user_id", profissionalId)
-        .maybeSingle(),
-      (supabase as any)
-        .from("profissional_bloqueios_agenda")
-        .select("*")
-        .eq("profissional_id", profissionalId)
-        .in("status", ["temporario", "confirmado"]),
-    ]);
+  const [jansRes, blocsRes, orcsRes, perfilRes, pbaRes] = await Promise.all([
+    supabase
+      .from("profissional_disponibilidade")
+      .select("dia_semana, hora_inicio, hora_fim")
+      .eq("user_id", profissionalId),
+    supabase
+      .from("profissional_bloqueios")
+      .select("data_inicio, data_fim")
+      .eq("user_id", profissionalId),
+    supabase
+      .from("orcamentos")
+      .select("id, data_agendada")
+      .eq("profissional_id", profissionalId)
+      .not("data_agendada", "is", null)
+      .in("status", ["aprovado", "pago"]),
+    supabase
+      .from("profissional_perfil")
+      .select("duracao_padrao_min")
+      .eq("user_id", profissionalId)
+      .maybeSingle(),
+    (supabase as any)
+      .from("profissional_bloqueios_agenda")
+      .select("*")
+      .eq("profissional_id", profissionalId)
+      .in("status", ["temporario", "confirmado"]),
+  ]);
+
+  const jans = jansRes.data;
+  const blocs = blocsRes.data;
+  const orcs = orcsRes.data;
+  const perfil = perfilRes.data;
+  const pbaRaw = pbaRes.data;
+
+  if (pbaRes.error) {
+    console.warn("[agenda] bloqueios de agenda indisponíveis", pbaRes.error);
+  }
 
   const now = new Date();
   const bloqueiosValidos = ((pbaRaw as any[]) || []).filter((b) => {

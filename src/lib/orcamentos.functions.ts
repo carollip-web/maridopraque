@@ -97,14 +97,35 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     const observacoes = data.observacoes?.trim() || null;
     console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
-    // valida range do catálogo
-    const { data: orc } = await supabase
+    // 0. Buscar orçamento com fallback para schema cache
+    let orc: any = null;
+    const { data: orcCompleto, error: orcError } = await (supabase as any)
       .from("orcamentos")
-      .select("service_id, tipo_atendimento")
+      .select("id, status, cliente_id, service_id, service_name, tipo_atendimento")
       .eq("id", data.orcamentoId)
-      .single();
+      .maybeSingle();
 
-    if (orc?.service_id) {
+    if (orcError || !orcCompleto) {
+      console.warn("[enviarOrcamento] falha ao buscar orçamento completo ou não encontrado", orcError);
+      
+      // Fallback sem campos novos
+      const { data: orcBasico, error: orcBasicoError } = await supabase
+        .from("orcamentos")
+        .select("id, status, cliente_id, service_id, service_name")
+        .eq("id", data.orcamentoId)
+        .maybeSingle();
+
+      if (orcBasicoError || !orcBasico) {
+        console.error("[enviarOrcamento] falha crítica ao localizar orçamento", orcBasicoError);
+        throw new Error("Não foi possível localizar o pedido solicitado.");
+      }
+      orc = { ...orcBasico, tipo_atendimento: null };
+    } else {
+      orc = orcCompleto;
+    }
+
+    // 0.1 Valida range do catálogo
+    if (orc.service_id) {
       const { data: cat } = await supabase
         .from("services_catalog")
         .select("preco_min, preco_max, nome")
@@ -134,23 +155,37 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       throw new Error("Apenas profissionais podem enviar orçamentos.");
     }
 
-    // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio)
-    const { data: perfilProfissional, error: perfilError } = await (supabase as any)
+    // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio) com fallback
+    let perfilProfissional: any = null;
+    const { data: perfCompleto, error: perfilError } = await (supabase as any)
       .from("profissional_perfil")
       .select("genero, oferece_apoio_feminino")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (perfilError) {
-      console.warn("[enviarOrcamento] não foi possível validar perfil operacional", perfilError);
+      console.warn("[enviarOrcamento] perfil operacional indisponível (schema cache?), tentando básico", perfilError);
+      const { data: perfBasico } = await supabase
+        .from("profissional_perfil")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      perfilProfissional = perfBasico ? { ...perfBasico, genero: null, oferece_apoio_feminino: false } : null;
+    } else {
+      perfilProfissional = perfCompleto;
     }
 
-    const perfilAny = perfilProfissional as any;
-
     const compat = isProfissionalCompativelComTipoAtendimento({
-      tipoAtendimento: (orc as any).tipo_atendimento,
-      genero: perfilAny?.genero as any,
-      ofereceApoioFeminino: perfilAny?.oferece_apoio_feminino,
+      tipoAtendimento: orc.tipo_atendimento ?? null,
+      genero: perfilProfissional?.genero as any,
+      ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino ?? false,
+    });
+
+    console.info("[enviarOrcamento] validação compatibilidade", { 
+      orcamentoId: orc.id, 
+      tipo: orc.tipo_atendimento, 
+      compat 
     });
 
     if (!compat.compatible && compat.blockProposal) {
