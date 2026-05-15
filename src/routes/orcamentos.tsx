@@ -619,12 +619,40 @@ function MeusOrcamentos() {
 
         toast.success("Orçamento atualizado.");
       } else {
-        const insertPayload = {
+        const basePayload = {
           cliente_id: userId,
           service_id: payload.serviceId,
           service_name: payload.serviceName,
           descricao: payload.descricao ?? null,
           fotos_problema: Array.isArray(fotos) ? fotos : [],
+        };
+
+        const { data: novoOrcamento, error: orcamentoError } = await supabase
+          .from("orcamentos")
+          .insert(basePayload as any)
+          .select("id")
+          .single();
+
+        if (orcamentoError) {
+          console.error("[orcamentos.handleNew] erro ao criar orçamento base", {
+            code: orcamentoError.code,
+            message: orcamentoError.message,
+            details: orcamentoError.details,
+            hint: orcamentoError.hint,
+          });
+
+          toast.error("Não foi possível criar o pedido", {
+            description: orcamentoError.message,
+          });
+
+          throw orcamentoError;
+        }
+
+        const novoId = novoOrcamento?.id;
+        if (!novoId) throw new Error("Pedido criado sem ID retornado.");
+
+        // Update preferences (separate to handle schema cache issues)
+        const preferenciasPayload = {
           tipo_atendimento: payload.tipoAtendimento || null,
           data_preferida: payload.dataPreferida || null,
           periodo_preferido: payload.periodoPreferido || null,
@@ -632,36 +660,25 @@ function MeusOrcamentos() {
           flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
         };
 
-        const { data: novoOrcamento, error: orcamentoError } = await supabase
+        const { error: preferenciasError } = await (supabase as any)
           .from("orcamentos")
-          .insert(insertPayload as any)
-          .select("id")
-          .single();
+          .update(preferenciasPayload)
+          .eq("id", novoId);
 
-        if (orcamentoError) {
-          console.error("[orcamentos.handleNew] erro ao criar orçamento", {
-            code: orcamentoError.code,
-            message: orcamentoError.message,
-            details: orcamentoError.details,
-            hint: orcamentoError.hint,
+        if (preferenciasError) {
+          console.error("[orcamentos.handleNew] falha ao salvar preferências", {
+            code: preferenciasError.code,
+            message: preferenciasError.message,
+            details: preferenciasError.details,
+            hint: preferenciasError.hint,
+            payload: preferenciasPayload,
           });
 
-          console.error(
-            "[orcamentos.handleNew] payload enviado",
-            JSON.stringify(insertPayload, null, 2),
+          toast.warning(
+            "Pedido criado, mas as preferências de atendimento/agenda não foram salvas. Tente editar o pedido."
           );
-
-          toast.error("Não foi possível criar o pedido", {
-            description: `${orcamentoError.code || ""} ${orcamentoError.message || ""}`.trim(),
-          });
-
-          throw orcamentoError;
-        }
-
-        const novoId = novoOrcamento?.id;
-
-        if (!novoId) {
-          throw new Error("Pedido criado sem ID retornado.");
+        } else {
+          console.info("[orcamentos.handleNew] preferências salvas", preferenciasPayload);
         }
 
         if (payload.materiais.length > 0) {

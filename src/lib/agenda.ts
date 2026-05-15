@@ -55,45 +55,52 @@ export function slotsDoDia(opts: {
 }
 
 export async function carregarAgendaProfissional(profissionalId: string) {
-  const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }, { data: pba }] = await Promise.all([
-    supabase
-      .from("profissional_disponibilidade")
-      .select("dia_semana, hora_inicio, hora_fim")
-      .eq("user_id", profissionalId),
-    supabase
-      .from("profissional_bloqueios")
-      .select("data_inicio, data_fim")
-      .eq("user_id", profissionalId),
-    supabase
-      .from("orcamentos")
-      .select("id, data_agendada")
-      .eq("profissional_id", profissionalId)
-      .not("data_agendada", "is", null)
-      .in("status", ["aprovado", "pago"]),
-    supabase
-      .from("profissional_perfil")
-      .select("duracao_padrao_min")
-      .eq("user_id", profissionalId)
-      .maybeSingle(),
-    supabase
-      .from("profissional_bloqueios_agenda")
-      .select("id, orcamento_id, inicio, fim, status, expires_at")
-      .eq("profissional_id", profissionalId)
-      .in("status", ["temporario", "confirmado"])
-      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`),
-  ]);
+  const [{ data: jans }, { data: blocs }, { data: orcs }, { data: perfil }, { data: pbaRaw }] =
+    await Promise.all([
+      supabase
+        .from("profissional_disponibilidade")
+        .select("dia_semana, hora_inicio, hora_fim")
+        .eq("user_id", profissionalId),
+      supabase
+        .from("profissional_bloqueios")
+        .select("data_inicio, data_fim")
+        .eq("user_id", profissionalId),
+      supabase
+        .from("orcamentos")
+        .select("id, data_agendada")
+        .eq("profissional_id", profissionalId)
+        .not("data_agendada", "is", null)
+        .in("status", ["aprovado", "pago"]),
+      supabase
+        .from("profissional_perfil")
+        .select("duracao_padrao_min")
+        .eq("user_id", profissionalId)
+        .maybeSingle(),
+      (supabase as any)
+        .from("profissional_bloqueios_agenda")
+        .select("*")
+        .eq("profissional_id", profissionalId)
+        .in("status", ["temporario", "confirmado"]),
+    ]);
+
+  const now = new Date();
+  const bloqueiosValidos = ((pbaRaw as any[]) || []).filter((b) => {
+    if (b.status !== "temporario") return true;
+    if (!b.expires_at) return true;
+    return new Date(b.expires_at) > now;
+  });
 
   // Combine traditional blocks with new agenda blocks
   const combinedBlocks = [
-    ...(blocs ?? []).map(b => ({ data_inicio: b.data_inicio, data_fim: b.data_fim })),
-    ...(pba ?? []).map(p => ({ data_inicio: p.inicio, data_fim: p.fim }))
+    ...(blocs ?? []).map((b) => ({ data_inicio: b.data_inicio, data_fim: b.data_fim })),
+    ...bloqueiosValidos.map((p) => ({ data_inicio: p.inicio, data_fim: p.fim })),
   ];
 
   return {
     janelas: (jans ?? []) as Janela[],
     bloqueios: combinedBlocks,
     agendados: (orcs ?? []) as Agendado[],
-    bloqueiosAgenda: pba ?? [], // Keep raw data for detailed UI
+    bloqueiosAgenda: bloqueiosValidos, // Keep raw data for detailed UI
     duracaoMin: perfil?.duracao_padrao_min ?? 60,
   };
 }

@@ -365,10 +365,19 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     console.info("[aceitarProposta] proposta validada", { propostaId: prop.id, orcamentoId: prop.orcamento_id });
 
-    // 2. Fetch budget with service client (ONLY id, cliente_id, status)
-    const { data: orc, error: e_orc } = await serviceClient
+    // 2. Fetch budget with service client (including agenda fields)
+    const { data: orc, error: e_orc } = await (serviceClient as any)
       .from("orcamentos")
-      .select("id, cliente_id, status")
+      .select(`
+        id,
+        cliente_id,
+        status,
+        tipo_atendimento,
+        data_preferida,
+        periodo_preferido,
+        horario_preferido,
+        flexibilidade_agenda
+      `)
       .eq("id", data.orcamentoId)
       .single();
 
@@ -388,12 +397,21 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Pedido não está mais aberto para propostas.");
     }
 
-    console.info("[aceitarProposta] orcamento validado", { orcamentoId: orc.id, status: orc.status });
+    console.info("[aceitarProposta] orcamento validado", {
+      orcamentoId: orc.id,
+      status: orc.status,
+      agenda: {
+        tipo: orc.tipo_atendimento,
+        data: orc.data_preferida,
+        periodo: orc.periodo_preferido,
+        horario: orc.horario_preferido,
+      }
+    });
 
     // 4. Update the specific proposta to aceita
     const { data: propUpdated, error: e_up } = await serviceClient
       .from("propostas")
-      .update({ 
+      .update({
         status: "aceita",
         updated_at: new Date().toISOString()
       })
@@ -419,7 +437,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
         .from("proposta_materiais")
         .select("*")
         .eq("proposta_id", prop.id);
-      
+
       if (pMats && pMats.length > 0) {
         await serviceClient.from("orcamento_materiais").delete().eq("orcamento_id", data.orcamentoId);
         await serviceClient.from("orcamento_materiais").insert(
@@ -488,22 +506,28 @@ export const aceitarProposta = createServerFn({ method: "POST" })
         if (inicioStr && fimStr) {
           const inicio = new Date(inicioStr).toISOString();
           const fim = new Date(fimStr).toISOString();
+          const nowIso = new Date().toISOString();
 
-          // Verificar conflitos
-          const { data: conflitos } = await serviceClient
+          // Verificar conflitos (não expirados)
+          const { data: conflitos } = await (serviceClient as any)
             .from("profissional_bloqueios_agenda")
-            .select("id")
+            .select("id, status, expires_at")
             .eq("profissional_id", prop.profissional_id)
             .in("status", ["temporario", "confirmado"])
-            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-            .filter("inicio", "lt", fim)
-            .filter("fim", "gt", inicio);
+            .lt("inicio", fim)
+            .gt("fim", inicio);
 
-          if (conflitos && conflitos.length > 0) {
-            console.warn("[aceitarProposta] conflito ao reservar agenda", { orcamentoId: updatedOrc.id, conflitos });
+          const conflitosValidos = (conflitos || []).filter((c: any) => {
+            if (c.status !== "temporario") return true;
+            if (!c.expires_at) return true;
+            return new Date(c.expires_at) > new Date();
+          });
+
+          if (conflitosValidos.length > 0) {
+            console.warn("[aceitarProposta] conflito ao reservar agenda", { orcamentoId: updatedOrc.id, conflitosValidos });
             agendaReserva = "conflito";
           } else {
-            const { error: e_block } = await serviceClient
+            const { error: e_block } = await (serviceClient as any)
               .from("profissional_bloqueios_agenda")
               .insert({
                 profissional_id: prop.profissional_id,
@@ -514,23 +538,24 @@ export const aceitarProposta = createServerFn({ method: "POST" })
                 motivo: "Reserva temporária aguardando pagamento",
                 expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2h
               });
-            
+
             if (e_block) {
               console.error("[aceitarProposta] erro ao criar bloqueio", e_block);
+              agendaReserva = "erro";
             } else {
               agendaReserva = "sucesso";
+              console.info("[aceitarProposta] reserva temporária criada com sucesso");
             }
           }
         }
       } catch (e_agenda) {
         console.error("[aceitarProposta] erro inesperado ao processar agenda", e_agenda);
+        agendaReserva = "erro";
       }
     }
 
-    console.info("[aceitarProposta] sucesso", { orcamentoId: updatedOrc.id, status: updatedOrc.status, agendaReserva });
-
-    return { 
-      orcamento: updatedOrc, 
+    return {
+      orcamento: updatedOrc,
       proposta: propUpdated,
       agendaReserva
     };
