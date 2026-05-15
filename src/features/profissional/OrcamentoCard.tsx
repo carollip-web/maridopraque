@@ -267,170 +267,218 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     });
   }
 
+  const isVideo = (url: string) => /\.(mp4|mov|webm|m4v)$/i.test(url.split("?")[0] || "");
+
   return (
-      <div
-        id={`orc-${o.id}`}
-        className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? "border-brand ring-2 ring-brand/30 shadow-lg" : isUrgent ? "border-red-200 shadow-red-50" : "border-border"}`}
-      >
-        {isUrgent && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
-            <p
-              className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
-            >
-              Solicitado em{" "}
-              {new Date(o.created_at).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <span
-              className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
-            >
-              {statusLabelOverride}
+    <div
+      id={`orc-${o.id}`}
+      className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col gap-4 relative overflow-hidden transition-all ${isHighlighted ? "border-brand ring-2 ring-brand/30 shadow-lg" : isUrgent ? "border-red-200 shadow-red-50" : "border-border"}`}
+    >
+      {isUrgent && <div className="absolute top-0 left-0 w-1 h-full bg-red-500 animate-pulse" />}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
+          <p
+            className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
+          >
+            Solicitado em{" "}
+            {new Date(o.created_at).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
+          >
+            {statusLabelOverride}
+          </span>
+          {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
+        </div>
+      </div>
+
+      {(o as any).tipo_atendimento && (
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+            {atendimentoPedidoLabel}
+          </span>
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
+              atendimentoCompat.level,
+            )}`}
+          >
+            {atendimentoCompat.label}
+          </span>
+        </div>
+      )}
+
+      <div className="text-sm space-y-2">
+        <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
+          <User className="h-4 w-4 shrink-0" />
+          <span className="truncate">{cliente?.nome || "Cliente"}</span>
+          {(clienteCidade || distKm != null) && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              {clienteCidade}
+              {distKm != null && ` · ${distKm.toFixed(1)} km`}
             </span>
-            {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
+          )}
+        </div>
+
+        {/* Resumo compacto Atendimento/Agenda (Sempre visível) */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 rounded-2xl bg-slate-50 p-4 border border-slate-100/50">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Atendimento
+            </p>
+            <p className="text-sm font-bold text-slate-800">{atendimentoPedidoLabel}</p>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Agenda desejada
+            </p>
+            <p className="text-sm font-bold text-slate-800">{agendaLabel}</p>
           </div>
         </div>
 
-        {(o as any).tipo_atendimento && (
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-              {atendimentoPedidoLabel}
-            </span>
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
-                atendimentoCompat.level,
-              )}`}
-            >
-              {atendimentoCompat.label}
-            </span>
+        {!o.tipo_atendimento && !o.data_preferida && (
+          <p className="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 italic">
+            Este pedido foi criado sem preferências de atendimento ou agenda registradas.
+          </p>
+        )}
+
+        {isAguardandoPagamento && (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
+            <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+              <Clock className="h-4 w-4" />
+              {isReservaTemporaria ? "Reserva temporária ativa" : "Reserva pendente"}
+            </div>
+            <p className="text-amber-700 text-[11px] leading-relaxed">
+              {isReservaTemporaria
+                ? `Este horário (${agendaLabel}) está bloqueado na sua agenda por 2h aguardando o pagamento.`
+                : "A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda."}
+            </p>
+            {isReservaTemporaria && reserva.expires_at && (
+              <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">
+                Expira às{" "}
+                {new Date(reserva.expires_at).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+            )}
+            {!isReservaTemporaria && o.data_preferida && (
+              <p className="text-[10px] text-amber-600 font-bold italic mt-1">
+                Não foi possível reservar automaticamente. Combine o horário pelo chat.
+              </p>
+            )}
           </div>
         )}
 
-        <div className="text-sm space-y-2">
-          <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
-            <User className="h-4 w-4 shrink-0" />
-            <span className="truncate">{cliente?.nome || "Cliente"}</span>
-            {(clienteCidade || distKm != null) && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                {clienteCidade}
-                {distKm != null && ` · ${distKm.toFixed(1)} km`}
-              </span>
-            )}
+        {isPagamentoConfirmado && (
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+              <CheckCircle2 className="h-4 w-4" />
+              {isReservaConfirmada ? "Agenda confirmada" : "Pagamento recebido"}
+            </div>
+            <p className="text-emerald-700 text-[11px] leading-relaxed">
+              {isReservaConfirmada
+                ? `Este serviço está confirmado na sua agenda para ${agendaLabel}.`
+                : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat."}
+            </p>
           </div>
-          
-          {isAguardandoPagamento && (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
-              <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
-                <Clock className="h-4 w-4" />
-                {isReservaTemporaria ? "Reserva temporária ativa" : "Reserva pendente"}
-              </div>
-              <p className="text-amber-700 text-[11px] leading-relaxed">
-                {isReservaTemporaria 
-                  ? `Este horário (${agendaLabel}) está bloqueado na sua agenda por 2h aguardando o pagamento.`
-                  : "A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda."}
-              </p>
-              {isReservaTemporaria && reserva.expires_at && (
-                <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">
-                  Expira às {new Date(reserva.expires_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </div>
-              )}
-              {!isReservaTemporaria && o.data_preferida && (
-                <p className="text-[10px] text-amber-600 font-bold italic mt-1">
-                  Não foi possível reservar automaticamente. Combine o horário pelo chat.
-                </p>
-              )}
-            </div>
-          )}
+        )}
 
-          {isPagamentoConfirmado && (
-            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
-                <CheckCircle2 className="h-4 w-4" />
-                {isReservaConfirmada ? "Agenda confirmada" : "Pagamento recebido"}
-              </div>
-              <p className="text-emerald-700 text-[11px] leading-relaxed">
-                {isReservaConfirmada
-                  ? `Este serviço está confirmado na sua agenda para ${agendaLabel}.`
-                  : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat."}
-              </p>
-            </div>
-          )}
-
-          {bloquearEnvioPorAtendimento && (
-            <div className="mt-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-              <p className="font-bold">{atendimentoCompat.label}</p>
-              <p className="mt-1 text-[11px] leading-relaxed">
-                {atendimentoCompat.reason || "Este pedido exige um tipo de atendimento incompatível com seu perfil."}
-              </p>
-            </div>
-          )}
+        {bloquearEnvioPorAtendimento && (
+          <div className="mt-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+            <p className="font-bold">{atendimentoCompat.label}</p>
+            <p className="mt-1 text-[11px] leading-relaxed">
+              {atendimentoCompat.reason ||
+                "Este pedido exige um tipo de atendimento incompatível com seu perfil."}
+            </p>
+          </div>
+        )}
 
         {showDetails && (
-          <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="grid gap-3 sm:grid-cols-2 text-xs">
-              <div>
-                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Tipo de Atendimento</p>
-                <p className="font-medium text-slate-700">{atendimentoPedidoLabel}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Agenda Desejada</p>
-                <p className="font-medium text-slate-700">{agendaLabel}</p>
-              </div>
+          <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300 shadow-inner">
+            <div className="grid gap-4 text-xs">
               {o.descricao && (
-                <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Descrição</p>
-                  <p className="text-slate-600 leading-relaxed">{o.descricao}</p>
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                    Descrição do Pedido
+                  </p>
+                  <p className="text-slate-700 leading-relaxed bg-white/50 p-3 rounded-lg border border-slate-100">
+                    {o.descricao}
+                  </p>
                 </div>
               )}
-              {materiais.length > 0 && (
-                <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Materiais Planejados</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {materiais.map((m, idx) => (
-                      <span key={idx} className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-600">
-                        {m.quantidade}x {m.nome_snapshot}
+
+              {/* Materiais: Usa propostaMateriais se existir, senão materiais do orçamento */}
+              {(propostaMateriais?.length || materiais.length > 0) && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">
+                    Materiais
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(propostaMateriais?.length ? propostaMateriais : materiais).map((m: any, idx: number) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-medium flex items-center gap-1.5 shadow-sm"
+                      >
+                        <span className="text-brand font-bold">{m.quantidade}x</span>{" "}
+                        {m.nome_snapshot || m.nome}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
-              {o.observacoes_profissional && (
-                <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Minhas Observações</p>
-                  <p className="text-slate-600 italic">"{o.observacoes_profissional}"</p>
+
+              {/* Observações da proposta ou profissional */}
+              {(obs || o.observacoes_profissional) && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
+                    Observações enviadas
+                  </p>
+                  <p className="text-slate-600 italic bg-white/50 p-3 rounded-lg border border-slate-100">
+                    "{obs || o.observacoes_profissional}"
+                  </p>
                 </div>
               )}
+
               {o.fotos_problema && o.fotos_problema.length > 0 && (
-                <div className="sm:col-span-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Anexos do Cliente</p>
-                  <div className="flex gap-2 flex-wrap mt-1">
-                    {o.fotos_problema.map((u) => {
-                      const isVideo = u.toLowerCase().match(/\.(mp4|mov|webm)$/);
-                      return (
-                        <a key={u} href={u} target="_blank" rel="noopener noreferrer" className="group relative">
-                          {isVideo ? (
-                            <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
-                              <Camera className="h-5 w-5 text-slate-500" />
-                              <span className="text-[8px] font-bold text-slate-600 mt-1">VER VÍDEO</span>
-                            </div>
-                          ) : (
-                            <img
-                              src={u}
-                              alt="Anexo"
-                              className="h-16 w-16 rounded-lg object-cover border border-border group-hover:opacity-90 transition"
-                            />
-                          )}
-                        </a>
-                      );
-                    })}
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">
+                    Anexos do Cliente
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {o.fotos_problema.map((u) => (
+                      <a
+                        key={u}
+                        href={u}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative"
+                      >
+                        {isVideo(u) ? (
+                          <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
+                            <Camera className="h-5 w-5 text-slate-500" />
+                            <span className="text-[8px] font-bold text-slate-600 mt-1">
+                              VER VÍDEO
+                            </span>
+                          </div>
+                        ) : (
+                          <img
+                            src={u}
+                            alt="Anexo"
+                            className="h-16 w-16 rounded-lg object-cover border border-border group-hover:opacity-90 transition shadow-sm"
+                          />
+                        )}
+                      </a>
+                    ))}
                   </div>
                 </div>
               )}
@@ -480,16 +528,14 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                   Editar Orçamento
                 </Button>
               )}
-              {mode === "info" && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`rounded-full font-bold h-10 px-6 ${showDetails ? "bg-slate-100" : ""}`}
-                  onClick={() => setShowDetails(!showDetails)}
-                >
-                  {showDetails ? "Ocultar Detalhes" : "Ver Detalhes"}
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className={`rounded-full font-bold h-10 px-6 ${showDetails ? "bg-slate-100" : ""}`}
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? "Ocultar Detalhes" : "Ver Detalhes"}
+              </Button>
 
               {o.status === "pago" && (
                 <div className="w-full space-y-4">
