@@ -7,9 +7,9 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
   },
   enviado: { label: "Enviado ao cliente", className: "bg-sky-100 text-sky-800" },
   fixo_auto: { label: "Preço fixo", className: "bg-slate-100 text-slate-700" },
-  aprovado: { label: "Aguardando Pagamento", className: "bg-amber-100 text-amber-800" },
-  pago: { label: "Agendado — em execução", className: "bg-emerald-600 text-white" },
-  concluido: { label: "Concluído", className: "bg-indigo-600 text-white" },
+  aprovado: { label: "Aguardando pagamento", className: "bg-amber-100 text-amber-700" },
+  pago: { label: "Agenda confirmada", className: "bg-emerald-100 text-emerald-700" },
+  concluido: { label: "Concluído", className: "bg-slate-100 text-slate-700" },
   recusado: { label: "Recusado", className: "bg-red-100 text-red-700" },
   cancelado: { label: "Cancelado", className: "bg-slate-200 text-slate-600" },
 };

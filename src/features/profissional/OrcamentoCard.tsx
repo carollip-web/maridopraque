@@ -74,10 +74,53 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     return {};
   });
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
+  const [showDetails, setShowDetails] = useState(false);
+
+  const isAguardandoPagamento = o.status === "aprovado";
+  const isPagamentoConfirmado = o.status === "pago";
+  const isServicoConcluido = o.status === "concluido";
 
   const meta = STATUS_META[o.status];
+  
+  const statusLabelOverride =
+    isAguardandoPagamento
+      ? "Aguardando pagamento"
+      : isPagamentoConfirmado
+        ? "Agenda confirmada"
+        : meta?.label ?? o.status;
+
+  const statusClassOverride =
+    isAguardandoPagamento
+      ? "bg-amber-100 text-amber-700"
+      : isPagamentoConfirmado
+        ? "bg-emerald-100 text-emerald-700"
+        : meta?.className ?? "bg-slate-100 text-slate-600";
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
+
+  const tipoAtendimentoLabel =
+    (o as any).tipo_atendimento === "mulher"
+      ? "Profissional mulher"
+      : (o as any).tipo_atendimento === "homem"
+        ? "Profissional homem"
+        : (o as any).tipo_atendimento === "homem_com_apoio_feminino"
+          ? "Profissional + apoio feminino"
+          : "Não informado";
+
+  const periodoLabel =
+    o.periodo_preferido === "manha"
+      ? "Manhã"
+      : o.periodo_preferido === "tarde"
+        ? "Tarde"
+        : o.periodo_preferido === "noite"
+          ? "Noite"
+          : o.periodo_preferido === "horario_especifico"
+            ? o.horario_preferido?.slice(0, 5) || "Horário específico"
+            : "A combinar";
+
+  const agendaLabel = o.data_preferida
+    ? `${new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${periodoLabel}`
+    : "A combinar";
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
@@ -220,9 +263,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${meta.className}`}
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
           >
-            {meta.label}
+            {statusLabelOverride}
           </span>
           {slaHoras && <SLABadge createdAt={o.created_at} prazoHoras={slaHoras} />}
         </div>
@@ -240,63 +283,92 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             </span>
           )}
         </div>
-        {(o as any).tipo_atendimento && (
-          <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 w-fit">
-            <User className="h-3.5 w-3.5" />
-            Atendimento: {
-              (o as any).tipo_atendimento === "mulher" ? "Profissional mulher" :
-              (o as any).tipo_atendimento === "homem" ? "Profissional homem" : 
-              "Profissional + apoio feminino"
-            }
+        {isAguardandoPagamento && (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
+            <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+              <Clock className="h-4 w-4" />
+              Reserva pendente
+            </div>
+            <p className="text-amber-700 text-xs leading-relaxed">
+              A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda.
+            </p>
           </div>
         )}
 
-        {o.data_preferida && (
-          <div className="flex flex-col gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                <Calendar className="h-3.5 w-3.5 text-brand" />
-                {new Date(o.data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
-                {" · "}
-                <span className="flex items-center gap-1 opacity-70">
-                  {o.periodo_preferido === 'manha' && <><Sunrise className="h-3 w-3" /> Manhã</>}
-                  {o.periodo_preferido === 'tarde' && <><Sun className="h-3 w-3" /> Tarde</>}
-                  {o.periodo_preferido === 'noite' && <><Moon className="h-3 w-3" /> Noite</>}
-                  {o.periodo_preferido === 'horario_especifico' && <><Clock className="h-3 w-3" /> {o.horario_preferido?.slice(0, 5)}</>}
-                </span>
+        {isPagamentoConfirmado && (
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+              <CheckCircle2 className="h-4 w-4" />
+              Agenda confirmada
+            </div>
+            <p className="text-emerald-700 text-xs leading-relaxed">
+              Pagamento confirmado. Este serviço já pode ser considerado compromisso ativo em sua agenda para {agendaLabel}.
+            </p>
+          </div>
+        )}
+
+        {showDetails && (
+          <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="grid gap-3 sm:grid-cols-2 text-xs">
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Tipo de Atendimento</p>
+                <p className="font-medium text-slate-700">{tipoAtendimentoLabel}</p>
               </div>
-              
-              {agendaResult && (
-                <div className={`flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                  agendaResult.compativel ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                }`} title={agendaResult.motivo}>
-                  {agendaResult.compativel ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                  {agendaResult.compativel ? "Compatível" : "Verificar Agenda"}
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Agenda Desejada</p>
+                <p className="font-medium text-slate-700">{agendaLabel}</p>
+              </div>
+              {o.descricao && (
+                <div className="sm:col-span-2">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Descrição</p>
+                  <p className="text-slate-600 leading-relaxed">{o.descricao}</p>
+                </div>
+              )}
+              {materiais.length > 0 && (
+                <div className="sm:col-span-2">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Materiais Planejados</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {materiais.map((m, idx) => (
+                      <span key={idx} className="px-2 py-1 rounded bg-white border border-slate-200 text-slate-600">
+                        {m.quantidade}x {m.nome_snapshot}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {o.observacoes_profissional && (
+                <div className="sm:col-span-2">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Minhas Observações</p>
+                  <p className="text-slate-600 italic">"{o.observacoes_profissional}"</p>
+                </div>
+              )}
+              {o.fotos_problema && o.fotos_problema.length > 0 && (
+                <div className="sm:col-span-2">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Anexos do Cliente</p>
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {o.fotos_problema.map((u) => {
+                      const isVideo = u.toLowerCase().match(/\.(mp4|mov|webm)$/);
+                      return (
+                        <a key={u} href={u} target="_blank" rel="noopener noreferrer" className="group relative">
+                          {isVideo ? (
+                            <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
+                              <Camera className="h-5 w-5 text-slate-500" />
+                              <span className="text-[8px] font-bold text-slate-600 mt-1">VER VÍDEO</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={u}
+                              alt="Anexo"
+                              className="h-16 w-16 rounded-lg object-cover border border-border group-hover:opacity-90 transition"
+                            />
+                          )}
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
-            
-            {agendaResult && !agendaResult.compativel && (
-              <p className="text-[10px] text-amber-600 font-medium">
-                {agendaResult.motivo}
-              </p>
-            )}
-          </div>
-        )}
-        {o.descricao && (
-          <p className="text-muted-foreground bg-slate-50 rounded-xl p-3 text-sm">{o.descricao}</p>
-        )}
-        {o.fotos_problema && o.fotos_problema.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            {o.fotos_problema.map((u) => (
-              <a key={u} href={u} target="_blank" rel="noopener noreferrer">
-                <img
-                  src={u}
-                  alt="Foto do problema"
-                  className="h-16 w-16 rounded-lg object-cover border border-border hover:opacity-90 transition"
-                />
-              </a>
-            ))}
           </div>
         )}
       </div>
@@ -342,6 +414,17 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                   Editar Orçamento
                 </Button>
               )}
+              {mode === "info" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`rounded-full font-bold h-10 px-6 ${showDetails ? "bg-slate-100" : ""}`}
+                  onClick={() => setShowDetails(!showDetails)}
+                >
+                  {showDetails ? "Ocultar Detalhes" : "Ver Detalhes"}
+                </Button>
+              )}
+
               {o.status === "pago" && (
                 <div className="w-full space-y-4">
                   <div className="space-y-2">
