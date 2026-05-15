@@ -44,15 +44,18 @@ export function ProfissionalConfiguracoes() {
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { data: profissionalPerfil } = useQuery({
+  const { data: profissionalPerfil, refetch: refetchPerfil } = useQuery({
     queryKey: ["profissional_perfil", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profissional_perfil")
-        .select("*")
+        .select(
+          "user_id, bio, cidade, especialidades, chave_pix, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
+      if (error) console.error("[ProfissionalConfiguracoes] load perfil", error);
       return data as unknown as ProfissionalPerfilData | null;
     },
     enabled: !!user,
