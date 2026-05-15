@@ -194,6 +194,12 @@ export function AgendaCalendar() {
         <span className="flex items-center gap-1">
           <i className="h-2 w-2 rounded-sm bg-brand" /> Agendamento
         </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-amber-400" /> Reserva pendente
+        </span>
+        <span className="flex items-center gap-1">
+          <i className="h-2 w-2 rounded-sm bg-emerald-500" /> Confirmado
+        </span>
       </div>
 
       {loading ? (
