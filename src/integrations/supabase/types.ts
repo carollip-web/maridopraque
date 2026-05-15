@@ -695,6 +695,53 @@ export type Database = {
         }
         Relationships: []
       }
+      profissional_bloqueios_agenda: {
+        Row: {
+          id: string;
+          profissional_id: string;
+          orcamento_id: string | null;
+          inicio: string;
+          fim: string;
+          status: string;
+          motivo: string | null;
+          expires_at: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          profissional_id: string;
+          orcamento_id?: string | null;
+          inicio: string;
+          fim: string;
+          status?: string;
+          motivo?: string | null;
+          expires_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          profissional_id?: string;
+          orcamento_id?: string | null;
+          inicio?: string;
+          fim?: string;
+          status?: string;
+          motivo?: string | null;
+          expires_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profissional_bloqueios_agenda_orcamento_id_fkey";
+            columns: ["orcamento_id"];
+            isOneToOne: false;
+            referencedRelation: "orcamentos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       proposta_materiais: {
         Row: {
           created_at: string

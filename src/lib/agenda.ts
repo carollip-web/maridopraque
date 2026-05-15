@@ -92,9 +92,7 @@ export async function carregarAgendaProfissional(profissionalId: string) {
   return {
     janelas: (jans ?? []) as Janela[],
     bloqueios: combinedBlocks,
-    agendados: (orcs ?? []).filter(
-      (o: { data_agendada: string | null }) => o.data_agendada,
-    ) as Agendado[],
+    agendados: (orcs ?? []) as Agendado[],
     bloqueiosAgenda: pba ?? [], // Keep raw data for detailed UI
     duracaoMin: perfil?.duracao_padrao_min ?? 60,
   };

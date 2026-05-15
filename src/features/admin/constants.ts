@@ -10,6 +10,7 @@ import {
   TestTube,
   ShieldCheck,
   Crown,
+  Bell,
 } from "lucide-react";
 import type { AdminSection, AdminLevel } from "@/hooks/useAuth";
 export type { AdminSection, AdminLevel };
@@ -44,6 +45,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "modo_teste", label: "Modo Teste", icon: TestTube },
   { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
+  { id: "notificacoes", label: "Notificações", icon: Bell },
 ];
 
 export const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {

@@ -15,7 +15,8 @@ export type AdminSection =
   | "config"
   | "equipe"
   | "modo_teste"
-  | "auditoria";
+  | "auditoria"
+  | "notificacoes";
 
 // Permission matrix per admin level
 const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
@@ -30,6 +31,7 @@ const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
     "equipe",
     "modo_teste",
     "auditoria",
+    "notificacoes",
   ],
   admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config"],
   financeiro: ["dashboard", "financeiro"],

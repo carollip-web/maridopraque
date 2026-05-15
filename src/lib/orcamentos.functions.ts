@@ -41,7 +41,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
         periodo_preferido: data.periodoPreferido ?? null,
         horario_preferido: data.horarioPreferido ?? null,
         flexibilidade_agenda: data.flexibilidadeAgenda ?? 'flexivel',
-      } as any)
+      })
       .select()
       .single();
     if (error) {
@@ -394,7 +394,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       .update({ 
         status: "aceita",
         updated_at: new Date().toISOString()
-      } as any)
+      })
       .eq("id", data.propostaId)
       .select()
       .single();
