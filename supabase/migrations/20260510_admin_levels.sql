@@ -1,5 +1,4 @@
 -- Migration: Multi-admin support with permission levels
--- Idempotent follow-up migration renamed from duplicated version 20260510.
 
 ALTER TABLE public.user_roles
 ADD COLUMN IF NOT EXISTS admin_level TEXT
