@@ -50,19 +50,19 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       throw new Error("O valor total do orçamento deve ser maior que zero.");
     }
 
-    // 3. Integração com Mercado Pago
+    // 3. Integração com Mercado Pago (ou Mock fallback)
     const ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
     const APP_URL = process.env.APP_URL || "https://maridopraque.lovable.app";
 
-    if (!ACCESS_TOKEN) {
-      console.error("[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado.");
-      return { 
-        ok: false, 
-        message: "O sistema de pagamentos está em configuração. Por favor, utilize o pagamento direto com o profissional por enquanto." 
-      };
-    }
+    let checkoutUrl = "";
+    let preferenceId = `mock-${Date.now()}`;
+    let gateway = "mercado_pago";
 
-    try {
+    if (!ACCESS_TOKEN) {
+      console.warn("[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado. Usando modo Simulação.");
+      gateway = "mock";
+      // We will set the checkoutUrl after we create the payment record so we can include its ID.
+    } else {
       console.info(`[Mercado Pago] Gerando preferência para Orçamento ${orc.id}...`);
       const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
         method: "POST",
@@ -101,8 +101,11 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
         throw new Error(mpData.message || "Erro na comunicação com Mercado Pago.");
       }
 
-      const checkoutUrl = mpData.init_point;
-      const preferenceId = mpData.id;
+      checkoutUrl = mpData.init_point;
+      preferenceId = mpData.id;
+    }
+
+    try {
 
       // 4. Criar registro de pagamento no servidor após validar posse/status.
       const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -126,9 +129,9 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           valor_sinal: valorSinal,
           valor_restante: valorRestante,
           status: "checkout_created",
-          gateway: "mercado_pago",
+          gateway: gateway,
           gateway_preference_id: preferenceId,
-          checkout_url: checkoutUrl,
+          checkout_url: checkoutUrl || null,
           metadata: {
             service_name: orc.service_name,
             mp_preference_id: preferenceId,
@@ -140,6 +143,17 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
 
       if (e2) throw new Error(`Erro ao salvar registro de pagamento: ${e2.message}`);
 
+      // If it's mock, we set the checkoutUrl to our internal simulator now that we have the payment ID
+      if (gateway === "mock") {
+        checkoutUrl = `/checkout/simular?pagamentoId=${pag.id}`;
+        
+        // Update the payment record with the mock url
+        await serviceClient
+          .from("pagamentos")
+          .update({ checkout_url: checkoutUrl })
+          .eq("id", pag.id);
+      }
+
       return { 
         ok: true, 
         checkoutUrl: checkoutUrl,
@@ -150,4 +164,57 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       console.error("[iniciarPagamentoOrcamento] Falha crítica:", err);
       throw new Error(err.message || "Falha ao processar pagamento.");
     }
+  });
+
+const simularSchema = z.object({
+  pagamentoId: z.string().uuid(),
+});
+
+export const simularPagamentoAprovado = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => simularSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!SUPABASE_URL || !SERVICE_KEY) {
+      throw new Error("Configuração do servidor ausente.");
+    }
+
+    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+      auth: { persistSession: false },
+    });
+
+    // 1. Fetch Payment
+    const { data: pag, error: e1 } = await serviceClient
+      .from("pagamentos")
+      .select("*")
+      .eq("id", data.pagamentoId)
+      .single() as any;
+
+    if (e1 || !pag) throw new Error("Pagamento não encontrado.");
+    if (pag.cliente_id !== userId) throw new Error("Sem permissão para este pagamento.");
+    if (pag.status === "paid") return { ok: true, message: "Já estava pago." };
+
+    // 2. Update Pagamento -> paid
+    await serviceClient
+      .from("pagamentos")
+      .update({ status: "paid" })
+      .eq("id", pag.id);
+
+    // 3. Update Orcamento -> pago
+    await serviceClient
+      .from("orcamentos")
+      .update({ status: "pago" })
+      .eq("id", pag.orcamento_id);
+
+    // 4. Update Bloqueio de Agenda -> confirmada
+    await serviceClient
+      .from("profissional_bloqueios_agenda")
+      .update({ status: "confirmada", expires_at: null })
+      .eq("orcamento_id", pag.orcamento_id);
+
+    return { ok: true };
   });

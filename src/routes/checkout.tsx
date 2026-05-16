@@ -30,37 +30,6 @@ export const Route = createFileRoute("/checkout")({
 });
 
 function CheckoutGuard() {
-  const enabled = import.meta.env.VITE_ENABLE_CHECKOUT === "true";
-  
-  if (!enabled) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4 py-16">
-        <div className="max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Checkout online em breve
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            O pagamento online ainda não está disponível. Acompanhe seus pedidos ou solicite um
-            orçamento — o pagamento é combinado diretamente com o profissional.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/servicos"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-            >
-              Ver serviços
-            </Link>
-            <Link
-              to="/cliente"
-              className="inline-flex h-10 items-center justify-center rounded-full border border-border bg-background px-5 text-sm font-medium text-foreground"
-            >
-              Meus pedidos
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
   return <Checkout />;
 }
 
@@ -72,7 +41,6 @@ function Checkout() {
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentInitiated, setPaymentInitiated] = useState(false);
 
   const startPayment = useServerFn(iniciarPagamentoOrcamento);
 
@@ -118,7 +86,7 @@ function Checkout() {
         toast.success("Redirecionando para pagamento seguro...");
         window.location.href = res.checkoutUrl;
       } else {
-        toast.error(res.message || "Erro ao preparar pagamento.");
+        toast.error((res as any).message || "Erro ao preparar pagamento.");
       }
     } catch (err: any) {
       toast.error(err.message || "Falha na comunicação com o servidor.");
@@ -160,35 +128,7 @@ function Checkout() {
   const upfrontAmount = valorTotal * 0.5;
   const remainingAmount = valorTotal - upfrontAmount;
 
-  if (paymentInitiated) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-32 text-center animate-in fade-in zoom-in duration-500">
-        <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-green-600">
-          <CheckCircle2 className="h-10 w-10" />
-        </div>
-        <h1 className="text-3xl font-bold">Pronto para o próximo passo!</h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          A infraestrutura para pagamento real do serviço{" "}
-          <span className="font-semibold text-foreground">{orcamento.service_name}</span> está sendo finalizada.
-        </p>
-        
-        <div className="mt-8 rounded-3xl border border-dashed border-border p-8 bg-card">
-          <p className="text-sm font-medium text-foreground">
-            A integração com o gateway de pagamento (Mercado Pago) entrará em operação nos próximos dias.
-          </p>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Nenhuma cobrança foi realizada no seu cartão ou conta bancária neste momento.
-          </p>
-        </div>
 
-        <div className="mt-10 flex flex-col gap-3">
-          <Button asChild size="lg" className="rounded-full">
-            <Link to="/cliente">Voltar para Meus Pedidos</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
