@@ -325,6 +325,19 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
     console.info("[enviarOrcamento] Success", { orcamentoId: data.orcamentoId, status: updatedOrc.status });
 
+    // 4. Create Notification for the client
+    if (orc.cliente_id) {
+      const { error: notifError } = await serviceClient.from("notificacoes").insert({
+        user_id: orc.cliente_id,
+        titulo: "Nova Proposta Recebida",
+        mensagem: `Um profissional enviou uma proposta para o pedido "${orc.service_name || 'Serviço'}".`,
+        orcamento_id: data.orcamentoId,
+        link: `/cliente?tab=pedidos&pedidoId=${data.orcamentoId}`,
+        lida: false
+      });
+      if (notifError) console.error("[enviarOrcamento] Failed to insert notification:", notifError);
+    }
+
     return { proposta: propRow, orcamento: updatedOrc };
   });
 
@@ -652,6 +665,19 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       console.warn("[aceitarProposta] reserva não criada: pedido sem data_preferida", {
         orcamentoId: orc.id,
       });
+    }
+
+    // 7. Create Notification for the professional
+    if (prop.profissional_id) {
+      const { error: notifError } = await serviceSupabase.from("notificacoes").insert({
+        user_id: prop.profissional_id,
+        titulo: "Proposta Aceita",
+        mensagem: `O cliente aceitou sua proposta! Aguardando o pagamento para confirmar o agendamento.`,
+        orcamento_id: orcamentoId,
+        link: `/profissional?tab=orcamentos&orcamentoId=${orcamentoId}`,
+        lida: false
+      });
+      if (notifError) console.error("[aceitarProposta] Erro ao criar notificação:", notifError);
     }
 
     return {

@@ -216,5 +216,28 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
       .update({ status: "confirmada", expires_at: null })
       .eq("orcamento_id", pag.orcamento_id);
 
+    // 5. Notifications
+    // For the Professional
+    if (pag.profissional_id) {
+      await serviceClient.from("notificacoes").insert({
+        user_id: pag.profissional_id,
+        titulo: "Pagamento Confirmado!",
+        mensagem: `O cliente realizou o pagamento e o serviço foi agendado definitivamente na sua agenda.`,
+        orcamento_id: pag.orcamento_id,
+        link: `/profissional?tab=servicos&orcamentoId=${pag.orcamento_id}`,
+        lida: false
+      });
+    }
+
+    // For the Client
+    await serviceClient.from("notificacoes").insert({
+      user_id: pag.cliente_id,
+      titulo: "Pagamento Aprovado",
+      mensagem: `Seu pagamento foi confirmado! O serviço já consta na agenda do profissional.`,
+      orcamento_id: pag.orcamento_id,
+      link: `/cliente?tab=pedidos&pedidoId=${pag.orcamento_id}`,
+      lida: false
+    });
+
     return { ok: true };
   });
