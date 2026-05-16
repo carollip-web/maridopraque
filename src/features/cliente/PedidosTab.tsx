@@ -147,8 +147,16 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           status: uiStatus as string,
           date: new Date(o.created_at).toLocaleDateString(),
           prof: propsForOrc[0]?.profNome || "-",
-          price: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
-          displayPrice: o.valor ? `R$ ${Number(o.valor).toFixed(2)}` : "A definir",
+          price: o.valor
+            ? `R$ ${Number(o.valor).toFixed(2)}`
+            : o.valor_servico
+              ? `R$ ${Number(o.valor_servico).toFixed(2)}`
+              : "A definir",
+          displayPrice: o.valor
+            ? `R$ ${Number(o.valor).toFixed(2)}`
+            : o.valor_servico
+              ? `R$ ${Number(o.valor_servico).toFixed(2)}`
+              : "A definir",
         };
       });
     },
