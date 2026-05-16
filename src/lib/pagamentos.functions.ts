@@ -223,7 +223,7 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
     // 4. Update Bloqueio de Agenda -> confirmada
     await serviceClient
       .from("profissional_bloqueios_agenda")
-      .update({ status: "confirmada", expires_at: null })
+      .update({ status: "confirmado", expires_at: null })
       .eq("orcamento_id", pag.orcamento_id);
 
     // 5. Notifications
