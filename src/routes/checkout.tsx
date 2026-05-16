@@ -99,12 +99,9 @@ function Checkout() {
 
     if (materiaisError) {
       console.error("[Checkout.loadOrcamento] Erro ao carregar materiais:", materiaisError);
-      toast.error("Não foi possível carregar os materiais do pedido.");
-      setLoading(false);
-      return;
     }
 
-    setOrcamento({ ...data, orcamento_materiais: materiais || [] });
+    setOrcamento({ ...data, orcamento_materiais: materiaisError ? [] : materiais || [] });
     setLoading(false);
   }
 
@@ -161,10 +158,12 @@ function Checkout() {
   }
 
   const valorServico = Number(orcamento?.valor_servico || 0);
-  const valorMateriais = (orcamento?.orcamento_materiais || []).reduce(
+  const materiais = orcamento?.orcamento_materiais || [];
+  const valorMateriaisCalculado = materiais.reduce(
     (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
     0
   );
+  const valorMateriais = materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
   const valorTotal = valorServico + valorMateriais;
   const upfrontAmount = valorTotal * 0.5;
   const remainingAmount = valorTotal - upfrontAmount;
