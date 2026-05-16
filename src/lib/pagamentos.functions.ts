@@ -17,21 +17,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     // 1. Buscar orçamento e validar posse/status
     const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
-      .select(`
-        id, 
-        status, 
-        cliente_id, 
-        profissional_id, 
-        service_name, 
-        valor,
-        valor_servico,
-        orcamento_materiais (
-          id,
-          nome_snapshot,
-          preco_unitario,
-          quantidade
-        )
-      `)
+      .select("id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", data.orcamentoId)
       .single() as any;
 
@@ -50,9 +36,19 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       throw new Error(`Orçamento em status "${orc.status}" não está pronto para pagamento.`);
     }
 
+    const { data: materiais, error: materiaisError } = await supabase
+      .from("orcamento_materiais")
+      .select("id, nome_snapshot, preco_unitario, quantidade")
+      .eq("orcamento_id", data.orcamentoId) as any;
+
+    if (materiaisError) {
+      console.error("[iniciarPagamentoOrcamento] Erro ao buscar materiais:", materiaisError);
+      throw new Error("Erro ao carregar materiais do orçamento.");
+    }
+
     // 2. Calcular valores no servidor (Fonte de verdade)
     const valorServico = Number(orc.valor_servico || 0);
-    const valorMateriais = (orc.orcamento_materiais || []).reduce(
+    const valorMateriais = (materiais || []).reduce(
       (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
       0
     );
