@@ -12,6 +12,14 @@ function createSupabaseClient() {
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_ANON_KEY;
 
+  // SMOKE: confirm which project the client is actually connecting to
+  console.info("[SUPABASE_CLIENT_INIT]", {
+    url: SUPABASE_URL,
+    // Show only the 'ref' fragment from the JWT payload (chars 60-80) to identify the project
+    keyRef: SUPABASE_PUBLISHABLE_KEY ? SUPABASE_PUBLISHABLE_KEY.slice(40, 90) : "MISSING",
+  });
+
+
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
       ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
