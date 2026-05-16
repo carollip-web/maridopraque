@@ -165,6 +165,32 @@ serve(async (req) => {
           console.error(`[Webhook ${requestId}] Erro ao criar bloqueio confirmado:`, e_agenda)
         }
       }
+
+      // 6. Criar Notificações
+      console.log(`[Webhook ${requestId}] Criando notificações de pagamento confirmado...`)
+      if (pagamento && pagamento.cliente_id) {
+        // Para o Cliente
+        await supabase.from("notificacoes").insert({
+          user_id: pagamento.cliente_id,
+          titulo: "Pagamento Aprovado",
+          mensagem: `Seu pagamento via Mercado Pago foi confirmado! O serviço já consta na agenda do profissional.`,
+          orcamento_id: orcamentoId,
+          link: `/cliente?tab=pedidos&pedidoId=${orcamentoId}`,
+          lida: false
+        });
+      }
+
+      if (updatedOrc.profissional_id) {
+        // Para o Profissional
+        await supabase.from("notificacoes").insert({
+          user_id: updatedOrc.profissional_id,
+          titulo: "Pagamento Confirmado!",
+          mensagem: `O cliente realizou o pagamento via Mercado Pago e o serviço foi agendado definitivamente na sua agenda.`,
+          orcamento_id: orcamentoId,
+          link: `/profissional?tab=servicos&orcamentoId=${orcamentoId}`,
+          lida: false
+        });
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), { 

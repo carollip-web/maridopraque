@@ -82,7 +82,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
             },
           ],
           external_reference: orc.id,
-          notification_url: `${APP_URL}/api/mercado-pago-webhook`, // Webhook a ser criado
+          notification_url: `${process.env.SUPABASE_URL}/functions/v1/mercado-pago-webhook`, // Supabase Edge Function
           back_urls: {
             success: `${APP_URL}/cliente?tab=pedidos&payment=success`,
             failure: `${APP_URL}/cliente?tab=pedidos&payment=failure`,
