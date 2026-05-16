@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SLABadge } from "@/components/SLABadge";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { Button } from "@/components/ui/button";
+import { Chat } from "@/components/Chat";
 import { Orcamento, Profile, ServicoCat, OrcMat } from "./types";
 import { STATUS_META } from "./constants";
 import {
@@ -617,6 +618,17 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         )}
       </div>
+
+      {/* Chat Section for Paid or Completed Orders */}
+      {!disableChat && (isPagamentoConfirmado || isServicoConcluido) && !editing && (
+        <div className="pt-4 border-t border-slate-100">
+          <Chat 
+            orcamentoId={o.id} 
+            contraparteId={o.cliente_id} 
+            contraparteNome={cliente?.nome || "Cliente"} 
+          />
+        </div>
+      )}
     </div>
   );
 }
