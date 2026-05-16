@@ -17,7 +17,19 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     // 1. Buscar orçamento e validar posse/status
     const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
-      .select("*, orcamento_materiais(*)")
+      .select(`
+        id, 
+        status, 
+        cliente_id, 
+        profissional_id, 
+        service_name, 
+        valor_servico,
+        orcamento_materiais (
+          id,
+          preco_unitario,
+          quantidade
+        )
+      `)
       .eq("id", data.orcamentoId)
       .single() as any;
 

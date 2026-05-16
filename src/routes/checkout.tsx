@@ -54,7 +54,23 @@ function Checkout() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orcamentos")
-      .select("*, orcamento_materiais(*)")
+      .select(`
+        id, 
+        status, 
+        cliente_id, 
+        service_name, 
+        valor, 
+        valor_servico,
+        data_preferida,
+        periodo_preferido,
+        horario_preferido,
+        orcamento_materiais (
+          id,
+          nome,
+          quantidade,
+          preco_unitario
+        )
+      `)
       .eq("id", id)
       .single();
 

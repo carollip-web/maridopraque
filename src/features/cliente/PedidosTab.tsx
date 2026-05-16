@@ -92,7 +92,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (!user) return [];
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("*")
+        .select("id, status, created_at, service_name, descricao, valor, cliente_id, profissional_id")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -106,7 +106,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (orcIds.length > 0) {
         const { data: pData } = await (supabase as any)
           .from("propostas")
-          .select("*")
+          .select("id, orcamento_id, profissional_id, valor_servico, status, observacoes")
           .in("orcamento_id", orcIds);
         propostas = pData || [];
         const profIds = Array.from(new Set(propostas.map((p) => p.profissional_id)));
