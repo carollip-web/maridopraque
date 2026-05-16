@@ -45,9 +45,20 @@ function Checkout() {
   const startPayment = useServerFn(iniciarPagamentoOrcamento);
 
   useEffect(() => {
-    if (orcamentoId && user && !authLoading) {
-      loadOrcamento(orcamentoId);
+    if (!orcamentoId) {
+      setLoading(false);
+      return;
     }
+
+    if (authLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      navigate({ to: "/login" });
+      return;
+    }
+
+    loadOrcamento(orcamentoId);
   }, [orcamentoId, user, authLoading]);
 
   async function loadOrcamento(id: string) {
@@ -61,31 +72,36 @@ function Checkout() {
 
     const { data, error } = await supabase
       .from("orcamentos")
-      .select(`
-        id, 
-        status, 
-        cliente_id, 
-        service_name, 
-        valor, 
-        valor_servico,
-        orcamento_materiais (
-          id,
-          nome_snapshot,
-          quantidade,
-          preco_unitario
-        )
-      `)
+      .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     console.info("[Checkout.loadOrcamento] Resultado Bruto:", { data, error, id });
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
+      setLoading(false);
       navigate({ to: "/cliente" });
       return;
     }
-    setOrcamento(data);
+
+    if (data.cliente_id !== user?.id) {
+      toast.error("Você não tem permissão para acessar este pedido.");
+      setLoading(false);
+      navigate({ to: "/cliente" });
+      return;
+    }
+
+    const { data: materiais, error: materiaisError } = await supabase
+      .from("orcamento_materiais")
+      .select("id, nome_snapshot, quantidade, preco_unitario")
+      .eq("orcamento_id", id);
+
+    if (materiaisError) {
+      console.error("[Checkout.loadOrcamento] Erro ao carregar materiais:", materiaisError);
+    }
+
+    setOrcamento({ ...data, orcamento_materiais: materiaisError ? [] : materiais || [] });
     setLoading(false);
   }
 
@@ -142,10 +158,12 @@ function Checkout() {
   }
 
   const valorServico = Number(orcamento?.valor_servico || 0);
-  const valorMateriais = (orcamento?.orcamento_materiais || []).reduce(
+  const materiais = orcamento?.orcamento_materiais || [];
+  const valorMateriaisCalculado = materiais.reduce(
     (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
     0
   );
+  const valorMateriais = materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
   const valorTotal = valorServico + valorMateriais;
   const upfrontAmount = valorTotal * 0.5;
   const remainingAmount = valorTotal - upfrontAmount;
