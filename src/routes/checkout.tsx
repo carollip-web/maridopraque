@@ -45,10 +45,10 @@ function Checkout() {
   const startPayment = useServerFn(iniciarPagamentoOrcamento);
 
   useEffect(() => {
-    if (orcamentoId) {
+    if (orcamentoId && user && !authLoading) {
       loadOrcamento(orcamentoId);
     }
-  }, [orcamentoId]);
+  }, [orcamentoId, user, authLoading]);
 
   async function loadOrcamento(id: string) {
     setLoading(true);
