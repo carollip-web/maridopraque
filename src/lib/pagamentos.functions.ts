@@ -23,9 +23,11 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
         cliente_id, 
         profissional_id, 
         service_name, 
+        valor,
         valor_servico,
         orcamento_materiais (
           id,
+          nome_snapshot,
           preco_unitario,
           quantidade
         )

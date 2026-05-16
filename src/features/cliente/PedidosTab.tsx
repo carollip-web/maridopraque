@@ -92,7 +92,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (!user) return [];
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, status, created_at, service_name, descricao, valor, cliente_id, profissional_id")
+        .select("id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
 
