@@ -641,6 +641,12 @@ function MeusOrcamentos() {
           status: "customizado_pendente",
         };
 
+        console.info("[orcamentos.handleNew] START", {
+          userId,
+          insertPayload,
+          supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        });
+
         console.info("[orcamentos.handleNew] criando pedido", {
           userId,
           basePayload,
@@ -652,6 +658,11 @@ function MeusOrcamentos() {
           .insert(insertPayload as any)
           .select("*")
           .single();
+
+        console.info("[orcamentos.handleNew] INSERT RESULT", {
+          novoOrcamento,
+          error: orcamentoError,
+        });
 
         if (orcamentoError) {
           const detalhes = [
@@ -681,15 +692,20 @@ function MeusOrcamentos() {
 
         const { data: confirmacao, error: confirmacaoError } = await supabase
           .from("orcamentos")
-          .select("id,service_name,status,tipo_atendimento,data_preferida,periodo_preferido,horario_preferido")
+          .select("id,service_name,status,cliente_id,tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,created_at")
           .eq("id", novoId)
           .maybeSingle();
+
+        console.info("[orcamentos.handleNew] CONFIRMACAO BANCO", {
+          confirmacao,
+          confirmError: confirmacaoError,
+        });
 
         console.info("[orcamentos.handleNew] pedido confirmado no banco", confirmacao);
 
         if (confirmacaoError || !confirmacao) {
           console.error("[orcamentos.handleNew] confirmação falhou", confirmacaoError);
-          toast.error("Pedido não foi encontrado no banco após criação.", {
+          toast.error("Pedido não foi confirmado no banco.", {
             description: confirmacaoError?.message,
           });
           throw new Error("Confirmação do pedido falhou.");
