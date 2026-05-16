@@ -45,9 +45,20 @@ function Checkout() {
   const startPayment = useServerFn(iniciarPagamentoOrcamento);
 
   useEffect(() => {
-    if (orcamentoId && user && !authLoading) {
-      loadOrcamento(orcamentoId);
+    if (!orcamentoId) {
+      setLoading(false);
+      return;
     }
+
+    if (authLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      navigate({ to: "/login" });
+      return;
+    }
+
+    loadOrcamento(orcamentoId);
   }, [orcamentoId, user, authLoading]);
 
   async function loadOrcamento(id: string) {
@@ -61,31 +72,39 @@ function Checkout() {
 
     const { data, error } = await supabase
       .from("orcamentos")
-      .select(`
-        id, 
-        status, 
-        cliente_id, 
-        service_name, 
-        valor, 
-        valor_servico,
-        orcamento_materiais (
-          id,
-          nome_snapshot,
-          quantidade,
-          preco_unitario
-        )
-      `)
+      .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
     console.info("[Checkout.loadOrcamento] Resultado Bruto:", { data, error, id });
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
+      setLoading(false);
       navigate({ to: "/cliente" });
       return;
     }
-    setOrcamento(data);
+
+    if (data.cliente_id !== user?.id) {
+      toast.error("Você não tem permissão para acessar este pedido.");
+      setLoading(false);
+      navigate({ to: "/cliente" });
+      return;
+    }
+
+    const { data: materiais, error: materiaisError } = await supabase
+      .from("orcamento_materiais")
+      .select("id, nome_snapshot, quantidade, preco_unitario")
+      .eq("orcamento_id", id);
+
+    if (materiaisError) {
+      console.error("[Checkout.loadOrcamento] Erro ao carregar materiais:", materiaisError);
+      toast.error("Não foi possível carregar os materiais do pedido.");
+      setLoading(false);
+      return;
+    }
+
+    setOrcamento({ ...data, orcamento_materiais: materiais || [] });
     setLoading(false);
   }
 
