@@ -61,7 +61,20 @@ function Checkout() {
 
     const { data, error } = await supabase
       .from("orcamentos")
-      .select("id, cliente_id, status, service_name, valor")
+      .select(`
+        id, 
+        status, 
+        cliente_id, 
+        service_name, 
+        valor, 
+        valor_servico,
+        orcamento_materiais (
+          id,
+          nome_snapshot,
+          quantidade,
+          preco_unitario
+        )
+      `)
       .eq("id", id)
       .single();
 
