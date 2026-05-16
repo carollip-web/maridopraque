@@ -60,16 +60,7 @@ function Checkout() {
         cliente_id, 
         service_name, 
         valor, 
-        valor_servico,
-        data_preferida,
-        periodo_preferido,
-        horario_preferido,
-        orcamento_materiais (
-          id,
-          nome_snapshot,
-          quantidade,
-          preco_unitario
-        )
+        valor_servico
       `)
       .eq("id", id)
       .single();
