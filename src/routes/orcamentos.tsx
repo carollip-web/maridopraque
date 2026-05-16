@@ -661,27 +661,20 @@ function MeusOrcamentos() {
 
         console.info("[orcamentos.handleNew] INSERT RESULT", {
           novoOrcamento,
-          error: orcamentoError,
+          orcamentoError,
         });
 
         if (orcamentoError) {
-          const detalhes = [
-            orcamentoError.code ? `code: ${orcamentoError.code}` : null,
-            orcamentoError.message ? `message: ${orcamentoError.message}` : null,
-            orcamentoError.details ? `details: ${orcamentoError.details}` : null,
-            orcamentoError.hint ? `hint: ${orcamentoError.hint}` : null,
-          ].filter(Boolean).join(" | ");
+          toast.error(
+            `Erro ao criar pedido: ${orcamentoError.code || ""} ${orcamentoError.message}`
+          );
 
-          console.error("[orcamentos.handleNew] erro ao criar pedido", {
+          console.error("[orcamentos.handleNew] erro detalhado", {
             code: orcamentoError.code,
             message: orcamentoError.message,
             details: orcamentoError.details,
             hint: orcamentoError.hint,
             payload: insertPayload,
-          });
-
-          toast.error("Não foi possível criar o pedido", {
-            description: detalhes || orcamentoError.message,
           });
 
           throw orcamentoError;

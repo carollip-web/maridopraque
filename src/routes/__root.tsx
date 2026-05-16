@@ -104,6 +104,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 
+// Smoke log: confirma qual build/commit está rodando no browser
+console.info("[APP_VERSION]", {
+  commit: "e820d57",
+  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+  buildAt: new Date().toISOString(),
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
