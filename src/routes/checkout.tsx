@@ -66,7 +66,7 @@ function Checkout() {
         horario_preferido,
         orcamento_materiais (
           id,
-          nome,
+          nome_snapshot,
           quantidade,
           preco_unitario
         )
