@@ -480,8 +480,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       throw new Error("Essa proposta não está mais disponível.");
     }
 
-    // 2. Fetch basic budget first. Keep this query free from newer columns so
-    // schema-cache issues never masquerade as "Pedido não encontrado".
+    // 2. Fetch basic budget first.
     const { data: orc, error: e_orc } = await serviceClient
       .from("orcamentos")
       .select("id, cliente_id, status")
