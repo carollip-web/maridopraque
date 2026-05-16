@@ -30,6 +30,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
 import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
+import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
@@ -138,6 +139,11 @@ const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
   path: '/profissional',
   getParentRoute: () => LoginRoute,
 } as any)
+const CheckoutSimularRoute = CheckoutSimularRouteImport.update({
+  id: '/simular',
+  path: '/simular',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 const AuthRedirectRoute = AuthRedirectRouteImport.update({
   id: '/auth/redirect',
   path: '/auth/redirect',
@@ -154,7 +160,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRouteWithChildren
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/auth/redirect': typeof AuthRedirectRoute
+  '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -179,7 +186,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRouteWithChildren
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/auth/redirect': typeof AuthRedirectRoute
+  '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -205,7 +213,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
-  '/checkout': typeof CheckoutRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/login': typeof LoginRouteWithChildren
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
   '/auth/redirect': typeof AuthRedirectRoute
+  '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/auth/redirect'
+    | '/checkout/simular'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/auth/redirect'
+    | '/checkout/simular'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/servicos'
     | '/servicos-admin'
     | '/auth/redirect'
+    | '/checkout/simular'
     | '/login/profissional'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -308,7 +320,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
   LoginRoute: typeof LoginRouteWithChildren
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginProfissionalRouteImport
       parentRoute: typeof LoginRoute
     }
+    '/checkout/simular': {
+      id: '/checkout/simular'
+      path: '/simular'
+      fullPath: '/checkout/simular'
+      preLoaderRoute: typeof CheckoutSimularRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
     '/auth/redirect': {
       id: '/auth/redirect'
       path: '/auth/redirect'
@@ -491,6 +510,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface CheckoutRouteChildren {
+  CheckoutSimularRoute: typeof CheckoutSimularRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutSimularRoute: CheckoutSimularRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
 
 interface LoginRouteChildren {
   LoginProfissionalRoute: typeof LoginProfissionalRoute
@@ -531,7 +562,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
   LoginRoute: LoginRouteWithChildren,
