@@ -65,6 +65,8 @@ function Checkout() {
       .eq("id", id)
       .single();
 
+    console.info("[Checkout.loadOrcamento] Resultado:", { data, error, id });
+
     if (error || !data) {
       toast.error("Pedido não encontrado.");
       navigate({ to: "/cliente" });
