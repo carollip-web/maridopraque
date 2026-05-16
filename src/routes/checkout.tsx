@@ -52,20 +52,20 @@ function Checkout() {
 
   async function loadOrcamento(id: string) {
     setLoading(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.info("[Checkout.loadOrcamento] Sessão atual:", { 
+      sessionUserId: sessionData.session?.user?.id,
+      hookUserId: user?.id,
+      authLoading
+    });
+
     const { data, error } = await supabase
       .from("orcamentos")
-      .select(`
-        id, 
-        status, 
-        cliente_id, 
-        service_name, 
-        valor, 
-        valor_servico
-      `)
+      .select("id, cliente_id, status, service_name, valor")
       .eq("id", id)
       .single();
 
-    console.info("[Checkout.loadOrcamento] Resultado:", { data, error, id });
+    console.info("[Checkout.loadOrcamento] Resultado Bruto:", { data, error, id });
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
