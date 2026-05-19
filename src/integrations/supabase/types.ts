@@ -700,6 +700,11 @@ export type Database = {
           genero: string | null
           lat: number | null
           lng: number | null
+          mp_access_token: string | null
+          mp_connected_at: string | null
+          mp_refresh_token: string | null
+          mp_token_expires_at: string | null
+          mp_user_id: string | null
           oferece_apoio_feminino: boolean
           onboarding_completo: boolean
           raio_atendimento_km: number
@@ -724,6 +729,11 @@ export type Database = {
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          mp_access_token?: string | null
+          mp_connected_at?: string | null
+          mp_refresh_token?: string | null
+          mp_token_expires_at?: string | null
+          mp_user_id?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           raio_atendimento_km?: number
@@ -748,6 +758,11 @@ export type Database = {
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          mp_access_token?: string | null
+          mp_connected_at?: string | null
+          mp_refresh_token?: string | null
+          mp_token_expires_at?: string | null
+          mp_user_id?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           raio_atendimento_km?: number

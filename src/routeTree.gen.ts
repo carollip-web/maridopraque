@@ -29,6 +29,7 @@ import { Route as AdminValidacaoRouteImport } from './routes/admin-validacao'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
+import { Route as MercadopagoCallbackRouteImport } from './routes/mercadopago.callback'
 import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
 import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
@@ -134,6 +135,11 @@ const ServicosCategoriaRoute = ServicosCategoriaRouteImport.update({
   path: '/$categoria',
   getParentRoute: () => ServicosRoute,
 } as any)
+const MercadopagoCallbackRoute = MercadopagoCallbackRouteImport.update({
+  id: '/mercadopago/callback',
+  path: '/mercadopago/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
   id: '/profissional',
   path: '/profissional',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/auth/redirect': typeof AuthRedirectRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mercadopago/callback': typeof MercadopagoCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/auth/redirect': typeof AuthRedirectRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mercadopago/callback': typeof MercadopagoCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/auth/redirect': typeof AuthRedirectRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mercadopago/callback': typeof MercadopagoCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/auth/redirect'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mercadopago/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/auth/redirect'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mercadopago/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   id:
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/auth/redirect'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mercadopago/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesById: FileRoutesById
@@ -336,6 +348,7 @@ export interface RootRouteChildren {
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
+  MercadopagoCallbackRoute: typeof MercadopagoCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicosCategoriaRouteImport
       parentRoute: typeof ServicosRoute
     }
+    '/mercadopago/callback': {
+      id: '/mercadopago/callback'
+      path: '/mercadopago/callback'
+      fullPath: '/mercadopago/callback'
+      preLoaderRoute: typeof MercadopagoCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/profissional': {
       id: '/login/profissional'
       path: '/profissional'
@@ -578,7 +598,17 @@ const rootRouteChildren: RootRouteChildren = {
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
   AuthRedirectRoute: AuthRedirectRoute,
+  MercadopagoCallbackRoute: MercadopagoCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

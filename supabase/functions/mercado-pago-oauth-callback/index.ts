@@ -11,17 +11,16 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders })
   }
 
-  const appUrl = Deno.env.get("APP_URL") || "https://maridopraque.lovable.app"
-
   try {
-    const url = new URL(req.url)
-    const code = url.searchParams.get("code")
-    const state = url.searchParams.get("state") // Este é o ID do profissional (user_id)
-    const errorParam = url.searchParams.get("error")
+    const body = await req.json().catch(() => ({}))
+    const code: string | undefined = body.code
+    const state: string | undefined = body.state
 
-    if (errorParam || !code || !state) {
-      console.error("Erro no callback OAuth ou parâmetros ausentes:", { errorParam, code, state })
-      return Response.redirect(`${appUrl}/profissional?mp_error=oauth_failed`, 302)
+    if (!code || !state) {
+      return new Response(JSON.stringify({ error: "Parâmetros code e state são obrigatórios" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
 
     const mpAppId = Deno.env.get("MERCADO_PAGO_APP_ID")
@@ -29,7 +28,10 @@ serve(async (req) => {
     
     if (!mpAppId || !mpClientSecret) {
       console.error("Variáveis de ambiente do Mercado Pago não configuradas.")
-      return Response.redirect(`${appUrl}/profissional?mp_error=keys_missing`, 302)
+      return new Response(JSON.stringify({ error: "Configuração do Mercado Pago ausente no servidor" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
@@ -55,7 +57,10 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errBody = await tokenResponse.text()
       console.error("Erro ao obter token do Mercado Pago:", errBody)
-      return Response.redirect(`${appUrl}/profissional?mp_error=token_exchange_failed`, 302)
+      return new Response(JSON.stringify({ error: `Erro ao obter token do Mercado Pago: ${errBody}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
 
     const tokenData = await tokenResponse.json()
@@ -90,7 +95,10 @@ serve(async (req) => {
 
     if (dbError) {
       console.error("Erro ao salvar tokens no banco de dados:", dbError)
-      return Response.redirect(`${appUrl}/profissional?mp_error=database_update_failed`, 302)
+      return new Response(JSON.stringify({ error: "Falha ao salvar tokens no banco de dados" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
 
     // Criar uma notificação informando que a conta foi vinculada
@@ -102,10 +110,15 @@ serve(async (req) => {
       lida: false
     })
 
-    // Redirecionar com sucesso
-    return Response.redirect(`${appUrl}/profissional?mp_connected=true`, 302)
+    return new Response(JSON.stringify({ ok: true, mp_user_id: user_id }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    })
   } catch (error) {
     console.error("Erro não tratado no callback OAuth:", error)
-    return Response.redirect(`${appUrl}/profissional?mp_error=unhandled_exception`, 302)
+    return new Response(JSON.stringify({ error: error.message || "Erro interno no servidor" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    })
   }
 })
