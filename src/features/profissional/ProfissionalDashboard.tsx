@@ -6,6 +6,7 @@ import { NivelBadge } from "@/components/NivelBadge";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { ProfissionalHeader } from "./ProfissionalHeader";
+import { MercadoPagoConnect } from "./MercadoPagoConnect";
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
 
@@ -53,6 +54,8 @@ export function ProfissionalDashboard({
       />
 
       <ProfileCompletenessCard />
+
+      <MercadoPagoConnect />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ActionStat
