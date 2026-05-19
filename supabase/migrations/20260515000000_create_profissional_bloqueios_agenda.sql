@@ -15,11 +15,13 @@ CREATE TABLE IF NOT EXISTS public.profissional_bloqueios_agenda (
 -- RLS
 ALTER TABLE public.profissional_bloqueios_agenda ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Profissionais podem gerenciar seus próprios bloqueios" ON public.profissional_bloqueios_agenda;
 CREATE POLICY "Profissionais podem gerenciar seus próprios bloqueios"
   ON public.profissional_bloqueios_agenda FOR ALL
   TO authenticated
   USING (auth.uid() = profissional_id);
 
+DROP POLICY IF EXISTS "Clientes podem ver bloqueios de seus orçamentos" ON public.profissional_bloqueios_agenda;
 CREATE POLICY "Clientes podem ver bloqueios de seus orçamentos"
   ON public.profissional_bloqueios_agenda FOR SELECT
   TO authenticated
@@ -30,13 +32,14 @@ CREATE POLICY "Clientes podem ver bloqueios de seus orçamentos"
     )
   );
 
+DROP POLICY IF EXISTS "Admins podem tudo" ON public.profissional_bloqueios_agenda;
 CREATE POLICY "Admins podem tudo"
   ON public.profissional_bloqueios_agenda FOR ALL
   TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM public.user_roles
-      WHERE user_id = auth.uid() AND role IN ('admin', 'superadmin')
+      WHERE user_id = auth.uid() AND role = 'admin'::app_role
     )
   );
 

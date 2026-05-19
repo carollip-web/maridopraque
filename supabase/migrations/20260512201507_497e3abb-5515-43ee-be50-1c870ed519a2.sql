@@ -1,6 +1,7 @@
 
 -- 1. Profiles: restrict professionals to clients they have orcamentos with
 DROP POLICY IF EXISTS "Profiles viewable by self or admin/professional" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles viewable by self or admin" ON public.profiles;
 CREATE POLICY "Profiles viewable by self or admin"
 ON public.profiles FOR SELECT
 USING (
@@ -19,6 +20,7 @@ USING (
 -- 2. Indicacoes: drop public read, add SECURITY DEFINER validator
 DROP POLICY IF EXISTS "Codigo publico para validar" ON public.indicacoes;
 
+DROP FUNCTION IF EXISTS public.validar_codigo_indicacao(text);
 CREATE OR REPLACE FUNCTION public.validar_codigo_indicacao(_codigo text)
 RETURNS TABLE(valido boolean, desconto_percent integer, owner_id uuid)
 LANGUAGE sql
@@ -35,6 +37,7 @@ GRANT EXECUTE ON FUNCTION public.validar_codigo_indicacao(text) TO authenticated
 
 -- 3. profissional_bloqueios: restrict to authenticated
 DROP POLICY IF EXISTS "Bloqueios leitura publica" ON public.profissional_bloqueios;
+DROP POLICY IF EXISTS "Bloqueios leitura autenticados" ON public.profissional_bloqueios;
 CREATE POLICY "Bloqueios leitura autenticados"
 ON public.profissional_bloqueios FOR SELECT
 TO authenticated
@@ -42,12 +45,20 @@ USING (true);
 
 -- 4. avaliacoes: restrict to authenticated
 DROP POLICY IF EXISTS "Avaliacoes leitura publica" ON public.avaliacoes;
+DROP POLICY IF EXISTS "Avaliacoes leitura autenticados" ON public.avaliacoes;
 CREATE POLICY "Avaliacoes leitura autenticados"
 ON public.avaliacoes FOR SELECT
 TO authenticated
 USING (true);
 
 -- 5. user_roles: only super_admin can manage admin role assignments
+ALTER TABLE public.user_roles
+  ADD COLUMN IF NOT EXISTS admin_level text
+  CHECK (admin_level IN ('super_admin', 'admin', 'financeiro', 'suporte'))
+  DEFAULT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_user_roles_admin_level ON public.user_roles(admin_level);
+
 CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -77,6 +88,7 @@ ALTER TABLE public.user_roles
 
 -- Replace blanket admin-manage policy with super-admin gate for admin rows
 DROP POLICY IF EXISTS "Admins manage roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Super admin manages admin roles" ON public.user_roles;
 
 CREATE POLICY "Super admin manages admin roles"
 ON public.user_roles FOR ALL

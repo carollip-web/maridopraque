@@ -19,14 +19,17 @@ create table if not exists public.pagamentos (
 
 alter table public.pagamentos enable row level security;
 
+drop policy if exists "Clientes podem ver seus próprios pagamentos" on public.pagamentos;
 create policy "Clientes podem ver seus próprios pagamentos"
   on public.pagamentos for select
   using (auth.uid() = cliente_id);
 
+drop policy if exists "Profissionais podem ver pagamentos de seus serviços" on public.pagamentos;
 create policy "Profissionais podem ver pagamentos de seus serviços"
   on public.pagamentos for select
   using (auth.uid() = profissional_id);
 
+drop policy if exists "Admins podem ver todos os pagamentos" on public.pagamentos;
 create policy "Admins podem ver todos os pagamentos"
   on public.pagamentos for select
   using (

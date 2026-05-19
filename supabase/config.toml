@@ -3,3 +3,6 @@ project_id = "rbfonmpuepqfhivvoqku"
 [functions.cron-limpeza-agenda]
 schedule = "*/15 * * * *"
 verify_jwt = false
+
+[functions.mercado-pago-webhook]
+verify_jwt = false

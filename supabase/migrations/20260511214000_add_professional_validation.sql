@@ -24,7 +24,8 @@ ALTER TABLE public.profissional_perfil
   ADD COLUMN IF NOT EXISTS cadastro_submetido_em timestamptz;
 
 -- Admin can see all validation data
-CREATE POLICY IF NOT EXISTS "Admin ve dados validacao" ON public.profissional_perfil
+DROP POLICY IF EXISTS "Admin ve dados validacao" ON public.profissional_perfil;
+CREATE POLICY "Admin ve dados validacao" ON public.profissional_perfil
   FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Storage bucket for professional documents
@@ -38,14 +39,17 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
-CREATE POLICY IF NOT EXISTS "Profissional upload proprio doc"
+DROP POLICY IF EXISTS "Profissional upload proprio doc" ON storage.objects;
+CREATE POLICY "Profissional upload proprio doc"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'documentos-profissionais' AND auth.uid()::text = (storage.foldername(name))[1]);
 
-CREATE POLICY IF NOT EXISTS "Profissional ve proprio doc"
+DROP POLICY IF EXISTS "Profissional ve proprio doc" ON storage.objects;
+CREATE POLICY "Profissional ve proprio doc"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'documentos-profissionais' AND auth.uid()::text = (storage.foldername(name))[1]);
 
-CREATE POLICY IF NOT EXISTS "Admin ve todos docs"
+DROP POLICY IF EXISTS "Admin ve todos docs" ON storage.objects;
+CREATE POLICY "Admin ve todos docs"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'documentos-profissionais' AND has_role(auth.uid(), 'admin'::app_role));

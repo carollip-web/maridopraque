@@ -12,11 +12,13 @@ CREATE TABLE IF NOT EXISTS public.proposta_materiais (
 
 ALTER TABLE public.proposta_materiais ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Profissional gerencia seus propostas materiais" ON public.proposta_materiais;
 CREATE POLICY "Profissional gerencia seus propostas materiais" ON public.proposta_materiais
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.propostas p WHERE p.id = proposta_id AND p.profissional_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Cliente ve materiais das propostas" ON public.proposta_materiais;
 CREATE POLICY "Cliente ve materiais das propostas" ON public.proposta_materiais
   FOR SELECT USING (
     EXISTS (
