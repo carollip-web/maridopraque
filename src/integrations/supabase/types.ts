@@ -952,6 +952,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      limpar_reservas_temporarias_expiradas: { Args: never; Returns: undefined }
       validar_codigo_indicacao: {
         Args: { _codigo: string }
         Returns: {
