@@ -249,5 +249,19 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
       lida: false
     });
 
+    // 6. Criar repasse profissional pendente
+    try {
+      const { error: rpcErr } = await serviceClient.rpc("criar_repasse_profissional_pendente", {
+        p_pagamento_id: pag.id
+      });
+      if (rpcErr) {
+        console.error("[simularPagamentoAprovado] erro ao criar repasse:", rpcErr);
+      } else {
+        console.log(`[simularPagamentoAprovado] Repasse pendente criado com sucesso para pagamento ${pag.id}`);
+      }
+    } catch (e_rpc) {
+      console.error("[simularPagamentoAprovado] erro ao criar repasse:", e_rpc);
+    }
+
     return { ok: true };
   });

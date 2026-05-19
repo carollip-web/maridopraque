@@ -191,6 +191,23 @@ serve(async (req) => {
           lida: false
         });
       }
+
+      // 7. Criar repasse profissional pendente de forma assíncrona/idempotente
+      if (pagamento && pagamento.id) {
+        console.log(`[Webhook ${requestId}] Criando repasse profissional pendente para pagamento ${pagamento.id}...`)
+        try {
+          const { error: rpcErr } = await supabase.rpc("criar_repasse_profissional_pendente", {
+            p_pagamento_id: pagamento.id
+          })
+          if (rpcErr) {
+            console.error(`[mercado-pago-webhook] erro ao criar repasse:`, rpcErr)
+          } else {
+            console.log(`[Webhook ${requestId}] Repasse pendente criado com sucesso para pagamento ${pagamento.id}`)
+          }
+        } catch (e_rpc) {
+          console.error(`[mercado-pago-webhook] erro ao criar repasse:`, e_rpc)
+        }
+      }
     }
 
     return new Response(JSON.stringify({ ok: true }), { 

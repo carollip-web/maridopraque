@@ -714,6 +714,12 @@ export type Database = {
           updated_at: string
           user_id: string
           veiculo_proprio: boolean | null
+          pix_key_type: string | null
+          pix_key: string | null
+          pix_holder_name: string | null
+          pix_holder_document: string | null
+          pix_dados_confirmados: boolean
+          repasse_automatico: boolean
         }
         Insert: {
           anos_experiencia?: number | null
@@ -743,6 +749,12 @@ export type Database = {
           updated_at?: string
           user_id: string
           veiculo_proprio?: boolean | null
+          pix_key_type?: string | null
+          pix_key?: string | null
+          pix_holder_name?: string | null
+          pix_holder_document?: string | null
+          pix_dados_confirmados?: boolean
+          repasse_automatico?: boolean
         }
         Update: {
           anos_experiencia?: number | null
@@ -772,6 +784,12 @@ export type Database = {
           updated_at?: string
           user_id?: string
           veiculo_proprio?: boolean | null
+          pix_key_type?: string | null
+          pix_key?: string | null
+          pix_holder_name?: string | null
+          pix_holder_document?: string | null
+          pix_dados_confirmados?: boolean
+          repasse_automatico?: boolean
         }
         Relationships: []
       }
@@ -933,6 +951,99 @@ export type Database = {
         }
         Relationships: []
       }
+      repasses_profissionais: {
+        Row: {
+          id: string
+          pagamento_id: string | null
+          orcamento_id: string | null
+          proposta_id: string | null
+          profissional_id: string
+          cliente_id: string | null
+          valor_bruto: number
+          valor_comissao_marketplace: number
+          valor_taxa_gateway: number
+          valor_liquido: number
+          pix_key_type: string | null
+          pix_key: string | null
+          pix_holder_name: string | null
+          pix_holder_document: string | null
+          status: string
+          btg_transfer_id: string | null
+          btg_end_to_end_id: string | null
+          btg_request_payload: Json | null
+          btg_response_payload: Json | null
+          erro: string | null
+          requested_at: string | null
+          approved_at: string | null
+          processing_at: string | null
+          paid_at: string | null
+          failed_at: string | null
+          cancelled_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          pagamento_id?: string | null
+          orcamento_id?: string | null
+          proposta_id?: string | null
+          profissional_id: string
+          cliente_id?: string | null
+          valor_bruto?: number
+          valor_comissao_marketplace?: number
+          valor_taxa_gateway?: number
+          valor_liquido?: number
+          pix_key_type?: string | null
+          pix_key?: string | null
+          pix_holder_name?: string | null
+          pix_holder_document?: string | null
+          status?: string
+          btg_transfer_id?: string | null
+          btg_end_to_end_id?: string | null
+          btg_request_payload?: Json | null
+          btg_response_payload?: Json | null
+          erro?: string | null
+          requested_at?: string | null
+          approved_at?: string | null
+          processing_at?: string | null
+          paid_at?: string | null
+          failed_at?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          pagamento_id?: string | null
+          orcamento_id?: string | null
+          proposta_id?: string | null
+          profissional_id?: string
+          cliente_id?: string | null
+          valor_bruto?: number
+          valor_comissao_marketplace?: number
+          valor_taxa_gateway?: number
+          valor_liquido?: number
+          pix_key_type?: string | null
+          pix_key?: string | null
+          pix_holder_name?: string | null
+          pix_holder_document?: string | null
+          status?: string
+          btg_transfer_id?: string | null
+          btg_end_to_end_id?: string | null
+          btg_request_payload?: Json | null
+          btg_response_payload?: Json | null
+          erro?: string | null
+          requested_at?: string | null
+          approved_at?: string | null
+          processing_at?: string | null
+          paid_at?: string | null
+          failed_at?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           admin_level: Database["public"]["Enums"]["admin_level"] | null
@@ -962,6 +1073,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_repasse_profissional_pendente: {
+        Args: {
+          p_pagamento_id: string
+        }
+        Returns: Database["public"]["Tables"]["repasses_profissionais"]["Row"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

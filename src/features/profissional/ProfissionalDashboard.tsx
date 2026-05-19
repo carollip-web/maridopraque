@@ -7,6 +7,7 @@ import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { ProfissionalHeader } from "./ProfissionalHeader";
 import { MercadoPagoConnect } from "./MercadoPagoConnect";
+import { PixRepasseSettings } from "./PixRepasseSettings";
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
 
@@ -56,6 +57,8 @@ export function ProfissionalDashboard({
       <ProfileCompletenessCard />
 
       <MercadoPagoConnect />
+
+      <PixRepasseSettings />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ActionStat
