@@ -1,1 +1,5 @@
 project_id = "rbfonmpuepqfhivvoqku"
+
+[functions.cron-limpeza-agenda]
+schedule = "*/15 * * * *"
+verify_jwt = false
