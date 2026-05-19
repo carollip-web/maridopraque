@@ -1,4 +1,4 @@
-project_id = "rbfonmpuepqfhivvoqku"
+project_id = "xvrjzixmoitjbvzmmkdk"
 
 [functions.cron-limpeza-agenda]
 schedule = "*/15 * * * *"
