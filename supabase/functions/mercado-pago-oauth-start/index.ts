@@ -31,18 +31,20 @@ serve(async (req) => {
       })
     }
 
-    // Obter o Client ID do Mercado Pago
-    const mpClientId = Deno.env.get("MERCADO_PAGO_CLIENT_ID")
-    if (!mpClientId) {
-      throw new Error("MERCADO_PAGO_CLIENT_ID não está configurado nas Secrets do Supabase.")
+    // Obter o App ID do Mercado Pago
+    const mpAppId = Deno.env.get("MERCADO_PAGO_APP_ID")
+    if (!mpAppId) {
+      throw new Error("MERCADO_PAGO_APP_ID não está configurado nas Secrets do Supabase.")
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-    const redirectUri = `${supabaseUrl}/functions/v1/mercado-pago-oauth-callback`
+    const redirectUri = Deno.env.get("MERCADO_PAGO_REDIRECT_URI") ?? ""
+    if (!redirectUri) {
+      throw new Error("MERCADO_PAGO_REDIRECT_URI não está configurado.")
+    }
 
     // Construir a URL de autorização do Mercado Pago
     // O parâmetro state carrega o ID do profissional para podermos identificá-lo no retorno
-    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${mpClientId}&response_type=code&platform_id=mp&state=${user.id}&redirect_uri=${encodeURIComponent(redirectUri)}`
+    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${mpAppId}&response_type=code&platform_id=mp&state=${user.id}&redirect_uri=${encodeURIComponent(redirectUri)}`
 
     return new Response(JSON.stringify({ url: authUrl }), {
       status: 200,

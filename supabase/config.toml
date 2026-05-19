@@ -6,3 +6,9 @@ verify_jwt = false
 
 [functions.mercado-pago-webhook]
 verify_jwt = false
+
+[functions.mercado-pago-oauth-start]
+verify_jwt = true
+
+[functions.mercado-pago-oauth-callback]
+verify_jwt = false

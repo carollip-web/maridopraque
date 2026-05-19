@@ -24,16 +24,16 @@ serve(async (req) => {
       return Response.redirect(`${appUrl}/profissional?mp_error=oauth_failed`, 302)
     }
 
-    const mpClientId = Deno.env.get("MERCADO_PAGO_CLIENT_ID")
+    const mpAppId = Deno.env.get("MERCADO_PAGO_APP_ID")
     const mpClientSecret = Deno.env.get("MERCADO_PAGO_CLIENT_SECRET")
     
-    if (!mpClientId || !mpClientSecret) {
+    if (!mpAppId || !mpClientSecret) {
       console.error("Variáveis de ambiente do Mercado Pago não configuradas.")
       return Response.redirect(`${appUrl}/profissional?mp_error=keys_missing`, 302)
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-    const redirectUri = `${supabaseUrl}/functions/v1/mercado-pago-oauth-callback`
+    const redirectUri = Deno.env.get("MERCADO_PAGO_REDIRECT_URI") ?? ""
 
     console.log("Exchanging Mercado Pago OAuth code for access token...")
     // Trocar o código de autorização pelo access_token do profissional
@@ -45,7 +45,7 @@ serve(async (req) => {
       },
       body: new URLSearchParams({
         client_secret: mpClientSecret,
-        client_id: mpClientId,
+        client_id: mpAppId,
         grant_type: "authorization_code",
         code: code,
         redirect_uri: redirectUri,
