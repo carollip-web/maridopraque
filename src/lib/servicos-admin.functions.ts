@@ -18,6 +18,7 @@ const servicoSchema = z.object({
   preco_min: z.number().nonnegative().max(1000000).optional().nullable(),
   preco_max: z.number().nonnegative().max(1000000).optional().nullable(),
   unidade: z.string().trim().max(40).optional().nullable(),
+  comissao_marketplace_pct: z.number().min(0).max(100).optional().default(15),
   ativo: z.boolean().optional(),
 });
 
@@ -47,6 +48,7 @@ export const salvarServico = createServerFn({ method: "POST" })
       preco_fixo: isFixed ? (data.preco_fixo ?? null) : null,
       preco_min: data.tipo_preco === "range" ? (data.preco_min ?? null) : null,
       preco_max: data.tipo_preco === "range" ? (data.preco_max ?? null) : null,
+      comissao_marketplace_pct: data.comissao_marketplace_pct ?? 15,
       ativo: data.ativo ?? true,
     };
     if (data.id) {

@@ -880,6 +880,7 @@ export type Database = {
         Row: {
           ativo: boolean
           categoria: string
+          comissao_marketplace_pct: number
           created_at: string
           descricao: string | null
           id: string
@@ -892,6 +893,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           categoria: string
+          comissao_marketplace_pct?: number
           created_at?: string
           descricao?: string | null
           id?: string
@@ -904,6 +906,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           categoria?: string
+          comissao_marketplace_pct?: number
           created_at?: string
           descricao?: string | null
           id?: string

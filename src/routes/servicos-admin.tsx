@@ -46,6 +46,7 @@ type Servico = {
   preco_min: number | null;
   preco_max: number | null;
   is_fixed_price: boolean;
+  comissao_marketplace_pct: number;
   ativo: boolean;
 };
 
@@ -94,6 +95,7 @@ function emptyServico(): Servico {
     preco_min: 0,
     preco_max: 0,
     is_fixed_price: false,
+    comissao_marketplace_pct: 15,
     ativo: true,
   };
 }
@@ -167,6 +169,7 @@ function ServicosAdmin() {
         preco_fixo: r.preco_fixo != null ? Number(r.preco_fixo) : null,
         preco_min: r.preco_min != null ? Number(r.preco_min) : null,
         preco_max: r.preco_max != null ? Number(r.preco_max) : null,
+        comissao_marketplace_pct: r.comissao_marketplace_pct != null ? Number(r.comissao_marketplace_pct) : 15,
       })),
     );
     setMateriais(
@@ -337,6 +340,7 @@ function ServicosAdmin() {
                     preco_fixo: s.preco_fixo,
                     preco_min: s.preco_min,
                     preco_max: s.preco_max,
+                    comissao_marketplace_pct: s.comissao_marketplace_pct,
                     ativo: s.ativo,
                   },
                 });
@@ -442,6 +446,9 @@ function ServicosAdmin() {
                             : s.tipo_preco === "range"
                               ? "Faixa de preço"
                               : "Sob orçamento"}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full">
+                          Comissão: {(s.comissao_marketplace_pct ?? 15).toFixed(2)}%
                         </span>
                       </div>
                       <h3 className="font-bold text-base">{s.nome}</h3>
@@ -754,6 +761,24 @@ function ServicoForm({
             proposta. Nenhuma faixa de referência será exibida.
           </div>
         )}
+
+        <div className="sm:col-span-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">
+            Comissão do Marketplace (%)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step="0.5"
+            value={s.comissao_marketplace_pct ?? 15}
+            onChange={(e) => setS({ ...s, comissao_marketplace_pct: Number(e.target.value) ?? 15 })}
+            className="w-full mt-1.5 h-11 px-4 rounded-xl border border-border bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Percentual descontado do profissional ao receber o pagamento
+          </p>
+        </div>
 
         <div className="sm:col-span-2">
           <label className="text-xs font-bold uppercase text-muted-foreground">Descrição</label>
