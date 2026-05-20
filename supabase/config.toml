@@ -40,3 +40,6 @@ entrypoint = "./functions/btg-webhook/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/btg-webhook/*.html" ]
+
+[functions.btg-repasse-disparar]
+verify_jwt = true
