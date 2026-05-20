@@ -700,9 +700,20 @@ export type Database = {
           genero: string | null
           lat: number | null
           lng: number | null
+          mp_access_token: string | null
+          mp_connected_at: string | null
+          mp_refresh_token: string | null
+          mp_token_expires_at: string | null
+          mp_user_id: string | null
           oferece_apoio_feminino: boolean
           onboarding_completo: boolean
+          pix_dados_confirmados: boolean
+          pix_holder_document: string | null
+          pix_holder_name: string | null
+          pix_key: string | null
+          pix_key_type: string | null
           raio_atendimento_km: number
+          repasse_automatico: boolean
           slug: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
@@ -724,9 +735,20 @@ export type Database = {
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          mp_access_token?: string | null
+          mp_connected_at?: string | null
+          mp_refresh_token?: string | null
+          mp_token_expires_at?: string | null
+          mp_user_id?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
+          pix_dados_confirmados?: boolean
+          pix_holder_document?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           raio_atendimento_km?: number
+          repasse_automatico?: boolean
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
@@ -748,9 +770,20 @@ export type Database = {
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          mp_access_token?: string | null
+          mp_connected_at?: string | null
+          mp_refresh_token?: string | null
+          mp_token_expires_at?: string | null
+          mp_user_id?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
+          pix_dados_confirmados?: boolean
+          pix_holder_document?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
           raio_atendimento_km?: number
+          repasse_automatico?: boolean
           slug?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
@@ -852,6 +885,75 @@ export type Database = {
           },
         ]
       }
+      repasses_profissionais: {
+        Row: {
+          approved_at: string | null
+          cancelled_at: string | null
+          cliente_id: string | null
+          created_at: string
+          erro: string | null
+          failed_at: string | null
+          id: string
+          orcamento_id: string | null
+          pagamento_id: string | null
+          paid_at: string | null
+          pix_holder_document: string | null
+          pix_holder_name: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          profissional_id: string
+          status: string
+          updated_at: string
+          valor_bruto: number
+          valor_comissao_marketplace: number
+          valor_liquido: number
+        }
+        Insert: {
+          approved_at?: string | null
+          cancelled_at?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          erro?: string | null
+          failed_at?: string | null
+          id?: string
+          orcamento_id?: string | null
+          pagamento_id?: string | null
+          paid_at?: string | null
+          pix_holder_document?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          profissional_id: string
+          status?: string
+          updated_at?: string
+          valor_bruto?: number
+          valor_comissao_marketplace?: number
+          valor_liquido?: number
+        }
+        Update: {
+          approved_at?: string | null
+          cancelled_at?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          erro?: string | null
+          failed_at?: string | null
+          id?: string
+          orcamento_id?: string | null
+          pagamento_id?: string | null
+          paid_at?: string | null
+          pix_holder_document?: string | null
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          profissional_id?: string
+          status?: string
+          updated_at?: string
+          valor_bruto?: number
+          valor_comissao_marketplace?: number
+          valor_liquido?: number
+        }
+        Relationships: []
+      }
       service_materiais: {
         Row: {
           created_at: string
@@ -880,6 +982,7 @@ export type Database = {
         Row: {
           ativo: boolean
           categoria: string
+          comissao_marketplace_pct: number
           created_at: string
           descricao: string | null
           id: string
@@ -892,6 +995,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           categoria: string
+          comissao_marketplace_pct?: number
           created_at?: string
           descricao?: string | null
           id?: string
@@ -904,6 +1008,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           categoria?: string
+          comissao_marketplace_pct?: number
           created_at?: string
           descricao?: string | null
           id?: string
@@ -944,6 +1049,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_repasse_profissional_pendente: {
+        Args: { p_pagamento_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
