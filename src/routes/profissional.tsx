@@ -8,6 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Loader2 } from "lucide-react";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 // Feature modules
 import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo, ProfissionalTab } from "@/features/profissional/types";
@@ -56,6 +58,7 @@ function ProfissionalArea() {
   const { tab = "pedidos", orcamentoId, chat } = Route.useSearch();
   const { user, isProfissional, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [minhasPropostas, setMinhasPropostas] = useState<any[]>([]);
   const [materiaisCat, setMateriaisCat] = useState<any[]>([]);
@@ -339,7 +342,15 @@ function ProfissionalArea() {
   };
 
   const handleProposalSent = ({ orcamentoId, proposta, orcamento }: { orcamentoId: string; proposta: any; orcamento: any }) => {
-    console.info("[ProfissionalArea] handleProposalSent - Optimistic Update", { orcamentoId });
+    console.log("[profissional.enviarOrcamento] proposta criada", proposta);
+    console.log("[profissional.enviarOrcamento] orçamento atualizado", orcamento);
+    console.log("[profissional.enviarOrcamento] invalidando queries");
+
+    // Invalidate React Query caches
+    queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
+    queryClient.invalidateQueries({ queryKey: ["propostas"] });
+    queryClient.invalidateQueries({ queryKey: ["profissional"] });
+    queryClient.invalidateQueries({ queryKey: ["radar"] });
     
     // 1. Update orcamentos status locally
     setOrcamentos(prev => prev.map(o => o.id === orcamentoId ? { ...o, ...orcamento } : o));
@@ -353,7 +364,10 @@ function ProfissionalArea() {
       return [proposta, ...prev];
     });
 
-    // 3. Trigger background refresh to stay in sync with server
+    // 3. Move the user immediately to the "Enviados" tab
+    setPedidosSubTab("enviados");
+
+    // 4. Trigger background refresh to stay in sync with server
     refresh();
   };
 
@@ -627,6 +641,7 @@ function ProfissionalArea() {
                 materiais={orcMats[sheetOrc.id] ?? []}
                 mode={sheetMode as any}
                 enviar={enviar}
+                onProposalSent={handleProposalSent}
                 refresh={() => {
                   refresh();
                   setSheetOrcamentoId(null);
