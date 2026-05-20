@@ -483,24 +483,20 @@ function ProfissionalArea() {
   const filterBy = (
     type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados" | string,
   ) => {
+    const jaEnvieiProposta = (orcamentoId: string) =>
+      propostasEnviadasLocal.has(orcamentoId) ||
+      minhasPropostas.some((p) => p.orcamento_id === orcamentoId);
+
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        // PERMISSIVE: Show all opportunities to avoid "vanishing" bugs.
-        // We only hide if the professional already sent a proposal or refused.
-        if (
-          !(
-            (o.status === "customizado_pendente" || o.status === "enviado") &&
-            !minhasPropostas.some((p) => p.orcamento_id === o.id)
-          )
-        )
-          return false;
-
+        if (!(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+        if (jaEnvieiProposta(o.id)) return false;
         if (recusados.has(o.id)) return false;
-        
+
         // Radius filter is still active as it's a hard constraint for logistics
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
-        
+
         // Atendimento Compatibility filter
         const compat = isProfissionalCompativelComTipoAtendimento({
           tipoAtendimento: (o as any).tipo_atendimento,
@@ -516,13 +512,13 @@ function ProfissionalArea() {
         return (
           o.profissional_id === user?.id &&
           o.status === "customizado_pendente" &&
-          !minhasPropostas.some((p) => p.orcamento_id === o.id)
+          !jaEnvieiProposta(o.id)
         );
       }
       if (type === "enviados") {
         return (
           (o.status === "customizado_pendente" || o.status === "enviado") &&
-          minhasPropostas.some((p) => p.orcamento_id === o.id && p.status === "pendente")
+          jaEnvieiProposta(o.id)
         );
       }
       if (type === "ativos") {
@@ -546,7 +542,8 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados]);
+  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados, propostasEnviadasLocal]);
+
 
   if (loading) {
     return (
