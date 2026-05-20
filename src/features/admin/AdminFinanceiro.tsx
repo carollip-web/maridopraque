@@ -5,36 +5,59 @@ import { Link } from "@tanstack/react-router";
 
 export function AdminFinanceiro() {
   const [data, setData] = useState<{
-    bruto: number;
-    liquido: number;
-    pendente: number;
+    totalFaturado: number;
+    lucroPlataforma: number;
+    saldoPendenteBtg: number;
     pagos: any[];
   } | null>(null);
-  const [comissao] = useState(20);
 
   useEffect(() => {
     (async () => {
-      const { data: orcs } = await supabase
-        .from("orcamentos")
-        .select(
-          "id, status, valor, service_name, created_at, data_pagamento, cliente_id, profissional_id",
-        )
-        .in("status", ["pago", "aprovado", "enviado"])
+      // Busca repasses, com junção aos orçamentos para pegar o nome do serviço
+      const { data: repasses, error } = await supabase
+        .from("repasses_profissionais")
+        .select(`
+          id, 
+          status, 
+          valor_bruto, 
+          valor_comissao_marketplace, 
+          valor_taxa_gateway,
+          valor_liquido,
+          created_at,
+          orcamentos ( service_name, data_pagamento )
+        `)
         .order("created_at", { ascending: false })
-        .limit(100);
-      const list = orcs || [];
-      const pagos = list.filter((o: any) => o.status === "pago");
-      const bruto = pagos.reduce(
-        (s: number, o: any) => s + Number(o.valor || 0),
-        0,
+        .limit(200);
+
+      const list = repasses || [];
+
+      // Volume Transacionado = Soma do valor bruto (tudo que o cliente pagou)
+      const totalFaturado = list.reduce(
+        (s: number, r: any) => s + Number(r.valor_bruto || 0),
+        0
       );
-      const liquido = bruto * (comissao / 100);
-      const pendente = list
-        .filter((o: any) => ["aprovado", "enviado"].includes(o.status))
-        .reduce((s: number, o: any) => s + Number(o.valor || 0), 0);
-      setData({ bruto, liquido, pendente, pagos });
+
+      // Lucro da Plataforma = Soma das comissões
+      const lucroPlataforma = list.reduce(
+        (s: number, r: any) => s + Number(r.valor_comissao_marketplace || 0),
+        0
+      );
+
+      // Saldo Parado no BTG = O que a plataforma deve aos profissionais (ainda não pago)
+      const saldoPendenteBtg = list
+        .filter((r: any) => ["pendente", "aprovado", "processando"].includes(r.status))
+        .reduce((s: number, r: any) => s + Number(r.valor_liquido || 0), 0);
+
+      const pagos = list.map((r: any) => ({
+        id: r.id,
+        service_name: r.orcamentos?.service_name || "Serviço",
+        data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
+        valor: r.valor_bruto,
+      }));
+
+      setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, pagos });
     })();
-  }, [comissao]);
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -54,42 +77,41 @@ export function AdminFinanceiro() {
         <>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 mb-1">Volume Bruto (pagos)</p>
-              <h3 className="text-3xl font-bold">R$ {data.bruto.toFixed(2)}</h3>
+              <p className="text-sm text-slate-500 mb-1">Total Faturado (Volume)</p>
+              <h3 className="text-3xl font-bold">R$ {data.totalFaturado.toFixed(2)}</h3>
               <div className="mt-4 flex items-center gap-1 text-emerald-600 text-xs font-bold">
                 <ArrowUpRight className="h-3 w-3" /> {data.pagos.length}{" "}
-                {data.pagos.length === 1 ? "pagamento" : "pagamentos"}
+                {data.pagos.length === 1 ? "pagamento total" : "pagamentos totais"}
               </div>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 mb-1">Líquido Plataforma</p>
-              <h3 className="text-3xl font-bold">R$ {data.liquido.toFixed(2)}</h3>
+              <p className="text-sm text-slate-500 mb-1">Lucro da Plataforma (Real)</p>
+              <h3 className="text-3xl font-bold text-emerald-600">R$ {data.lucroPlataforma.toFixed(2)}</h3>
               <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
-                Comissão: {comissao}%
+                Proveniente das comissões
               </div>
             </div>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-brand">
               <p className="text-sm text-slate-500 mb-1">
-                Aguardando Pagamento
+                Saldo Parado BTG (A Repassar)
               </p>
               <h3 className="text-3xl font-bold">
-                R$ {data.pendente.toFixed(2)}
+                R$ {data.saldoPendenteBtg.toFixed(2)}
               </h3>
               <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
-                <Clock className="h-3 w-3" /> Aprovados/enviados
+                <Clock className="h-3 w-3" /> Aguardando transferência Pix
               </div>
             </div>
           </div>
 
           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="p-6 border-b border-slate-100 font-bold flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" /> Últimos
-              pagamentos recebidos
+              <Calendar className="h-4 w-4 text-slate-400" /> Histórico de Transações
             </div>
             <div className="p-6 space-y-4">
               {data.pagos.length === 0 && (
                 <p className="text-sm text-slate-400">
-                  Nenhum pagamento ainda.
+                  Nenhum repasse criado ainda.
                 </p>
               )}
               {data.pagos.slice(0, 10).map((f: any) => (
@@ -106,7 +128,7 @@ export function AdminFinanceiro() {
                         : "—"}
                     </p>
                   </div>
-                  <p className="font-bold text-emerald-600">
+                  <p className="font-bold text-slate-900">
                     + R$ {Number(f.valor || 0).toFixed(2)}
                   </p>
                 </div>

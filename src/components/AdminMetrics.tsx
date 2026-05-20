@@ -76,7 +76,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         prevStartDate = subDays(startDate, 30);
       }
 
-      const [{ data: orcs }, { data: avs }, { data: roles }] = await Promise.all([
+      const [{ data: orcs }, { data: avs }, { data: roles }, { data: repassesData }] = await Promise.all([
         supabase
           .from("orcamentos")
           .select("*")
@@ -84,6 +84,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           .order("created_at", { ascending: false }),
         supabase.from("avaliacoes").select("nota, created_at"),
         supabase.from("user_roles").select("user_id, role"),
+        supabase.from("repasses_profissionais").select("created_at, status, valor_comissao_marketplace"),
       ]);
 
       const allRoles = roles || [];
@@ -102,11 +103,18 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         return d >= prevStartDate && d < startDate;
       });
 
-      // Calculate Revenue & Volume
+      const repasses = repassesData || [];
+      const currentRepasses = repasses.filter((r) => new Date(r.created_at) >= startDate);
+      const prevRepasses = repasses.filter((r) => {
+        const d = new Date(r.created_at);
+        return d >= prevStartDate && d < startDate;
+      });
+
+      // Calculate Revenue & Volume from repasses (lucro real)
       const calcRev = (arr: any[]) =>
-        arr.filter((o) => o.status === "pago").reduce((s, o) => s + Number(o.valor || 0), 0);
-      const revCurrent = calcRev(currentPeriod);
-      const revPrev = calcRev(prevPeriod);
+        arr.reduce((s, r) => s + Number(r.valor_comissao_marketplace || 0), 0);
+      const revCurrent = calcRev(currentRepasses);
+      const revPrev = calcRev(prevRepasses);
       const revChange = revPrev > 0 ? ((revCurrent - revPrev) / revPrev) * 100 : 0;
 
       const activeCurrent = currentPeriod.filter((o) =>
@@ -162,11 +170,10 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       for (let i = 0; i < (timeRange === "7d" ? 7 : 30); i++) {
         const d = subDays(now, i);
         const dayOrcs = currentPeriod.filter((o) => isSameDay(new Date(o.created_at), d));
+        const dayRepasses = currentRepasses.filter((r) => isSameDay(new Date(r.created_at), d));
         days.unshift({
           name: format(d, "dd/MM"),
-          receita: dayOrcs
-            .filter((o) => o.status === "pago")
-            .reduce((s, o) => s + Number(o.valor || 0), 0),
+          receita: dayRepasses.reduce((s, r) => s + Number(r.valor_comissao_marketplace || 0), 0),
           pedidos: dayOrcs.length,
         });
       }

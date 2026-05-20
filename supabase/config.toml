@@ -1,7 +1,6 @@
 project_id = "xvrjzixmoitjbvzmmkdk"
 
 [functions.cron-limpeza-agenda]
-schedule = "*/15 * * * *"
 verify_jwt = false
 
 [functions.mercado-pago-webhook]
@@ -45,5 +44,4 @@ entrypoint = "./functions/btg-webhook/index.ts"
 verify_jwt = true
 
 [functions.btg-token-refresh]
-schedule = "*/15 * * * *"
 verify_jwt = false
