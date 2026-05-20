@@ -90,8 +90,7 @@ serve(async (req) => {
         user_id: repasse.profissional_id,
         titulo,
         mensagem,
-        lida: false,
-        tipo: isSuccess ? "sucesso" : "alerta"
+        lida: false
       })
 
     return new Response(JSON.stringify({ success: true }), { status: 200 })

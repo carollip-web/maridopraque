@@ -159,8 +159,8 @@ function AdminRepassesPage() {
     try {
       setApprovingId(repasse.id);
 
-      const { data, error } = await supabase.functions.invoke("btg-pix-lote", {
-        body: { repasse_id: repasse.id }
+      const { data, error } = await supabase.functions.invoke("btg-repasse-disparar", {
+        body: { repasse_ids: [repasse.id] }
       });
 
       if (error) {
