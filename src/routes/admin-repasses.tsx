@@ -233,7 +233,7 @@ function AdminRepassesPage() {
   const loadBtgStatus = async () => {
     setBtgLoading(true);
     try {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("marketplace_integracoes")
         .select("connected_at, access_token")
         .eq("provider", "btg")

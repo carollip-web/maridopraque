@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -155,6 +180,54 @@ export type Database = {
           id?: string
           user_id?: string
           usos?: number
+        }
+        Relationships: []
+      }
+      marketplace_integracoes: {
+        Row: {
+          access_token: string | null
+          account_id: string | null
+          company_id: string | null
+          connected_at: string | null
+          connected_by: string | null
+          created_at: string
+          extra: Json | null
+          id: string
+          provider: string
+          refresh_token: string | null
+          scope: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_id?: string | null
+          company_id?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          extra?: Json | null
+          id?: string
+          provider: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          account_id?: string | null
+          company_id?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          extra?: Json | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -305,7 +378,29 @@ export type Database = {
           subtotal?: number | null
           unidade_snapshot?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_orcamento_materiais_material"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orcamento_materiais_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_materiais_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamento_recusas: {
         Row: {
@@ -349,7 +444,7 @@ export type Database = {
           descricao: string | null
           flexibilidade_agenda: string | null
           fotos_concluido: string[]
-          fotos_problema: string[]
+          fotos_problema: string[] | null
           horario_preferido: string | null
           id: string
           is_test: boolean
@@ -383,7 +478,7 @@ export type Database = {
           descricao?: string | null
           flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
-          fotos_problema?: string[]
+          fotos_problema?: string[] | null
           horario_preferido?: string | null
           id?: string
           is_test?: boolean
@@ -417,7 +512,7 @@ export type Database = {
           descricao?: string | null
           flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
-          fotos_problema?: string[]
+          fotos_problema?: string[] | null
           horario_preferido?: string | null
           id?: string
           is_test?: boolean
@@ -591,6 +686,7 @@ export type Database = {
           data_inicio: string
           id: string
           motivo: string | null
+          orcamento_id: string | null
           user_id: string
         }
         Insert: {
@@ -599,6 +695,7 @@ export type Database = {
           data_inicio: string
           id?: string
           motivo?: string | null
+          orcamento_id?: string | null
           user_id: string
         }
         Update: {
@@ -607,9 +704,18 @@ export type Database = {
           data_inicio?: string
           id?: string
           motivo?: string | null
+          orcamento_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profissional_bloqueios_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profissional_bloqueios_agenda: {
         Row: {
@@ -660,27 +766,36 @@ export type Database = {
       }
       profissional_disponibilidade: {
         Row: {
+          ativo: boolean | null
           created_at: string
+          data_especifica: string | null
           dia_semana: number
           hora_fim: string
           hora_inicio: string
           id: string
+          recorrente: boolean | null
           user_id: string
         }
         Insert: {
+          ativo?: boolean | null
           created_at?: string
+          data_especifica?: string | null
           dia_semana: number
           hora_fim: string
           hora_inicio: string
           id?: string
+          recorrente?: boolean | null
           user_id: string
         }
         Update: {
+          ativo?: boolean | null
           created_at?: string
+          data_especifica?: string | null
           dia_semana?: number
           hora_fim?: string
           hora_inicio?: string
           id?: string
+          recorrente?: boolean | null
           user_id?: string
         }
         Relationships: []
@@ -688,23 +803,43 @@ export type Database = {
       profissional_perfil: {
         Row: {
           anos_experiencia: number | null
+          aprovacao_status: string
+          aprovado_em: string | null
+          aprovado_por: string | null
           atende_emergencias: boolean | null
           ativo: boolean
+          bairro: string | null
           bio: string | null
+          cadastro_completo: boolean
+          cadastro_submetido_em: string | null
+          cep: string | null
           chave_pix: string | null
           cidade: string | null
+          como_conheceu: string | null
+          complemento: string | null
+          cpf: string | null
           created_at: string
+          data_nascimento: string | null
           duracao_padrao_min: number
+          endereco: string | null
           especialidades: string[] | null
+          estado: string | null
+          experiencia_anos: number | null
+          foto_documento_frente: string | null
+          foto_documento_verso: string | null
+          foto_selfie: string | null
           foto_url: string | null
           genero: string | null
           lat: number | null
           lng: number | null
+          motivo_rejeicao: string | null
           mp_access_token: string | null
           mp_connected_at: string | null
           mp_refresh_token: string | null
           mp_token_expires_at: string | null
           mp_user_id: string | null
+          numero: string | null
+          observacoes_cadastro: string | null
           oferece_apoio_feminino: boolean
           onboarding_completo: boolean
           pix_dados_confirmados: boolean
@@ -712,9 +847,10 @@ export type Database = {
           pix_holder_name: string | null
           pix_key: string | null
           pix_key_type: string | null
-          raio_atendimento_km: number
+          raio_atendimento_km: number | null
           repasse_automatico: boolean
           slug: string | null
+          telefone: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
           updated_at: string
@@ -723,23 +859,43 @@ export type Database = {
         }
         Insert: {
           anos_experiencia?: number | null
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           atende_emergencias?: boolean | null
           ativo?: boolean
+          bairro?: string | null
           bio?: string | null
+          cadastro_completo?: boolean
+          cadastro_submetido_em?: string | null
+          cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          como_conheceu?: string | null
+          complemento?: string | null
+          cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           duracao_padrao_min?: number
+          endereco?: string | null
           especialidades?: string[] | null
+          estado?: string | null
+          experiencia_anos?: number | null
+          foto_documento_frente?: string | null
+          foto_documento_verso?: string | null
+          foto_selfie?: string | null
           foto_url?: string | null
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
           mp_refresh_token?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
+          numero?: string | null
+          observacoes_cadastro?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           pix_dados_confirmados?: boolean
@@ -747,9 +903,10 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
-          raio_atendimento_km?: number
+          raio_atendimento_km?: number | null
           repasse_automatico?: boolean
           slug?: string | null
+          telefone?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
@@ -758,23 +915,43 @@ export type Database = {
         }
         Update: {
           anos_experiencia?: number | null
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           atende_emergencias?: boolean | null
           ativo?: boolean
+          bairro?: string | null
           bio?: string | null
+          cadastro_completo?: boolean
+          cadastro_submetido_em?: string | null
+          cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          como_conheceu?: string | null
+          complemento?: string | null
+          cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           duracao_padrao_min?: number
+          endereco?: string | null
           especialidades?: string[] | null
+          estado?: string | null
+          experiencia_anos?: number | null
+          foto_documento_frente?: string | null
+          foto_documento_verso?: string | null
+          foto_selfie?: string | null
           foto_url?: string | null
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
           mp_refresh_token?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
+          numero?: string | null
+          observacoes_cadastro?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           pix_dados_confirmados?: boolean
@@ -782,9 +959,10 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
-          raio_atendimento_km?: number
+          raio_atendimento_km?: number | null
           repasse_automatico?: boolean
           slug?: string | null
+          telefone?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
@@ -797,7 +975,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          material_id: string
+          material_id: string | null
           nome_snapshot: string
           preco_unitario: number
           proposta_id: string
@@ -808,7 +986,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          material_id: string
+          material_id?: string | null
           nome_snapshot: string
           preco_unitario?: number
           proposta_id: string
@@ -819,7 +997,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          material_id?: string
+          material_id?: string | null
           nome_snapshot?: string
           preco_unitario?: number
           proposta_id?: string
@@ -888,6 +1066,10 @@ export type Database = {
       repasses_profissionais: {
         Row: {
           approved_at: string | null
+          btg_end_to_end_id: string | null
+          btg_request_payload: Json | null
+          btg_response_payload: Json | null
+          btg_transfer_id: string | null
           cancelled_at: string | null
           cliente_id: string | null
           created_at: string
@@ -901,15 +1083,23 @@ export type Database = {
           pix_holder_name: string | null
           pix_key: string | null
           pix_key_type: string | null
+          processing_at: string | null
           profissional_id: string
+          proposta_id: string | null
+          requested_at: string | null
           status: string
           updated_at: string
           valor_bruto: number
           valor_comissao_marketplace: number
           valor_liquido: number
+          valor_taxa_gateway: number
         }
         Insert: {
           approved_at?: string | null
+          btg_end_to_end_id?: string | null
+          btg_request_payload?: Json | null
+          btg_response_payload?: Json | null
+          btg_transfer_id?: string | null
           cancelled_at?: string | null
           cliente_id?: string | null
           created_at?: string
@@ -923,15 +1113,23 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
+          processing_at?: string | null
           profissional_id: string
+          proposta_id?: string | null
+          requested_at?: string | null
           status?: string
           updated_at?: string
           valor_bruto?: number
           valor_comissao_marketplace?: number
           valor_liquido?: number
+          valor_taxa_gateway?: number
         }
         Update: {
           approved_at?: string | null
+          btg_end_to_end_id?: string | null
+          btg_request_payload?: Json | null
+          btg_response_payload?: Json | null
+          btg_transfer_id?: string | null
           cancelled_at?: string | null
           cliente_id?: string | null
           created_at?: string
@@ -945,12 +1143,16 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
+          processing_at?: string | null
           profissional_id?: string
+          proposta_id?: string | null
+          requested_at?: string | null
           status?: string
           updated_at?: string
           valor_bruto?: number
           valor_comissao_marketplace?: number
           valor_liquido?: number
+          valor_taxa_gateway?: number
         }
         Relationships: []
       }
@@ -976,7 +1178,22 @@ export type Database = {
           quantidade_sugerida?: number
           service_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_service_materiais_material"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_service_materiais_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services_catalog: {
         Row: {
@@ -1022,21 +1239,21 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          admin_level: Database["public"]["Enums"]["admin_level"] | null
+          admin_level: string | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          admin_level?: Database["public"]["Enums"]["admin_level"] | null
+          admin_level?: string | null
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          admin_level?: Database["public"]["Enums"]["admin_level"] | null
+          admin_level?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
@@ -1051,7 +1268,42 @@ export type Database = {
     Functions: {
       criar_repasse_profissional_pendente: {
         Args: { p_pagamento_id: string }
-        Returns: string
+        Returns: {
+          approved_at: string | null
+          btg_end_to_end_id: string | null
+          btg_request_payload: Json | null
+          btg_response_payload: Json | null
+          btg_transfer_id: string | null
+          cancelled_at: string | null
+          cliente_id: string | null
+          created_at: string
+          erro: string | null
+          failed_at: string | null
+          id: string
+          orcamento_id: string | null
+          pagamento_id: string | null
+          paid_at: string | null
+          pix_holder_document: string | null
+          pix_holder_name: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          processing_at: string | null
+          profissional_id: string
+          proposta_id: string | null
+          requested_at: string | null
+          status: string
+          updated_at: string
+          valor_bruto: number
+          valor_comissao_marketplace: number
+          valor_liquido: number
+          valor_taxa_gateway: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "repasses_profissionais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {
@@ -1062,6 +1314,10 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       limpar_reservas_temporarias_expiradas: { Args: never; Returns: undefined }
+      marcar_orcamento_enviado: {
+        Args: { _orcamento_id: string }
+        Returns: Json
+      }
       validar_codigo_indicacao: {
         Args: { _codigo: string }
         Returns: {
@@ -1072,7 +1328,6 @@ export type Database = {
       }
     }
     Enums: {
-      admin_level: "super_admin" | "admin" | "financeiro" | "suporte"
       app_role: "cliente" | "profissional" | "admin"
       orcamento_status:
         | "fixo_auto"
@@ -1208,9 +1463,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
-      admin_level: ["super_admin", "admin", "financeiro", "suporte"],
       app_role: ["cliente", "profissional", "admin"],
       orcamento_status: [
         "fixo_auto",
