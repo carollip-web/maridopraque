@@ -366,25 +366,56 @@ function ProfissionalArea() {
     queryClient.invalidateQueries({ queryKey: ["propostas"] });
     queryClient.invalidateQueries({ queryKey: ["profissional"] });
     queryClient.invalidateQueries({ queryKey: ["radar"] });
-    
-    // 1. Update orcamentos status locally
-    setOrcamentos(prev => prev.map(o => o.id === orcamentoId ? { ...o, ...orcamento } : o));
-    
-    // 2. Add or update proposal in minhasPropostas locally
-    setMinhasPropostas(prev => {
-      const exists = prev.some(p => p.id === proposta.id);
-      if (exists) {
-        return prev.map(p => p.id === proposta.id ? proposta : p);
-      }
-      return [proposta, ...prev];
+
+    // 1. Track locally that this professional sent a proposal for this orçamento
+    setPropostasEnviadasLocal((prev) => {
+      const next = new Set(prev);
+      next.add(orcamentoId);
+      return next;
     });
 
-    // 3. Move the user immediately to the "Enviados" tab
+    // 2. Normalize proposta/orcamento defensively
+    const propostaNormalizada = {
+      ...proposta,
+      orcamento_id: proposta?.orcamento_id ?? orcamentoId,
+      profissional_id: proposta?.profissional_id ?? user?.id,
+      status: proposta?.status ?? "pendente",
+    };
+    const orcamentoNormalizado = {
+      ...orcamento,
+      id: orcamentoId,
+      status: orcamento?.status ?? "enviado",
+    };
+
+    // 3. Update orcamentos status locally
+    setOrcamentos((prev) =>
+      prev.map((o) => (o.id === orcamentoId ? { ...o, ...orcamentoNormalizado } : o)),
+    );
+
+    // 4. Add or update proposal in minhasPropostas locally (dedupe by id or orcamento_id)
+    setMinhasPropostas((prev) => {
+      const idx = prev.findIndex((p) =>
+        propostaNormalizada.id && p.id
+          ? p.id === propostaNormalizada.id
+          : p.orcamento_id === propostaNormalizada.orcamento_id,
+      );
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], ...propostaNormalizada };
+        return copy;
+      }
+      return [propostaNormalizada, ...prev];
+    });
+
+    // 5. Move the user immediately to the "Enviados" tab
     setPedidosSubTab("enviados");
 
-    // 4. Trigger background refresh to stay in sync with server
-    refresh();
+    // 6. Delay background refresh so it doesn't overwrite optimistic state
+    setTimeout(() => {
+      refresh();
+    }, 800);
   };
+
 
   useEffect(() => {
     if (!user) return;
