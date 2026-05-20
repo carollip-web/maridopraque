@@ -21,6 +21,7 @@ import { Route as PagamentoRouteImport } from './routes/pagamento'
 import { Route as OrcamentosRouteImport } from './routes/orcamentos'
 import { Route as MateriaisAdminRouteImport } from './routes/materiais-admin'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -95,6 +96,11 @@ const MateriaisAdminRoute = MateriaisAdminRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipeRoute = EquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContatoRoute = ContatoRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRouteWithChildren
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/cliente'
     | '/contato'
+    | '/equipe'
     | '/login'
     | '/materiais-admin'
     | '/orcamentos'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/cliente'
     | '/contato'
+    | '/equipe'
     | '/login'
     | '/materiais-admin'
     | '/orcamentos'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/cliente'
     | '/contato'
+    | '/equipe'
     | '/login'
     | '/materiais-admin'
     | '/orcamentos'
@@ -360,6 +372,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
+  EquipeRoute: typeof EquipeRoute
   LoginRoute: typeof LoginRouteWithChildren
   MateriaisAdminRoute: typeof MateriaisAdminRoute
   OrcamentosRoute: typeof OrcamentosRoute
@@ -461,6 +474,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipe': {
+      id: '/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof EquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contato': {
@@ -626,6 +646,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRouteWithChildren,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
+  EquipeRoute: EquipeRoute,
   LoginRoute: LoginRouteWithChildren,
   MateriaisAdminRoute: MateriaisAdminRoute,
   OrcamentosRoute: OrcamentosRoute,
@@ -645,12 +666,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
