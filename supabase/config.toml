@@ -43,3 +43,7 @@ entrypoint = "./functions/btg-webhook/index.ts"
 
 [functions.btg-repasse-disparar]
 verify_jwt = true
+
+[functions.btg-token-refresh]
+schedule = "*/15 * * * *"
+verify_jwt = false
