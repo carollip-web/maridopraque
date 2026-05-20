@@ -15,6 +15,9 @@ const profileSchema = z.object({
   bio: z.string().optional(),
   cidade: z.string().optional(),
   chave_pix: z.string().optional(),
+  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM", ""]).optional(),
+  pix_holder_name: z.string().optional(),
+  pix_holder_document: z.string().optional(),
   anos_experiencia: z.coerce.number().min(0).optional(),
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
@@ -30,6 +33,9 @@ type ProfissionalPerfilData = {
   cidade: string | null;
   especialidades: string[] | null;
   chave_pix?: string | null;
+  pix_key_type?: string | null;
+  pix_holder_name?: string | null;
+  pix_holder_document?: string | null;
   anos_experiencia?: number | null;
   raio_atendimento_km?: number | null;
   atende_emergencias?: boolean | null;
@@ -51,7 +57,7 @@ export function ProfissionalConfiguracoes() {
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
-          "user_id, bio, cidade, especialidades, chave_pix, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng",
+          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -74,6 +80,9 @@ export function ProfissionalConfiguracoes() {
       bio: "",
       cidade: "",
       chave_pix: "",
+      pix_key_type: "",
+      pix_holder_name: "",
+      pix_holder_document: "",
       anos_experiencia: 0,
       raio_atendimento_km: 15,
       atende_emergencias: false,
@@ -91,6 +100,9 @@ export function ProfissionalConfiguracoes() {
       bio: profissionalPerfil?.bio ?? "",
       cidade: profissionalPerfil?.cidade ?? "",
       chave_pix: profissionalPerfil?.chave_pix ?? "",
+      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? "",
+      pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
+      pix_holder_document: profissionalPerfil?.pix_holder_document ?? "",
       anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
       raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
       atende_emergencias: !!profissionalPerfil?.atende_emergencias,
@@ -132,6 +144,10 @@ export function ProfissionalConfiguracoes() {
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
         chave_pix: values.chave_pix || null,
+        pix_key: values.chave_pix || null,
+        pix_key_type: values.pix_key_type || null,
+        pix_holder_name: values.pix_holder_name || null,
+        pix_holder_document: values.pix_holder_document || null,
         anos_experiencia: Number(values.anos_experiencia ?? 0),
         raio_atendimento_km: Number(values.raio_atendimento_km ?? 15),
         atende_emergencias: !!values.atende_emergencias,
@@ -324,15 +340,66 @@ export function ProfissionalConfiguracoes() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Chave PIX (Para Repasses)
-              </label>
-              <input
-                {...register("chave_pix")}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
-                placeholder="CPF, CNPJ, E-mail ou Celular"
-              />
+            {/* Dados do Pix */}
+            <div className="sm:col-span-2 rounded-2xl border border-brand/10 bg-brand-soft/10 p-5">
+              <div className="mb-5">
+                <h4 className="text-sm font-bold text-slate-900">Dados Bancários (Pix)</h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Para receber os repasses, informe a sua chave Pix e os dados do titular.
+                </p>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Chave Pix
+                  </label>
+                  <input
+                    {...register("chave_pix")}
+                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    placeholder="Chave Pix"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Tipo de Chave
+                  </label>
+                  <select
+                    {...register("pix_key_type")}
+                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="CPF">CPF</option>
+                    <option value="CNPJ">CNPJ</option>
+                    <option value="EMAIL">E-mail</option>
+                    <option value="PHONE">Telefone</option>
+                    <option value="RANDOM">Chave Aleatória</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Nome Completo do Titular
+                  </label>
+                  <input
+                    {...register("pix_holder_name")}
+                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    placeholder="Nome como está no banco"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    CPF/CNPJ do Titular
+                  </label>
+                  <input
+                    {...register("pix_holder_document")}
+                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    placeholder="Somente números"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1.5">

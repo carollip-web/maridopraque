@@ -95,6 +95,7 @@ function AdminRepassesPage() {
   // Filtros e busca
   const [selectedStatus, setSelectedStatus] = useState<string>("todos");
   const [searchQuery, setSearchQuery] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -156,27 +157,27 @@ function AdminRepassesPage() {
   // Ações de alteração de status
   const handleAprovar = async (repasse: Repasse) => {
     try {
-      let cleanErro = repasse.erro;
-      if (repasse.erro === "Profissional sem dados Pix confirmados" && repasse.pix_key) {
-        cleanErro = null;
+      setApprovingId(repasse.id);
+
+      const { data, error } = await supabase.functions.invoke("btg-pix-lote", {
+        body: { repasse_id: repasse.id }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Erro desconhecido na chamada da Edge Function");
       }
 
-      const { error } = await supabase
-        .from("repasses_profissionais")
-        .update({
-          status: "aprovado",
-          approved_at: new Date().toISOString(),
-          erro: cleanErro,
-        })
-        .eq("id", repasse.id);
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
 
-      if (error) throw error;
-
-      toast.success("Repasse aprovado com sucesso!");
+      toast.success("Pagamento via Pix iniciado com sucesso!");
       loadData();
     } catch (err: any) {
       console.error("[handleAprovar] Erro:", err);
-      toast.error("Falha ao aprovar o repasse.");
+      toast.error(err.message || "Falha ao iniciar pagamento via BTG.");
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -620,13 +621,20 @@ function AdminRepassesPage() {
                           <div className="flex items-center justify-center gap-1.5">
                             {rep.status === "pendente" && (
                               <>
-                                <button
+                                <Button
+                                  size="sm"
+                                  className="h-8 gap-1 flex items-center"
                                   onClick={() => handleAprovar(rep)}
-                                  className="h-8 px-3 rounded-lg bg-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 hover:-translate-y-0.5 transition shadow-sm"
-                                  title="Aprovar transferência"
+                                  disabled={approvingId === rep.id || !btgStatus?.connected}
+                                  title={!btgStatus?.connected ? "Conecte a conta BTG primeiro" : "Aprovar e transferir"}
                                 >
-                                  Aprovar
-                                </button>
+                                  {approvingId === rep.id ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4" />
+                                  )}
+                                  {approvingId === rep.id ? "Processando" : "Aprovar (Pix)"}
+                                </Button>
                                 <button
                                   onClick={() => handleCancelar(rep.id)}
                                   className="h-8 px-3 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs hover:-translate-y-0.5 transition"
