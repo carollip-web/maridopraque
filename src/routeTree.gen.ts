@@ -26,6 +26,7 @@ import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminValidacaoRouteImport } from './routes/admin-validacao'
+import { Route as AdminRepassesRouteImport } from './routes/admin-repasses'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
@@ -120,6 +121,11 @@ const AdminValidacaoRoute = AdminValidacaoRouteImport.update({
   path: '/admin-validacao',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRepassesRoute = AdminRepassesRouteImport.update({
+  id: '/admin-repasses',
+  path: '/admin-repasses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -164,6 +170,7 @@ const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -191,6 +198,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/checkout': typeof CheckoutRouteWithChildren
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
@@ -275,6 +285,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
     | '/checkout'
@@ -330,6 +342,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminRepassesRoute: typeof AdminRepassesRoute
   AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminValidacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-repasses': {
+      id: '/admin-repasses'
+      path: '/admin-repasses'
+      fullPath: '/admin-repasses'
+      preLoaderRoute: typeof AdminRepassesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -580,6 +600,7 @@ const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminRepassesRoute: AdminRepassesRoute,
   AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,
   CheckoutRoute: CheckoutRouteWithChildren,

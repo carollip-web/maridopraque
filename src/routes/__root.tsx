@@ -126,6 +126,7 @@ function RootComponent() {
   // para evitar poluição visual (admin, cliente, profissional, materiais-admin, servicos-admin).
   const isAppShell =
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/admin-repasses") ||
     pathname.startsWith("/cliente") ||
     pathname.startsWith("/profissional") ||
     pathname.startsWith("/materiais-admin") ||

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { ArrowUpRight, Calendar, Clock } from "lucide-react";
+import { ArrowUpRight, Calendar, Clock, Landmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
 
 export function AdminFinanceiro() {
   const [data, setData] = useState<{
@@ -37,8 +38,14 @@ export function AdminFinanceiro() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4 flex-wrap">
         <h2 className="text-2xl font-bold">Relatório Financeiro</h2>
+        <Link
+          to="/admin-repasses"
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-brand px-6 text-sm font-bold text-white shadow-md shadow-brand/20 transition hover:-translate-y-0.5 hover:bg-brand/90 gap-2"
+        >
+          <Landmark className="h-4 w-4" /> Repasses Pix BTG
+        </Link>
       </div>
 
       {!data && <p className="text-sm text-slate-400">Carregando…</p>}
