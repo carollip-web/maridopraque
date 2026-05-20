@@ -98,6 +98,7 @@ function ProfissionalArea() {
   const [slaMedioH, setSlaMedioH] = useState<string>("—");
   const [totalConcluidos, setTotalConcluidos] = useState(0);
   const [recusados, setRecusados] = useState<Set<string>>(new Set());
+  const [propostasEnviadasLocal, setPropostasEnviadasLocal] = useState<Set<string>>(new Set());
   const [profGenero, setProfGenero] = useState<string | null>(null);
   const [profApoioFeminino, setProfApoioFeminino] = useState(false);
 
@@ -133,13 +134,20 @@ function ProfissionalArea() {
         .order("created_at", { ascending: false })
     ]);
 
-    const propsList = propsRes.data || [];
-    const propOrcIds = propsList.map(p => p.orcamento_id);
-    
+    if (propsRes.error) {
+      console.error("[ProfissionalArea.refresh] erro ao buscar propostas", propsRes.error);
+    }
+    if (orcsRes.error) {
+      console.error("[ProfissionalArea.refresh] erro ao buscar orçamentos", orcsRes.error);
+    }
+
+    const propsList = propsRes.error ? null : (propsRes.data || []);
+    const propOrcIds = (propsList || []).map(p => p.orcamento_id);
+
     // If there are budgets where I sent a proposal but I'm NOT the assigned professional,
     // we need to fetch those too.
     const missingOrcIds = propOrcIds.filter(id => !orcsRes.data?.some(o => o.id === id));
-    
+
     let list = (orcsRes.data || []) as Orcamento[];
     if (missingOrcIds.length > 0) {
       const { data: missingOrcs } = await supabase
@@ -149,7 +157,9 @@ function ProfissionalArea() {
       if (missingOrcs) list = [...list, ...(missingOrcs as Orcamento[])];
     }
 
-    setMinhasPropostas(propsList);
+    if (propsList !== null) {
+      setMinhasPropostas(propsList);
+    }
     setOrcamentos(list);
     
     console.info("[ProfissionalArea] detalhes agenda/atendimento", list?.map((o) => ({
@@ -311,12 +321,17 @@ function ProfissionalArea() {
 
     const orcIds = list.map((o) => o.id);
     if (orcIds.length) {
-      const { data: propsData } = await (supabase as any)
+      const propsRes2 = await (supabase as any)
         .from("propostas")
         .select("*")
         .eq("profissional_id", user?.id!)
         .in("orcamento_id", orcIds);
-      setMinhasPropostas(propsData || []);
+      if (propsRes2.error) {
+        console.error("[ProfissionalArea.refresh] erro ao buscar propostas (2)", propsRes2.error);
+      } else {
+        setMinhasPropostas(propsRes2.data || []);
+      }
+      const propsData = propsRes2.data;
 
       const propIds = (propsData || []).map((p: any) => p.id);
       if (propIds.length > 0) {
@@ -351,25 +366,56 @@ function ProfissionalArea() {
     queryClient.invalidateQueries({ queryKey: ["propostas"] });
     queryClient.invalidateQueries({ queryKey: ["profissional"] });
     queryClient.invalidateQueries({ queryKey: ["radar"] });
-    
-    // 1. Update orcamentos status locally
-    setOrcamentos(prev => prev.map(o => o.id === orcamentoId ? { ...o, ...orcamento } : o));
-    
-    // 2. Add or update proposal in minhasPropostas locally
-    setMinhasPropostas(prev => {
-      const exists = prev.some(p => p.id === proposta.id);
-      if (exists) {
-        return prev.map(p => p.id === proposta.id ? proposta : p);
-      }
-      return [proposta, ...prev];
+
+    // 1. Track locally that this professional sent a proposal for this orçamento
+    setPropostasEnviadasLocal((prev) => {
+      const next = new Set(prev);
+      next.add(orcamentoId);
+      return next;
     });
 
-    // 3. Move the user immediately to the "Enviados" tab
+    // 2. Normalize proposta/orcamento defensively
+    const propostaNormalizada = {
+      ...proposta,
+      orcamento_id: proposta?.orcamento_id ?? orcamentoId,
+      profissional_id: proposta?.profissional_id ?? user?.id,
+      status: proposta?.status ?? "pendente",
+    };
+    const orcamentoNormalizado = {
+      ...orcamento,
+      id: orcamentoId,
+      status: orcamento?.status ?? "enviado",
+    };
+
+    // 3. Update orcamentos status locally
+    setOrcamentos((prev) =>
+      prev.map((o) => (o.id === orcamentoId ? { ...o, ...orcamentoNormalizado } : o)),
+    );
+
+    // 4. Add or update proposal in minhasPropostas locally (dedupe by id or orcamento_id)
+    setMinhasPropostas((prev) => {
+      const idx = prev.findIndex((p) =>
+        propostaNormalizada.id && p.id
+          ? p.id === propostaNormalizada.id
+          : p.orcamento_id === propostaNormalizada.orcamento_id,
+      );
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = { ...copy[idx], ...propostaNormalizada };
+        return copy;
+      }
+      return [propostaNormalizada, ...prev];
+    });
+
+    // 5. Move the user immediately to the "Enviados" tab
     setPedidosSubTab("enviados");
 
-    // 4. Trigger background refresh to stay in sync with server
-    refresh();
+    // 6. Delay background refresh so it doesn't overwrite optimistic state
+    setTimeout(() => {
+      refresh();
+    }, 800);
   };
+
 
   useEffect(() => {
     if (!user) return;
@@ -437,24 +483,20 @@ function ProfissionalArea() {
   const filterBy = (
     type: "oportunidades" | "elaboracao" | "enviados" | "ativos" | "finalizados" | string,
   ) => {
+    const jaEnvieiProposta = (orcamentoId: string) =>
+      propostasEnviadasLocal.has(orcamentoId) ||
+      minhasPropostas.some((p) => p.orcamento_id === orcamentoId);
+
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        // PERMISSIVE: Show all opportunities to avoid "vanishing" bugs.
-        // We only hide if the professional already sent a proposal or refused.
-        if (
-          !(
-            (o.status === "customizado_pendente" || o.status === "enviado") &&
-            !minhasPropostas.some((p) => p.orcamento_id === o.id)
-          )
-        )
-          return false;
-
+        if (!(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+        if (jaEnvieiProposta(o.id)) return false;
         if (recusados.has(o.id)) return false;
-        
+
         // Radius filter is still active as it's a hard constraint for logistics
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
-        
+
         // Atendimento Compatibility filter
         const compat = isProfissionalCompativelComTipoAtendimento({
           tipoAtendimento: (o as any).tipo_atendimento,
@@ -470,13 +512,13 @@ function ProfissionalArea() {
         return (
           o.profissional_id === user?.id &&
           o.status === "customizado_pendente" &&
-          !minhasPropostas.some((p) => p.orcamento_id === o.id)
+          !jaEnvieiProposta(o.id)
         );
       }
       if (type === "enviados") {
         return (
           (o.status === "customizado_pendente" || o.status === "enviado") &&
-          minhasPropostas.some((p) => p.orcamento_id === o.id && p.status === "pendente")
+          jaEnvieiProposta(o.id)
         );
       }
       if (type === "ativos") {
@@ -500,7 +542,8 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados]);
+  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados, propostasEnviadasLocal]);
+
 
   if (loading) {
     return (
