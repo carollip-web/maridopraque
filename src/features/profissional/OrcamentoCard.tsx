@@ -160,20 +160,41 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
-      
-      const finalStatus = res?.orcamento?.status || "enviado";
+
+      console.log("[profissional.enviarOrcamento] resposta bruta", res);
+
+      const propostaNormalizada = res?.proposta ?? {
+        id: `optimistic-${o.id}`,
+        orcamento_id: o.id,
+        profissional_id: userId,
+        valor_servico: v,
+        observacoes: obs.trim() || null,
+        status: "pendente",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const orcamentoNormalizado = {
+        ...o,
+        ...(res?.orcamento ?? {}),
+        id: o.id,
+        status: res?.orcamento?.status ?? "enviado",
+        profissional_id:
+          res?.orcamento?.profissional_id ?? o.profissional_id ?? userId,
+        valor_servico: res?.orcamento?.valor_servico ?? v,
+        updated_at: new Date().toISOString(),
+      };
+
+      const finalStatus = orcamentoNormalizado.status;
       toast.success(`Proposta enviada! Status do pedido: ${finalStatus}`);
-      
-      if (onProposalSent && res?.proposta && res?.orcamento) {
-        onProposalSent({
-          orcamentoId: o.id,
-          proposta: res.proposta,
-          orcamento: res.orcamento
-        });
-      }
+
+      onProposalSent?.({
+        orcamentoId: o.id,
+        proposta: propostaNormalizada,
+        orcamento: orcamentoNormalizado,
+      });
 
       if (mode === "revisar") setEditing(false);
-      refresh?.();
     } catch (e: any) {
       console.error("Erro ao enviar proposta:", e);
       toast.error("Falha ao enviar", { 
