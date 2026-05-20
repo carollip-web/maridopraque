@@ -14,7 +14,9 @@ import {
   Copy, 
   Check, 
   Wrench,
-  Inbox
+  Inbox,
+  Link2,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +86,11 @@ function AdminRepassesPage() {
   const [profiles, setProfiles] = useState<Record<string, { nome: string; email: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Estado BTG
+  const [btgStatus, setBtgStatus] = useState<{ connected: boolean; connectedAt: string | null } | null>(null);
+  const [btgLoading, setBtgLoading] = useState(true);
+  const [btgConnecting, setBtgConnecting] = useState(false);
   
   // Filtros e busca
   const [selectedStatus, setSelectedStatus] = useState<string>("todos");
@@ -92,6 +99,7 @@ function AdminRepassesPage() {
   const navigate = useNavigate();
 
   const hasAccess = isLoggedIn && (adminLevel === "admin" || adminLevel === "super_admin" || adminLevel === "financeiro");
+  const canConnectBtg = adminLevel === "super_admin" || adminLevel === "financeiro";
 
   const loadData = async () => {
     try {
@@ -142,6 +150,7 @@ function AdminRepassesPage() {
       return;
     }
     loadData();
+    loadBtgStatus();
   }, [authLoading, hasAccess]);
 
   // Ações de alteração de status
@@ -218,6 +227,41 @@ function AdminRepassesPage() {
     setCopiedId(text);
     toast.success("Copiado com sucesso!");
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Carregar status da conta BTG
+  const loadBtgStatus = async () => {
+    setBtgLoading(true);
+    try {
+      const { data } = await (supabase as any)
+        .from("marketplace_integracoes")
+        .select("connected_at, access_token")
+        .eq("provider", "btg")
+        .maybeSingle();
+      setBtgStatus({
+        connected: !!(data?.connected_at && data?.access_token),
+        connectedAt: data?.connected_at ?? null,
+      });
+    } catch {
+      setBtgStatus({ connected: false, connectedAt: null });
+    } finally {
+      setBtgLoading(false);
+    }
+  };
+
+  // Iniciar fluxo OAuth BTG
+  const handleConnectBtg = async () => {
+    setBtgConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("btg-oauth-start");
+      if (error) throw error;
+      if (!data?.authUrl) throw new Error("URL de autorização não retornada pelo servidor");
+      window.location.href = data.authUrl;
+    } catch (err: any) {
+      console.error("[handleConnectBtg]", err);
+      toast.error(err?.message ?? "Falha ao iniciar conexão com BTG Pactual");
+      setBtgConnecting(false);
+    }
   };
 
   // Filtragem e busca
@@ -322,6 +366,53 @@ function AdminRepassesPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 mt-10 space-y-8">
+        {/* Card Conta BTG do Marketplace */}
+        {canConnectBtg && (
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  btgStatus?.connected ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+                }`}>
+                  <Link2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+                    Conta BTG Pactual do Marketplace
+                  </p>
+                  {btgLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verificando status...
+                    </div>
+                  ) : btgStatus?.connected ? (
+                    <div>
+                      <p className="text-sm font-bold text-emerald-700">✓ Conectado</p>
+                      {btgStatus.connectedAt && (
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          em {new Date(btgStatus.connectedAt).toLocaleString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm font-semibold text-slate-500">Não conectado</p>
+                  )}
+                </div>
+              </div>
+              <Button
+                onClick={handleConnectBtg}
+                disabled={btgConnecting || btgLoading}
+                className="bg-[#0F172A] hover:bg-slate-700 text-white font-bold gap-2 rounded-xl px-5 self-start sm:self-auto"
+              >
+                {btgConnecting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Iniciando...</>
+                ) : (
+                  <><Link2 className="h-4 w-4" /> Conectar conta BTG</>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Cards de Métricas Premium */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
