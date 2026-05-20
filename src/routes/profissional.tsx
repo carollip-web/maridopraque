@@ -98,6 +98,7 @@ function ProfissionalArea() {
   const [slaMedioH, setSlaMedioH] = useState<string>("—");
   const [totalConcluidos, setTotalConcluidos] = useState(0);
   const [recusados, setRecusados] = useState<Set<string>>(new Set());
+  const [propostasEnviadasLocal, setPropostasEnviadasLocal] = useState<Set<string>>(new Set());
   const [profGenero, setProfGenero] = useState<string | null>(null);
   const [profApoioFeminino, setProfApoioFeminino] = useState(false);
 
