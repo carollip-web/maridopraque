@@ -77,6 +77,7 @@ FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
 
 -- 4. RPC: criar_repasse_profissional_pendente
+DROP FUNCTION IF EXISTS public.criar_repasse_profissional_pendente(uuid);
 CREATE OR REPLACE FUNCTION public.criar_repasse_profissional_pendente(p_pagamento_id UUID)
 RETURNS UUID
 LANGUAGE plpgsql

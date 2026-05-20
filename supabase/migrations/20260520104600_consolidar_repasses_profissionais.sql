@@ -45,6 +45,7 @@ WITH CHECK (
 );
 
 -- 3. Atualizar a função SQL/RPC criar_repasse_profissional_pendente
+DROP FUNCTION IF EXISTS public.criar_repasse_profissional_pendente(uuid);
 CREATE OR REPLACE FUNCTION public.criar_repasse_profissional_pendente(p_pagamento_id uuid)
 RETURNS public.repasses_profissionais
 LANGUAGE plpgsql
