@@ -5,6 +5,36 @@ const MP_ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN")
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
+function calcularIntervaloReserva(
+  dataPreferida: string | Date,
+  periodo?: string | null,
+  horario?: string | null,
+) {
+  const data = String(dataPreferida).slice(0, 10);
+
+  if (periodo === "manha") {
+    return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+  }
+
+  if (periodo === "tarde") {
+    return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
+  }
+
+  if (periodo === "noite") {
+    return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
+  }
+
+  if (periodo === "horario_especifico" && horario) {
+    const hora = String(horario).slice(0, 5);
+    const inicioDate = new Date(`${data}T${hora}:00-03:00`);
+    const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
+
+    return { inicio: inicioDate.toISOString(), fim: fimDate.toISOString() };
+  }
+
+  return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+}
+
 serve(async (req) => {
   const requestId = crypto.randomUUID()
   console.log(`[Webhook ${requestId}] Request received`)
@@ -131,32 +161,18 @@ serve(async (req) => {
       if ((!existingBlocks || existingBlocks.length === 0) && updatedOrc.data_preferida) {
         console.log(`[Webhook ${requestId}] Nenhuma reserva temporária encontrada. Criando bloqueio confirmado...`)
         try {
-          const baseDate = updatedOrc.data_preferida;
-          let inicioStr = "";
-          let fimStr = "";
+          const { inicio, fim } = calcularIntervaloReserva(
+            updatedOrc.data_preferida,
+            updatedOrc.periodo_preferido,
+            updatedOrc.horario_preferido,
+          );
 
-          if (updatedOrc.periodo_preferido === "manha") {
-            inicioStr = `${baseDate}T08:00:00Z`;
-            fimStr = `${baseDate}T12:00:00Z`;
-          } else if (updatedOrc.periodo_preferido === "tarde") {
-            inicioStr = `${baseDate}T13:00:00Z`;
-            fimStr = `${baseDate}T18:00:00Z`;
-          } else if (updatedOrc.periodo_preferido === "noite") {
-            inicioStr = `${baseDate}T18:00:00Z`;
-            fimStr = `${baseDate}T21:00:00Z`;
-          } else if (updatedOrc.periodo_preferido === "horario_especifico" && updatedOrc.horario_preferido) {
-            inicioStr = `${baseDate}T${updatedOrc.horario_preferido}Z`;
-            const d = new Date(inicioStr);
-            d.setHours(d.getHours() + 2);
-            fimStr = d.toISOString();
-          }
-
-          if (inicioStr && fimStr) {
+          if (inicio && fim) {
             await supabase.from("profissional_bloqueios_agenda").insert({
               profissional_id: updatedOrc.profissional_id,
               orcamento_id: updatedOrc.id,
-              inicio: new Date(inicioStr).toISOString(),
-              fim: new Date(fimStr).toISOString(),
+              inicio,
+              fim,
               status: "confirmado",
               motivo: "Pagamento confirmado (reserva direta)"
             });

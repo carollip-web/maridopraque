@@ -78,7 +78,7 @@ export function AgendaCalendar() {
   useEffect(() => {
     if (!user) return;
     let alive = true;
-    (async () => {
+    const loadAgenda = async () => {
       setLoading(true);
       const [{ data: jans }, { data: blocs }, { data: ags }, { data: perfil }, pbaRes] =
         await Promise.all([
@@ -106,27 +106,26 @@ export function AgendaCalendar() {
             .maybeSingle(),
           (supabase as any)
             .from("profissional_bloqueios_agenda")
-            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at")
+            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name)")
             .eq("profissional_id", user.id)
             .in("status", ["temporario", "confirmado"])
             .lt("inicio", weekEnd.toISOString())
-            .gt("fim", weekStart.toISOString()),
+            .gte("fim", weekStart.toISOString()),
         ]);
       if (!alive) return;
       if (pbaRes.error) {
         console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
       }
       const now = new Date();
-      const reservasValidas = ((pbaRes.data as ReservaAgenda[]) || []).filter((r) => {
+      const reservasValidas = ((pbaRes.data as any[]) || []).filter((r) => {
         if (r.status !== "temporario") return true;
         if (!r.expires_at) return true;
         return new Date(r.expires_at) > now;
-      });
-      console.info("[AgendaCalendar] semana visível e reservas", {
-        inicioSemana: weekStart.toISOString(),
-        fimSemana: weekEnd.toISOString(),
-        reservas: reservasValidas,
-      });
+      }).map(r => ({
+        ...r,
+        service_name: r.orcamentos?.service_name || "Serviço"
+      }));
+
       setJanelas((jans as Janela[]) ?? []);
       setBloqueios((blocs as Bloqueio[]) ?? []);
       setReservas(reservasValidas);
@@ -134,9 +133,31 @@ export function AgendaCalendar() {
       setDuracao(dur);
       setAgendamentos(((ags as any[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
       setLoading(false);
-    })();
+    };
+
+    loadAgenda();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel("agenda-reservas-rt")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "profissional_bloqueios_agenda",
+          filter: `profissional_id=eq.${user.id}`,
+        },
+        () => {
+          console.info("[AgendaCalendar] Atualização em tempo real recebida. Recarregando...");
+          loadAgenda();
+        }
+      )
+      .subscribe();
+
     return () => {
       alive = false;
+      supabase.removeChannel(channel);
     };
   }, [user?.id, weekStart, weekEnd]);
 
@@ -337,9 +358,10 @@ export function AgendaCalendar() {
                   {reservas
                     .filter((r) => {
                       const ini = new Date(r.inicio);
-                      return ini >= dayStart && ini < dayEnd;
+                      const fim = new Date(r.fim);
+                      return ini < dayEnd && fim > dayStart;
                     })
-                    .map((r) => {
+                    .map((r: any) => {
                       const ini = new Date(r.inicio);
                       const fim = new Date(r.fim);
                       const startMin = ini.getHours() * 60 + ini.getMinutes();
@@ -356,10 +378,11 @@ export function AgendaCalendar() {
                           key={r.id}
                           className={`absolute left-1 right-1 rounded-md px-1.5 py-1 shadow-sm overflow-hidden ${cls}`}
                           style={{ top, height }}
-                          title={`${label} • ${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                          title={`${label} • ${r.service_name || "Serviço"} • ${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
                         >
                           <p className="text-[10px] font-bold leading-tight truncate">{label}</p>
                           <p className="text-[10px] leading-tight truncate opacity-90">
+                            {r.service_name && <span className="font-semibold">{r.service_name}<br/></span>}
                             {ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             –{fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                           </p>
