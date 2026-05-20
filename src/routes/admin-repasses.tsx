@@ -24,7 +24,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
-type Repasse = Database["public"]["Tables"]["repasses_profissionais"]["Row"];
+type Repasse = Database["public"]["Tables"]["repasses_profissionais"]["Row"] & {
+  orcamentos?: { status: string } | null;
+};
 
 export const Route = createFileRoute("/admin-repasses")({
   component: AdminRepassesPage,
@@ -107,7 +109,7 @@ function AdminRepassesPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from("repasses_profissionais")
-        .select("*")
+        .select("*, orcamentos(status)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -603,11 +605,20 @@ function AdminRepassesPage() {
                           </div>
                         </td>
 
-                        {/* Status e erros */}
+                        {/* Status e alertas */}
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${badge.bg}`}>
                             {badge.label}
                           </span>
+                          
+                          {/* ESCROW TAG */}
+                          {rep.status === "pendente" && rep.orcamentos?.status === "pago" && (
+                            <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              <AlertTriangle className="h-3 w-3" />
+                              Garantia: Retido
+                            </div>
+                          )}
+
                           {rep.erro && (
                             <div className="text-[10px] text-red-600 flex items-start gap-1 mt-1.5 max-w-[200px] leading-tight font-medium">
                               <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
@@ -623,17 +634,33 @@ function AdminRepassesPage() {
                               <>
                                 <Button
                                   size="sm"
-                                  className="h-8 gap-1 flex items-center"
-                                  onClick={() => handleAprovar(rep)}
-                                  disabled={approvingId === rep.id || !btgStatus?.connected}
-                                  title={!btgStatus?.connected ? "Conecte a conta BTG primeiro" : "Aprovar e transferir"}
+                                  className={`h-8 gap-1 flex items-center ${
+                                    rep.orcamentos?.status === "pago" ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  onClick={() => {
+                                    if (rep.orcamentos?.status === "pago") {
+                                      toast.warning("Repasse retido. Aguarde o cliente marcar o serviço como concluído.");
+                                      return;
+                                    }
+                                    handleAprovar(rep);
+                                  }}
+                                  disabled={approvingId === rep.id || !btgStatus?.connected || rep.orcamentos?.status === "pago"}
+                                  title={
+                                    !btgStatus?.connected 
+                                      ? "Conecte a conta BTG primeiro" 
+                                      : rep.orcamentos?.status === "pago" 
+                                        ? "Serviço em andamento (Retido)"
+                                        : "Aprovar e transferir"
+                                  }
                                 >
                                   {approvingId === rep.id ? (
                                     <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : rep.orcamentos?.status === "pago" ? (
+                                    <AlertTriangle className="h-4 w-4" />
                                   ) : (
                                     <CheckCircle className="h-4 w-4" />
                                   )}
-                                  {approvingId === rep.id ? "Processando" : "Aprovar (Pix)"}
+                                  {approvingId === rep.id ? "Processando" : rep.orcamentos?.status === "pago" ? "Retido" : "Aprovar (Pix)"}
                                 </Button>
                                 <button
                                   onClick={() => handleCancelar(rep.id)}

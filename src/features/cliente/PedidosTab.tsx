@@ -18,6 +18,7 @@ import {
   Phone,
   User,
   Calendar,
+  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +55,26 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const cancelarPedidoFn = useServerFn(cancelarPedido);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isCompleting, setIsCompleting] = useState<string | null>(null);
+
+  const handleCompleteOrder = async (orderId: string) => {
+    if (!confirm("Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.")) return;
+    setIsCompleting(orderId);
+    try {
+      const { error } = await supabase
+        .from("orcamentos")
+        .update({ status: "concluido" })
+        .eq("id", orderId);
+      if (error) throw error;
+      toast.success("Serviço marcado como concluído!");
+      queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+    } catch (e: any) {
+      toast.error("Erro ao concluir", { description: e.message });
+    } finally {
+      setIsCompleting(null);
+    }
+  };
 
   const handleDeleteOrder = async (orderId: string, title: string) => {
     if (!confirm(`Tem certeza que deseja cancelar o pedido "${title}"?`)) return;
@@ -136,6 +157,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     ? "Aguardando Pagamento"
                   : o.status === "pago"
                     ? "Agendado"
+                  : o.status === "concluido"
+                    ? "Concluído"
                     : o.status;
         return {
           propostas: propsForOrc,
@@ -305,6 +328,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     const aguardandoPagamento =
       sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
     const pagoOuAgendado = sp.status === "Agendado" || sp.rawStatus === "pago";
+    const concluido = sp.rawStatus === "concluido";
 
     const statusLabel = aguardandoAprovacao
       ? "Aguardando sua aprovação"
@@ -312,6 +336,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         ? "Aguardando pagamento"
         : pagoOuAgendado
           ? "Serviço agendado"
+        : concluido
+          ? "Serviço concluído"
           : sp.status;
 
     const statusClass = aguardandoAprovacao
@@ -319,6 +345,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       : aguardandoPagamento
         ? "bg-emerald-100 text-emerald-700"
         : pagoOuAgendado
+          ? "bg-blue-100 text-blue-700"
+        : concluido
           ? "bg-green-100 text-green-700"
           : "bg-slate-100 text-slate-600";
 
@@ -435,8 +463,16 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
                 {pagoOuAgendado && (
                   <div className="relative pl-6">
+                    <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-blue-500 border-4 border-white shadow-sm" />
+                    <p className="text-sm font-bold">Serviço em andamento</p>
+                    <p className="text-xs text-muted-foreground">{sp.date}</p>
+                  </div>
+                )}
+
+                {concluido && (
+                  <div className="relative pl-6">
                     <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-green-500 border-4 border-white shadow-sm" />
-                    <p className="text-sm font-bold">Serviço confirmado</p>
+                    <p className="text-sm font-bold">Serviço concluído</p>
                     <p className="text-xs text-muted-foreground">{sp.date}</p>
                   </div>
                 )}
@@ -595,14 +631,48 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             )}
 
             {pagoOuAgendado && (
-              <section className="bg-white rounded-[2rem] border border-green-100 p-6 md:p-8 shadow-soft">
-                <p className="text-[10px] uppercase tracking-widest text-green-700 font-bold mb-2">
-                  Serviço confirmado
+              <section className="bg-white rounded-[2rem] border border-blue-100 p-6 md:p-8 shadow-soft">
+                <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold mb-2">
+                  Serviço Agendado
                 </p>
-                <h3 className="text-xl font-bold mb-2">Tudo certo por aqui</h3>
-                <p className="text-sm text-muted-foreground">
-                  Combine os detalhes finais com o profissional pelo chat.
+                <h3 className="text-xl font-bold mb-2">Serviço em andamento</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Combine os detalhes finais com o profissional pelo chat. Após a execução, marque como concluído para liberar o repasse.
                 </p>
+                <Button
+                  className="w-full rounded-full h-13 bg-brand hover:bg-brand/90 text-white font-bold shadow-lg"
+                  disabled={isCompleting === sp.id}
+                  onClick={() => handleCompleteOrder(sp.id)}
+                >
+                  {isCompleting === sp.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                  )}
+                  Marcar como Concluído
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full h-12 font-bold mt-3 text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                  onClick={() => window.open(WHATSAPP_LINK, "_blank")}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Problemas com o serviço?
+                </Button>
+              </section>
+            )}
+
+            {concluido && (
+              <section className="bg-white rounded-[2rem] border border-green-100 p-6 md:p-8 shadow-soft bg-green-50/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-full bg-green-500 text-white flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-green-900">Serviço Finalizado</h3>
+                    <p className="text-sm text-green-700">Aprovado e repasse liberado.</p>
+                  </div>
+                </div>
               </section>
             )}
 
@@ -947,6 +1017,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         p.status === "Agendado"
+                          ? "bg-blue-100 text-blue-700"
+                        : p.status === "Concluído"
                           ? "bg-green-100 text-green-700"
                           : p.status === "Em Análise"
                             ? "bg-slate-100 text-slate-600"

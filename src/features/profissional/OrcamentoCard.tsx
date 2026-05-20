@@ -96,14 +96,18 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     isAguardandoPagamento
       ? "Aguardando pagamento"
       : isPagamentoConfirmado
-        ? "Agenda confirmada"
+        ? "Agendado (Aguardando cliente)"
+      : isServicoConcluido
+        ? "Finalizado (Aguardando liberação)"
         : meta?.label ?? o.status;
 
   const statusClassOverride =
     isAguardandoPagamento
       ? "bg-amber-100 text-amber-700"
       : isPagamentoConfirmado
-        ? "bg-emerald-100 text-emerald-700"
+        ? "bg-blue-100 text-blue-700"
+      : isServicoConcluido
+        ? "bg-green-100 text-green-700"
         : meta?.className ?? "bg-slate-100 text-slate-600";
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
@@ -237,7 +241,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     if (fotosConcluido.length === 0) {
       if (
         !confirm(
-          "Marcar como concluído sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto.",
+          "Salvar sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto."
         )
       )
         return;
@@ -245,12 +249,12 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     setSaving(true);
     const { error } = await supabase
       .from("orcamentos")
-      .update({ status: "concluido" as any, fotos_concluido: fotosConcluido })
+      .update({ fotos_concluido: fotosConcluido })
       .eq("id", o.id);
     if (error) {
-      toast.error("Erro ao concluir", { description: error.message });
+      toast.error("Erro ao salvar fotos", { description: error.message });
     } else {
-      toast.success("Serviço concluído! O cliente receberá pedido de avaliação.");
+      toast.success("Fotos salvas! Peça para o cliente marcar como concluído no app dele para liberar seu repasse.");
       refresh?.();
     }
     setSaving(false);
@@ -402,15 +406,28 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         )}
 
         {isPagamentoConfirmado && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+          <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 space-y-2">
+            <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
               <CheckCircle2 className="h-4 w-4" />
               {isReservaConfirmada ? "Agenda confirmada" : "Pagamento recebido"}
             </div>
-            <p className="text-emerald-700 text-[11px] leading-relaxed">
+            <p className="text-blue-700 text-[11px] leading-relaxed">
               {isReservaConfirmada
-                ? `Este serviço está confirmado na sua agenda para ${agendaLabel}.`
-                : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat."}
+                ? `Este serviço está confirmado na sua agenda para ${agendaLabel}. `
+                : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat. "}
+              Após executar o serviço, peça para o cliente confirmar a conclusão no aplicativo dele.
+            </p>
+          </div>
+        )}
+
+        {isServicoConcluido && (
+          <div className="p-4 rounded-xl bg-green-50 border border-green-100 space-y-2">
+            <div className="flex items-center gap-2 text-green-800 font-bold text-sm">
+              <CheckCircle2 className="h-4 w-4" />
+              Serviço Finalizado
+            </div>
+            <p className="text-green-700 text-[11px] leading-relaxed">
+              O cliente marcou o serviço como concluído. O repasse está em processamento e será liberado em breve.
             </p>
           </div>
         )}
@@ -577,8 +594,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     disabled={saving}
                     className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
                   >
-                    Finalizar Serviço
+                    Salvar Evidências
                   </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Para o repasse ser liberado, o cliente precisa confirmar a conclusão do serviço no app dele.
+                  </p>
                 </div>
               )}
             </div>
