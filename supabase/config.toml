@@ -12,3 +12,9 @@ verify_jwt = true
 
 [functions.mercado-pago-oauth-callback]
 verify_jwt = false
+
+[functions.btg-oauth-start]
+verify_jwt = true
+
+[functions.btg-oauth-callback]
+verify_jwt = false
