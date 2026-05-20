@@ -321,12 +321,17 @@ function ProfissionalArea() {
 
     const orcIds = list.map((o) => o.id);
     if (orcIds.length) {
-      const { data: propsData } = await (supabase as any)
+      const propsRes2 = await (supabase as any)
         .from("propostas")
         .select("*")
         .eq("profissional_id", user?.id!)
         .in("orcamento_id", orcIds);
-      setMinhasPropostas(propsData || []);
+      if (propsRes2.error) {
+        console.error("[ProfissionalArea.refresh] erro ao buscar propostas (2)", propsRes2.error);
+      } else {
+        setMinhasPropostas(propsRes2.data || []);
+      }
+      const propsData = propsRes2.data;
 
       const propIds = (propsData || []).map((p: any) => p.id);
       if (propIds.length > 0) {
