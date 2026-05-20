@@ -134,13 +134,20 @@ function ProfissionalArea() {
         .order("created_at", { ascending: false })
     ]);
 
-    const propsList = propsRes.data || [];
-    const propOrcIds = propsList.map(p => p.orcamento_id);
-    
+    if (propsRes.error) {
+      console.error("[ProfissionalArea.refresh] erro ao buscar propostas", propsRes.error);
+    }
+    if (orcsRes.error) {
+      console.error("[ProfissionalArea.refresh] erro ao buscar orçamentos", orcsRes.error);
+    }
+
+    const propsList = propsRes.error ? null : (propsRes.data || []);
+    const propOrcIds = (propsList || []).map(p => p.orcamento_id);
+
     // If there are budgets where I sent a proposal but I'm NOT the assigned professional,
     // we need to fetch those too.
     const missingOrcIds = propOrcIds.filter(id => !orcsRes.data?.some(o => o.id === id));
-    
+
     let list = (orcsRes.data || []) as Orcamento[];
     if (missingOrcIds.length > 0) {
       const { data: missingOrcs } = await supabase
@@ -150,7 +157,9 @@ function ProfissionalArea() {
       if (missingOrcs) list = [...list, ...(missingOrcs as Orcamento[])];
     }
 
-    setMinhasPropostas(propsList);
+    if (propsList !== null) {
+      setMinhasPropostas(propsList);
+    }
     setOrcamentos(list);
     
     console.info("[ProfissionalArea] detalhes agenda/atendimento", list?.map((o) => ({
