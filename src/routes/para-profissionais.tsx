@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/para-profissionais")({
   head: () => ({
@@ -49,6 +51,38 @@ type DashStats = {
 function ParaProfissionaisPage() {
   const { isLoggedIn, isProfissional, userData } = useAuth();
   const [stats, setStats] = useState<DashStats | null>(null);
+
+  const [preCadastroOpen, setPreCadastroOpen] = useState(false);
+  const [preCadLoading, setPreCadLoading] = useState(false);
+  const [preCadForm, setPreCadForm] = useState({
+    nome: "",
+    telefone: "",
+    cidade: "",
+    especialidade: "Elétrica"
+  });
+
+  const handlePreCadastroSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPreCadLoading(true);
+    try {
+      const payload = {
+        nome: preCadForm.nome,
+        telefone: preCadForm.telefone.replace(/\D/g, ""),
+        cidade: preCadForm.cidade,
+        especialidade_principal: preCadForm.especialidade
+      };
+      // Allow public insert to profissionais_pre_cadastro
+      const { error } = await supabase.from("profissionais_pre_cadastro").insert(payload);
+      if (error) throw error;
+      toast.success("Interesse registrado! Entraremos em contato via WhatsApp em breve.");
+      setPreCadastroOpen(false);
+      setPreCadForm({ nome: "", telefone: "", cidade: "", especialidade: "Elétrica" });
+    } catch (err: any) {
+      toast.error("Erro ao enviar pré-cadastro", { description: err.message });
+    } finally {
+      setPreCadLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isProfissional) return;
@@ -121,13 +155,11 @@ function ParaProfissionaisPage() {
               ) : (
                 <>
                   <Button
-                    asChild
                     size="lg"
+                    onClick={() => setPreCadastroOpen(true)}
                     className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8"
                   >
-                    <Link to="/profissional-cadastro">
                      Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
                   </Button>
                   <Button
                     asChild
@@ -345,18 +377,84 @@ function ParaProfissionaisPage() {
               </Button>
             ) : (
               <Button
-                asChild
                 size="lg"
+                onClick={() => setPreCadastroOpen(true)}
                 className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
               >
-                <Link to="/login/profissional">
                   Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
               </Button>
             )}
           </div>
         </div>
       </section>
+
+      <Dialog open={preCadastroOpen} onOpenChange={setPreCadastroOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Quero ser parceiro!</DialogTitle>
+            <DialogDescription>
+              Deixe seus contatos. Nossa equipe falará com você no WhatsApp em breve para explicar a plataforma e liberar seu cadastro.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePreCadastroSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Nome completo</label>
+              <input 
+                required
+                className="input-field" 
+                placeholder="Seu nome"
+                value={preCadForm.nome}
+                onChange={e => setPreCadForm({...preCadForm, nome: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">WhatsApp</label>
+              <input 
+                required
+                className="input-field" 
+                placeholder="(11) 99999-9999"
+                value={preCadForm.telefone}
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  const formatted = v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{4})$/, "$1-$2");
+                  setPreCadForm({...preCadForm, telefone: formatted});
+                }}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Cidade de atuação</label>
+              <input 
+                required
+                className="input-field" 
+                placeholder="Ex: São Paulo - SP"
+                value={preCadForm.cidade}
+                onChange={e => setPreCadForm({...preCadForm, cidade: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Especialidade Principal</label>
+              <select 
+                required
+                className="input-field"
+                value={preCadForm.especialidade}
+                onChange={e => setPreCadForm({...preCadForm, especialidade: e.target.value})}
+              >
+                <option value="Elétrica">Elétrica</option>
+                <option value="Hidráulica">Hidráulica</option>
+                <option value="Montagem de Móveis">Montagem de Móveis</option>
+                <option value="Pintura">Pintura</option>
+                <option value="Chaveiro">Chaveiro</option>
+                <option value="Reformas e Alvenaria">Reformas e Alvenaria</option>
+                <option value="Limpeza">Limpeza</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <Button type="submit" disabled={preCadLoading} className="w-full font-bold bg-brand text-brand-foreground mt-4">
+              {preCadLoading ? "Enviando..." : "Enviar interesse"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

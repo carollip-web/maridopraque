@@ -46,6 +46,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "modo_teste", label: "Modo Teste", icon: TestTube },
   { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
   { id: "notificacoes", label: "Notificações", icon: Bell },
+  { id: "leads", label: "Leads (Pré-Cadastro)", icon: Users },
 ];
 
 export const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
