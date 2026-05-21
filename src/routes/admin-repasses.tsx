@@ -113,7 +113,7 @@ function AdminRepassesPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      const list = data || [];
+      const list = (data || []) as unknown as Repasse[];
       setRepasses(list);
 
       // Buscar perfis dos profissionais e clientes de forma otimizada
