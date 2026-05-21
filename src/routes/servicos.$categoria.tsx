@@ -11,6 +11,10 @@ import {
   ListChecks,
   Info,
   ChevronDown,
+  Lightbulb,
+  ShowerHead,
+  Key,
+  Drill,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +85,72 @@ const categorias: Record<string, CategoryMeta> = {
     observacoesPadrao: [
       "Prazos dependem do órgão público — informamos a previsão na visita técnica.",
       "Documentos do imóvel (matrícula/IPTU) agilizam a abertura do processo.",
+    ],
+  },
+  elétrica: {
+    slug: "elétrica",
+    nome: "elétrica",
+    titulo: "Elétrica",
+    subtitulo: "Troca de tomadas, disjuntores, chuveiros e instalação de ventilador de teto.",
+    description:
+      "Serviços elétricos residenciais executados por profissionais com NR-10. Diagnóstico no local e garantia em todo serviço.",
+    icon: Lightbulb,
+    beneficios: [
+      "Profissionais com NR-10",
+      "Diagnóstico antes da execução",
+      "Garantia em todo serviço",
+    ],
+    observacoesPadrao: [
+      "Desligamos o disjuntor por alguns minutos durante o reparo.",
+    ],
+  },
+  hidráulica: {
+    slug: "hidráulica",
+    nome: "hidráulica",
+    titulo: "Hidráulica",
+    subtitulo: "Vazamentos, descargas, registros, sifões, torneiras e desentupimentos.",
+    description:
+      "Reparos hidráulicos com diagnóstico antes de qualquer quebra. Atendimento no mesmo dia para vazamentos urgentes.",
+    icon: ShowerHead,
+    beneficios: [
+      "Atendimento no mesmo dia",
+      "Diagnóstico antes de qualquer quebra",
+      "Garantia em todo serviço",
+    ],
+    observacoesPadrao: [
+      "Vazamentos antigos podem revelar danos adicionais — confirmamos no local.",
+    ],
+  },
+  chaveiro: {
+    slug: "chaveiro",
+    nome: "chaveiro",
+    titulo: "Chaveiro",
+    subtitulo: "Abertura de porta e troca de segredo com profissional credenciado.",
+    description:
+      "Serviço de chaveiro residencial: abertura emergencial de portas e troca de segredos com cilindros novos.",
+    icon: Key,
+    beneficios: [
+      "Atendimento rápido em emergências",
+      "Cilindros e segredos novos com garantia",
+    ],
+    observacoesPadrao: [
+      "Em abertura de portas pode ser necessário comprovante de residência.",
+    ],
+  },
+  instalação: {
+    slug: "instalação",
+    nome: "instalação",
+    titulo: "Instalação",
+    subtitulo: "Rede de proteção, envelopamento de eletros, insulfilm e papel de parede.",
+    description:
+      "Instalações com acabamento profissional, materiais e fixação adequados a cada superfície.",
+    icon: Drill,
+    beneficios: [
+      "Materiais adequados a cada superfície",
+      "Acabamento profissional",
+    ],
+    observacoesPadrao: [
+      "Verificamos as medidas no local antes de iniciar a instalação.",
     ],
   },
 };
