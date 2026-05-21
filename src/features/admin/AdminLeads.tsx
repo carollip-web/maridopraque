@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, RefreshCw } from "lucide-react";
+import { MessageSquare, RefreshCw, Plus, Link as LinkIcon, Copy } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type Lead = Database["public"]["Tables"]["profissionais_pre_cadastro"]["Row"];
@@ -13,6 +14,15 @@ type Lead = Database["public"]["Tables"]["profissionais_pre_cadastro"]["Row"];
 export function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [addForm, setAddForm] = useState({
+    nome: "",
+    telefone: "",
+    cidade: "",
+    especialidade: "Elétrica"
+  });
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -52,6 +62,41 @@ export function AdminLeads() {
     window.open(`https://wa.me/55${number}?text=Olá! Vimos seu interesse em se tornar parceiro do Marido pra Quê.`, "_blank");
   };
 
+  const generateInviteLink = async (id: string) => {
+    const link = `${window.location.origin}/convite?id=${id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copiado para a área de transferência!");
+      // Automatically update status to convidado
+      updateStatus(id, "convidado");
+    } catch (err) {
+      toast.error("Erro ao copiar o link.");
+    }
+  };
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddLoading(true);
+    try {
+      const payload = {
+        nome: addForm.nome,
+        telefone: addForm.telefone.replace(/\D/g, ""),
+        cidade: addForm.cidade,
+        especialidade_principal: addForm.especialidade
+      };
+      const { error } = await supabase.from("profissionais_pre_cadastro").insert(payload);
+      if (error) throw error;
+      toast.success("Lead adicionado com sucesso!");
+      setAddModalOpen(false);
+      setAddForm({ nome: "", telefone: "", cidade: "", especialidade: "Elétrica" });
+      fetchLeads();
+    } catch (err: any) {
+      toast.error("Erro ao adicionar lead", { description: err.message });
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between">
@@ -59,10 +104,15 @@ export function AdminLeads() {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Leads (Pré-Cadastros)</h2>
           <p className="text-slate-500">Profissionais que demonstraram interesse pela landing page.</p>
         </div>
-        <Button onClick={fetchLeads} variant="outline" size="sm">
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setAddModalOpen(true)} className="bg-brand text-brand-foreground font-bold shadow-brand">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Profissional
+          </Button>
+          <Button onClick={fetchLeads} variant="outline" size="icon">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -112,15 +162,26 @@ export function AdminLeads() {
                         </select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openWhatsApp(lead.telefone)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Chamar
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Gerar e copiar link de convite"
+                            onClick={() => generateInviteLink(lead.id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <LinkIcon className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title="Chamar no WhatsApp"
+                            onClick={() => openWhatsApp(lead.telefone)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -130,6 +191,74 @@ export function AdminLeads() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Lead Manualmente</DialogTitle>
+            <DialogDescription>
+              Cadastre um profissional que você conheceu fora do fluxo público.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Nome completo</label>
+              <input 
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Nome do profissional"
+                value={addForm.nome}
+                onChange={e => setAddForm({...addForm, nome: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">WhatsApp</label>
+              <input 
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="(11) 99999-9999"
+                value={addForm.telefone}
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  const formatted = v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{4})$/, "$1-$2");
+                  setAddForm({...addForm, telefone: formatted});
+                }}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Cidade de atuação</label>
+              <input 
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Ex: São Paulo - SP"
+                value={addForm.cidade}
+                onChange={e => setAddForm({...addForm, cidade: e.target.value})}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold">Especialidade Principal</label>
+              <select 
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={addForm.especialidade}
+                onChange={e => setAddForm({...addForm, especialidade: e.target.value})}
+              >
+                <option value="Elétrica">Elétrica</option>
+                <option value="Hidráulica">Hidráulica</option>
+                <option value="Montagem de Móveis">Montagem de Móveis</option>
+                <option value="Pintura">Pintura</option>
+                <option value="Chaveiro">Chaveiro</option>
+                <option value="Reformas e Alvenaria">Reformas e Alvenaria</option>
+                <option value="Limpeza">Limpeza</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <Button type="submit" disabled={addLoading} className="w-full font-bold bg-brand text-brand-foreground mt-4">
+              {addLoading ? "Adicionando..." : "Adicionar Profissional"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

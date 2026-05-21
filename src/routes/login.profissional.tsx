@@ -210,7 +210,7 @@ function LoginProfissionalPage() {
 
           <p className="text-center mt-6 text-xs text-muted-foreground">
             Ainda não é parceiro?{" "}
-            <Link to="/contato" className="font-bold text-brand hover:underline">
+            <Link to="/para-profissionais" className="font-bold text-brand hover:underline">
               Candidate-se aqui
             </Link>
           </p>
