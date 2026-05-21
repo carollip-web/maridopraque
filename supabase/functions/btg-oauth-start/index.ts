@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     // 4. Montar URL de autorização BTG
-    const scopes = "openid accounts accounts.readonly banking:payments banking:payments.readonly credit-conciliation documents apps:webhooks"
+    const scopes = "openid empresas.btgpactual.com/accounts empresas.btgpactual.com/accounts.readonly empresas.btgpactual.com/payments empresas.btgpactual.com/payments.readonly empresas.btgpactual.com/credit-conciliation"
     
     // Gerar um state aleatório
     const state = crypto.randomUUID()
