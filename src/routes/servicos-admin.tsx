@@ -70,6 +70,8 @@ const CATEGORIAS = [
   "reparos",
   "elétrica",
   "hidráulica",
+  "chaveiro",
+  "instalação",
   "pintura",
   "limpeza",
   "engenharia",
