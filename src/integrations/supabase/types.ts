@@ -980,43 +980,85 @@ export type Database = {
       }
       services_catalog: {
         Row: {
+          apoio_feminino_valor: number | null
           ativo: boolean
           categoria: string
           comissao_marketplace_pct: number
+          complexidade: string | null
           created_at: string
+          custo_base_real: number | null
+          custo_profissional: number | null
           descricao: string | null
+          domingo_feriado_factor: number | null
+          fator_precificacao_maxima: number | null
           id: string
           is_fixed_price: boolean
+          markup_margem_empresa: number | null
+          mpq_tabela_rev: string | null
           nome: string
+          operacao_plataforma_factor: number | null
           preco_fixo: number | null
           preco_max: number | null
+          preco_max_prestador: number | null
           preco_min: number | null
+          preco_min_prestador: number | null
+          risco_garantia_factor: number | null
+          slug: string | null
+          urgencia_noturno_factor: number | null
         }
         Insert: {
+          apoio_feminino_valor?: number | null
           ativo?: boolean
           categoria: string
           comissao_marketplace_pct?: number
+          complexidade?: string | null
           created_at?: string
+          custo_base_real?: number | null
+          custo_profissional?: number | null
           descricao?: string | null
+          domingo_feriado_factor?: number | null
+          fator_precificacao_maxima?: number | null
           id?: string
           is_fixed_price?: boolean
+          markup_margem_empresa?: number | null
+          mpq_tabela_rev?: string | null
           nome: string
+          operacao_plataforma_factor?: number | null
           preco_fixo?: number | null
           preco_max?: number | null
+          preco_max_prestador?: number | null
           preco_min?: number | null
+          preco_min_prestador?: number | null
+          risco_garantia_factor?: number | null
+          slug?: string | null
+          urgencia_noturno_factor?: number | null
         }
         Update: {
+          apoio_feminino_valor?: number | null
           ativo?: boolean
           categoria?: string
           comissao_marketplace_pct?: number
+          complexidade?: string | null
           created_at?: string
+          custo_base_real?: number | null
+          custo_profissional?: number | null
           descricao?: string | null
+          domingo_feriado_factor?: number | null
+          fator_precificacao_maxima?: number | null
           id?: string
           is_fixed_price?: boolean
+          markup_margem_empresa?: number | null
+          mpq_tabela_rev?: string | null
           nome?: string
+          operacao_plataforma_factor?: number | null
           preco_fixo?: number | null
           preco_max?: number | null
+          preco_max_prestador?: number | null
           preco_min?: number | null
+          preco_min_prestador?: number | null
+          risco_garantia_factor?: number | null
+          slug?: string | null
+          urgencia_noturno_factor?: number | null
         }
         Relationships: []
       }
