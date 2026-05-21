@@ -113,7 +113,7 @@ function AdminRepassesPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      const list = data || [];
+      const list = (data || []) as unknown as Repasse[];
       setRepasses(list);
 
       // Buscar perfis dos profissionais e clientes de forma otimizada
@@ -236,7 +236,7 @@ function AdminRepassesPage() {
   const loadBtgStatus = async () => {
     setBtgLoading(true);
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("marketplace_integracoes")
         .select("connected_at, access_token")
         .eq("provider", "btg")
