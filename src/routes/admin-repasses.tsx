@@ -263,7 +263,32 @@ function AdminRepassesPage() {
     } catch (err: any) {
       console.error("[handleConnectBtg]", err);
       toast.error(err?.message ?? "Falha ao iniciar conexão com BTG Pactual");
+    } finally {
       setBtgConnecting(false);
+    }
+  };
+
+  // Sincronizar status com BTG
+  const [syncingStatus, setSyncingStatus] = useState(false);
+  const handleSyncStatus = async () => {
+    try {
+      setSyncingStatus(true);
+      const { data, error } = await supabase.functions.invoke("btg-repasse-status-sync");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.results?.length === 0) {
+        toast.info(data.message || "Nenhum repasse pendente encontrado.");
+      } else {
+        const sucessos = data.results.filter((r: any) => r.success).length;
+        toast.success(`Sincronizado status de ${sucessos} repasses.`);
+      }
+      loadData();
+    } catch (err: any) {
+      console.error("[handleSyncStatus]", err);
+      toast.error(err?.message ?? "Falha ao sincronizar status com BTG");
+    } finally {
+      setSyncingStatus(false);
     }
   };
 
@@ -358,13 +383,23 @@ function AdminRepassesPage() {
             </p>
           </div>
           
-          <Button
-            onClick={loadData}
-            variant="outline"
-            className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-bold self-start md:self-auto gap-2"
-          >
-            <RefreshCw className="h-4 w-4" /> Atualizar Fila
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto">
+            <Button
+              onClick={handleSyncStatus}
+              disabled={syncingStatus}
+              className="bg-brand text-white hover:bg-brand/90 font-bold gap-2"
+            >
+              {syncingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Consultar status BTG
+            </Button>
+            <Button
+              onClick={loadData}
+              variant="outline"
+              className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 font-bold gap-2"
+            >
+              <RefreshCw className="h-4 w-4" /> Atualizar Fila
+            </Button>
+          </div>
         </div>
       </header>
 

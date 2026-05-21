@@ -238,21 +238,39 @@ serve(async (req) => {
 
           results.push({ id: repasseId, success: false, error: clearError })
         } else {
-          // Sucesso (201 Created)
+          // Sucesso (200, 201 Created, 202 Accepted)
           const batchId = responseJson?.batchId || null
+          const contractGuid = responseJson?.contractGuid || null
+          const operationNeedsApproval = responseJson?.operationNeedsApproval || false
+
+          let nextStatus = "processando"
+          if (operationNeedsApproval) {
+            nextStatus = "aguardando_aprovacao_btg"
+          }
 
           await supabaseAdmin
             .from("repasses_profissionais")
             .update({
-              status: "processando",
+              status: nextStatus,
+              erro: null,
               btg_transfer_id: batchId,
+              btg_contract_guid: contractGuid,
+              operation_needs_approval: operationNeedsApproval,
+              btg_response: {
+                batchId,
+                contractGuid,
+                operationNeedsApproval,
+                httpStatus: btgResponse.status,
+                timestamp: new Date().toISOString()
+              },
               btg_request_payload: btgPayload,
               btg_response_payload: responseJson,
-              processing_at: new Date().toISOString()
+              processing_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             })
             .eq("id", repasse.id)
 
-          results.push({ id: repasseId, success: true, batchId })
+          results.push({ id: repasseId, success: true, batchId, nextStatus })
         }
       } catch (err: any) {
         console.error(`Erro interno ao processar repasse ${repasseId}:`, err)
