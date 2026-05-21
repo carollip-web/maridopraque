@@ -1154,7 +1154,15 @@ export type Database = {
           valor_liquido?: number
           valor_taxa_gateway?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_repasses_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_materiais: {
         Row: {
