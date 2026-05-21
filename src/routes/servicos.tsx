@@ -92,6 +92,82 @@ const categorias: CategoryMeta[] = [
     ],
   },
   {
+    slug: "elétrica",
+    nome: "elétrica",
+    titulo: "Elétrica",
+    subtitulo:
+      "Troca de tomadas, disjuntores, chuveiros e instalação de ventilador de teto com segurança.",
+    icon: Lightbulb,
+    beneficios: [
+      "Profissionais com NR-10",
+      "Diagnóstico no local",
+      "Garantia em todo serviço",
+    ],
+    observacoesPadrao: [
+      "Desligamos o disjuntor por alguns minutos durante o reparo.",
+    ],
+  },
+  {
+    slug: "hidráulica",
+    nome: "hidráulica",
+    titulo: "Hidráulica",
+    subtitulo:
+      "Vazamentos, descargas, registros, sifões, torneiras e desentupimentos.",
+    icon: ShowerHead,
+    beneficios: [
+      "Atendimento no mesmo dia",
+      "Diagnóstico antes de qualquer quebra",
+      "Garantia em todo serviço",
+    ],
+    observacoesPadrao: [
+      "Vazamentos antigos podem revelar danos adicionais — confirmamos no local.",
+    ],
+  },
+  {
+    slug: "chaveiro",
+    nome: "chaveiro",
+    titulo: "Chaveiro",
+    subtitulo: "Abertura de porta e troca de segredo com profissional credenciado.",
+    icon: Key,
+    beneficios: [
+      "Atendimento rápido em emergências",
+      "Cilindros e segredos novos com garantia",
+    ],
+    observacoesPadrao: [
+      "Em abertura de portas pode ser necessário comprovante de residência.",
+    ],
+  },
+  {
+    slug: "instalação",
+    nome: "instalação",
+    titulo: "Instalação",
+    subtitulo:
+      "Rede de proteção, envelopamento de eletros, insulfilm e papel de parede.",
+    icon: Drill,
+    beneficios: [
+      "Materiais e fixação adequados a cada superfície",
+      "Acabamento profissional",
+    ],
+    observacoesPadrao: [
+      "Verificamos as medidas no local antes de iniciar a instalação.",
+    ],
+  },
+  {
+    slug: "reparos",
+    nome: "reparos",
+    titulo: "Reparos e Manutenção",
+    subtitulo:
+      "Pintura, rejuntes e pequenos reparos com técnica e acabamento.",
+    icon: Wrench,
+    beneficios: [
+      "Garantia de 30 dias em qualquer reparo",
+      "Limpeza do ambiente após o serviço",
+    ],
+    observacoesPadrao: [
+      "Pintura em ambientes úmidos pode exigir tratamento prévio.",
+    ],
+  },
+  {
     slug: "engenharia",
     nome: "engenharia",
     titulo: "Engenharia e Legalização",
