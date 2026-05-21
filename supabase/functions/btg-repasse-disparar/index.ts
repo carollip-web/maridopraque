@@ -81,13 +81,39 @@ serve(async (req) => {
     // 4. Buscar credenciais BTG
     const { data: btgConfig, error: btgError } = await supabaseAdmin
       .from("marketplace_integracoes")
-      .select("access_token, company_id")
+      .select("access_token, company_id, account_id, token_expires_at, scope")
       .eq("provider", "btg")
       .maybeSingle()
 
-    if (btgError || !btgConfig || !btgConfig.access_token || !btgConfig.company_id) {
+    if (btgError || !btgConfig || !btgConfig.access_token) {
       return new Response(JSON.stringify({ error: "Integração BTG não encontrada ou não autenticada." }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (!btgConfig.company_id || !btgConfig.account_id) {
+      return new Response(JSON.stringify({ error: "Integração BTG conectada, mas conta/empresa ainda não configurada." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    const tokenExpired = btgConfig.token_expires_at ? new Date(btgConfig.token_expires_at) <= new Date() : true
+    const hasScope = typeof btgConfig.scope === 'string' && btgConfig.scope.includes("brn:btg:empresas:banking:payments")
+
+    // Log seguro inicial
+    console.log("Iniciando repasses PIX:", {
+      provider: "btg",
+      hasAccountId: !!btgConfig.account_id,
+      hasCompanyId: !!btgConfig.company_id,
+      hasScopeBankingPayments: hasScope,
+      tokenExpired
+    })
+
+    if (tokenExpired || !hasScope) {
+      return new Response(JSON.stringify({ error: "Token BTG sem permissão de pagamento ou expirado." }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
@@ -124,7 +150,7 @@ serve(async (req) => {
               description: "Repasse de serviços",
               debitParty: {
                 branchCode: "50",
-                number: "000000050"
+                number: btgConfig.account_id
               },
               detail: {
                 key: {
@@ -163,20 +189,35 @@ serve(async (req) => {
           responseJson = { rawText: responseText }
         }
 
+        console.log("BTG API call result:", {
+          endpoint: btgRequestUrl,
+          status: btgResponse.status,
+          response: responseJson
+        })
+
         if (!btgResponse.ok) {
+          let errorMessage = JSON.stringify(responseJson).substring(0, 1000)
+          let clearError = responseJson
+          
+          if (btgResponse.status === 401 || btgResponse.status === 403) {
+            const msg = "Token BTG sem permissão de pagamento ou expirado."
+            errorMessage = msg
+            clearError = msg
+          }
+
           console.error(`Erro no BTG repasse ${repasse.id}:`, responseText)
           await supabaseAdmin
             .from("repasses_profissionais")
             .update({
               status: "falhou",
-              erro: JSON.stringify(responseJson).substring(0, 1000),
+              erro: errorMessage,
               btg_request_payload: btgPayload,
               btg_response_payload: responseJson,
               failed_at: new Date().toISOString()
             })
             .eq("id", repasse.id)
 
-          results.push({ id: repasseId, success: false, error: responseJson })
+          results.push({ id: repasseId, success: false, error: clearError })
         } else {
           // Sucesso (201 Created)
           const batchId = responseJson?.batchId || null
