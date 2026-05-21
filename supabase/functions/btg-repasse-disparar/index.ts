@@ -64,9 +64,16 @@ serve(async (req) => {
     }
 
     // 3. Receber parâmetros
-    const { repasse_ids } = await req.json()
+    const { repasse_ids, dryRun = false, confirmRealPayment = false } = await req.json()
     if (!repasse_ids || !Array.isArray(repasse_ids) || repasse_ids.length === 0) {
       return new Response(JSON.stringify({ error: "repasse_ids não fornecido ou vazio" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (!dryRun && !confirmRealPayment) {
+      return new Response(JSON.stringify({ error: "Repasse real bloqueado: confirmação explícita ausente." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
@@ -170,6 +177,18 @@ serve(async (req) => {
 
         // De acordo com a API Reference: url_base/{companyId}/banking/payments
         const btgRequestUrl = `https://api.sandbox.empresas.btgpactual.com/${btgConfig.company_id}/banking/payments`
+
+        if (dryRun) {
+          results.push({ 
+            id: repasseId, 
+            success: true, 
+            dryRun: true,
+            message: "Dry-run concluído com sucesso. Integração válida, scopes verificados e payload sanitizado.",
+            endpoint: btgRequestUrl,
+            payload: btgPayload
+          })
+          continue
+        }
 
         const btgResponse = await fetch(btgRequestUrl, {
           method: "POST",
