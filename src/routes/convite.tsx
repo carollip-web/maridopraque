@@ -18,7 +18,7 @@ const schema = z.object({
 });
 
 function ConvitePage() {
-  const { id } = Route.useSearch<{ id?: string }>();
+  const { id } = (Route.useSearch as any)() as { id?: string };
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
