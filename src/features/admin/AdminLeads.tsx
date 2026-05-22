@@ -7,9 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, RefreshCw, Plus, Link as LinkIcon, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import type { Database } from "@/integrations/supabase/types";
 
-type Lead = Database["public"]["Tables"]["profissionais_pre_cadastro"]["Row"];
+type Lead = {
+  id: string;
+  created_at: string;
+  nome: string;
+  telefone: string;
+  cidade: string;
+  especialidade_principal: string;
+  status: string;
+};
+const db = supabase as any;
 
 export function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
