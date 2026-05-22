@@ -19,6 +19,7 @@ import {
   User,
   Calendar,
   AlertTriangle,
+  Star,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -123,7 +124,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
       const orcIds = list.map((o) => o.id);
       let propostas: any[] = [];
-      const profsMap: Record<string, string> = {};
+      const profsMap: Record<string, { nome: string; slug?: string; media?: string; totalAvaliacoes?: number }> = {};
+      
       if (orcIds.length > 0) {
         const { data: pData } = await (supabase as any)
           .from("propostas")
@@ -131,19 +133,53 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           .in("orcamento_id", orcIds);
         propostas = pData || [];
         const profIds = Array.from(new Set(propostas.map((p) => p.profissional_id)));
+        
         if (profIds.length > 0) {
+          // fetch names
           const { data: prData } = await supabase
             .from("profiles")
             .select("id, nome")
             .in("id", profIds);
-          (prData || []).forEach((p) => (profsMap[p.id] = p.nome));
+            
+          // fetch slugs
+          const { data: perfilData } = await supabase
+            .from("profissional_perfil")
+            .select("user_id, slug")
+            .in("user_id", profIds);
+            
+          // fetch ratings
+          const { data: avData } = await supabase
+            .from("avaliacoes")
+            .select("profissional_id, nota")
+            .in("profissional_id", profIds);
+
+          (prData || []).forEach((p) => {
+            const perf = (perfilData || []).find((pf) => pf.user_id === p.id);
+            const avs = (avData || []).filter((av) => av.profissional_id === p.id);
+            const media = avs.length > 0 
+              ? (avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1)
+              : undefined;
+              
+            profsMap[p.id] = {
+              nome: p.nome,
+              slug: perf?.slug,
+              media,
+              totalAvaliacoes: avs.length
+            };
+          });
         }
       }
 
       return list.map((o) => {
         const propsForOrc = propostas
           .filter((p) => p.orcamento_id === o.id)
-          .map((p) => ({ ...p, profNome: profsMap[p.profissional_id] || "Profissional" }));
+          .map((p) => ({ 
+            ...p, 
+            profNome: profsMap[p.profissional_id]?.nome || "Profissional",
+            profSlug: profsMap[p.profissional_id]?.slug,
+            profMedia: profsMap[p.profissional_id]?.media,
+            profTotalAvaliacoes: profsMap[p.profissional_id]?.totalAvaliacoes,
+          }));
         const uiStatus =
           o.status === "customizado_pendente" && propsForOrc.length > 0
             ? "Aguardando sua aprovação"
@@ -515,9 +551,22 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       className="rounded-2xl border border-slate-100 bg-slate-50 p-4 flex items-center justify-between gap-4"
                     >
                       <div>
-                        <p className="font-bold">{prop.profNome || "Profissional"}</p>
+                        <p className="font-bold flex items-center gap-2">
+                          {prop.profNome || "Profissional"}
+                          {prop.profMedia && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold border border-amber-100">
+                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                              {prop.profMedia}
+                            </span>
+                          )}
+                        </p>
+                        {prop.profSlug && (
+                          <a href={`/profissionais/perfil/${prop.profSlug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-brand hover:underline block mt-1">
+                            Ver Perfil e Avaliações
+                          </a>
+                        )}
                         {prop.observacoes && (
-                          <p className="text-xs text-muted-foreground mt-1">{prop.observacoes}</p>
+                          <p className="text-xs text-muted-foreground mt-2">{prop.observacoes}</p>
                         )}
                       </div>
                       <div className="text-right">
@@ -558,9 +607,22 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
                     Profissional que enviou a proposta
                   </p>
-                  <p className="font-bold text-lg">{primeiraProposta.profNome || "Profissional"}</p>
+                  <p className="font-bold text-lg flex items-center gap-2">
+                    {primeiraProposta.profNome || "Profissional"}
+                    {primeiraProposta.profMedia && (
+                      <span className="inline-flex items-center gap-1 text-sm bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-bold border border-amber-100">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        {primeiraProposta.profMedia}
+                      </span>
+                    )}
+                  </p>
+                  {primeiraProposta.profSlug && (
+                    <a href={`/profissionais/perfil/${primeiraProposta.profSlug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline inline-block mt-1 mb-2">
+                      Ver Perfil e Avaliações
+                    </a>
+                  )}
                   {primeiraProposta.observacoes && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {primeiraProposta.observacoes}
                     </p>
                   )}

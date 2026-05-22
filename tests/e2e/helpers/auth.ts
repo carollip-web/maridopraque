@@ -1,7 +1,7 @@
 import { Page } from "@playwright/test";
 
 export const TEST_PASSWORD = "Teste@2026!";
-export const TEST_DOMAIN = "teste.maridopraque.local";
+export const TEST_DOMAIN = "example.com";
 
 export const ACCOUNTS = {
   admin: `admin-teste@${TEST_DOMAIN}`,

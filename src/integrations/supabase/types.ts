@@ -1139,6 +1139,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirmar_convite: { Args: { p_convite_id: string }; Returns: undefined }
       criar_repasse_profissional_pendente: {
         Args: { p_pagamento_id: string }
         Returns: string
@@ -1160,6 +1161,7 @@ export type Database = {
           valido: boolean
         }[]
       }
+      verificar_convite: { Args: { p_convite_id: string }; Returns: Json }
     }
     Enums: {
       admin_level: "super_admin" | "admin" | "financeiro" | "suporte"
