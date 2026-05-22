@@ -78,11 +78,7 @@ export function ProfissionalOrcamentos({
               Acompanhe oportunidades, propostas em elaboração e retornos de clientes.
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleGenerateTestOrder}
-            className="rounded-full"
-          >
+          <Button variant="outline" onClick={handleGenerateTestOrder} className="rounded-full">
             Gerar pedido teste
           </Button>
         </div>
@@ -140,7 +136,8 @@ export function ProfissionalOrcamentos({
                     <div>
                       <p className="font-bold">Você ainda não configurou suas especialidades.</p>
                       <p className="mt-1">
-                        Vá em <strong>Configurações</strong> para selecionar os serviços que você realiza e começar a receber oportunidades compatíveis.
+                        Vá em <strong>Configurações</strong> para selecionar os serviços que você
+                        realiza e começar a receber oportunidades compatíveis.
                       </p>
                     </div>
                   </div>
@@ -163,9 +160,11 @@ export function ProfissionalOrcamentos({
                   minhaAgenda={minhaAgenda}
                   profGenero={profGenero}
                   profApoioFeminino={profApoioFeminino}
-                  emptyMsg={especialidades.length === 0 
-                    ? "Configure suas especialidades para ver oportunidades."
-                    : "Nenhuma oportunidade disponível para suas especialidades no momento."}
+                  emptyMsg={
+                    especialidades.length === 0
+                      ? "Configure suas especialidades para ver oportunidades."
+                      : "Nenhuma oportunidade disponível para suas especialidades no momento."
+                  }
                   emptyIcon={Clock}
                 />
               </TabsContent>

@@ -40,7 +40,7 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
         data_preferida: data.dataPreferida ?? null,
         periodo_preferido: data.periodoPreferido ?? null,
         horario_preferido: data.horarioPreferido ?? null,
-        flexibilidade_agenda: data.flexibilidadeAgenda ?? 'flexivel',
+        flexibilidade_agenda: data.flexibilidadeAgenda ?? "flexivel",
       })
       .select()
       .single();
@@ -106,8 +106,11 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (orcError || !orcCompleto) {
-      console.warn("[enviarOrcamento] falha ao buscar orçamento completo ou não encontrado", orcError);
-      
+      console.warn(
+        "[enviarOrcamento] falha ao buscar orçamento completo ou não encontrado",
+        orcError,
+      );
+
       // Fallback sem campos novos
       const { data: orcBasico, error: orcBasicoError } = await supabase
         .from("orcamentos")
@@ -115,11 +118,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .eq("id", data.orcamentoId)
         .maybeSingle();
 
-      if (
-        orcBasico &&
-        typeof orcBasico === "object" &&
-        !Array.isArray(orcBasico)
-      ) {
+      if (orcBasico && typeof orcBasico === "object" && !Array.isArray(orcBasico)) {
         const ob = orcBasico as any;
         orc = {
           id: ob.id,
@@ -176,8 +175,11 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (perfilError) {
-      console.warn("[enviarOrcamento] perfil operacional indisponível (schema cache?), tentando básico", perfilError);
-      
+      console.warn(
+        "[enviarOrcamento] perfil operacional indisponível (schema cache?), tentando básico",
+        perfilError,
+      );
+
       const { data: perfBasico } = await supabase
         .from("profissional_perfil")
         .select("id")
@@ -204,10 +206,10 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino ?? false,
     });
 
-    console.info("[enviarOrcamento] validação compatibilidade", { 
-      orcamentoId: orc.id, 
-      tipo: orc.tipo_atendimento, 
-      compat 
+    console.info("[enviarOrcamento] validação compatibilidade", {
+      orcamentoId: orc.id,
+      tipo: orc.tipo_atendimento,
+      compat,
     });
 
     if (!compat.compatible && compat.blockProposal) {
@@ -243,7 +245,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       if (uErr) throw new Error(uErr.message);
       proposalId = updated.id;
       propRow = updated;
-      
+
       // Delete old materials for this proposal
       await supabase.from("proposta_materiais").delete().eq("proposta_id", proposalId);
     } else {
@@ -299,19 +301,23 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
     if (!SERVICE_KEY || !SUPABASE_URL) {
       console.error("[enviarOrcamento] Missing environment variables for Service Role");
-      throw new Error("Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL",
+      );
     }
 
     const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false }
+      auth: { persistSession: false },
     });
 
-    console.info("[enviarOrcamento] Updating status via Service Role", { orcamentoId: data.orcamentoId });
+    console.info("[enviarOrcamento] Updating status via Service Role", {
+      orcamentoId: data.orcamentoId,
+    });
     const { data: updatedOrc, error: updateError } = await serviceClient
       .from("orcamentos")
-      .update({ 
+      .update({
         status: "enviado",
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", data.orcamentoId)
       .in("status", ["customizado_pendente", "enviado"])
@@ -323,17 +329,20 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       throw new Error("Pedido não encontrado ou status atual não permite receber proposta.");
     }
 
-    console.info("[enviarOrcamento] Success", { orcamentoId: data.orcamentoId, status: updatedOrc.status });
+    console.info("[enviarOrcamento] Success", {
+      orcamentoId: data.orcamentoId,
+      status: updatedOrc.status,
+    });
 
     // 4. Create Notification for the client
     if (orc.cliente_id) {
       const { error: notifError } = await serviceClient.from("notificacoes").insert({
         user_id: orc.cliente_id,
         titulo: "Nova Proposta Recebida",
-        mensagem: `Um profissional enviou uma proposta para o pedido "${orc.service_name || 'Serviço'}".`,
+        mensagem: `Um profissional enviou uma proposta para o pedido "${orc.service_name || "Serviço"}".`,
         orcamento_id: data.orcamentoId,
         link: `/cliente?tab=pedidos&pedidoId=${data.orcamentoId}`,
-        lida: false
+        lida: false,
       });
       if (notifError) console.error("[enviarOrcamento] Failed to insert notification:", notifError);
     }
@@ -369,9 +378,11 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
         .select("profissional_id, valor_servico")
         .eq("id", data.orcamentoId)
         .single();
-      
+
       if (!fullOrc?.profissional_id || !fullOrc?.valor_servico) {
-        throw new Error("Não é possível aprovar este orçamento diretamente sem um profissional ou valor definido. Utilize o fluxo de aceitar propostas.");
+        throw new Error(
+          "Não é possível aprovar este orçamento diretamente sem um profissional ou valor definido. Utilize o fluxo de aceitar propostas.",
+        );
       }
     }
 
@@ -440,7 +451,9 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     if (!SERVICE_KEY || !SUPABASE_URL) {
       console.error("[aceitarProposta] Missing environment variables for Service Role");
-      throw new Error("Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
+      );
     }
 
     const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
@@ -519,18 +532,23 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     const { data: pref, error: prefError } = await (serviceClient as any)
       .from("orcamentos")
-      .select("tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,flexibilidade_agenda")
+      .select(
+        "tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,flexibilidade_agenda",
+      )
       .eq("id", orcamentoId)
       .maybeSingle();
 
     if (prefError) {
-      console.warn(`[aceitarProposta] Erro ao carregar preferências do pedido: ${prefError.message}`, {
-        code: prefError.code,
-        message: prefError.message,
-        details: prefError.details,
-        hint: prefError.hint,
-        orcamentoId,
-      });
+      console.warn(
+        `[aceitarProposta] Erro ao carregar preferências do pedido: ${prefError.message}`,
+        {
+          code: prefError.code,
+          message: prefError.message,
+          details: prefError.details,
+          hint: prefError.hint,
+          orcamentoId,
+        },
+      );
     } else if (pref) {
       preferencias = {
         tipo_atendimento: pref.tipo_atendimento ?? null,
@@ -590,7 +608,8 @@ export const aceitarProposta = createServerFn({ method: "POST" })
     }
 
     // 6. Agenda Reservation (Optional - don't crash if it fails)
-    let reservaStatus: "temporaria" | "ja_existia" | "erro" | "sem_data" | "sem_profissional" = "sem_data";
+    let reservaStatus: "temporaria" | "ja_existia" | "erro" | "sem_data" | "sem_profissional" =
+      "sem_data";
 
     console.info("[aceitarProposta] dados para reserva", {
       propostaId: prop?.id,
@@ -674,7 +693,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
         mensagem: `O cliente aceitou sua proposta! Aguardando o pagamento para confirmar o agendamento.`,
         orcamento_id: orcamentoId,
         link: `/profissional?tab=orcamentos&orcamentoId=${orcamentoId}`,
-        lida: false
+        lida: false,
       });
       if (notifError) console.error("[aceitarProposta] Erro ao criar notificação:", notifError);
     }
@@ -945,10 +964,10 @@ export const criarCenarioTestePagamento = createServerFn({ method: "POST" })
         service_name: "🔧 Teste de Pagamento Real",
         descricao: "⚠️ Pedido gerado automaticamente para validar o checkout Mercado Pago.",
         status: "aprovado",
-        valor_servico: 100.00,
-        valor: 100.00,
+        valor_servico: 100.0,
+        valor: 100.0,
         data_aprovacao: new Date().toISOString(),
-        is_test: true
+        is_test: true,
       })
       .select()
       .single();

@@ -275,8 +275,8 @@ function Index() {
             </div>
             <p className="text-muted-foreground md:text-lg">
               Sabemos que receber alguém em casa exige confiança. Por isso oferecemos três opções de
-              atendimento — incluindo apoio feminino durante a visita para clientes que moram sozinhas e
-              preferem mais segurança.
+              atendimento — incluindo apoio feminino durante a visita para clientes que moram
+              sozinhas e preferem mais segurança.
             </p>
           </div>
 
@@ -320,8 +320,8 @@ function Index() {
               <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
               <p>
                 <span className="font-medium text-foreground">Política de segurança.</span> Todos os
-                profissionais e mulheres de apoio passam por verificação de documentos, antecedentes e
-                avaliação contínua dos clientes.
+                profissionais e mulheres de apoio passam por verificação de documentos, antecedentes
+                e avaliação contínua dos clientes.
               </p>
             </div>
             <div className="flex items-start gap-3 text-sm text-muted-foreground border-t border-border pt-4">

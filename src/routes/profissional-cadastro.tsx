@@ -488,7 +488,9 @@ function ProfissionalCadastro() {
                 </div>
                 <div className="sm:col-span-2 grid sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                   <div>
-                    <label className="text-xs font-bold uppercase text-muted-foreground">Gênero para atendimento</label>
+                    <label className="text-xs font-bold uppercase text-muted-foreground">
+                      Gênero para atendimento
+                    </label>
                     <select
                       value={form.genero}
                       onChange={(e) => set("genero", e.target.value)}
@@ -508,7 +510,9 @@ function ProfissionalCadastro() {
                         onChange={(e) => set("oferece_apoio_feminino", e.target.checked)}
                         className="h-5 w-5 accent-brand rounded border-slate-300"
                       />
-                      <span className="text-sm font-medium text-slate-700">Ofereço apoio feminino</span>
+                      <span className="text-sm font-medium text-slate-700">
+                        Ofereço apoio feminino
+                      </span>
                     </label>
                   </div>
                 </div>

@@ -10,9 +10,15 @@ import { Loader2 } from "lucide-react";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 import { useQueryClient } from "@tanstack/react-query";
 
-
 // Feature modules
-import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo, ProfissionalTab } from "@/features/profissional/types";
+import {
+  Orcamento,
+  Profile,
+  ServicoCat,
+  OrcMat,
+  ClienteGeo,
+  ProfissionalTab,
+} from "@/features/profissional/types";
 import { ProfissionalSidebar } from "@/features/profissional/ProfissionalSidebar";
 import { ProfissionalDashboard } from "@/features/profissional/ProfissionalDashboard";
 import { ProfissionalOrcamentos } from "@/features/profissional/ProfissionalOrcamentos";
@@ -75,7 +81,7 @@ function ProfissionalArea() {
     markAsRead: markNotifAsRead,
     markAllAsRead: markAllNotifAsRead,
   } = useNotifications();
-  
+
   const profNotifications = profNotificationsAll.filter(
     (n) => !n.link || n.link.startsWith("/profissional"),
   );
@@ -120,18 +126,15 @@ function ProfissionalArea() {
 
   const refresh = async () => {
     if (!user) return;
-    
+
     // 1. Fetch EVERYTHING in parallel to ensure consistent state
     const [propsRes, orcsRes] = await Promise.all([
-      supabase
-        .from("propostas")
-        .select("*, orcamento_id")
-        .eq("profissional_id", user.id),
+      supabase.from("propostas").select("*, orcamento_id").eq("profissional_id", user.id),
       supabase
         .from("orcamentos")
         .select("*")
         .or(`profissional_id.is.null,profissional_id.eq.${user.id}`)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false }),
     ]);
 
     if (propsRes.error) {
@@ -141,12 +144,12 @@ function ProfissionalArea() {
       console.error("[ProfissionalArea.refresh] erro ao buscar orçamentos", orcsRes.error);
     }
 
-    const propsList = propsRes.error ? null : (propsRes.data || []);
-    const propOrcIds = (propsList || []).map(p => p.orcamento_id);
+    const propsList = propsRes.error ? null : propsRes.data || [];
+    const propOrcIds = (propsList || []).map((p) => p.orcamento_id);
 
     // If there are budgets where I sent a proposal but I'm NOT the assigned professional,
     // we need to fetch those too.
-    const missingOrcIds = propOrcIds.filter(id => !orcsRes.data?.some(o => o.id === id));
+    const missingOrcIds = propOrcIds.filter((id) => !orcsRes.data?.some((o) => o.id === id));
 
     let list = (orcsRes.data || []) as Orcamento[];
     if (missingOrcIds.length > 0) {
@@ -161,17 +164,20 @@ function ProfissionalArea() {
       setMinhasPropostas(propsList);
     }
     setOrcamentos(list);
-    
-    console.info("[ProfissionalArea] detalhes agenda/atendimento", list?.map((o) => ({
-      id: o.id,
-      service_name: o.service_name,
-      status: o.status,
-      tipo_atendimento: o.tipo_atendimento,
-      data_preferida: o.data_preferida,
-      periodo_preferido: o.periodo_preferido,
-      horario_preferido: o.horario_preferido,
-      flexibilidade_agenda: o.flexibilidade_agenda,
-    })));
+
+    console.info(
+      "[ProfissionalArea] detalhes agenda/atendimento",
+      list?.map((o) => ({
+        id: o.id,
+        service_name: o.service_name,
+        status: o.status,
+        tipo_atendimento: o.tipo_atendimento,
+        data_preferida: o.data_preferida,
+        periodo_preferido: o.periodo_preferido,
+        horario_preferido: o.horario_preferido,
+        flexibilidade_agenda: o.flexibilidade_agenda,
+      })),
+    );
 
     const agenda = await carregarAgendaProfissional(user.id);
     setMinhaAgenda(agenda);
@@ -223,12 +229,17 @@ function ProfissionalArea() {
       let perfil: any = null;
       const { data: perfilCompleto, error: perfilCompletoError } = await (supabase as any)
         .from("profissional_perfil")
-        .select("ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino")
+        .select(
+          "ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (perfilCompletoError) {
-        console.warn("[ProfissionalArea] perfil completo indisponível, tentando básico", perfilCompletoError);
+        console.warn(
+          "[ProfissionalArea] perfil completo indisponível, tentando básico",
+          perfilCompletoError,
+        );
 
         const { data: perfilBasico, error: perfilBasicoError } = await (supabase as any)
           .from("profissional_perfil")
@@ -240,11 +251,7 @@ function ProfissionalArea() {
           console.error("[ProfissionalArea] erro ao carregar perfil básico", perfilBasicoError);
         }
 
-        if (
-          perfilBasico &&
-          typeof perfilBasico === "object" &&
-          !Array.isArray(perfilBasico)
-        ) {
+        if (perfilBasico && typeof perfilBasico === "object" && !Array.isArray(perfilBasico)) {
           const pb = perfilBasico as any;
           perfil = {
             ativo: pb.ativo,
@@ -262,7 +269,10 @@ function ProfissionalArea() {
         perfil = perfilCompleto;
       }
 
-      const { data: avs } = await supabase.from("avaliacoes").select("nota").eq("profissional_id", user.id!);
+      const { data: avs } = await supabase
+        .from("avaliacoes")
+        .select("nota")
+        .eq("profissional_id", user.id!);
 
       if (perfil) {
         setAtivo(perfil.ativo);
@@ -275,7 +285,7 @@ function ProfissionalArea() {
         setProfGenero(perfil.genero ?? null);
         setProfApoioFeminino(Boolean(perfil.oferece_apoio_feminino));
       }
-      
+
       if (avs && avs.length > 0) {
         setMediaAvaliacoes((avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1));
       }
@@ -356,7 +366,15 @@ function ProfissionalArea() {
     setLoadingList(false);
   };
 
-  const handleProposalSent = ({ orcamentoId, proposta, orcamento }: { orcamentoId: string; proposta: any; orcamento: any }) => {
+  const handleProposalSent = ({
+    orcamentoId,
+    proposta,
+    orcamento,
+  }: {
+    orcamentoId: string;
+    proposta: any;
+    orcamento: any;
+  }) => {
     console.log("[profissional.enviarOrcamento] proposta criada", proposta);
     console.log("[profissional.enviarOrcamento] orçamento atualizado", orcamento);
     console.log("[profissional.enviarOrcamento] invalidando queries");
@@ -416,7 +434,6 @@ function ProfissionalArea() {
     }, 800);
   };
 
-
   useEffect(() => {
     if (!user) return;
     refresh();
@@ -425,12 +442,16 @@ function ProfissionalArea() {
       .on("postgres_changes", { event: "*", schema: "public", table: "orcamentos" }, () =>
         refresh(),
       )
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "propostas",
-        filter: `profissional_id=eq.${user.id}`
-      }, () => refresh())
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "propostas",
+          filter: `profissional_id=eq.${user.id}`,
+        },
+        () => refresh(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -517,8 +538,7 @@ function ProfissionalArea() {
       }
       if (type === "enviados") {
         return (
-          (o.status === "customizado_pendente" || o.status === "enviado") &&
-          jaEnvieiProposta(o.id)
+          (o.status === "customizado_pendente" || o.status === "enviado") && jaEnvieiProposta(o.id)
         );
       }
       if (type === "ativos") {
@@ -542,8 +562,16 @@ function ProfissionalArea() {
       ativos: filterBy("ativos").length,
       finalizados: filterBy("finalizados").length,
     };
-  }, [orcamentos, especialidades, user?.id, profGeo, clienteGeo, minhasPropostas, recusados, propostasEnviadasLocal]);
-
+  }, [
+    orcamentos,
+    especialidades,
+    user?.id,
+    profGeo,
+    clienteGeo,
+    minhasPropostas,
+    recusados,
+    propostasEnviadasLocal,
+  ]);
 
   if (loading) {
     return (
@@ -603,7 +631,7 @@ function ProfissionalArea() {
   const sheetOrc = sheetOrcamentoId
     ? (orcamentos.find((o) => o.id === sheetOrcamentoId) ?? null)
     : null;
-    
+
   const sheetMode = sheetOrc
     ? sheetOrc.profissional_id === user?.id
       ? sheetOrc.status === "enviado"
@@ -816,7 +844,9 @@ function ProfissionalArea() {
                   mediaAvaliacoes,
                 }}
                 orcamentos={orcamentos}
-                setTab={(t) => navigate({ to: "/profissional", search: (prev: any) => ({ ...prev, tab: t }) })}
+                setTab={(t) =>
+                  navigate({ to: "/profissional", search: (prev: any) => ({ ...prev, tab: t }) })
+                }
                 setPedidosSubTab={setPedidosSubTab}
                 setServicosSubTab={setServicosSubTab}
               />

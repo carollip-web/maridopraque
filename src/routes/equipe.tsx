@@ -1,13 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Loader2,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -94,9 +87,7 @@ function EquipePage() {
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Acesso da Equipe
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Acesso da Equipe</h1>
           <p className="text-slate-400 mt-2">
             Painel interno — restrito a colaboradores autorizados.
           </p>
@@ -155,11 +146,7 @@ function EquipePage() {
               size="lg"
               className="w-full h-14 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 font-bold shadow-lg mt-2"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Entrar"
-              )}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
             </Button>
           </form>
         </div>

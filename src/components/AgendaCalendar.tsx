@@ -117,14 +117,16 @@ export function AgendaCalendar() {
         console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
       }
       const now = new Date();
-      const reservasValidas = ((pbaRes.data as any[]) || []).filter((r) => {
-        if (r.status !== "temporario") return true;
-        if (!r.expires_at) return true;
-        return new Date(r.expires_at) > now;
-      }).map(r => ({
-        ...r,
-        service_name: r.orcamentos?.service_name || "Serviço"
-      }));
+      const reservasValidas = ((pbaRes.data as any[]) || [])
+        .filter((r) => {
+          if (r.status !== "temporario") return true;
+          if (!r.expires_at) return true;
+          return new Date(r.expires_at) > now;
+        })
+        .map((r) => ({
+          ...r,
+          service_name: r.orcamentos?.service_name || "Serviço",
+        }));
 
       setJanelas((jans as Janela[]) ?? []);
       setBloqueios((blocs as Bloqueio[]) ?? []);
@@ -151,7 +153,7 @@ export function AgendaCalendar() {
         () => {
           console.info("[AgendaCalendar] Atualização em tempo real recebida. Recarregando...");
           loadAgenda();
-        }
+        },
       )
       .subscribe();
 
@@ -382,9 +384,21 @@ export function AgendaCalendar() {
                         >
                           <p className="text-[10px] font-bold leading-tight truncate">{label}</p>
                           <p className="text-[10px] leading-tight truncate opacity-90">
-                            {r.service_name && <span className="font-semibold">{r.service_name}<br/></span>}
-                            {ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            –{fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            {r.service_name && (
+                              <span className="font-semibold">
+                                {r.service_name}
+                                <br />
+                              </span>
+                            )}
+                            {ini.toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            –
+                            {fim.toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
                         </div>
                       );

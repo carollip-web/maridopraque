@@ -38,7 +38,9 @@ function ConvitePage() {
     }
 
     const checkInvite = async () => {
-      const { data, error } = await (supabase as any).rpc("verificar_convite", { p_convite_id: id });
+      const { data, error } = await (supabase as any).rpc("verificar_convite", {
+        p_convite_id: id,
+      });
       if (error) {
         setError("Erro ao validar convite.");
       } else if (data?.valido) {
@@ -69,15 +71,15 @@ function ConvitePage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/profissional-cadastro`,
-          data: { 
+          data: {
             nome: leadInfo.nome,
-            convite_id: id // Isso será lido pelo trigger no banco para criar o perfil!
+            convite_id: id, // Isso será lido pelo trigger no banco para criar o perfil!
           },
         },
       });
 
       if (signupError) throw signupError;
-      
+
       setSuccess(true);
       toast.success("Conta criada com sucesso!");
     } catch (err: any) {
@@ -128,7 +130,8 @@ function ConvitePage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-slate-600 mb-6">
-              Sua conta profissional foi gerada com sucesso. Verifique seu e-mail para confirmar seu cadastro, e então faça login para completar seu perfil e enviar seus documentos.
+              Sua conta profissional foi gerada com sucesso. Verifique seu e-mail para confirmar seu
+              cadastro, e então faça login para completar seu perfil e enviar seus documentos.
             </p>
             <Button onClick={() => navigate({ to: "/login" })} className="w-full bg-brand">
               Ir para o Login
@@ -148,8 +151,10 @@ function ConvitePage() {
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Convite Exclusivo</CardTitle>
           <CardDescription className="text-base mt-2 text-slate-500">
-            Olá, <span className="font-semibold text-slate-900">{leadInfo?.nome}</span>! 
-            Sua vaga como parceiro(a) de <span className="font-semibold text-brand">{leadInfo?.especialidade}</span> está garantida.
+            Olá, <span className="font-semibold text-slate-900">{leadInfo?.nome}</span>! Sua vaga
+            como parceiro(a) de{" "}
+            <span className="font-semibold text-brand">{leadInfo?.especialidade}</span> está
+            garantida.
           </CardDescription>
         </CardHeader>
         <CardContent>

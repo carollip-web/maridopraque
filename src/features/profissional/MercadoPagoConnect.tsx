@@ -1,39 +1,41 @@
-import { useEffect, useState } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, AlertCircle, ExternalLink, Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface MercadoPagoStatus {
-  connected: boolean
-  mp_user_id: string | null
-  mp_connected_at: string | null
-  mp_token_expires_at: string | null
+  connected: boolean;
+  mp_user_id: string | null;
+  mp_connected_at: string | null;
+  mp_token_expires_at: string | null;
 }
 
 export function MercadoPagoConnect() {
-  const [status, setStatus] = useState<MercadoPagoStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [connecting, setConnecting] = useState(false)
+  const [status, setStatus] = useState<MercadoPagoStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
 
   const loadStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select("mp_user_id, mp_connected_at, mp_token_expires_at")
         .eq("user_id", user.id)
-        .maybeSingle()
+        .maybeSingle();
 
       if (error) {
-        console.error(error)
+        console.error(error);
       }
 
       setStatus({
@@ -41,54 +43,54 @@ export function MercadoPagoConnect() {
         mp_user_id: data?.mp_user_id ?? null,
         mp_connected_at: data?.mp_connected_at ?? null,
         mp_token_expires_at: data?.mp_token_expires_at ?? null,
-      })
+      });
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadStatus()
+    loadStatus();
 
     // Verificar feedback de retorno do OAuth via URL params
-    const url = new URL(window.location.href)
+    const url = new URL(window.location.href);
     if (url.searchParams.get("mp_connected") === "true") {
-      toast.success("Mercado Pago conectado com sucesso!")
-      url.searchParams.delete("mp_connected")
-      window.history.replaceState({}, "", url.toString())
+      toast.success("Mercado Pago conectado com sucesso!");
+      url.searchParams.delete("mp_connected");
+      window.history.replaceState({}, "", url.toString());
     }
-    const mpError = url.searchParams.get("mp_error")
+    const mpError = url.searchParams.get("mp_error");
     if (mpError) {
-      toast.error(`Erro ao conectar Mercado Pago: ${mpError}`)
-      url.searchParams.delete("mp_error")
-      window.history.replaceState({}, "", url.toString())
+      toast.error(`Erro ao conectar Mercado Pago: ${mpError}`);
+      url.searchParams.delete("mp_error");
+      window.history.replaceState({}, "", url.toString());
     }
-  }, [])
+  }, []);
 
   const handleConnect = async () => {
-    setConnecting(true)
+    setConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start")
-      if (error) throw error
-      if (!data?.url) throw new Error("URL de autorização não retornada")
-      
+      const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
+      if (error) throw error;
+      if (!data?.url) throw new Error("URL de autorização não retornada");
+
       // Redirecionar para o Mercado Pago
-      window.location.href = data.url
+      window.location.href = data.url;
     } catch (err: any) {
-      console.error(err)
-      toast.error(err?.message ?? "Falha ao iniciar conexão com Mercado Pago")
-      setConnecting(false)
+      console.error(err);
+      toast.error(err?.message ?? "Falha ao iniciar conexão com Mercado Pago");
+      setConnecting(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <Card className="p-6">
         <Loader2 className="h-5 w-5 animate-spin" />
       </Card>
-    )
+    );
   }
 
   return (
@@ -97,7 +99,8 @@ export function MercadoPagoConnect() {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">Mercado Pago</h3>
           <p className="text-sm text-muted-foreground">
-            Conecte sua conta para receber pagamentos diretamente, com a comissão da plataforma descontada automaticamente.
+            Conecte sua conta para receber pagamentos diretamente, com a comissão da plataforma
+            descontada automaticamente.
           </p>
         </div>
         {status?.connected ? (
@@ -115,7 +118,9 @@ export function MercadoPagoConnect() {
 
       {status?.connected ? (
         <div className="space-y-2 text-sm">
-          <p><strong>ID Mercado Pago:</strong> {status.mp_user_id}</p>
+          <p>
+            <strong>ID Mercado Pago:</strong> {status.mp_user_id}
+          </p>
           {status.mp_connected_at && (
             <p>
               <strong>Conectado em:</strong>{" "}
@@ -124,7 +129,9 @@ export function MercadoPagoConnect() {
           )}
           <Button variant="outline" onClick={handleConnect} disabled={connecting}>
             {connecting ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Reconectando...</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Reconectando...
+              </>
             ) : (
               <>Reconectar conta</>
             )}
@@ -142,7 +149,9 @@ export function MercadoPagoConnect() {
           </div>
           <Button onClick={handleConnect} disabled={connecting} className="w-full sm:w-auto">
             {connecting ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Conectando...</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Conectando...
+              </>
             ) : (
               <>
                 <ExternalLink className="h-4 w-4 mr-2" />
@@ -153,5 +162,5 @@ export function MercadoPagoConnect() {
         </div>
       )}
     </Card>
-  )
+  );
 }

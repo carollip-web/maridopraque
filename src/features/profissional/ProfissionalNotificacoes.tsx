@@ -37,10 +37,7 @@ export function ProfissionalNotificacoes({
       n.data?.pedidoId ||
       n.pedidoId;
 
-    const status =
-      n.status ||
-      n.metadata?.status ||
-      n.data?.status;
+    const status = n.status || n.metadata?.status || n.data?.status;
 
     return { orcamentoId, status };
   };
@@ -49,9 +46,7 @@ export function ProfissionalNotificacoes({
     const { orcamentoId, status } = getNotificationTarget(n);
     if (orcamentoId) {
       const tab =
-        status === "aprovado" ||
-        status === "pago" ||
-        status === "concluido"
+        status === "aprovado" || status === "pago" || status === "concluido"
           ? "servicos"
           : "orcamentos";
 
@@ -85,7 +80,9 @@ export function ProfissionalNotificacoes({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Notificações</h2>
-          <p className="text-sm text-muted-foreground">Atualizações sobre seus pedidos e serviços.</p>
+          <p className="text-sm text-muted-foreground">
+            Atualizações sobre seus pedidos e serviços.
+          </p>
         </div>
         {unreadNotifications > 0 && (
           <button

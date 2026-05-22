@@ -2,15 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import {
-  Users,
-  Search,
-  FileDown,
-  Trash2,
-  UserPlus,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Users, Search, FileDown, Trash2, UserPlus, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -62,13 +54,9 @@ export function AdminClientes() {
   } = useQuery({
     queryKey: ["admin", "clientes"],
     queryFn: async () => {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       const proIds = new Set(
-        (roles || [])
-          .filter((r: any) => r.role !== "cliente")
-          .map((r: any) => r.user_id),
+        (roles || []).filter((r: any) => r.role !== "cliente").map((r: any) => r.user_id),
       );
       const { data: profs } = await supabase
         .from("profiles")
@@ -182,14 +170,7 @@ export function AdminClientes() {
 
   const handleExportClients = () => {
     if (clientes.length === 0) return;
-    const headers = [
-      "ID",
-      "Nome",
-      "E-mail",
-      "WhatsApp",
-      "Pedidos Pagos",
-      "Cadastro",
-    ];
+    const headers = ["ID", "Nome", "E-mail", "WhatsApp", "Pedidos Pagos", "Cadastro"];
     const rows = clientes.map((c: any) =>
       [
         c.id,
@@ -208,10 +189,7 @@ export function AdminClientes() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `clientes_${new Date().toISOString().split("T")[0]}.csv`,
-    );
+    link.setAttribute("download", `clientes_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -311,8 +289,8 @@ export function AdminClientes() {
               <DialogHeader>
                 <DialogTitle>Adicionar Novo Cliente</DialogTitle>
                 <DialogDescription>
-                  Crie uma conta de acesso para um novo cliente. Ele poderá fazer
-                  login com este e-mail e senha.
+                  Crie uma conta de acesso para um novo cliente. Ele poderá fazer login com este
+                  e-mail e senha.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -322,9 +300,7 @@ export function AdminClientes() {
                     id="name"
                     placeholder="João da Silva"
                     value={newClient.nome}
-                    onChange={(e) =>
-                      setNewClient((prev) => ({ ...prev, nome: e.target.value }))
-                    }
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, nome: e.target.value }))}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -334,9 +310,7 @@ export function AdminClientes() {
                     type="email"
                     placeholder="joao@exemplo.com"
                     value={newClient.email}
-                    onChange={(e) =>
-                      setNewClient((prev) => ({ ...prev, email: e.target.value }))
-                    }
+                    onChange={(e) => setNewClient((prev) => ({ ...prev, email: e.target.value }))}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -368,11 +342,7 @@ export function AdminClientes() {
                   disabled={isCreating}
                   className="bg-brand text-white"
                 >
-                  {isCreating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Criar Cliente"
-                  )}
+                  {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Cliente"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -395,9 +365,7 @@ export function AdminClientes() {
           <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
             <Checkbox
               id="select-all-clients"
-              checked={
-                filtered.length > 0 && selectedIds.length === filtered.length
-              }
+              checked={filtered.length > 0 && selectedIds.length === filtered.length}
               onCheckedChange={toggleSelectAll}
               className="border-slate-300"
             />
@@ -446,9 +414,7 @@ export function AdminClientes() {
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12">
           <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-          <p className="text-slate-400">
-            Nenhum cliente encontrado para sua busca.
-          </p>
+          <p className="text-slate-400">Nenhum cliente encontrado para sua busca.</p>
         </div>
       )}
 
@@ -469,9 +435,7 @@ export function AdminClientes() {
                   {c.nome?.[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-bold text-slate-900 truncate">
-                    {c.nome || "Sem nome"}
-                  </h4>
+                  <h4 className="font-bold text-slate-900 truncate">{c.nome || "Sem nome"}</h4>
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <span className="truncate">{c.email}</span>
                     {c.whatsapp && (

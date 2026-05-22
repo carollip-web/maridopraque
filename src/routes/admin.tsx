@@ -62,7 +62,7 @@ function AdminArea() {
       navigate({ to: "/login" });
       return;
     }
-    
+
     // Sync active tab with URL
     if (searchParams.tab && searchParams.tab !== activeTab) {
       if (canAccess(searchParams.tab as AdminSection)) {
@@ -118,8 +118,8 @@ function AdminArea() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex text-slate-900 font-sans selection:bg-brand/10 selection:text-brand">
-      <AdminSidebar 
-        activeTab={activeTab} 
+      <AdminSidebar
+        activeTab={activeTab}
         setActiveTab={handleTabChange}
         sidebarItems={sidebarItems}
         profile={profile}

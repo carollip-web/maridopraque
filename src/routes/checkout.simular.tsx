@@ -64,7 +64,11 @@ function CheckoutSimular() {
         <p className="mt-2 text-muted-foreground text-sm">
           Nenhum pagamento selecionado para simulação.
         </p>
-        <Button onClick={() => navigate({ to: "/cliente" })} className="mt-6 rounded-full" variant="outline">
+        <Button
+          onClick={() => navigate({ to: "/cliente" })}
+          className="mt-6 rounded-full"
+          variant="outline"
+        >
           Voltar
         </Button>
       </div>
@@ -78,12 +82,14 @@ function CheckoutSimular() {
       </div>
       <h1 className="text-3xl font-bold">Simulador de Checkout</h1>
       <p className="mt-4 text-lg text-muted-foreground">
-        Você está em um ambiente de teste. Simule a aprovação do pagamento para continuar o fluxo do serviço.
+        Você está em um ambiente de teste. Simule a aprovação do pagamento para continuar o fluxo do
+        serviço.
       </p>
-      
+
       <div className="mt-8 rounded-3xl border border-dashed border-border p-8 bg-card">
         <p className="text-sm font-medium text-foreground">
-          Ao clicar abaixo, o sistema marcará este pedido como "Pago" e a reserva da agenda passará de temporária para "Confirmada".
+          Ao clicar abaixo, o sistema marcará este pedido como "Pago" e a reserva da agenda passará
+          de temporária para "Confirmada".
         </p>
       </div>
 

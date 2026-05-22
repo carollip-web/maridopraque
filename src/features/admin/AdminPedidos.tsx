@@ -49,8 +49,7 @@ export function AdminPedidos() {
     navigate({
       search: ((old: any) => ({ ...old, range: val || "all" })) as any,
     });
-  const clearFilters = () =>
-    navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -67,11 +66,7 @@ export function AdminPedidos() {
 
       const list = orcs || [];
       const ids = Array.from(
-        new Set(
-          list
-            .flatMap((o: any) => [o.cliente_id, o.profissional_id])
-            .filter(Boolean),
-        ),
+        new Set(list.flatMap((o: any) => [o.cliente_id, o.profissional_id]).filter(Boolean)),
       );
       const orcIds = list.map((o: any) => o.id);
 
@@ -82,27 +77,21 @@ export function AdminPedidos() {
 
       if (ids.length > 0) {
         promises.push(
-          Promise.resolve(
-            supabase.from("profiles").select("id, nome, email").in("id", ids),
-          ).then(({ data }) => {
-            profileMap = Object.fromEntries(
-              (data || []).map((p: any) => [p.id, p]),
-            );
-          }),
+          Promise.resolve(supabase.from("profiles").select("id, nome, email").in("id", ids)).then(
+            ({ data }) => {
+              profileMap = Object.fromEntries((data || []).map((p: any) => [p.id, p]));
+            },
+          ),
         );
       }
 
       if (orcIds.length > 0) {
         promises.push(
           Promise.resolve(
-            supabase
-              .from("orcamento_materiais")
-              .select("*")
-              .in("orcamento_id", orcIds),
+            supabase.from("orcamento_materiais").select("*").in("orcamento_id", orcIds),
           ).then(({ data }) => {
             (data || []).forEach((m: any) => {
-              if (!materialsMap[m.orcamento_id])
-                materialsMap[m.orcamento_id] = [];
+              if (!materialsMap[m.orcamento_id]) materialsMap[m.orcamento_id] = [];
               materialsMap[m.orcamento_id].push(m);
             });
           }),
@@ -120,9 +109,7 @@ export function AdminPedidos() {
   const materials = data?.materials || {};
 
   const allPros = useMemo(() => {
-    const ids = Array.from(
-      new Set(orcamentos.map((o) => o.profissional_id).filter(Boolean)),
-    );
+    const ids = Array.from(new Set(orcamentos.map((o) => o.profissional_id).filter(Boolean)));
     return ids
       .map((id: any) => profiles[id])
       .filter(Boolean)
@@ -146,14 +133,8 @@ export function AdminPedidos() {
     return Object.values(groups)
       .map((items) => {
         const first = items[0];
-        const totalValor = items.reduce(
-          (sum, i) => sum + (Number(i.valor) || 0),
-          0,
-        );
-        const totalServico = items.reduce(
-          (sum, i) => sum + (Number(i.valor_servico) || 0),
-          0,
-        );
+        const totalValor = items.reduce((sum, i) => sum + (Number(i.valor) || 0), 0);
+        const totalServico = items.reduce((sum, i) => sum + (Number(i.valor_servico) || 0), 0);
         const allServiceNames = items.map((i) => i.service_name).join(" + ");
 
         const allMats = items.flatMap((i) => materials[i.id] || []);
@@ -169,10 +150,7 @@ export function AdminPedidos() {
           _unified_materials: allMats,
         };
       })
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [orcamentos, materials]);
 
   const filtered = useMemo(() => {
@@ -190,10 +168,7 @@ export function AdminPedidos() {
           weekAgo.setDate(now.getDate() - 7);
           if (d < weekAgo) return false;
         } else if (dateRange === "month") {
-          if (
-            d.getMonth() !== now.getMonth() ||
-            d.getFullYear() !== now.getFullYear()
-          )
+          if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())
             return false;
         }
       }
@@ -300,10 +275,7 @@ export function AdminPedidos() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `pedidos_${new Date().toISOString().split("T")[0]}.csv`,
-    );
+    link.setAttribute("download", `pedidos_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -382,9 +354,7 @@ export function AdminPedidos() {
         qc.invalidateQueries({ queryKey: ["admin", "orcamentos"] });
       }
       if (failCount > 0) {
-        toast.error(
-          `Falha ao excluir ${failCount} pedidos. Verifique as dependências.`,
-        );
+        toast.error(`Falha ao excluir ${failCount} pedidos. Verifique as dependências.`);
       }
     } catch (e: any) {
       toast.error("Erro no processamento em lote", { description: e.message });
@@ -402,9 +372,7 @@ export function AdminPedidos() {
   };
 
   const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   return (
@@ -470,10 +438,7 @@ export function AdminPedidos() {
           </div>
 
           <div className="flex items-center gap-2">
-            {(search ||
-              filter !== "todos" ||
-              proFilter !== "todos" ||
-              dateRange !== "all") && (
+            {(search || filter !== "todos" || proFilter !== "todos" || dateRange !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -489,10 +454,7 @@ export function AdminPedidos() {
               className="h-9 rounded-full gap-2 bg-white border-slate-200 hover:border-brand/30 hover:bg-slate-50 text-slate-600 transition-all shadow-sm px-4"
               onClick={() => refetch()}
             >
-              <RefreshCw
-                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-              />{" "}
-              Atualizar
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} /> Atualizar
             </Button>
             <Button
               variant="outline"
@@ -561,9 +523,7 @@ export function AdminPedidos() {
               key={t.id}
               onClick={() => setFilter(t.id)}
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-colors ${
-                filter === t.id
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-500 hover:bg-slate-50"
+                filter === t.id ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"
               }`}
             >
               {t.label}
@@ -576,10 +536,7 @@ export function AdminPedidos() {
               <tr>
                 <th className="px-6 py-4 w-10">
                   <Checkbox
-                    checked={
-                      filtered.length > 0 &&
-                      selectedIds.length === filtered.length
-                    }
+                    checked={filtered.length > 0 && selectedIds.length === filtered.length}
                     onCheckedChange={toggleSelectAll}
                     className="border-slate-300"
                   />
@@ -625,10 +582,7 @@ export function AdminPedidos() {
               )}
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-12 text-center text-slate-400 text-sm"
-                  >
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">
                     Nenhum pedido encontrado.
                   </td>
                 </tr>
@@ -641,13 +595,10 @@ export function AdminPedidos() {
                     label: o.status,
                   };
                   const cli = profiles[o.cliente_id];
-                  const prof = o.profissional_id
-                    ? profiles[o.profissional_id]
-                    : null;
+                  const prof = o.profissional_id ? profiles[o.profissional_id] : null;
                   const oMats = o._unified_materials || [];
                   const matsTotal = oMats.reduce(
-                    (sum: number, m: any) =>
-                      sum + Number(m.preco_unitario) * Number(m.quantidade),
+                    (sum: number, m: any) => sum + Number(m.preco_unitario) * Number(m.quantidade),
                     0,
                   );
 
@@ -699,31 +650,37 @@ export function AdminPedidos() {
                           {oMats.length > 0 && (
                             <span className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
                               {oMats
-                                .map(
-                                  (m: any) =>
-                                    `${m.nome_snapshot} (x${m.quantidade})`,
-                                )
+                                .map((m: any) => `${m.nome_snapshot} (x${m.quantidade})`)
                                 .join(", ")}
                             </span>
                           )}
                           {o.tipo_atendimento && (
-                            <span className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded w-fit ${
-                              o.tipo_atendimento === "mulher" ? "bg-pink-100 text-pink-600" :
-                              o.tipo_atendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
-                            }`}>
-                               {o.tipo_atendimento === "mulher" ? "Profissional mulher" :
-                               o.tipo_atendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
+                            <span
+                              className={`text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded w-fit ${
+                                o.tipo_atendimento === "mulher"
+                                  ? "bg-pink-100 text-pink-600"
+                                  : o.tipo_atendimento === "homem"
+                                    ? "bg-blue-100 text-blue-600"
+                                    : "bg-emerald-100 text-emerald-600"
+                              }`}
+                            >
+                              {o.tipo_atendimento === "mulher"
+                                ? "Profissional mulher"
+                                : o.tipo_atendimento === "homem"
+                                  ? "Profissional homem"
+                                  : "Profissional + apoio feminino"}
                             </span>
                           )}
                           {o.data_preferida && (
                             <div className="flex items-center gap-1.5 mt-1 text-[9px] text-slate-500 font-medium">
                               <Calendar className="h-2.5 w-2.5" />
-                              {new Date(o.data_preferida + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              {new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")}
                               {" · "}
-                              {o.periodo_preferido === 'manha' && 'Manhã'}
-                              {o.periodo_preferido === 'tarde' && 'Tarde'}
-                              {o.periodo_preferido === 'noite' && 'Noite'}
-                              {o.periodo_preferido === 'horario_especifico' && o.horario_preferido?.slice(0, 5)}
+                              {o.periodo_preferido === "manha" && "Manhã"}
+                              {o.periodo_preferido === "tarde" && "Tarde"}
+                              {o.periodo_preferido === "noite" && "Noite"}
+                              {o.periodo_preferido === "horario_especifico" &&
+                                o.horario_preferido?.slice(0, 5)}
                             </div>
                           )}
                         </div>
@@ -731,9 +688,7 @@ export function AdminPedidos() {
                       <td className="px-6 py-4">
                         {prof ? (
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-slate-700">
-                              {prof.nome}
-                            </span>
+                            <span className="text-sm font-medium text-slate-700">{prof.nome}</span>
                             {prof.whatsapp && (
                               <a
                                 href={`https://wa.me/${prof.whatsapp.replace(/\D/g, "")}`}
@@ -745,9 +700,7 @@ export function AdminPedidos() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-300 italic">
-                            Não atribuído
-                          </span>
+                          <span className="text-xs text-slate-300 italic">Não atribuído</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -768,9 +721,7 @@ export function AdminPedidos() {
                                 {o.valor_servico
                                   ? `S: R$ ${Number(o.valor_servico).toFixed(0)}`
                                   : ""}
-                                {matsTotal > 0
-                                  ? ` + M: R$ ${matsTotal.toFixed(0)}`
-                                  : ""}
+                                {matsTotal > 0 ? ` + M: R$ ${matsTotal.toFixed(0)}` : ""}
                               </span>
                             )}
                           </div>

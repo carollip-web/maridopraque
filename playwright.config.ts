@@ -14,10 +14,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: process.env.BASE_URL ? undefined : {
-    command: "/Users/nsx000387/.bun/bin/bun run dev",
-    url: "http://localhost:8080",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: "/Users/nsx000387/.bun/bin/bun run dev",
+        url: "http://localhost:8080",
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });

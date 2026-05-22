@@ -63,7 +63,9 @@ export function ProfissionalSidebar({
           <item.icon className="h-4 w-4" />
           {item.label}
           {item.badge != null && item.badge > 0 && (
-            <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${activeTab === item.id ? "bg-white/20 text-white" : "bg-brand/15 text-brand"}`}>
+            <span
+              className={`ml-auto text-[10px] px-2 py-0.5 rounded-full ${activeTab === item.id ? "bg-white/20 text-white" : "bg-brand/15 text-brand"}`}
+            >
               {item.badge}
             </span>
           )}

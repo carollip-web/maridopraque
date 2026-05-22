@@ -173,7 +173,8 @@ function ServicosAdmin() {
         preco_fixo: r.preco_fixo != null ? Number(r.preco_fixo) : null,
         preco_min: r.preco_min != null ? Number(r.preco_min) : null,
         preco_max: r.preco_max != null ? Number(r.preco_max) : null,
-        comissao_marketplace_pct: r.comissao_marketplace_pct != null ? Number(r.comissao_marketplace_pct) : 15,
+        comissao_marketplace_pct:
+          r.comissao_marketplace_pct != null ? Number(r.comissao_marketplace_pct) : 15,
       })),
     );
     setMateriais(

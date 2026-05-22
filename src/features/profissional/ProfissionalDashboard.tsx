@@ -1,5 +1,14 @@
 import React from "react";
-import { Clock, Pencil, TrendingUp, DollarSign, CalendarClock, Star, Wallet, Settings } from "lucide-react";
+import {
+  Clock,
+  Pencil,
+  TrendingUp,
+  DollarSign,
+  CalendarClock,
+  Star,
+  Wallet,
+  Settings,
+} from "lucide-react";
 import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { NivelBadge } from "@/components/NivelBadge";
@@ -124,16 +133,8 @@ export function ProfissionalDashboard({
                 label="Minha agenda"
                 onClick={() => setTab("agenda")}
               />
-              <QuickLink
-                icon={Star}
-                label="Avaliações"
-                onClick={() => setTab("avaliacoes")}
-              />
-              <QuickLink
-                icon={Wallet}
-                label="Financeiro"
-                onClick={() => setTab("financeiro")}
-              />
+              <QuickLink icon={Star} label="Avaliações" onClick={() => setTab("avaliacoes")} />
+              <QuickLink icon={Wallet} label="Financeiro" onClick={() => setTab("financeiro")} />
               <QuickLink
                 icon={Settings}
                 label="Perfil e configurações"

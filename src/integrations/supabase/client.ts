@@ -19,7 +19,6 @@ function createSupabaseClient() {
     keyRef: SUPABASE_PUBLISHABLE_KEY ? SUPABASE_PUBLISHABLE_KEY.slice(40, 90) : "MISSING",
   });
 
-
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
       ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),

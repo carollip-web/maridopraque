@@ -45,9 +45,7 @@ export function AdminConfig() {
           <div className="flex-1 min-w-0">
             <p className="text-lg font-bold truncate">{profile?.nome || "—"}</p>
             <p className="text-sm text-slate-500 truncate">{user?.email}</p>
-            {profile?.whatsapp && (
-              <p className="text-sm text-slate-500">{profile.whatsapp}</p>
-            )}
+            {profile?.whatsapp && <p className="text-sm text-slate-500">{profile.whatsapp}</p>}
             {levelMeta && (
               <span
                 className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${levelMeta.color}`}
@@ -60,9 +58,7 @@ export function AdminConfig() {
           <Button
             variant="outline"
             className="rounded-xl font-bold shrink-0 flex items-center gap-2"
-            onClick={() =>
-              navigate({ to: "/cliente", search: { tab: "dados" } as any })
-            }
+            onClick={() => navigate({ to: "/cliente", search: { tab: "dados" } as any })}
           >
             <ArrowUpRight className="h-4 w-4" />
             Editar perfil
@@ -70,16 +66,15 @@ export function AdminConfig() {
         </div>
         <p className="mt-6 text-xs text-slate-400 flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5" />
-          Para editar nome, WhatsApp e foto, acesse a área do cliente — os dados
-          são compartilhados entre os dois painéis.
+          Para editar nome, WhatsApp e foto, acesse a área do cliente — os dados são compartilhados
+          entre os dois painéis.
         </p>
       </section>
 
       <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <h3 className="font-bold mb-2 text-slate-900">Segurança</h3>
         <p className="text-sm text-slate-500 mb-4">
-          Enviaremos um link para <strong>{user?.email}</strong> para você
-          definir uma nova senha.
+          Enviaremos um link para <strong>{user?.email}</strong> para você definir uma nova senha.
         </p>
         <Button variant="outline" className="rounded-lg" onClick={trocarSenha}>
           Enviar link de redefinição de senha

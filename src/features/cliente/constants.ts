@@ -5,10 +5,22 @@ import {
   CreditCard,
   Bell,
   User,
+  Heart,
+  HeadphonesIcon,
+  ShieldCheck,
 } from "lucide-react";
 import React from "react";
 
-export type Tab = "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "notificacoes";
+export type Tab =
+  | "inicio"
+  | "pedidos"
+  | "servicos"
+  | "pagamentos"
+  | "dados"
+  | "seguranca"
+  | "favoritos"
+  | "suporte"
+  | "notificacoes";
 
 export interface SidebarItem {
   id: Tab;
@@ -21,8 +33,12 @@ export const ALL_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: "pedidos", label: "Pedidos e Orçamentos", icon: ClipboardList },
   { id: "servicos", label: "Histórico de Serviços", icon: History },
   { id: "pagamentos", label: "Pagamentos", icon: CreditCard },
+  { id: "favoritos", label: "Profissionais Favoritos", icon: Heart },
+  { id: "suporte", label: "Central de Ajuda", icon: HeadphonesIcon },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "dados", label: "Meus Dados", icon: User },
+  { id: "seguranca", label: "Segurança e Privacidade", icon: ShieldCheck },
 ];
 
-export const WHATSAPP_LINK = "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20sobre%20meu%20pedido.";
+export const WHATSAPP_LINK =
+  "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20sobre%20meu%20pedido.";

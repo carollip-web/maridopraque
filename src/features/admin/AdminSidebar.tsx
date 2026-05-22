@@ -69,9 +69,7 @@ export function AdminSidebar({
             {initials}
           </div>
           <div className="flex-1 overflow-hidden">
-            <p className="text-xs font-bold truncate">
-              {profile?.nome || "Administrador"}
-            </p>
+            <p className="text-xs font-bold truncate">{profile?.nome || "Administrador"}</p>
             <p className="text-[10px] text-slate-500 truncate">{adminEmail}</p>
             {levelMeta && (
               <span

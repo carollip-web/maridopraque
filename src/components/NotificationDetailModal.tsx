@@ -29,16 +29,9 @@ export function NotificationDetailModal({
       n.data?.pedidoId ||
       n.pedidoId;
 
-    const status =
-      n.status ||
-      n.metadata?.status ||
-      n.data?.status;
+    const status = n.status || n.metadata?.status || n.data?.status;
 
-    const tipo =
-      n.tipo ||
-      n.type ||
-      n.metadata?.tipo ||
-      n.data?.tipo;
+    const tipo = n.tipo || n.type || n.metadata?.tipo || n.data?.tipo;
 
     return { orcamentoId, status, tipo };
   };
@@ -47,10 +40,7 @@ export function NotificationDetailModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative w-full max-w-xl rounded-[2rem] bg-white shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200">
         <button
@@ -70,12 +60,15 @@ export function NotificationDetailModal({
             Notificação
           </p>
 
-          <h3 className="text-2xl font-bold">
-            {n.titulo || n.title || "Notificação"}
-          </h3>
+          <h3 className="text-2xl font-bold">{n.titulo || n.title || "Notificação"}</h3>
 
           <p className="text-muted-foreground mt-3 leading-relaxed">
-            {n.mensagem || n.message || n.desc || n.descricao || n.description || "Sem detalhes adicionais."}
+            {n.mensagem ||
+              n.message ||
+              n.desc ||
+              n.descricao ||
+              n.description ||
+              "Sem detalhes adicionais."}
           </p>
 
           <div className="mt-6 rounded-2xl bg-slate-50 p-4 space-y-2 text-sm">
@@ -91,9 +84,7 @@ export function NotificationDetailModal({
             {orcamentoId && (
               <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Pedido</span>
-                <span className="font-bold">
-                  {String(orcamentoId).slice(0, 8)}
-                </span>
+                <span className="font-bold">{String(orcamentoId).slice(0, 8)}</span>
               </div>
             )}
           </div>

@@ -116,47 +116,51 @@ export async function carregarAgendaProfissional(profissionalId: string) {
 
 export const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export function isAgendaCompativel(orcamento: any, agenda: any): { compativel: boolean; motivo?: string } {
+export function isAgendaCompativel(
+  orcamento: any,
+  agenda: any,
+): { compativel: boolean; motivo?: string } {
   if (!orcamento.data_preferida) return { compativel: true };
-  
-  const data = new Date(orcamento.data_preferida + 'T00:00:00');
+
+  const data = new Date(orcamento.data_preferida + "T00:00:00");
   const slots = slotsDoDia({
     data,
     janelas: agenda.janelas,
     bloqueios: agenda.bloqueios,
     agendados: agenda.agendados,
-    duracaoMin: agenda.duracaoMin
+    duracaoMin: agenda.duracaoMin,
   });
-  
+
   if (slots.length === 0) {
     // Verificar se tem slots em dias próximos (opcional para feedback)
     return { compativel: false, motivo: "Sem janelas disponíveis neste dia" };
   }
-  
-  if (orcamento.periodo_preferido === 'horario_especifico' && orcamento.horario_preferido) {
-    const [h, m] = orcamento.horario_preferido.split(':').map(Number);
+
+  if (orcamento.periodo_preferido === "horario_especifico" && orcamento.horario_preferido) {
+    const [h, m] = orcamento.horario_preferido.split(":").map(Number);
     const target = new Date(data);
     target.setHours(h, m, 0, 0);
-    
-    const exato = slots.some(s => s.getTime() === target.getTime());
+
+    const exato = slots.some((s) => s.getTime() === target.getTime());
     if (exato) return { compativel: true };
-    
-    if (orcamento.flexibilidade_agenda === 'exato') return { compativel: false, motivo: "Horário específico ocupado ou indisponível" };
-    
+
+    if (orcamento.flexibilidade_agenda === "exato")
+      return { compativel: false, motivo: "Horário específico ocupado ou indisponível" };
+
     // Se for flexível, qualquer slot no dia serve, mas avisamos que é aproximado
     return { compativel: true, motivo: "Horário exato indisponível, mas há alternativas no dia" };
   }
-  
+
   // Períodos: manha (7-12), tarde (12-18), noite (18-22)
-  const hasInPeriod = slots.some(s => {
+  const hasInPeriod = slots.some((s) => {
     const hour = s.getHours();
-    if (orcamento.periodo_preferido === 'manha') return hour >= 7 && hour < 12;
-    if (orcamento.periodo_preferido === 'tarde') return hour >= 12 && hour < 18;
-    if (orcamento.periodo_preferido === 'noite') return hour >= 18 && hour < 22;
+    if (orcamento.periodo_preferido === "manha") return hour >= 7 && hour < 12;
+    if (orcamento.periodo_preferido === "tarde") return hour >= 12 && hour < 18;
+    if (orcamento.periodo_preferido === "noite") return hour >= 18 && hour < 22;
     return true;
   });
-  
+
   if (hasInPeriod) return { compativel: true };
-  
+
   return { compativel: false, motivo: "Sem disponibilidade no período desejado" };
 }

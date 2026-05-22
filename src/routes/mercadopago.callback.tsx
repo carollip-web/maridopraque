@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { Card } from "@/components/ui/card"
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/mercadopago/callback")({
   component: MercadoPagoCallbackPage,
@@ -11,52 +11,52 @@ export const Route = createFileRoute("/mercadopago/callback")({
     state: typeof search.state === "string" ? search.state : undefined,
     error: typeof search.error === "string" ? search.error : undefined,
   }),
-})
+});
 
 function MercadoPagoCallbackPage() {
-  const navigate = useNavigate()
-  const { code, state, error } = Route.useSearch()
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-  const [message, setMessage] = useState("Processando conexão com Mercado Pago...")
+  const navigate = useNavigate();
+  const { code, state, error } = Route.useSearch();
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("Processando conexão com Mercado Pago...");
 
   useEffect(() => {
     const processCallback = async () => {
       if (error) {
-        setStatus("error")
-        setMessage(`Mercado Pago retornou erro: ${error}`)
-        return
+        setStatus("error");
+        setMessage(`Mercado Pago retornou erro: ${error}`);
+        return;
       }
 
       if (!code || !state) {
-        setStatus("error")
-        setMessage("Parâmetros de callback ausentes (code ou state)")
-        return
+        setStatus("error");
+        setMessage("Parâmetros de callback ausentes (code ou state)");
+        return;
       }
 
       try {
         const { data, error: invokeError } = await supabase.functions.invoke(
           "mercado-pago-oauth-callback",
-          { body: { code, state } }
-        )
+          { body: { code, state } },
+        );
 
-        if (invokeError) throw invokeError
-        if (!data?.ok) throw new Error(data?.error ?? "Falha desconhecida")
+        if (invokeError) throw invokeError;
+        if (!data?.ok) throw new Error(data?.error ?? "Falha desconhecida");
 
-        setStatus("success")
-        setMessage("Conta Mercado Pago conectada com sucesso! Redirecionando...")
+        setStatus("success");
+        setMessage("Conta Mercado Pago conectada com sucesso! Redirecionando...");
 
         setTimeout(() => {
-          navigate({ to: "/profissional", search: { mp_connected: "true" } as any })
-        }, 1500)
+          navigate({ to: "/profissional", search: { mp_connected: "true" } as any });
+        }, 1500);
       } catch (err: any) {
-        console.error(err)
-        setStatus("error")
-        setMessage(err?.message ?? "Falha ao conectar Mercado Pago")
+        console.error(err);
+        setStatus("error");
+        setMessage(err?.message ?? "Falha ao conectar Mercado Pago");
       }
-    }
+    };
 
-    processCallback()
-  }, [code, state, error, navigate])
+    processCallback();
+  }, [code, state, error, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -90,5 +90,5 @@ function MercadoPagoCallbackPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

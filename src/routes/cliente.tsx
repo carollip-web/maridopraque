@@ -14,7 +14,9 @@ import { ServicosTab } from "@/features/cliente/ServicosTab";
 import { PagamentosTab } from "@/features/cliente/PagamentosTab";
 import { NotificacoesTab } from "@/features/cliente/NotificacoesTab";
 import { DadosTab } from "@/features/cliente/DadosTab";
-
+import { SegurancaTab } from "@/features/cliente/SegurancaTab";
+import { FavoritosTab } from "@/features/cliente/FavoritosTab";
+import { SuporteTab } from "@/features/cliente/SuporteTab";
 export const Route = createFileRoute("/cliente")({
   validateSearch: (search: Record<string, unknown>) => {
     return {
@@ -126,6 +128,9 @@ function ClienteArea() {
         {activeTab === "pagamentos" && <PagamentosTab />}
         {activeTab === "notificacoes" && <NotificacoesTab setActiveTab={setActiveTab} />}
         {activeTab === "dados" && <DadosTab />}
+        {activeTab === "seguranca" && <SegurancaTab />}
+        {activeTab === "favoritos" && <FavoritosTab />}
+        {activeTab === "suporte" && <SuporteTab />}
       </main>
     </div>
   );

@@ -22,13 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
 
-function ProDetailView({
-  proId,
-  view,
-}: {
-  proId: string;
-  view: "ganhos" | "servicos" | "nota";
-}) {
+function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servicos" | "nota" }) {
   const { data: details, isLoading } = useQuery({
     queryKey: ["admin", "pro-details", proId, view],
     queryFn: async () => {
@@ -62,17 +56,12 @@ function ProDetailView({
   return (
     <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10 space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
       {details?.length === 0 && (
-        <p className="text-xs text-white/40 text-center py-4">
-          Nenhum registro encontrado.
-        </p>
+        <p className="text-xs text-white/40 text-center py-4">Nenhum registro encontrado.</p>
       )}
 
       {view === "nota"
         ? (details as any[]).map((av) => (
-            <div
-              key={av.id}
-              className="text-left border-b border-white/5 pb-2 last:border-0"
-            >
+            <div key={av.id} className="text-left border-b border-white/5 pb-2 last:border-0">
               <div className="flex justify-between items-center mb-1">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
@@ -87,9 +76,7 @@ function ProDetailView({
                 </span>
               </div>
               {av.comentario && (
-                <p className="text-xs text-white/70 italic line-clamp-2">
-                  "{av.comentario}"
-                </p>
+                <p className="text-xs text-white/70 italic line-clamp-2">"{av.comentario}"</p>
               )}
             </div>
           ))
@@ -182,17 +169,14 @@ export function AdminProfissionais() {
     navigate({
       search: ((old: any) => ({ ...old, pro_status: val || "todos" })) as any,
     });
-  const clearFilters = () =>
-    navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const [selected, setSelected] = useState<any | null>(null);
   const [editingEsp, setEditingEsp] = useState(false);
   const [espSelected, setEspSelected] = useState<string[]>([]);
   const [savingEsp, setSavingEsp] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [detailView, setDetailView] = useState<
-    "ganhos" | "servicos" | "nota" | null
-  >(null);
+  const [detailView, setDetailView] = useState<"ganhos" | "servicos" | "nota" | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPro, setNewPro] = useState({ nome: "", email: "", password: "" });
   const [isCreating, setIsCreating] = useState(false);
@@ -208,30 +192,19 @@ export function AdminProfissionais() {
       const ids = (roles || []).map((r: any) => r.user_id);
       if (ids.length === 0) return [];
 
-      const [{ data: profs }, { data: perfis }, { data: orcs }, { data: avs }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, nome, email, whatsapp")
-            .in("id", ids),
-          supabase.from("profissional_perfil").select("*").in("user_id", ids),
-          supabase
-            .from("orcamentos")
-            .select("profissional_id, status, valor")
-            .in("profissional_id", ids),
-          supabase
-            .from("avaliacoes")
-            .select("profissional_id, nota")
-            .in("profissional_id", ids),
-        ]);
+      const [{ data: profs }, { data: perfis }, { data: orcs }, { data: avs }] = await Promise.all([
+        supabase.from("profiles").select("id, nome, email, whatsapp").in("id", ids),
+        supabase.from("profissional_perfil").select("*").in("user_id", ids),
+        supabase
+          .from("orcamentos")
+          .select("profissional_id, status, valor")
+          .in("profissional_id", ids),
+        supabase.from("avaliacoes").select("profissional_id, nota").in("profissional_id", ids),
+      ]);
 
-      const perfilMap = Object.fromEntries(
-        (perfis || []).map((p: any) => [p.user_id, p]),
-      );
-      const stats: Record<
-        string,
-        { ganhos: number; servicos: number; nota: number; n: number }
-      > = {};
+      const perfilMap = Object.fromEntries((perfis || []).map((p: any) => [p.user_id, p]));
+      const stats: Record<string, { ganhos: number; servicos: number; nota: number; n: number }> =
+        {};
       (orcs || []).forEach((o: any) => {
         if (!o.profissional_id) return;
         stats[o.profissional_id] ||= { ganhos: 0, servicos: 0, nota: 0, n: 0 };
@@ -276,9 +249,7 @@ export function AdminProfissionais() {
       !search ||
       p.nome?.toLowerCase().includes(search.toLowerCase()) ||
       p.email?.toLowerCase().includes(search.toLowerCase()) ||
-      p.especialidades?.some((e: string) =>
-        e.toLowerCase().includes(search.toLowerCase()),
-      );
+      p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
     const matchStatus =
       filterStatus === "todos" ||
       (filterStatus === "ativo" && p.ativo) ||
@@ -298,9 +269,7 @@ export function AdminProfissionais() {
       toast.error("Erro ao atualizar status");
       return;
     }
-    toast.success(
-      pro.ativo ? "Profissional desativado" : "Profissional ativado",
-    );
+    toast.success(pro.ativo ? "Profissional desativado" : "Profissional ativado");
     qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
     if (selected?.id === pro.id) setSelected({ ...selected, ativo: !pro.ativo });
   };
@@ -517,8 +486,7 @@ export function AdminProfissionais() {
                   <div className="shrink-0 text-right hidden sm:block">
                     {pro.rating != null && (
                       <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
-                        {pro.rating.toFixed(1)}{" "}
-                        <Star className="h-3 w-3" fill="currentColor" />
+                        {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
                       </p>
                     )}
                     <p className="text-[10px] text-slate-400">
@@ -567,17 +535,12 @@ export function AdminProfissionais() {
                     {
                       key: "nota" as const,
                       label: "Nota",
-                      value:
-                        selected.rating != null
-                          ? `${selected.rating.toFixed(1)} ★`
-                          : "—",
+                      value: selected.rating != null ? `${selected.rating.toFixed(1)} ★` : "—",
                     },
                   ].map(({ key, label, value }) => (
                     <button
                       key={key}
-                      onClick={() =>
-                        setDetailView(detailView === key ? null : key)
-                      }
+                      onClick={() => setDetailView(detailView === key ? null : key)}
                       className={`rounded-xl p-3 text-center transition-all ${
                         detailView === key
                           ? "bg-white text-slate-900 shadow-sm"
@@ -599,9 +562,7 @@ export function AdminProfissionais() {
                   ))}
                 </div>
 
-                {detailView && (
-                  <ProDetailView proId={selected.id} view={detailView} />
-                )}
+                {detailView && <ProDetailView proId={selected.id} view={detailView} />}
               </div>
 
               <div className="p-6 space-y-5">
@@ -625,28 +586,20 @@ export function AdminProfissionais() {
 
                 {selected.cidade && (
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">
-                      Cidade
-                    </p>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Cidade</p>
                     <p className="text-sm">{selected.cidade}</p>
                   </div>
                 )}
                 {selected.whatsapp && (
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">
-                      WhatsApp
-                    </p>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">WhatsApp</p>
                     <p className="text-sm">{selected.whatsapp}</p>
                   </div>
                 )}
                 {selected.bio && (
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">
-                      Bio
-                    </p>
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      {selected.bio}
-                    </p>
+                    <p className="text-xs font-bold text-slate-400 uppercase mb-1">Bio</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{selected.bio}</p>
                   </div>
                 )}
 
@@ -658,7 +611,9 @@ export function AdminProfissionais() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Apoio Feminino</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
+                      Apoio Feminino
+                    </p>
                     <p className="text-sm font-medium">
                       {selected.oferece_apoio_feminino ? "✅ Sim" : "❌ Não"}
                     </p>
@@ -667,9 +622,7 @@ export function AdminProfissionais() {
 
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-bold text-slate-400 uppercase">
-                      Especialidades
-                    </p>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Especialidades</p>
                     <button
                       onClick={() => {
                         setEditingEsp(!editingEsp);
@@ -683,9 +636,7 @@ export function AdminProfissionais() {
                   {editingEsp ? (
                     <div className="space-y-6">
                       {ESPECIALIDADES_OPCOES.map((cat) => {
-                        const allSelected = cat.opcoes.every((opt) =>
-                          espSelected.includes(opt),
-                        );
+                        const allSelected = cat.opcoes.every((opt) => espSelected.includes(opt));
 
                         return (
                           <div
@@ -694,17 +645,14 @@ export function AdminProfissionais() {
                           >
                             <div className="flex items-center justify-between mb-3">
                               <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
-                                <cat.icon className="h-3.5 w-3.5" />{" "}
-                                {cat.categoria}
+                                <cat.icon className="h-3.5 w-3.5" /> {cat.categoria}
                               </p>
                               <button
                                 type="button"
                                 onClick={() => {
                                   if (allSelected) {
                                     setEspSelected(
-                                      espSelected.filter(
-                                        (e) => !cat.opcoes.includes(e),
-                                      ),
+                                      espSelected.filter((e) => !cat.opcoes.includes(e)),
                                     );
                                   } else {
                                     const others = espSelected.filter(
@@ -715,9 +663,7 @@ export function AdminProfissionais() {
                                 }}
                                 className="text-[10px] font-bold text-brand hover:bg-brand/10 px-2 py-1 rounded-md transition-colors"
                               >
-                                {allSelected
-                                  ? "Remover todos"
-                                  : "Selecionar todos"}
+                                {allSelected ? "Remover todos" : "Selecionar todos"}
                               </button>
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -790,9 +736,7 @@ export function AdminProfissionais() {
                           </span>
                         ))
                       ) : (
-                        <p className="text-sm text-slate-400">
-                          Nenhuma especialidade cadastrada
-                        </p>
+                        <p className="text-sm text-slate-400">Nenhuma especialidade cadastrada</p>
                       )}
                     </div>
                   )}
@@ -806,10 +750,7 @@ export function AdminProfissionais() {
                       size="sm"
                       className="w-full rounded-xl justify-start gap-2"
                     >
-                      <Link
-                        to="/profissionais/perfil/$slug"
-                        params={{ slug: selected.slug }}
-                      >
+                      <Link to="/profissionais/perfil/$slug" params={{ slug: selected.slug }}>
                         <ArrowUpRight className="h-4 w-4" /> Ver perfil público
                       </Link>
                     </Button>
@@ -872,24 +813,18 @@ export function AdminProfissionais() {
                   <input
                     required
                     value={newPro.nome}
-                    onChange={(e) =>
-                      setNewPro({ ...newPro, nome: e.target.value })
-                    }
+                    onChange={(e) => setNewPro({ ...newPro, nome: e.target.value })}
                     placeholder="Ex: João da Silva"
                     className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand/20 outline-none"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase ml-1">
-                    E-mail
-                  </label>
+                  <label className="text-xs font-bold text-slate-500 uppercase ml-1">E-mail</label>
                   <input
                     required
                     type="email"
                     value={newPro.email}
-                    onChange={(e) =>
-                      setNewPro({ ...newPro, email: e.target.value })
-                    }
+                    onChange={(e) => setNewPro({ ...newPro, email: e.target.value })}
                     placeholder="joao@exemplo.com"
                     className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand/20 outline-none"
                   />
@@ -902,9 +837,7 @@ export function AdminProfissionais() {
                     required
                     type="password"
                     value={newPro.password}
-                    onChange={(e) =>
-                      setNewPro({ ...newPro, password: e.target.value })
-                    }
+                    onChange={(e) => setNewPro({ ...newPro, password: e.target.value })}
                     placeholder="••••••••"
                     className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand/20 outline-none"
                   />
@@ -914,11 +847,7 @@ export function AdminProfissionais() {
                   disabled={isCreating}
                   className="w-full bg-brand text-white rounded-2xl h-12 font-bold shadow-lg shadow-brand/20 mt-4"
                 >
-                  {isCreating ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    "Criar Conta"
-                  )}
+                  {isCreating ? <Loader2 className="h-5 w-5 animate-spin" /> : "Criar Conta"}
                 </Button>
               </form>
             </div>

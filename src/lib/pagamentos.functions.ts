@@ -15,31 +15,33 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // 1. Buscar orçamento e validar posse/status
-    const { data: orc, error: e1 } = await supabase
+    const { data: orc, error: e1 } = (await supabase
       .from("orcamentos")
-      .select("id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material")
+      .select(
+        "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material",
+      )
       .eq("id", data.orcamentoId)
-      .single() as any;
+      .single()) as any;
 
     if (e1 || !orc) {
       console.error("[iniciarPagamentoOrcamento] Orçamento não encontrado:", data.orcamentoId);
       throw new Error("Orçamento não encontrado.");
     }
-    
+
     if (orc.cliente_id !== userId) {
       console.warn("[iniciarPagamentoOrcamento] Tentativa de acesso não autorizado por:", userId);
       throw new Error("Sem permissão para este orçamento.");
     }
-    
+
     const statusPagaveis = ["aprovado", "fixo_auto"];
     if (!statusPagaveis.includes(orc.status)) {
       throw new Error(`Orçamento em status "${orc.status}" não está pronto para pagamento.`);
     }
 
-    const { data: materiais, error: materiaisError } = await supabase
+    const { data: materiais, error: materiaisError } = (await supabase
       .from("orcamento_materiais")
       .select("id, nome_snapshot, preco_unitario, quantidade")
-      .eq("orcamento_id", data.orcamentoId) as any;
+      .eq("orcamento_id", data.orcamentoId)) as any;
 
     if (materiaisError) {
       console.error("[iniciarPagamentoOrcamento] Erro ao buscar materiais:", materiaisError);
@@ -50,7 +52,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const valorServico = Number(orc.valor_servico || 0);
     const valorMateriais = (materiais || []).reduce(
       (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
-      0
+      0,
     );
     const valorTotal = valorServico + valorMateriais;
     const valorSinal = valorTotal * 0.5;
@@ -69,7 +71,9 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     let gateway = "mercado_pago";
 
     if (!ACCESS_TOKEN) {
-      console.warn("[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado. Usando modo Simulação.");
+      console.warn(
+        "[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado. Usando modo Simulação.",
+      );
       gateway = "mock";
       // We will set the checkoutUrl after we create the payment record so we can include its ID.
     } else {
@@ -77,7 +81,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${ACCESS_TOKEN}`,
+          Authorization: `Bearer ${ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -116,20 +120,21 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     }
 
     try {
-
       // 4. Criar registro de pagamento no servidor após validar posse/status.
       const SUPABASE_URL = process.env.SUPABASE_URL;
       const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       if (!SUPABASE_URL || !SERVICE_KEY) {
-        throw new Error("Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.");
+        throw new Error(
+          "Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
+        );
       }
 
       const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
         auth: { persistSession: false },
       });
 
-      const { data: pag, error: e2 } = await serviceClient
+      const { data: pag, error: e2 } = (await serviceClient
         .from("pagamentos")
         .insert({
           orcamento_id: orc.id,
@@ -145,18 +150,18 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           metadata: {
             service_name: orc.service_name,
             mp_preference_id: preferenceId,
-            initiated_at: new Date().toISOString()
-          }
+            initiated_at: new Date().toISOString(),
+          },
         })
         .select()
-        .single() as any;
+        .single()) as any;
 
       if (e2) throw new Error(`Erro ao salvar registro de pagamento: ${e2.message}`);
 
       // If it's mock, we set the checkoutUrl to our internal simulator now that we have the payment ID
       if (gateway === "mock") {
         checkoutUrl = `/checkout/simular?pagamentoId=${pag.id}`;
-        
+
         // Update the payment record with the mock url
         await serviceClient
           .from("pagamentos")
@@ -164,12 +169,11 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           .eq("id", pag.id);
       }
 
-      return { 
-        ok: true, 
+      return {
+        ok: true,
         checkoutUrl: checkoutUrl,
-        pagamentoId: pag.id
+        pagamentoId: pag.id,
       };
-
     } catch (err: any) {
       console.error("[iniciarPagamentoOrcamento] Falha crítica:", err);
       throw new Error(err.message || "Falha ao processar pagamento.");
@@ -198,27 +202,21 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
     });
 
     // 1. Fetch Payment
-    const { data: pag, error: e1 } = await serviceClient
+    const { data: pag, error: e1 } = (await serviceClient
       .from("pagamentos")
       .select("*")
       .eq("id", data.pagamentoId)
-      .single() as any;
+      .single()) as any;
 
     if (e1 || !pag) throw new Error("Pagamento não encontrado.");
     if (pag.cliente_id !== userId) throw new Error("Sem permissão para este pagamento.");
     if (pag.status === "paid") return { ok: true, message: "Já estava pago." };
 
     // 2. Update Pagamento -> paid
-    await serviceClient
-      .from("pagamentos")
-      .update({ status: "paid" })
-      .eq("id", pag.id);
+    await serviceClient.from("pagamentos").update({ status: "paid" }).eq("id", pag.id);
 
     // 3. Update Orcamento -> pago
-    await serviceClient
-      .from("orcamentos")
-      .update({ status: "pago" })
-      .eq("id", pag.orcamento_id);
+    await serviceClient.from("orcamentos").update({ status: "pago" }).eq("id", pag.orcamento_id);
 
     // 4. Update Bloqueio de Agenda -> confirmado
     await serviceClient
@@ -235,7 +233,7 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
         mensagem: `O cliente realizou o pagamento e o serviço foi agendado definitivamente na sua agenda.`,
         orcamento_id: pag.orcamento_id,
         link: `/profissional?tab=servicos&orcamentoId=${pag.orcamento_id}`,
-        lida: false
+        lida: false,
       });
     }
 
@@ -246,18 +244,20 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
       mensagem: `Seu pagamento foi confirmado! O serviço já consta na agenda do profissional.`,
       orcamento_id: pag.orcamento_id,
       link: `/cliente?tab=pedidos&pedidoId=${pag.orcamento_id}`,
-      lida: false
+      lida: false,
     });
 
     // 6. Criar repasse profissional pendente
     try {
       const { error: rpcErr } = await serviceClient.rpc("criar_repasse_profissional_pendente", {
-        p_pagamento_id: pag.id
+        p_pagamento_id: pag.id,
       });
       if (rpcErr) {
         console.error("[simularPagamentoAprovado] erro ao criar repasse:", rpcErr);
       } else {
-        console.log(`[simularPagamentoAprovado] Repasse pendente criado com sucesso para pagamento ${pag.id}`);
+        console.log(
+          `[simularPagamentoAprovado] Repasse pendente criado com sucesso para pagamento ${pag.id}`,
+        );
       }
     } catch (e_rpc) {
       console.error("[simularPagamentoAprovado] erro ao criar repasse:", e_rpc);

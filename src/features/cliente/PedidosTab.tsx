@@ -59,7 +59,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
 
   const handleCompleteOrder = async (orderId: string) => {
-    if (!confirm("Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.")) return;
+    if (
+      !confirm(
+        "Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.",
+      )
+    )
+      return;
     setIsCompleting(orderId);
     try {
       const { error } = await supabase
@@ -114,7 +119,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (!user) return [];
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id")
+        .select(
+          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id",
+        )
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -124,8 +131,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
       const orcIds = list.map((o) => o.id);
       let propostas: any[] = [];
-      const profsMap: Record<string, { nome: string; slug?: string; media?: string; totalAvaliacoes?: number }> = {};
-      
+      const profsMap: Record<
+        string,
+        { nome: string; slug?: string; media?: string; totalAvaliacoes?: number }
+      > = {};
+
       if (orcIds.length > 0) {
         const { data: pData } = await (supabase as any)
           .from("propostas")
@@ -133,20 +143,20 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           .in("orcamento_id", orcIds);
         propostas = pData || [];
         const profIds = Array.from(new Set(propostas.map((p) => p.profissional_id)));
-        
+
         if (profIds.length > 0) {
           // fetch names
           const { data: prData } = await supabase
             .from("profiles")
             .select("id, nome")
             .in("id", profIds);
-            
+
           // fetch slugs
           const { data: perfilData } = await supabase
             .from("profissional_perfil")
             .select("user_id, slug")
             .in("user_id", profIds);
-            
+
           // fetch ratings
           const { data: avData } = await supabase
             .from("avaliacoes")
@@ -156,15 +166,16 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           (prData || []).forEach((p) => {
             const perf = (perfilData || []).find((pf) => pf.user_id === p.id);
             const avs = (avData || []).filter((av) => av.profissional_id === p.id);
-            const media = avs.length > 0 
-              ? (avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1)
-              : undefined;
-              
+            const media =
+              avs.length > 0
+                ? (avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1)
+                : undefined;
+
             profsMap[p.id] = {
               nome: p.nome,
               slug: perf?.slug,
               media,
-              totalAvaliacoes: avs.length
+              totalAvaliacoes: avs.length,
             };
           });
         }
@@ -173,8 +184,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       return list.map((o) => {
         const propsForOrc = propostas
           .filter((p) => p.orcamento_id === o.id)
-          .map((p) => ({ 
-            ...p, 
+          .map((p) => ({
+            ...p,
             profNome: profsMap[p.profissional_id]?.nome || "Profissional",
             profSlug: profsMap[p.profissional_id]?.slug,
             profMedia: profsMap[p.profissional_id]?.media,
@@ -191,11 +202,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   ? "Aprovação Automática"
                   : o.status === "aprovado"
                     ? "Aguardando Pagamento"
-                  : o.status === "pago"
-                    ? "Agendado"
-                  : o.status === "concluido"
-                    ? "Concluído"
-                    : o.status;
+                    : o.status === "pago"
+                      ? "Agendado"
+                      : o.status === "concluido"
+                        ? "Concluído"
+                        : o.status;
         return {
           propostas: propsForOrc,
           ...o,
@@ -224,33 +235,40 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const filters = ["Todos", "Agendado", "Em Análise", "Aguardando sua aprovação"];
 
-
   useEffect(() => {
     if (!user) return;
-    
+
     const channel = supabase
       .channel("cliente-pedidos-realtime")
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "orcamentos",
-        filter: `cliente_id=eq.${user.id}`
-      }, async () => {
-        console.info("[PedidosTab] Realtime Update - orcamentos", { userId: user.id });
-        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
-        await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
-      })
-      .on("postgres_changes", { 
-        event: "*", 
-        schema: "public", 
-        table: "propostas"
-      }, async () => {
-        console.info("[PedidosTab] Realtime Update - propostas");
-        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
-        await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orcamentos",
+          filter: `cliente_id=eq.${user.id}`,
+        },
+        async () => {
+          console.info("[PedidosTab] Realtime Update - orcamentos", { userId: user.id });
+          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
+          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "propostas",
+        },
+        async () => {
+          console.info("[PedidosTab] Realtime Update - propostas");
+          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
+          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
+        },
+      )
       .subscribe();
-      
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -258,7 +276,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const handleApprove = async () => {
     if (!selectedPedido) return;
-    
+
     if (!session?.access_token) {
       toast.error("Sua sessão expirou. Faça login novamente.");
       return;
@@ -289,7 +307,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         });
         console.info("[PedidosTab] resultado aceitarProposta", aceiteRes);
         const reservaStatus = (aceiteRes as { agendaReserva?: string } | undefined)?.agendaReserva;
-        if (reservaStatus === "sem_data" || reservaStatus === "erro" || reservaStatus === "sem_profissional") {
+        if (
+          reservaStatus === "sem_data" ||
+          reservaStatus === "erro" ||
+          reservaStatus === "sem_profissional"
+        ) {
           toast.info(
             "Proposta aceita, mas a agenda não foi reservada automaticamente. Combine o horário pelo chat.",
           );
@@ -361,8 +383,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     const primeiraProposta = sp.propostas?.[0] ?? null;
     const temProposta = !!primeiraProposta;
     const aguardandoAprovacao = sp.status === "Aguardando sua aprovação";
-    const aguardandoPagamento =
-      sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
+    const aguardandoPagamento = sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
     const pagoOuAgendado = sp.status === "Agendado" || sp.rawStatus === "pago";
     const concluido = sp.rawStatus === "concluido";
 
@@ -372,9 +393,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         ? "Aguardando pagamento"
         : pagoOuAgendado
           ? "Serviço agendado"
-        : concluido
-          ? "Serviço concluído"
-          : sp.status;
+          : concluido
+            ? "Serviço concluído"
+            : sp.status;
 
     const statusClass = aguardandoAprovacao
       ? "bg-amber-100 text-amber-700"
@@ -382,9 +403,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         ? "bg-emerald-100 text-emerald-700"
         : pagoOuAgendado
           ? "bg-blue-100 text-blue-700"
-        : concluido
-          ? "bg-green-100 text-green-700"
-          : "bg-slate-100 text-slate-600";
+          : concluido
+            ? "bg-green-100 text-green-700"
+            : "bg-slate-100 text-slate-600";
 
     const propostaValor = primeiraProposta?.valor_servico
       ? `R$ ${Number(primeiraProposta.valor_servico).toFixed(2)}`
@@ -561,7 +582,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                           )}
                         </p>
                         {prop.profSlug && (
-                          <a href={`/profissionais/perfil/${prop.profSlug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-brand hover:underline block mt-1">
+                          <a
+                            href={`/profissionais/perfil/${prop.profSlug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-brand hover:underline block mt-1"
+                          >
                             Ver Perfil e Avaliações
                           </a>
                         )}
@@ -617,7 +643,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     )}
                   </p>
                   {primeiraProposta.profSlug && (
-                    <a href={`/profissionais/perfil/${primeiraProposta.profSlug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline inline-block mt-1 mb-2">
+                    <a
+                      href={`/profissionais/perfil/${primeiraProposta.profSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-brand hover:underline inline-block mt-1 mb-2"
+                    >
                       Ver Perfil e Avaliações
                     </a>
                   )}
@@ -699,7 +730,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 </p>
                 <h3 className="text-xl font-bold mb-2">Serviço em andamento</h3>
                 <p className="text-sm text-muted-foreground mb-6">
-                  Combine os detalhes finais com o profissional pelo chat. Após a execução, marque como concluído para liberar o repasse.
+                  Combine os detalhes finais com o profissional pelo chat. Após a execução, marque
+                  como concluído para liberar o repasse.
                 </p>
                 <Button
                   className="w-full rounded-full h-13 bg-brand hover:bg-brand/90 text-white font-bold shadow-lg"
@@ -937,9 +969,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   </p>
                   <div className="flex flex-col gap-3">
                     <Button
-                      onClick={() =>
-                        navigate({ to: `/checkout?orcamentoId=${selectedPedido.id}` })
-                      }
+                      onClick={() => navigate({ to: `/checkout?orcamentoId=${selectedPedido.id}` })}
                       className="w-full bg-brand text-white rounded-full h-14 font-bold shadow-lg"
                     >
                       Ir para pagamento seguro
@@ -1080,11 +1110,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         p.status === "Agendado"
                           ? "bg-blue-100 text-blue-700"
-                        : p.status === "Concluído"
-                          ? "bg-green-100 text-green-700"
-                          : p.status === "Em Análise"
-                            ? "bg-slate-100 text-slate-600"
-                            : "bg-amber-100 text-amber-700"
+                          : p.status === "Concluído"
+                            ? "bg-green-100 text-green-700"
+                            : p.status === "Em Análise"
+                              ? "bg-slate-100 text-slate-600"
+                              : "bg-amber-100 text-amber-700"
                       }`}
                     >
                       {p.uiStatus}
@@ -1115,7 +1145,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     </Button>
                   )}
                   {p.rawStatus === "aprovado" && (
-                    <Button 
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate({ to: `/checkout?orcamentoId=${p.id}` });

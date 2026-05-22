@@ -79,9 +79,7 @@ export function AdminServicos() {
         const lines = text.split(/\r?\n/).filter((l) => l.trim());
         if (lines.length < 2) throw new Error("Arquivo vazio ou sem dados");
 
-        const headers = lines[0]
-          .split(",")
-          .map((h) => h.replace(/"/g, "").trim());
+        const headers = lines[0].split(",").map((h) => h.replace(/"/g, "").trim());
         const data = lines
           .slice(1)
           .map((line) => {
@@ -100,15 +98,11 @@ export function AdminServicos() {
 
             const obj: any = {};
             headers.forEach((h, i) => {
-              let val: any =
-                values[i]?.replace(/^"|"$/g, "").replace(/""/g, '"') || null;
+              let val: any = values[i]?.replace(/^"|"$/g, "").replace(/""/g, '"') || null;
               if (["preco_fixo", "preco_min", "preco_max"].includes(h)) {
                 val = val ? Number(val) : null;
               } else if (h === "is_fixed_price" || h === "ativo") {
-                val =
-                  val?.toLowerCase() === "true" ||
-                  val === "Sim" ||
-                  val === "1";
+                val = val?.toLowerCase() === "true" || val === "Sim" || val === "1";
               }
               if (h === "id" && !val) return;
               obj[h] = val;
@@ -209,10 +203,7 @@ export function AdminServicos() {
           ))}
         {!isLoading &&
           categorias.map(([cat, count]) => (
-            <div
-              key={cat}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm"
-            >
+            <div key={cat} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <p className="font-bold capitalize">{cat}</p>
               <p className="text-xs text-slate-500">
                 {count} {count === 1 ? "item ativo" : "itens ativos"}
@@ -251,10 +242,7 @@ export function AdminServicos() {
               ))}
             {!isLoading && servicos.length === 0 && (
               <tr>
-                <td
-                  colSpan={4}
-                  className="px-6 py-8 text-center text-slate-400 text-sm"
-                >
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-400 text-sm">
                   Nenhum serviço cadastrado.
                 </td>
               </tr>
@@ -263,9 +251,7 @@ export function AdminServicos() {
               servicos.map((s: any) => (
                 <tr key={s.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 text-sm font-bold">{s.nome}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 capitalize">
-                    {s.categoria}
-                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600 capitalize">{s.categoria}</td>
                   <td className="px-6 py-4 text-sm font-bold">
                     {s.preco_min != null && s.preco_max != null
                       ? `R$ ${Number(s.preco_min).toFixed(0)} – R$ ${Number(s.preco_max).toFixed(0)}`

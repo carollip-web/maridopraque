@@ -11,14 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Loader2,
-  ShieldCheck,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  FileDown,
-} from "lucide-react";
+import { Loader2, ShieldCheck, RefreshCw, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface AuditRow {
@@ -87,31 +80,18 @@ export function AdminAuditoria() {
   const [filterDate, setFilterDate] = useState("");
   const [page, setPage] = useState(0);
 
-  const queryKey = [
-    "admin-audit-log",
-    filterAction,
-    filterActor,
-    filterDate,
-    page,
-  ];
+  const queryKey = ["admin-audit-log", filterAction, filterActor, filterDate, page];
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey,
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from("admin_audit_log")
-        .select(
-          "id, created_at, actor_user_id, action, target_user_id, details",
-          { count: "exact" },
-        )
+        .select("id, created_at, actor_user_id, action, target_user_id, details", {
+          count: "exact",
+        })
         .order("created_at", { ascending: false })
         .range(from, to);
 
@@ -119,10 +99,7 @@ export function AdminAuditoria() {
 
       if (filterActor.trim()) {
         const term = filterActor.trim();
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            term,
-          );
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(term);
 
         if (isUuid) {
           q = q.eq("actor_user_id", term);
@@ -205,10 +182,7 @@ export function AdminAuditoria() {
 
       if (filterActor.trim()) {
         const term = filterActor.trim();
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            term,
-          );
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(term);
         if (isUuid) {
           q = q.eq("actor_user_id", term);
         } else {
@@ -317,12 +291,7 @@ export function AdminAuditoria() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExport}
-            disabled={isExporting}
-          >
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting}>
             {isExporting ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -330,15 +299,8 @@ export function AdminAuditoria() {
             )}
             Exportar CSV
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-            />
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
         </div>
@@ -409,9 +371,7 @@ export function AdminAuditoria() {
             Erro ao carregar auditoria: {(error as Error).message}
           </div>
         ) : !rows || rows.length === 0 ? (
-          <div className="p-12 text-center text-sm text-slate-500">
-            Nenhum evento encontrado.
-          </div>
+          <div className="p-12 text-center text-sm text-slate-500">Nenhum evento encontrado.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -441,11 +401,12 @@ export function AdminAuditoria() {
                       <td className="px-4 py-3">
                         {(() => {
                           const p = fmtUser(r.actor_user_id);
-                          if (!p) return (
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              {r.actor_user_id}
-                            </div>
-                          );
+                          if (!p)
+                            return (
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                {r.actor_user_id}
+                              </div>
+                            );
                           return (
                             <div className="space-y-0.5">
                               <div className="text-slate-700 font-medium leading-none">
@@ -464,29 +425,32 @@ export function AdminAuditoria() {
                         })()}
                       </td>
                       <td className="px-4 py-3">
-                        {r.target_user_id ? (() => {
-                          const p = fmtUser(r.target_user_id);
-                          if (!p) return (
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              {r.target_user_id}
-                            </div>
-                          );
-                          return (
-                            <div className="space-y-0.5">
-                              <div className="text-slate-700 font-medium leading-none">
-                                {p.nome || "Sem nome"}
-                              </div>
-                              {p.email && (
-                                <div className="text-[10px] text-slate-500 leading-none">
-                                  {p.email}
+                        {r.target_user_id ? (
+                          (() => {
+                            const p = fmtUser(r.target_user_id);
+                            if (!p)
+                              return (
+                                <div className="text-[10px] text-slate-400 font-mono">
+                                  {r.target_user_id}
                                 </div>
-                              )}
-                              <div className="text-[10px] text-slate-400 font-mono leading-none">
-                                {r.target_user_id}
+                              );
+                            return (
+                              <div className="space-y-0.5">
+                                <div className="text-slate-700 font-medium leading-none">
+                                  {p.nome || "Sem nome"}
+                                </div>
+                                {p.email && (
+                                  <div className="text-[10px] text-slate-500 leading-none">
+                                    {p.email}
+                                  </div>
+                                )}
+                                <div className="text-[10px] text-slate-400 font-mono leading-none">
+                                  {r.target_user_id}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })() : (
+                            );
+                          })()
+                        ) : (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
@@ -496,9 +460,7 @@ export function AdminAuditoria() {
                             {entries.map(([k, v]) => (
                               <div key={k} className="contents">
                                 <dt className="text-slate-500 font-medium">{k}</dt>
-                                <dd className="text-slate-700 break-words">
-                                  {formatValue(v)}
-                                </dd>
+                                <dd className="text-slate-700 break-words">{formatValue(v)}</dd>
                               </div>
                             ))}
                           </dl>
@@ -517,8 +479,7 @@ export function AdminAuditoria() {
         {rows && rows.length > 0 && (
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50/50 text-xs text-slate-600">
             <div>
-              Mostrando {page * PAGE_SIZE + 1}–
-              {Math.min((page + 1) * PAGE_SIZE, total)} de {total}
+              Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} de {total}
             </div>
             <div className="flex items-center gap-2">
               <Button

@@ -15,7 +15,7 @@ export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
   const searchParams = useSearch({ strict: false }) as any;
   const navigate = useNavigate();
-  
+
   const [selectedNotification, setSelectedNotification] = React.useState<any | null>(null);
 
   const getNotificationTarget = (n: any) => {
@@ -32,10 +32,7 @@ export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
       n.data?.pedidoId ||
       n.pedidoId;
 
-    const status =
-      n.status ||
-      n.metadata?.status ||
-      n.data?.status;
+    const status = n.status || n.metadata?.status || n.data?.status;
 
     return { orcamentoId, status };
   };

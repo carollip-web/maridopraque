@@ -76,16 +76,19 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         prevStartDate = subDays(startDate, 30);
       }
 
-      const [{ data: orcs }, { data: avs }, { data: roles }, { data: repassesData }] = await Promise.all([
-        supabase
-          .from("orcamentos")
-          .select("*")
-          .eq("is_test", false)
-          .order("created_at", { ascending: false }),
-        supabase.from("avaliacoes").select("nota, created_at"),
-        supabase.from("user_roles").select("user_id, role"),
-        supabase.from("repasses_profissionais").select("created_at, status, valor_comissao_marketplace"),
-      ]);
+      const [{ data: orcs }, { data: avs }, { data: roles }, { data: repassesData }] =
+        await Promise.all([
+          supabase
+            .from("orcamentos")
+            .select("*")
+            .eq("is_test", false)
+            .order("created_at", { ascending: false }),
+          supabase.from("avaliacoes").select("nota, created_at"),
+          supabase.from("user_roles").select("user_id, role"),
+          supabase
+            .from("repasses_profissionais")
+            .select("created_at, status, valor_comissao_marketplace"),
+        ]);
 
       const allRoles = roles || [];
       const nonClientUserIds = new Set(

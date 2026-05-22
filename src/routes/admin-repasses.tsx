@@ -1,22 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
-import { 
-  ArrowLeft, 
-  Search, 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw, 
-  DollarSign, 
-  TrendingUp, 
-  AlertTriangle, 
-  Calendar, 
-  User, 
-  Copy, 
-  Check, 
+import {
+  ArrowLeft,
+  Search,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  DollarSign,
+  TrendingUp,
+  AlertTriangle,
+  Calendar,
+  User,
+  Copy,
+  Check,
   Wrench,
   Inbox,
   Link2,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,27 +73,52 @@ function maskPixKey(key: string | null, type: string | null): string {
 }
 
 const STATUS_BADGES: Record<string, { bg: string; text: string; label: string }> = {
-  pendente: { bg: "bg-amber-50 border-amber-200 text-amber-700", text: "text-amber-700", label: "Pendente" },
-  aprovado: { bg: "bg-indigo-50 border-indigo-200 text-indigo-700", text: "text-indigo-700", label: "Aprovado" },
-  processando: { bg: "bg-blue-50 border-blue-200 text-blue-700", text: "text-blue-700", label: "Processando" },
+  pendente: {
+    bg: "bg-amber-50 border-amber-200 text-amber-700",
+    text: "text-amber-700",
+    label: "Pendente",
+  },
+  aprovado: {
+    bg: "bg-indigo-50 border-indigo-200 text-indigo-700",
+    text: "text-indigo-700",
+    label: "Aprovado",
+  },
+  processando: {
+    bg: "bg-blue-50 border-blue-200 text-blue-700",
+    text: "text-blue-700",
+    label: "Processando",
+  },
   enviado: { bg: "bg-sky-50 border-sky-200 text-sky-700", text: "text-sky-700", label: "Enviado" },
-  pago: { bg: "bg-emerald-50 border-emerald-200 text-emerald-700", text: "text-emerald-700", label: "Pago" },
+  pago: {
+    bg: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    text: "text-emerald-700",
+    label: "Pago",
+  },
   falhou: { bg: "bg-red-50 border-red-200 text-red-700", text: "text-red-700", label: "Falhou" },
-  cancelado: { bg: "bg-slate-100 border-slate-200 text-slate-600", text: "text-slate-600", label: "Cancelado" },
+  cancelado: {
+    bg: "bg-slate-100 border-slate-200 text-slate-600",
+    text: "text-slate-600",
+    label: "Cancelado",
+  },
 };
 
 function AdminRepassesPage() {
   const { isLoggedIn, adminLevel, loading: authLoading } = useAuth();
   const [repasses, setRepasses] = useState<Repasse[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { nome: string; email: string | null }>>({});
+  const [profiles, setProfiles] = useState<Record<string, { nome: string; email: string | null }>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Estado BTG
-  const [btgStatus, setBtgStatus] = useState<{ connected: boolean; connectedAt: string | null } | null>(null);
+  const [btgStatus, setBtgStatus] = useState<{
+    connected: boolean;
+    connectedAt: string | null;
+  } | null>(null);
   const [btgLoading, setBtgLoading] = useState(true);
   const [btgConnecting, setBtgConnecting] = useState(false);
-  
+
   // Filtros e busca
   const [selectedStatus, setSelectedStatus] = useState<string>("todos");
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,7 +126,9 @@ function AdminRepassesPage() {
 
   const navigate = useNavigate();
 
-  const hasAccess = isLoggedIn && (adminLevel === "admin" || adminLevel === "super_admin" || adminLevel === "financeiro");
+  const hasAccess =
+    isLoggedIn &&
+    (adminLevel === "admin" || adminLevel === "super_admin" || adminLevel === "financeiro");
   const canConnectBtg = adminLevel === "super_admin" || adminLevel === "financeiro";
 
   const loadData = async () => {
@@ -120,8 +147,8 @@ function AdminRepassesPage() {
       const userIds = Array.from(
         new Set([
           ...list.map((r) => r.profissional_id),
-          ...list.map((r) => r.cliente_id).filter(Boolean) as string[],
-        ])
+          ...(list.map((r) => r.cliente_id).filter(Boolean) as string[]),
+        ]),
       );
 
       if (userIds.length > 0) {
@@ -162,7 +189,7 @@ function AdminRepassesPage() {
       setApprovingId(repasse.id);
 
       const { data, error } = await supabase.functions.invoke("btg-repasse-disparar", {
-        body: { repasse_ids: [repasse.id] }
+        body: { repasse_ids: [repasse.id] },
       });
 
       if (error) {
@@ -296,17 +323,17 @@ function AdminRepassesPage() {
   const filteredRepasses = useMemo(() => {
     return repasses.filter((r) => {
       const matchesStatus = selectedStatus === "todos" || r.status === selectedStatus;
-      
+
       const profName = (profiles[r.profissional_id]?.nome || "").toLowerCase();
       const cliName = (r.cliente_id ? profiles[r.cliente_id]?.nome || "" : "").toLowerCase();
       const pixKey = (r.pix_key || "").toLowerCase();
       const doc = (r.pix_holder_document || "").toLowerCase();
       const query = searchQuery.toLowerCase();
 
-      const matchesSearch = 
-        profName.includes(query) || 
-        cliName.includes(query) || 
-        pixKey.includes(query) || 
+      const matchesSearch =
+        profName.includes(query) ||
+        cliName.includes(query) ||
+        pixKey.includes(query) ||
         doc.includes(query) ||
         r.id.toLowerCase().includes(query);
 
@@ -376,20 +403,28 @@ function AdminRepassesPage() {
               <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Financeiro
             </Link>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl flex items-center gap-3">
-              Fila de Repasses Pix <span className="text-xs bg-brand/20 text-brand px-3 py-1 rounded-full uppercase tracking-wider border border-brand/30">Ambiente Protegido</span>
+              Fila de Repasses Pix{" "}
+              <span className="text-xs bg-brand/20 text-brand px-3 py-1 rounded-full uppercase tracking-wider border border-brand/30">
+                Ambiente Protegido
+              </span>
             </h1>
             <p className="text-slate-400 max-w-xl text-sm leading-relaxed">
-              Consulte, valide e libere de forma manual e segura os recebimentos dos profissionais parceiros gerados via BTG.
+              Consulte, valide e libere de forma manual e segura os recebimentos dos profissionais
+              parceiros gerados via BTG.
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3 self-start md:self-auto">
             <Button
               onClick={handleSyncStatus}
               disabled={syncingStatus}
               className="bg-brand text-white hover:bg-brand/90 font-bold gap-2"
             >
-              {syncingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {syncingStatus ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               Consultar status BTG
             </Button>
             <Button
@@ -409,9 +444,13 @@ function AdminRepassesPage() {
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                  btgStatus?.connected ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
-                }`}>
+                <div
+                  className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    btgStatus?.connected
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-slate-100 text-slate-400"
+                  }`}
+                >
                   <Link2 className="h-5 w-5" />
                 </div>
                 <div>
@@ -442,9 +481,13 @@ function AdminRepassesPage() {
                 className="bg-[#0F172A] hover:bg-slate-700 text-white font-bold gap-2 rounded-xl px-5 self-start sm:self-auto"
               >
                 {btgConnecting ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Iniciando...</>
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Iniciando...
+                  </>
                 ) : (
-                  <><Link2 className="h-4 w-4" /> Conectar conta BTG</>
+                  <>
+                    <Link2 className="h-4 w-4" /> Conectar conta BTG
+                  </>
                 )}
               </Button>
             </div>
@@ -455,8 +498,16 @@ function AdminRepassesPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Volume Bruto Total</p>
-              <h3 className="text-2xl font-black text-slate-900">R$ {metrics.brutoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Volume Bruto Total
+              </p>
+              <h3 className="text-2xl font-black text-slate-900">
+                R${" "}
+                {metrics.brutoTotal.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </h3>
             </div>
             <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
               <DollarSign className="h-3.5 w-3.5" /> Total em pagamentos
@@ -465,8 +516,16 @@ function AdminRepassesPage() {
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Comissão Plataforma</p>
-              <h3 className="text-2xl font-black text-slate-900">R$ {metrics.comissaoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Comissão Plataforma
+              </p>
+              <h3 className="text-2xl font-black text-slate-900">
+                R${" "}
+                {metrics.comissaoTotal.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </h3>
             </div>
             <div className="mt-4 flex items-center gap-1 text-brand text-xs font-bold">
               <TrendingUp className="h-3.5 w-3.5 animate-pulse" /> Taxa de intermediação
@@ -475,8 +534,16 @@ function AdminRepassesPage() {
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Líquido Pendente</p>
-              <h3 className="text-2xl font-black text-amber-600">R$ {metrics.pendenteLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Líquido Pendente
+              </p>
+              <h3 className="text-2xl font-black text-amber-600">
+                R${" "}
+                {metrics.pendenteLiquido.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </h3>
             </div>
             <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
               <AlertTriangle className="h-3.5 w-3.5" /> Aguardando liberação
@@ -485,8 +552,16 @@ function AdminRepassesPage() {
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Líquido Pago</p>
-              <h3 className="text-2xl font-black text-emerald-600">R$ {metrics.pagoLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Líquido Pago
+              </p>
+              <h3 className="text-2xl font-black text-emerald-600">
+                R${" "}
+                {metrics.pagoLiquido.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </h3>
             </div>
             <div className="mt-4 flex items-center gap-1 text-emerald-600 text-xs font-bold">
               <CheckCircle className="h-3.5 w-3.5" /> Transferências concluídas
@@ -549,7 +624,8 @@ function AdminRepassesPage() {
               <div>
                 <h4 className="font-bold text-slate-800">Nenhum repasse encontrado</h4>
                 <p className="text-xs text-slate-400 max-w-xs mt-1">
-                  Não localizamos nenhum repasse de profissional com os filtros aplicados no momento.
+                  Não localizamos nenhum repasse de profissional com os filtros aplicados no
+                  momento.
                 </p>
               </div>
             </div>
@@ -569,7 +645,11 @@ function AdminRepassesPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredRepasses.map((rep) => {
                     const prof = profiles[rep.profissional_id];
-                    const badge = STATUS_BADGES[rep.status] || { bg: "bg-slate-100", text: "text-slate-700", label: rep.status };
+                    const badge = STATUS_BADGES[rep.status] || {
+                      bg: "bg-slate-100",
+                      text: "text-slate-700",
+                      label: rep.status,
+                    };
 
                     return (
                       <tr key={rep.id} className="hover:bg-slate-50/40 transition group">
@@ -611,19 +691,26 @@ function AdminRepassesPage() {
                         {/* Valores financeiro */}
                         <td className="px-6 py-4 text-right">
                           <div className="font-black text-sm text-slate-900">
-                            R$ {Number(rep.valor_liquido).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            R${" "}
+                            {Number(rep.valor_liquido).toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                            })}
                           </div>
                           <div className="text-[10px] text-slate-400 mt-1 font-semibold flex justify-end gap-1.5">
                             <span>Bruto: R$ {Number(rep.valor_bruto).toFixed(2)}</span>
                             <span>·</span>
-                            <span className="text-brand">Taxa: R$ {Number(rep.valor_comissao_marketplace).toFixed(2)}</span>
+                            <span className="text-brand">
+                              Taxa: R$ {Number(rep.valor_comissao_marketplace).toFixed(2)}
+                            </span>
                           </div>
                         </td>
 
                         {/* Dados Pix */}
                         <td className="px-6 py-4">
                           <div className="text-xs font-bold text-slate-800">
-                            {rep.pix_holder_name || <span className="text-red-500 italic">Nome Ausente</span>}
+                            {rep.pix_holder_name || (
+                              <span className="text-red-500 italic">Nome Ausente</span>
+                            )}
                           </div>
                           <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
                             <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wide">
@@ -642,10 +729,12 @@ function AdminRepassesPage() {
 
                         {/* Status e alertas */}
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${badge.bg}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${badge.bg}`}
+                          >
                             {badge.label}
                           </span>
-                          
+
                           {/* ESCROW TAG */}
                           {rep.status === "pendente" && rep.orcamentos?.status === "pago" && (
                             <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
@@ -670,20 +759,28 @@ function AdminRepassesPage() {
                                 <Button
                                   size="sm"
                                   className={`h-8 gap-1 flex items-center ${
-                                    rep.orcamentos?.status === "pago" ? "opacity-50 cursor-not-allowed" : ""
+                                    rep.orcamentos?.status === "pago"
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
                                   }`}
                                   onClick={() => {
                                     if (rep.orcamentos?.status === "pago") {
-                                      toast.warning("Repasse retido. Aguarde o cliente marcar o serviço como concluído.");
+                                      toast.warning(
+                                        "Repasse retido. Aguarde o cliente marcar o serviço como concluído.",
+                                      );
                                       return;
                                     }
                                     handleAprovar(rep);
                                   }}
-                                  disabled={approvingId === rep.id || !btgStatus?.connected || rep.orcamentos?.status === "pago"}
+                                  disabled={
+                                    approvingId === rep.id ||
+                                    !btgStatus?.connected ||
+                                    rep.orcamentos?.status === "pago"
+                                  }
                                   title={
-                                    !btgStatus?.connected 
-                                      ? "Conecte a conta BTG primeiro" 
-                                      : rep.orcamentos?.status === "pago" 
+                                    !btgStatus?.connected
+                                      ? "Conecte a conta BTG primeiro"
+                                      : rep.orcamentos?.status === "pago"
                                         ? "Serviço em andamento (Retido)"
                                         : "Aprovar e transferir"
                                   }
@@ -695,7 +792,11 @@ function AdminRepassesPage() {
                                   ) : (
                                     <CheckCircle className="h-4 w-4" />
                                   )}
-                                  {approvingId === rep.id ? "Processando" : rep.orcamentos?.status === "pago" ? "Retido" : "Aprovar (Pix)"}
+                                  {approvingId === rep.id
+                                    ? "Processando"
+                                    : rep.orcamentos?.status === "pago"
+                                      ? "Retido"
+                                      : "Aprovar (Pix)"}
                                 </Button>
                                 <button
                                   onClick={() => handleCancelar(rep.id)}

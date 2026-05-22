@@ -1,5 +1,16 @@
 import React, { useState } from "react";
-import { User, MapPin, Camera, Calendar, Clock, CheckCircle2, AlertCircle, Sunrise, Sun, Moon } from "lucide-react";
+import {
+  User,
+  MapPin,
+  Camera,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Sunrise,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { isAgendaCompativel } from "@/lib/agenda";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -64,7 +75,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const isOportunidade = !minhaProposta && mode === "pegar";
   const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
   const [editing, setEditing] = useState(isOportunidade);
-  
+
   const initialValor = minhaProposta?.valor_servico ?? o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(
     initialValor != null ? String(initialValor).replace(".", ",") : "",
@@ -91,24 +102,22 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const isServicoConcluido = o.status === "concluido";
 
   const meta = STATUS_META[o.status];
-  
-  const statusLabelOverride =
-    isAguardandoPagamento
-      ? "Aguardando pagamento"
-      : isPagamentoConfirmado
-        ? "Agendado (Aguardando cliente)"
+
+  const statusLabelOverride = isAguardandoPagamento
+    ? "Aguardando pagamento"
+    : isPagamentoConfirmado
+      ? "Agendado (Aguardando cliente)"
       : isServicoConcluido
         ? "Finalizado (Aguardando liberação)"
-        : meta?.label ?? o.status;
+        : (meta?.label ?? o.status);
 
-  const statusClassOverride =
-    isAguardandoPagamento
-      ? "bg-amber-100 text-amber-700"
-      : isPagamentoConfirmado
-        ? "bg-blue-100 text-blue-700"
+  const statusClassOverride = isAguardandoPagamento
+    ? "bg-amber-100 text-amber-700"
+    : isPagamentoConfirmado
+      ? "bg-blue-100 text-blue-700"
       : isServicoConcluido
         ? "bg-green-100 text-green-700"
-        : meta?.className ?? "bg-slate-100 text-slate-600";
+        : (meta?.className ?? "bg-slate-100 text-slate-600");
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
@@ -146,7 +155,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     }
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) {
         throw new Error("Sua sessão expirou. Por favor, faça login novamente.");
       }
@@ -183,8 +194,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         ...(res?.orcamento ?? {}),
         id: o.id,
         status: res?.orcamento?.status ?? "enviado",
-        profissional_id:
-          res?.orcamento?.profissional_id ?? o.profissional_id ?? userId,
+        profissional_id: res?.orcamento?.profissional_id ?? o.profissional_id ?? userId,
         valor_servico: res?.orcamento?.valor_servico ?? v,
         updated_at: new Date().toISOString(),
       };
@@ -201,8 +211,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
       if (mode === "revisar") setEditing(false);
     } catch (e: any) {
       console.error("Erro ao enviar proposta:", e);
-      toast.error("Falha ao enviar", { 
-        description: e?.message || "Ocorreu um erro inesperado." 
+      toast.error("Falha ao enviar", {
+        description: e?.message || "Ocorreu um erro inesperado.",
       });
     } finally {
       setSaving(false);
@@ -239,11 +249,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
   const handleConcluir = async () => {
     if (fotosConcluido.length === 0) {
-      if (
-        !confirm(
-          "Salvar sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto."
-        )
-      )
+      if (!confirm("Salvar sem anexar fotos do serviço pronto? Recomendamos pelo menos 1 foto."))
         return;
     }
     setSaving(true);
@@ -254,7 +260,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     if (error) {
       toast.error("Erro ao salvar fotos", { description: error.message });
     } else {
-      toast.success("Fotos salvas! Peça para o cliente marcar como concluído no app dele para liberar seu repasse.");
+      toast.success(
+        "Fotos salvas! Peça para o cliente marcar como concluído no app dele para liberar seu repasse.",
+      );
       refresh?.();
     }
     setSaving(false);
@@ -427,7 +435,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               Serviço Finalizado
             </div>
             <p className="text-green-700 text-[11px] leading-relaxed">
-              O cliente marcou o serviço como concluído. O repasse está em processamento e será liberado em breve.
+              O cliente marcou o serviço como concluído. O repasse está em processamento e será
+              liberado em breve.
             </p>
           </div>
         )}
@@ -463,15 +472,17 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     Materiais
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(propostaMateriais?.length ? propostaMateriais : materiais).map((m: any, idx: number) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-medium flex items-center gap-1.5 shadow-sm"
-                      >
-                        <span className="text-brand font-bold">{m.quantidade}x</span>{" "}
-                        {m.nome_snapshot || m.nome}
-                      </span>
-                    ))}
+                    {(propostaMateriais?.length ? propostaMateriais : materiais).map(
+                      (m: any, idx: number) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-medium flex items-center gap-1.5 shadow-sm"
+                        >
+                          <span className="text-brand font-bold">{m.quantidade}x</span>{" "}
+                          {m.nome_snapshot || m.nome}
+                        </span>
+                      ),
+                    )}
                   </div>
                 </div>
               )}
@@ -597,7 +608,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     Salvar Evidências
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-2">
-                    Para o repasse ser liberado, o cliente precisa confirmar a conclusão do serviço no app dele.
+                    Para o repasse ser liberado, o cliente precisa confirmar a conclusão do serviço
+                    no app dele.
                   </p>
                 </div>
               )}
@@ -663,10 +675,10 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
       {/* Chat Section for Paid or Completed Orders */}
       {!disableChat && (isPagamentoConfirmado || isServicoConcluido) && !editing && (
         <div className="pt-4 border-t border-slate-100">
-          <Chat 
-            orcamentoId={o.id} 
-            contraparteId={o.cliente_id} 
-            contraparteNome={cliente?.nome || "Cliente"} 
+          <Chat
+            orcamentoId={o.id}
+            contraparteId={o.cliente_id}
+            contraparteNome={cliente?.nome || "Cliente"}
           />
         </div>
       )}

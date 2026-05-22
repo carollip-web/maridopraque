@@ -18,7 +18,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/para-profissionais")({
@@ -58,7 +64,7 @@ function ParaProfissionaisPage() {
     nome: "",
     telefone: "",
     cidade: "",
-    especialidade: "Elétrica"
+    especialidade: "Elétrica",
   });
 
   const handlePreCadastroSubmit = async (e: React.FormEvent) => {
@@ -69,7 +75,7 @@ function ParaProfissionaisPage() {
         nome: preCadForm.nome,
         telefone: preCadForm.telefone.replace(/\D/g, ""),
         cidade: preCadForm.cidade,
-        especialidade_principal: preCadForm.especialidade
+        especialidade_principal: preCadForm.especialidade,
       };
       // Allow public insert to profissionais_pre_cadastro
       const { error } = await (supabase as any).from("profissionais_pre_cadastro").insert(payload);
@@ -159,7 +165,7 @@ function ParaProfissionaisPage() {
                     onClick={() => setPreCadastroOpen(true)}
                     className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8"
                   >
-                     Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
+                    Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                   <Button
                     asChild
@@ -381,7 +387,7 @@ function ParaProfissionaisPage() {
                 onClick={() => setPreCadastroOpen(true)}
                 className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
               >
-                  Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
+                Quero ser parceiro <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
           </div>
@@ -393,51 +399,54 @@ function ParaProfissionaisPage() {
           <DialogHeader>
             <DialogTitle>Quero ser parceiro!</DialogTitle>
             <DialogDescription>
-              Deixe seus contatos. Nossa equipe falará com você no WhatsApp em breve para explicar a plataforma e liberar seu cadastro.
+              Deixe seus contatos. Nossa equipe falará com você no WhatsApp em breve para explicar a
+              plataforma e liberar seu cadastro.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePreCadastroSubmit} className="space-y-4 mt-2">
             <div className="space-y-1">
               <label className="text-sm font-semibold">Nome completo</label>
-              <input 
+              <input
                 required
-                className="input-field" 
+                className="input-field"
                 placeholder="Seu nome"
                 value={preCadForm.nome}
-                onChange={e => setPreCadForm({...preCadForm, nome: e.target.value})}
+                onChange={(e) => setPreCadForm({ ...preCadForm, nome: e.target.value })}
               />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-semibold">WhatsApp</label>
-              <input 
+              <input
                 required
-                className="input-field" 
+                className="input-field"
                 placeholder="(11) 99999-9999"
                 value={preCadForm.telefone}
-                onChange={e => {
+                onChange={(e) => {
                   const v = e.target.value.replace(/\D/g, "").slice(0, 11);
-                  const formatted = v.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{4})$/, "$1-$2");
-                  setPreCadForm({...preCadForm, telefone: formatted});
+                  const formatted = v
+                    .replace(/(\d{2})(\d)/, "($1) $2")
+                    .replace(/(\d{5})(\d{4})$/, "$1-$2");
+                  setPreCadForm({ ...preCadForm, telefone: formatted });
                 }}
               />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-semibold">Cidade de atuação</label>
-              <input 
+              <input
                 required
-                className="input-field" 
+                className="input-field"
                 placeholder="Ex: São Paulo - SP"
                 value={preCadForm.cidade}
-                onChange={e => setPreCadForm({...preCadForm, cidade: e.target.value})}
+                onChange={(e) => setPreCadForm({ ...preCadForm, cidade: e.target.value })}
               />
             </div>
             <div className="space-y-1">
               <label className="text-sm font-semibold">Especialidade Principal</label>
-              <select 
+              <select
                 required
                 className="input-field"
                 value={preCadForm.especialidade}
-                onChange={e => setPreCadForm({...preCadForm, especialidade: e.target.value})}
+                onChange={(e) => setPreCadForm({ ...preCadForm, especialidade: e.target.value })}
               >
                 <option value="Elétrica">Elétrica</option>
                 <option value="Hidráulica">Hidráulica</option>
@@ -449,7 +458,11 @@ function ParaProfissionaisPage() {
                 <option value="Outro">Outro</option>
               </select>
             </div>
-            <Button type="submit" disabled={preCadLoading} className="w-full font-bold bg-brand text-brand-foreground mt-4">
+            <Button
+              type="submit"
+              disabled={preCadLoading}
+              className="w-full font-bold bg-brand text-brand-foreground mt-4"
+            >
               {preCadLoading ? "Enviando..." : "Enviar interesse"}
             </Button>
           </form>

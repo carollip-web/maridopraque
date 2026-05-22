@@ -12,7 +12,9 @@ async function diagnose() {
   console.log("--- Diagnosing Recent Budgets ---");
   const { data: orcamentos, error: orcError } = await supabase
     .from("orcamentos")
-    .select("id, service_name, status, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, flexibilidade_agenda, profissional_id")
+    .select(
+      "id, service_name, status, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, flexibilidade_agenda, profissional_id",
+    )
     .order("created_at", { ascending: false })
     .limit(5);
 

@@ -175,9 +175,7 @@ export function ProfissionalConfiguracoes() {
       // 4. Confirm persistence
       const { data: savedPerfil } = await supabase
         .from("profissional_perfil")
-        .select(
-          "genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix",
-        )
+        .select("genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -433,7 +431,8 @@ export function ProfissionalConfiguracoes() {
               <div className="mb-5">
                 <h4 className="text-sm font-bold text-slate-900">Compatibilidade de atendimento</h4>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Essa informação ajuda a mostrar pedidos compatíveis com o tipo de atendimento escolhido pela cliente.
+                  Essa informação ajuda a mostrar pedidos compatíveis com o tipo de atendimento
+                  escolhido pela cliente.
                 </p>
               </div>
 

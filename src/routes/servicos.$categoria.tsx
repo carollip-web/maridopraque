@@ -100,9 +100,7 @@ const categorias: Record<string, CategoryMeta> = {
       "Diagnóstico antes da execução",
       "Garantia em todo serviço",
     ],
-    observacoesPadrao: [
-      "Desligamos o disjuntor por alguns minutos durante o reparo.",
-    ],
+    observacoesPadrao: ["Desligamos o disjuntor por alguns minutos durante o reparo."],
   },
   hidráulica: {
     slug: "hidráulica",
@@ -129,13 +127,8 @@ const categorias: Record<string, CategoryMeta> = {
     description:
       "Serviço de chaveiro residencial: abertura emergencial de portas e troca de segredos com cilindros novos.",
     icon: Key,
-    beneficios: [
-      "Atendimento rápido em emergências",
-      "Cilindros e segredos novos com garantia",
-    ],
-    observacoesPadrao: [
-      "Em abertura de portas pode ser necessário comprovante de residência.",
-    ],
+    beneficios: ["Atendimento rápido em emergências", "Cilindros e segredos novos com garantia"],
+    observacoesPadrao: ["Em abertura de portas pode ser necessário comprovante de residência."],
   },
   instalação: {
     slug: "instalação",
@@ -145,13 +138,8 @@ const categorias: Record<string, CategoryMeta> = {
     description:
       "Instalações com acabamento profissional, materiais e fixação adequados a cada superfície.",
     icon: Drill,
-    beneficios: [
-      "Materiais adequados a cada superfície",
-      "Acabamento profissional",
-    ],
-    observacoesPadrao: [
-      "Verificamos as medidas no local antes de iniciar a instalação.",
-    ],
+    beneficios: ["Materiais adequados a cada superfície", "Acabamento profissional"],
+    observacoesPadrao: ["Verificamos as medidas no local antes de iniciar a instalação."],
   },
 };
 

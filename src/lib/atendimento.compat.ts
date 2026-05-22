@@ -1,17 +1,6 @@
-export type TipoAtendimento =
-  | "homem"
-  | "mulher"
-  | "homem_com_apoio_feminino"
-  | null
-  | undefined;
+export type TipoAtendimento = "homem" | "mulher" | "homem_com_apoio_feminino" | null | undefined;
 
-export type GeneroProfissional =
-  | "homem"
-  | "mulher"
-  | "outro"
-  | "nao_informar"
-  | null
-  | undefined;
+export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar" | null | undefined;
 
 export type AtendimentoCompatibility = {
   compatible: boolean;

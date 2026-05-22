@@ -149,21 +149,23 @@ export function AdminModoTeste() {
           )}
           Apagar dados de teste
         </Button>
-        <Button 
+        <Button
           onClick={async () => {
             setCreatingScenario(true);
             try {
               const r = await criarTeste();
-              toast.success("Cenário de pagamento criado! Verifique 'Meus Orçamentos' no modo Cliente.");
+              toast.success(
+                "Cenário de pagamento criado! Verifique 'Meus Orçamentos' no modo Cliente.",
+              );
               qc.invalidateQueries({ queryKey: ["test-orcamentos"] });
             } catch (e: any) {
               toast.error(e.message);
             } finally {
               setCreatingScenario(false);
             }
-          }} 
+          }}
           disabled={creatingScenario}
-          variant="outline" 
+          variant="outline"
           className="gap-2 border-brand text-brand hover:bg-brand/5"
         >
           {creatingScenario ? (

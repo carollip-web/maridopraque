@@ -65,12 +65,18 @@ export const Route = createFileRoute("/orcamentos")({
         <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100">
           <XCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <h2 className="text-2xl font-black tracking-tight mb-2">Ops! Algo deu errado.</h2>
-          <p className="text-sm font-medium opacity-80 mb-6">Ocorreu um erro inesperado ao carregar seus orçamentos.</p>
-          <Button onClick={() => window.location.reload()} variant="outline" className="rounded-full border-red-200 hover:bg-red-100">
+          <p className="text-sm font-medium opacity-80 mb-6">
+            Ocorreu um erro inesperado ao carregar seus orçamentos.
+          </p>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            className="rounded-full border-red-200 hover:bg-red-100"
+          >
             Tentar novamente
           </Button>
         </div>
-        {process.env.NODE_ENV === 'development' && (
+        {process.env.NODE_ENV === "development" && (
           <div className="text-left mt-8 p-4 bg-slate-900 text-slate-300 rounded-2xl overflow-auto text-[10px] font-mono leading-relaxed shadow-xl border border-slate-800">
             <p className="text-red-400 font-bold mb-2">DEV ERROR LOG:</p>
             {error.message}
@@ -136,7 +142,10 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
   customizado_pendente: { label: "Aguardando proposta", cls: "bg-amber-50 text-amber-700" },
   fixo_auto: { label: "Aguardando aprovação", cls: "bg-blue-50 text-blue-700" },
   enviado: { label: "Aguardando aprovação", cls: "bg-blue-50 text-blue-700" },
-  aprovado: { label: "Aguardando pagamento", cls: "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm" },
+  aprovado: {
+    label: "Aguardando pagamento",
+    cls: "bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm",
+  },
   recusado: { label: "Recusado", cls: "bg-red-50 text-red-700" },
   pago: { label: "Pagamento confirmado", cls: "bg-green-50 text-green-700" },
   cancelado: { label: "Cancelado", cls: "bg-slate-50 text-slate-700" },
@@ -193,14 +202,14 @@ function MeusOrcamentos() {
         .select("*")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
-      
+
       if (orcError) {
         console.error("[orcamentos.refresh] erro ao buscar orçamentos", orcError);
         toast.error("Não foi possível carregar seus orçamentos.");
         return;
       }
 
-      const rows = (data as any ?? []) as OrcamentoRow[];
+      const rows = ((data as any) ?? []) as OrcamentoRow[];
       setList(rows);
 
       if (rows.length > 0) {
@@ -211,7 +220,7 @@ function MeusOrcamentos() {
             "orcamento_id",
             rows.map((r) => r.id),
           );
-        
+
         if (matsError) console.error("[orcamentos.refresh] erro ao buscar materiais", matsError);
 
         const grouped: Record<string, OrcMaterial[]> = {};
@@ -227,22 +236,22 @@ function MeusOrcamentos() {
             "orcamento_id",
             rows.map((r) => r.id),
           );
-        
+
         if (propsError) console.error("[orcamentos.refresh] erro ao buscar propostas", propsError);
-        
+
         const pRows = props ?? [];
-        const profIds = Array.from(new Set(pRows.map(p => p.profissional_id).filter(Boolean)));
-        
+        const profIds = Array.from(new Set(pRows.map((p) => p.profissional_id).filter(Boolean)));
+
         const profsMap: Record<string, string> = {};
         if (profIds.length > 0) {
           const { data: profs, error: profsError } = await supabase
             .from("profiles")
             .select("id, nome")
             .in("id", profIds);
-          
+
           if (profsError) console.error("[orcamentos.refresh] erro ao buscar perfis", profsError);
 
-          (profs ?? []).forEach(pf => {
+          (profs ?? []).forEach((pf) => {
             profsMap[pf.id] = pf.nome;
           });
         }
@@ -287,14 +296,14 @@ function MeusOrcamentos() {
       )
       .on(
         "postgres_changes",
-        { 
-          event: "*", 
-          schema: "public", 
-          table: "propostas"
+        {
+          event: "*",
+          schema: "public",
+          table: "propostas",
         },
         () => {
           refresh();
-        }
+        },
       )
       .subscribe();
     return () => {
@@ -482,14 +491,38 @@ function MeusOrcamentos() {
       try {
         window.localStorage.setItem(
           draftKey,
-          JSON.stringify({ selServiceId, descricao, tipoAtendimento, dataPreferida, periodoPreferido, horarioPreferido, flexibilidadeAgenda, picked, step, savedAt: Date.now() }),
+          JSON.stringify({
+            selServiceId,
+            descricao,
+            tipoAtendimento,
+            dataPreferida,
+            periodoPreferido,
+            horarioPreferido,
+            flexibilidadeAgenda,
+            picked,
+            step,
+            savedAt: Date.now(),
+          }),
         );
         setDraftSavedAt(Date.now());
         setHasDraft(true);
       } catch {}
     }, 500);
     return () => window.clearTimeout(t);
-  }, [draftKey, showNew, editingId, selServiceId, descricao, tipoAtendimento, dataPreferida, periodoPreferido, horarioPreferido, flexibilidadeAgenda, picked, step]);
+  }, [
+    draftKey,
+    showNew,
+    editingId,
+    selServiceId,
+    descricao,
+    tipoAtendimento,
+    dataPreferida,
+    periodoPreferido,
+    horarioPreferido,
+    flexibilidadeAgenda,
+    picked,
+    step,
+  ]);
 
   const carregarRascunho = () => {
     if (!draftKey || typeof window === "undefined") return;
@@ -666,7 +699,7 @@ function MeusOrcamentos() {
 
         if (orcamentoError) {
           toast.error(
-            `Erro ao criar pedido: ${orcamentoError.code || ""} ${orcamentoError.message}`
+            `Erro ao criar pedido: ${orcamentoError.code || ""} ${orcamentoError.message}`,
           );
 
           console.error("[orcamentos.handleNew] erro detalhado", {
@@ -685,7 +718,9 @@ function MeusOrcamentos() {
 
         const { data: confirmacao, error: confirmacaoError } = await supabase
           .from("orcamentos")
-          .select("id,service_name,status,cliente_id,tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,created_at")
+          .select(
+            "id,service_name,status,cliente_id,tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,created_at",
+          )
           .eq("id", novoId)
           .maybeSingle();
 
@@ -780,7 +815,12 @@ function MeusOrcamentos() {
         <div className="flex items-center gap-3">
           {hasDraft && !showNew && (
             <div className="flex items-center bg-slate-50 p-1 rounded-full border border-slate-100">
-              <Button onClick={carregarRascunho} variant="ghost" size="sm" className="rounded-full text-xs gap-2 font-bold text-slate-600">
+              <Button
+                onClick={carregarRascunho}
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-xs gap-2 font-bold text-slate-600"
+              >
                 <Save className="h-3.5 w-3.5" /> Retomar rascunho
               </Button>
               <Button
@@ -836,8 +876,7 @@ function MeusOrcamentos() {
               const Icon = s.icon;
               const active = step === s.n;
               const done = step > s.n;
-              const canGo =
-                s.n <= step || (s.n > step && !!selServiceId);
+              const canGo = s.n <= step || (s.n > step && !!selServiceId);
               return (
                 <li key={s.n} className="flex items-center gap-2">
                   <button
@@ -1037,7 +1076,9 @@ function MeusOrcamentos() {
                       className="sr-only"
                     />
                     <div className="flex items-center gap-3 mb-2">
-                      <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${opt.color}`}>
+                      <div
+                        className={`h-10 w-10 rounded-2xl flex items-center justify-center ${opt.color}`}
+                      >
                         {opt.icon}
                       </div>
                       <span className="font-bold text-slate-800">{opt.title}</span>
@@ -1068,9 +1109,12 @@ function MeusOrcamentos() {
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="text-center mb-4">
-                <h3 className="text-xl font-bold text-slate-800">Quando você prefere receber o serviço?</h3>
+                <h3 className="text-xl font-bold text-slate-800">
+                  Quando você prefere receber o serviço?
+                </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Vamos buscar profissionais disponíveis na sua região e no melhor horário para você.
+                  Vamos buscar profissionais disponíveis na sua região e no melhor horário para
+                  você.
                 </p>
               </div>
 
@@ -1114,13 +1158,35 @@ function MeusOrcamentos() {
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs uppercase font-bold text-muted-foreground">Período de preferência</label>
+                <label className="text-xs uppercase font-bold text-muted-foreground">
+                  Período de preferência
+                </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { id: "manha", label: "Manhã", icon: Sunrise, color: "text-amber-500 bg-amber-50" },
-                    { id: "tarde", label: "Tarde", icon: Sun, color: "text-orange-500 bg-orange-50" },
-                    { id: "noite", label: "Noite", icon: Moon, color: "text-indigo-500 bg-indigo-50" },
-                    { id: "horario_especifico", label: "Hora exata", icon: Clock, color: "text-brand bg-brand-soft" },
+                    {
+                      id: "manha",
+                      label: "Manhã",
+                      icon: Sunrise,
+                      color: "text-amber-500 bg-amber-50",
+                    },
+                    {
+                      id: "tarde",
+                      label: "Tarde",
+                      icon: Sun,
+                      color: "text-orange-500 bg-orange-50",
+                    },
+                    {
+                      id: "noite",
+                      label: "Noite",
+                      icon: Moon,
+                      color: "text-indigo-500 bg-indigo-50",
+                    },
+                    {
+                      id: "horario_especifico",
+                      label: "Hora exata",
+                      icon: Clock,
+                      color: "text-brand bg-brand-soft",
+                    },
                   ].map((p) => (
                     <button
                       key={p.id}
@@ -1131,7 +1197,9 @@ function MeusOrcamentos() {
                           : "border-slate-100 bg-slate-50/50 grayscale hover:grayscale-0 hover:border-slate-200"
                       }`}
                     >
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${p.color}`}>
+                      <div
+                        className={`h-10 w-10 rounded-xl flex items-center justify-center ${p.color}`}
+                      >
                         <p.icon className="h-5 w-5" />
                       </div>
                       <span className="text-xs font-bold text-slate-700">{p.label}</span>
@@ -1142,7 +1210,9 @@ function MeusOrcamentos() {
 
               {periodoPreferido === "horario_especifico" && (
                 <div className="space-y-2 animate-in zoom-in-95 duration-200">
-                  <label className="text-xs uppercase font-bold text-muted-foreground">Selecione o horário</label>
+                  <label className="text-xs uppercase font-bold text-muted-foreground">
+                    Selecione o horário
+                  </label>
                   <input
                     type="time"
                     value={horarioPreferido}
@@ -1158,7 +1228,10 @@ function MeusOrcamentos() {
                 </Button>
                 <Button
                   onClick={() => setStep(4)}
-                  disabled={!dataPreferida || (periodoPreferido === "horario_especifico" && !horarioPreferido)}
+                  disabled={
+                    !dataPreferida ||
+                    (periodoPreferido === "horario_especifico" && !horarioPreferido)
+                  }
                   className="rounded-full bg-foreground text-background font-bold gap-2"
                 >
                   Continuar <ChevronRight className="h-4 w-4" />
@@ -1274,7 +1347,9 @@ function MeusOrcamentos() {
           {step === 5 && selServico && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Revise sua solicitação</h3>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Revise sua solicitação
+                </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Confira os detalhes abaixo antes de enviar para os profissionais.
                 </p>
@@ -1294,7 +1369,9 @@ function MeusOrcamentos() {
                           <Wrench className="h-5 w-5" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-800 leading-tight">{selServico.nome}</h4>
+                          <h4 className="font-bold text-slate-800 leading-tight">
+                            {selServico.nome}
+                          </h4>
                           {descricao.trim() && (
                             <p className="mt-2 text-xs text-muted-foreground line-clamp-3 italic">
                               "{descricao}"
@@ -1311,15 +1388,27 @@ function MeusOrcamentos() {
                           Atendimento
                         </p>
                         <div className="flex items-center gap-2">
-                          <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs ${
-                            tipoAtendimento === "mulher" ? "bg-pink-100 text-pink-600" :
-                            tipoAtendimento === "homem" ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
-                          }`}>
-                            {tipoAtendimento === "homem_com_apoio_feminino" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                          <div
+                            className={`h-8 w-8 rounded-xl flex items-center justify-center text-xs ${
+                              tipoAtendimento === "mulher"
+                                ? "bg-pink-100 text-pink-600"
+                                : tipoAtendimento === "homem"
+                                  ? "bg-blue-100 text-blue-600"
+                                  : "bg-emerald-100 text-emerald-600"
+                            }`}
+                          >
+                            {tipoAtendimento === "homem_com_apoio_feminino" ? (
+                              <Users className="h-4 w-4" />
+                            ) : (
+                              <User className="h-4 w-4" />
+                            )}
                           </div>
                           <span className="text-xs font-bold text-slate-700">
-                            {tipoAtendimento === "mulher" ? "Profissional mulher" :
-                             tipoAtendimento === "homem" ? "Profissional homem" : "Profissional + apoio feminino"}
+                            {tipoAtendimento === "mulher"
+                              ? "Profissional mulher"
+                              : tipoAtendimento === "homem"
+                                ? "Profissional homem"
+                                : "Profissional + apoio feminino"}
                           </span>
                         </div>
                       </div>
@@ -1333,13 +1422,18 @@ function MeusOrcamentos() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-slate-700">
-                              {dataPreferida ? new Date(dataPreferida + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : "---"}
+                              {dataPreferida
+                                ? new Date(dataPreferida + "T00:00:00").toLocaleDateString(
+                                    "pt-BR",
+                                    { day: "2-digit", month: "short" },
+                                  )
+                                : "---"}
                               {" · "}
                               <span className="text-muted-foreground">
-                                {periodoPreferido === 'manha' && 'Manhã'}
-                                {periodoPreferido === 'tarde' && 'Tarde'}
-                                {periodoPreferido === 'noite' && 'Noite'}
-                                {periodoPreferido === 'horario_especifico' && horarioPreferido}
+                                {periodoPreferido === "manha" && "Manhã"}
+                                {periodoPreferido === "tarde" && "Tarde"}
+                                {periodoPreferido === "noite" && "Noite"}
+                                {periodoPreferido === "horario_especifico" && horarioPreferido}
                               </span>
                             </p>
                           </div>
@@ -1354,20 +1448,25 @@ function MeusOrcamentos() {
                           Materiais Selecionados ({Object.keys(picked).length})
                         </p>
                         <ul className="space-y-2">
-                          {Object.entries(picked).slice(0, 3).map(([id, qty]) => {
-                            const m = materiais.find((x) => x.id === id);
-                            if (!m) return null;
-                            return (
-                              <li key={id} className="flex justify-between text-xs">
-                                <span className="text-slate-600 truncate mr-4">
-                                  {m.nome} <span className="opacity-50">· {qty} {m.unidade}</span>
-                                </span>
-                                <span className="font-bold tabular-nums text-slate-800">
-                                  {brl(Number(m.preco_atual) * qty)}
-                                </span>
-                              </li>
-                            );
-                          })}
+                          {Object.entries(picked)
+                            .slice(0, 3)
+                            .map(([id, qty]) => {
+                              const m = materiais.find((x) => x.id === id);
+                              if (!m) return null;
+                              return (
+                                <li key={id} className="flex justify-between text-xs">
+                                  <span className="text-slate-600 truncate mr-4">
+                                    {m.nome}{" "}
+                                    <span className="opacity-50">
+                                      · {qty} {m.unidade}
+                                    </span>
+                                  </span>
+                                  <span className="font-bold tabular-nums text-slate-800">
+                                    {brl(Number(m.preco_atual) * qty)}
+                                  </span>
+                                </li>
+                              );
+                            })}
                           {Object.keys(picked).length > 3 && (
                             <li className="text-[10px] text-brand font-bold">
                               + {Object.keys(picked).length - 3} outros itens
@@ -1394,11 +1493,13 @@ function MeusOrcamentos() {
                         {brl(Number(selServico.preco_max) + subtotalMat)}
                       </span>
                     </div>
-                    
+
                     <div className="mt-6 space-y-3 pt-6 border-t border-brand-foreground/20">
                       <div className="flex justify-between text-xs">
                         <span className="opacity-70">Mão de obra</span>
-                        <span className="font-bold">{brl(Number(selServico.preco_min))} - {brl(Number(selServico.preco_max))}</span>
+                        <span className="font-bold">
+                          {brl(Number(selServico.preco_min))} - {brl(Number(selServico.preco_max))}
+                        </span>
                       </div>
                       {subtotalMat > 0 && (
                         <div className="flex justify-between text-xs">
@@ -1442,14 +1543,15 @@ function MeusOrcamentos() {
                       <h4 className="font-bold text-sm tracking-tight">Pagamento seguro</h4>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-relaxed">
-                      Você só paga depois que o profissional enviar a proposta final e você aprovar. O pagamento será feito pela plataforma, em ambiente seguro.
+                      Você só paga depois que o profissional enviar a proposta final e você aprovar.
+                      O pagamento será feito pela plataforma, em ambiente seguro.
                     </p>
                     <div className="space-y-2">
                       {[
                         "Envie sua solicitação",
                         "Receba a proposta do profissional",
                         "Aprove o orçamento",
-                        "Pague com segurança"
+                        "Pague com segurança",
                       ].map((txt, i) => (
                         <div key={i} className="flex items-center gap-3">
                           <div className="h-4 w-4 rounded-full bg-slate-200 text-[8px] flex items-center justify-center font-bold text-slate-500 shrink-0">
@@ -1464,7 +1566,8 @@ function MeusOrcamentos() {
                   <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
                     <Info className="h-5 w-5 text-amber-600 shrink-0" />
                     <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
-                      O valor final e a disponibilidade da agenda serão confirmados pelo profissional no chat após o recebimento deste pedido.
+                      O valor final e a disponibilidade da agenda serão confirmados pelo
+                      profissional no chat após o recebimento deste pedido.
                     </p>
                   </div>
                 </div>
@@ -1486,12 +1589,13 @@ function MeusOrcamentos() {
         {list.map((o) => {
           const propsForO = propostas[o.id] || [];
           const hasProps = propsForO.length > 0;
-          const s = (o.status === "customizado_pendente" && hasProps)
-            ? { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" }
-            : (statusLabel[o.status] ?? {
-                label: o.status,
-                cls: "bg-slate-100 text-slate-700",
-              });
+          const s =
+            o.status === "customizado_pendente" && hasProps
+              ? { label: "Aguardando Aprovação", cls: "bg-blue-50 text-blue-700" }
+              : (statusLabel[o.status] ?? {
+                  label: o.status,
+                  cls: "bg-slate-100 text-slate-700",
+                });
           const podeAprovar = o.status === "enviado" || o.status === "fixo_auto";
           const mats = orcMats[o.id] ?? [];
           const isOpen = !!expanded[o.id];
@@ -1631,14 +1735,16 @@ function MeusOrcamentos() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-900">Orçamento Aprovado!</p>
-                        <p className="text-xs text-emerald-700">Tudo pronto para começar seu serviço.</p>
+                        <p className="text-xs text-emerald-700">
+                          Tudo pronto para começar seu serviço.
+                        </p>
                       </div>
                     </div>
-                    <Button asChild className="w-full sm:w-auto bg-brand text-brand-foreground rounded-full font-bold h-11 px-6 shadow-lg shadow-brand/20">
-                      <Link
-                        to="/checkout"
-                        search={{ orcamentoId: o.id } as any}
-                      >
+                    <Button
+                      asChild
+                      className="w-full sm:w-auto bg-brand text-brand-foreground rounded-full font-bold h-11 px-6 shadow-lg shadow-brand/20"
+                    >
+                      <Link to="/checkout" search={{ orcamentoId: o.id } as any}>
                         Ir para pagamento seguro <ChevronRight className="h-4 w-4 ml-2" />
                       </Link>
                     </Button>

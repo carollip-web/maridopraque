@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
-import { supabase } from "@/integrations/supabase/client"
-import { Card } from "@/components/ui/card"
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/btg/callback")({
   component: BtgCallbackPage,
@@ -11,52 +11,51 @@ export const Route = createFileRoute("/btg/callback")({
     state: typeof search.state === "string" ? search.state : undefined,
     error: typeof search.error === "string" ? search.error : undefined,
   }),
-})
+});
 
 function BtgCallbackPage() {
-  const navigate = useNavigate()
-  const { code, state, error } = Route.useSearch()
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-  const [message, setMessage] = useState("Processando conexão com o BTG Pactual...")
+  const navigate = useNavigate();
+  const { code, state, error } = Route.useSearch();
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("Processando conexão com o BTG Pactual...");
 
   useEffect(() => {
     const processCallback = async () => {
       if (error) {
-        setStatus("error")
-        setMessage(`BTG Pactual retornou erro: ${error}`)
-        return
+        setStatus("error");
+        setMessage(`BTG Pactual retornou erro: ${error}`);
+        return;
       }
 
       if (!code || !state) {
-        setStatus("error")
-        setMessage("Parâmetros de callback ausentes (code ou state)")
-        return
+        setStatus("error");
+        setMessage("Parâmetros de callback ausentes (code ou state)");
+        return;
       }
 
       try {
-        const { data, error: invokeError } = await supabase.functions.invoke(
-          "btg-oauth-callback",
-          { body: { code, state } }
-        )
+        const { data, error: invokeError } = await supabase.functions.invoke("btg-oauth-callback", {
+          body: { code, state },
+        });
 
-        if (invokeError) throw invokeError
-        if (!data?.ok) throw new Error(data?.error ?? "Falha desconhecida")
+        if (invokeError) throw invokeError;
+        if (!data?.ok) throw new Error(data?.error ?? "Falha desconhecida");
 
-        setStatus("success")
-        setMessage("Conta BTG conectada com sucesso! Redirecionando...")
+        setStatus("success");
+        setMessage("Conta BTG conectada com sucesso! Redirecionando...");
 
         setTimeout(() => {
-          navigate({ to: "/admin-repasses" })
-        }, 2000)
+          navigate({ to: "/admin-repasses" });
+        }, 2000);
       } catch (err: any) {
-        console.error("[btg-callback]", err)
-        setStatus("error")
-        setMessage(err?.message ?? "Falha ao conectar conta BTG Pactual")
+        console.error("[btg-callback]", err);
+        setStatus("error");
+        setMessage(err?.message ?? "Falha ao conectar conta BTG Pactual");
       }
-    }
+    };
 
-    processCallback()
-  }, [code, state, error, navigate])
+    processCallback();
+  }, [code, state, error, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -90,5 +89,5 @@ function BtgCallbackPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

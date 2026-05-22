@@ -15,8 +15,7 @@ export function AdminEquipe() {
   const qc = useQueryClient();
   const convidarFn = useServerFn(convidarAdminFn);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteLevel, setInviteLevel] =
-    useState<NonNullable<AdminLevel>>("suporte");
+  const [inviteLevel, setInviteLevel] = useState<NonNullable<AdminLevel>>("suporte");
   const [inviting, setInviting] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [changingLevel, setChangingLevel] = useState<string | null>(null);
@@ -36,8 +35,7 @@ export function AdminEquipe() {
         .in("id", ids);
       return (profiles || []).map((p: any) => ({
         ...p,
-        admin_level:
-          roles.find((r: any) => r.user_id === p.id)?.admin_level ?? null,
+        admin_level: roles.find((r: any) => r.user_id === p.id)?.admin_level ?? null,
       }));
     },
   });
@@ -99,10 +97,7 @@ export function AdminEquipe() {
     qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
   };
 
-  const handleChangeLevel = async (
-    memberId: string,
-    newLevel: NonNullable<AdminLevel>,
-  ) => {
+  const handleChangeLevel = async (memberId: string, newLevel: NonNullable<AdminLevel>) => {
     setChangingLevel(memberId);
     const { error } = await supabase
       .from("user_roles")
@@ -161,8 +156,7 @@ export function AdminEquipe() {
           <UserPlus className="h-4 w-4 text-brand" /> Adicionar Administrador
         </h3>
         <p className="text-sm text-slate-500 mb-6">
-          Se ainda não tem conta, enviamos um convite por e-mail para definir a
-          senha.
+          Se ainda não tem conta, enviamos um convite por e-mail para definir a senha.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
@@ -174,9 +168,7 @@ export function AdminEquipe() {
           />
           <select
             value={inviteLevel}
-            onChange={(e) =>
-              setInviteLevel(e.target.value as NonNullable<AdminLevel>)
-            }
+            onChange={(e) => setInviteLevel(e.target.value as NonNullable<AdminLevel>)}
             className="p-3 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-brand/20 outline-none"
           >
             <option value="suporte">Suporte</option>
@@ -189,11 +181,7 @@ export function AdminEquipe() {
             disabled={inviting || !inviteEmail}
             className="bg-brand text-white rounded-lg px-6 font-bold"
           >
-            {inviting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Adicionar"
-            )}
+            {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Adicionar"}
           </Button>
         </div>
       </section>
@@ -206,10 +194,7 @@ export function AdminEquipe() {
         <div className="divide-y divide-slate-100">
           {isLoading &&
             [...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="px-8 py-5 flex items-center justify-between"
-              >
+              <div key={i} className="px-8 py-5 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-10 w-10 rounded-full" />
                   <div className="space-y-2">
@@ -223,9 +208,7 @@ export function AdminEquipe() {
           {!isLoading &&
             team.map((member: any) => {
               const meta = member.admin_level
-                ? ADMIN_LEVEL_LABELS[
-                    member.admin_level as NonNullable<AdminLevel>
-                  ]
+                ? ADMIN_LEVEL_LABELS[member.admin_level as NonNullable<AdminLevel>]
                 : null;
               const isSelf = member.id === user?.id;
               return (
@@ -239,18 +222,14 @@ export function AdminEquipe() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm truncate">
-                          {member.nome || member.email}
-                        </p>
+                        <p className="font-bold text-sm truncate">{member.nome || member.email}</p>
                         {isSelf && (
                           <span className="text-[9px] font-bold uppercase text-brand bg-brand/10 px-1.5 py-0.5 rounded">
                             Você
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 truncate">
-                        {member.email}
-                      </p>
+                      <p className="text-xs text-slate-500 truncate">{member.email}</p>
                       {meta && (
                         <span
                           className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${meta.color}`}
@@ -266,10 +245,7 @@ export function AdminEquipe() {
                       value={member.admin_level ?? ""}
                       disabled={changingLevel === member.id}
                       onChange={(e) =>
-                        handleChangeLevel(
-                          member.id,
-                          e.target.value as NonNullable<AdminLevel>,
-                        )
+                        handleChangeLevel(member.id, e.target.value as NonNullable<AdminLevel>)
                       }
                       className="text-xs p-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-brand/20 outline-none"
                     >
@@ -284,11 +260,7 @@ export function AdminEquipe() {
                       disabled={removing === member.id || isSelf}
                       onClick={() => handleRemove(member.id, member.email)}
                       className={`rounded-lg px-3 ${isSelf ? "text-slate-300 cursor-not-allowed" : "text-red-500 hover:bg-red-50 hover:text-red-600"}`}
-                      title={
-                        isSelf
-                          ? "Você não pode remover a si mesmo"
-                          : "Remover acesso"
-                      }
+                      title={isSelf ? "Você não pode remover a si mesmo" : "Remover acesso"}
                     >
                       {removing === member.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />

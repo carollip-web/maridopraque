@@ -14,4 +14,5 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
   cancelado: { label: "Cancelado", className: "bg-slate-200 text-slate-600" },
 };
 
-export const WHATSAPP_LINK = "https://wa.me/5521999999999?text=Olá!%20Sou%20profissional%20do%20Marido%20Pra%20Quê.";
+export const WHATSAPP_LINK =
+  "https://wa.me/5521999999999?text=Olá!%20Sou%20profissional%20do%20Marido%20Pra%20Quê.";

@@ -61,4 +61,3 @@ export const STATUS_COLORS: Record<string, { bg: string; color: string; label: s
   cancelado: { bg: "bg-slate-100", color: "text-slate-600", label: "Cancelado" },
   fixo_auto: { bg: "bg-violet-50", color: "text-violet-700", label: "Auto-aprovado" },
 };
-

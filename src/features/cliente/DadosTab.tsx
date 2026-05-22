@@ -2,14 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Camera,
-  ShieldCheck,
-  User,
-  MapPin,
-  ChevronRight,
-  Bell,
-} from "lucide-react";
+import { Camera, ShieldCheck, User, MapPin, ChevronRight, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -299,25 +292,6 @@ export function DadosTab() {
                 Serviços pagos
               </p>
             </div>
-          </div>
-        </section>
-
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
-          <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
-          </h4>
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full rounded-xl justify-between text-xs font-bold py-6 group"
-              onClick={handleResetPassword}
-            >
-              Enviar link p/ redefinir senha
-              <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Você receberá um e-mail em {user?.email} com um link seguro para criar uma nova senha.
-            </p>
           </div>
         </section>
       </div>
@@ -636,38 +610,6 @@ export function DadosTab() {
                 ))}
             </div>
           )}
-        </section>
-
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-2xl bg-brand/10 flex items-center justify-center">
-              <Bell className="h-5 w-5 text-brand" />
-            </div>
-            <h3 className="font-bold text-lg">Preferências de contato</h3>
-          </div>
-          <div className="space-y-4">
-            <Toggle
-              label="Notificações via WhatsApp"
-              desc="Avisos de agendamento e chegada do profissional."
-              value={whatsappNotifications}
-              onChange={(v) => {
-                setWhatsappNotifications(v);
-                savePrefs({ whatsappNotifications: v });
-              }}
-            />
-            <Toggle
-              label="E-mails de promoção"
-              desc="Receba cupons de desconto e dicas de manutenção."
-              value={promoEmails}
-              onChange={(v) => {
-                setPromoEmails(v);
-                savePrefs({ promoEmails: v });
-              }}
-            />
-          </div>
-          <p className="mt-4 text-[11px] text-muted-foreground">
-            As preferências ficam salvas neste navegador.
-          </p>
         </section>
       </div>
 

@@ -16,7 +16,8 @@ export function AdminFinanceiro() {
       // Busca repasses, com junção aos orçamentos para pegar o nome do serviço
       const { data: repasses, error } = await supabase
         .from("repasses_profissionais")
-        .select(`
+        .select(
+          `
           id, 
           status, 
           valor_bruto, 
@@ -25,22 +26,20 @@ export function AdminFinanceiro() {
           valor_liquido,
           created_at,
           orcamentos ( service_name, data_pagamento )
-        `)
+        `,
+        )
         .order("created_at", { ascending: false })
         .limit(200);
 
       const list = repasses || [];
 
       // Volume Transacionado = Soma do valor bruto (tudo que o cliente pagou)
-      const totalFaturado = list.reduce(
-        (s: number, r: any) => s + Number(r.valor_bruto || 0),
-        0
-      );
+      const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_bruto || 0), 0);
 
       // Lucro da Plataforma = Soma das comissões
       const lucroPlataforma = list.reduce(
         (s: number, r: any) => s + Number(r.valor_comissao_marketplace || 0),
-        0
+        0,
       );
 
       // Saldo Parado no BTG = O que a plataforma deve aos profissionais (ainda não pago)
@@ -86,18 +85,16 @@ export function AdminFinanceiro() {
             </div>
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
               <p className="text-sm text-slate-500 mb-1">Lucro da Plataforma (Real)</p>
-              <h3 className="text-3xl font-bold text-emerald-600">R$ {data.lucroPlataforma.toFixed(2)}</h3>
+              <h3 className="text-3xl font-bold text-emerald-600">
+                R$ {data.lucroPlataforma.toFixed(2)}
+              </h3>
               <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
                 Proveniente das comissões
               </div>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-brand">
-              <p className="text-sm text-slate-500 mb-1">
-                Saldo Parado BTG (A Repassar)
-              </p>
-              <h3 className="text-3xl font-bold">
-                R$ {data.saldoPendenteBtg.toFixed(2)}
-              </h3>
+              <p className="text-sm text-slate-500 mb-1">Saldo Parado BTG (A Repassar)</p>
+              <h3 className="text-3xl font-bold">R$ {data.saldoPendenteBtg.toFixed(2)}</h3>
               <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
                 <Clock className="h-3 w-3" /> Aguardando transferência Pix
               </div>
@@ -110,9 +107,7 @@ export function AdminFinanceiro() {
             </div>
             <div className="p-6 space-y-4">
               {data.pagos.length === 0 && (
-                <p className="text-sm text-slate-400">
-                  Nenhum repasse criado ainda.
-                </p>
+                <p className="text-sm text-slate-400">Nenhum repasse criado ainda.</p>
               )}
               {data.pagos.slice(0, 10).map((f: any) => (
                 <div
@@ -128,9 +123,7 @@ export function AdminFinanceiro() {
                         : "—"}
                     </p>
                   </div>
-                  <p className="font-bold text-slate-900">
-                    + R$ {Number(f.valor || 0).toFixed(2)}
-                  </p>
+                  <p className="font-bold text-slate-900">+ R$ {Number(f.valor || 0).toFixed(2)}</p>
                 </div>
               ))}
             </div>

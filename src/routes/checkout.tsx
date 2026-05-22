@@ -37,7 +37,7 @@ function Checkout() {
   const { orcamentoId, service: queryService, step } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  
+
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -64,10 +64,10 @@ function Checkout() {
   async function loadOrcamento(id: string) {
     setLoading(true);
     const { data: sessionData } = await supabase.auth.getSession();
-    console.info("[Checkout.loadOrcamento] Sessão atual:", { 
+    console.info("[Checkout.loadOrcamento] Sessão atual:", {
       sessionUserId: sessionData.session?.user?.id,
       hookUserId: user?.id,
-      authLoading
+      authLoading,
     });
 
     const { data, error } = await supabase
@@ -113,8 +113,10 @@ function Checkout() {
 
     setIsProcessing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await startPayment({ 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await startPayment({
         data: { orcamentoId },
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -161,14 +163,13 @@ function Checkout() {
   const materiais = orcamento?.orcamento_materiais || [];
   const valorMateriaisCalculado = materiais.reduce(
     (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
-    0
+    0,
   );
-  const valorMateriais = materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
+  const valorMateriais =
+    materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
   const valorTotal = valorServico + valorMateriais;
   const upfrontAmount = valorTotal * 0.5;
   const remainingAmount = valorTotal - upfrontAmount;
-
-
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
@@ -201,8 +202,8 @@ function Checkout() {
               <div>
                 <h3 className="font-bold text-lg">Como funciona o pagamento?</h3>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Para sua segurança, processamos o pagamento do sinal (50%) através de nossa plataforma. 
-                  O valor restante é pago diretamente ao profissional após a conclusão.
+                  Para sua segurança, processamos o pagamento do sinal (50%) através de nossa
+                  plataforma. O valor restante é pago diretamente ao profissional após a conclusão.
                 </p>
               </div>
             </div>
@@ -214,12 +215,16 @@ function Checkout() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-foreground font-medium">{orcamento.service_name}</span>
-                  <span className="text-muted-foreground text-sm">R$ {valorServico.toFixed(2)}</span>
+                  <span className="text-muted-foreground text-sm">
+                    R$ {valorServico.toFixed(2)}
+                  </span>
                 </div>
                 {valorMateriais > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="text-foreground font-medium">Materiais previstos</span>
-                    <span className="text-muted-foreground text-sm">R$ {valorMateriais.toFixed(2)}</span>
+                    <span className="text-muted-foreground text-sm">
+                      R$ {valorMateriais.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 <div className="pt-4 border-t border-border flex justify-between items-center font-bold text-lg">
@@ -232,7 +237,9 @@ function Checkout() {
             <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-brand font-bold text-lg">Sinal a pagar (50%)</span>
-                <span className="text-brand font-black text-2xl">R$ {upfrontAmount.toFixed(2)}</span>
+                <span className="text-brand font-black text-2xl">
+                  R$ {upfrontAmount.toFixed(2)}
+                </span>
               </div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
                 Saldo de R$ {remainingAmount.toFixed(2)} após o serviço
@@ -252,7 +259,7 @@ function Checkout() {
                 "Preparar Pagamento"
               )}
             </Button>
-            
+
             <p className="text-center text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
               Ambiente Seguro · Sem cobrança imediata
             </p>
@@ -283,7 +290,8 @@ function Checkout() {
           <div className="rounded-3xl bg-brand p-8 text-white">
             <h3 className="font-bold mb-2">Dúvidas sobre o sinal?</h3>
             <p className="text-sm text-white/80 leading-relaxed mb-4">
-              O sinal de 50% é uma segurança para o profissional reservar a data e para você garantir a prioridade no atendimento.
+              O sinal de 50% é uma segurança para o profissional reservar a data e para você
+              garantir a prioridade no atendimento.
             </p>
             <Link to="/ajuda" className="text-xs font-bold underline uppercase tracking-widest">
               Saiba mais sobre pagamentos
