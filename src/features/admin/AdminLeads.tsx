@@ -7,9 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, RefreshCw, Plus, Link as LinkIcon, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import type { Database } from "@/integrations/supabase/types";
 
-type Lead = Database["public"]["Tables"]["profissionais_pre_cadastro"]["Row"];
+type Lead = {
+  id: string;
+  created_at: string;
+  nome: string;
+  telefone: string;
+  cidade: string;
+  especialidade_principal: string;
+  status: string;
+};
+const db = supabase as any;
 
 export function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -26,7 +34,7 @@ export function AdminLeads() {
 
   const fetchLeads = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("profissionais_pre_cadastro")
       .select("*")
       .order("created_at", { ascending: false });
@@ -44,7 +52,7 @@ export function AdminLeads() {
   }, []);
 
   const updateStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from("profissionais_pre_cadastro")
       .update({ status: newStatus })
       .eq("id", id);
@@ -84,7 +92,7 @@ export function AdminLeads() {
         cidade: addForm.cidade,
         especialidade_principal: addForm.especialidade
       };
-      const { error } = await supabase.from("profissionais_pre_cadastro").insert(payload);
+      const { error } = await db.from("profissionais_pre_cadastro").insert(payload);
       if (error) throw error;
       toast.success("Lead adicionado com sucesso!");
       setAddModalOpen(false);

@@ -72,7 +72,7 @@ function ParaProfissionaisPage() {
         especialidade_principal: preCadForm.especialidade
       };
       // Allow public insert to profissionais_pre_cadastro
-      const { error } = await supabase.from("profissionais_pre_cadastro").insert(payload);
+      const { error } = await (supabase as any).from("profissionais_pre_cadastro").insert(payload);
       if (error) throw error;
       toast.success("Interesse registrado! Entraremos em contato via WhatsApp em breve.");
       setPreCadastroOpen(false);

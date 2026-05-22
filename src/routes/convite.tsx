@@ -9,6 +9,7 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/convite")({
   component: ConvitePage,
+  validateSearch: (s: Record<string, unknown>) => ({ id: s.id as string | undefined }),
 });
 
 const schema = z.object({
@@ -17,7 +18,7 @@ const schema = z.object({
 });
 
 function ConvitePage() {
-  const { id } = Route.useSearch<{ id?: string }>();
+  const { id } = (Route.useSearch as any)() as { id?: string };
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ function ConvitePage() {
     }
 
     const checkInvite = async () => {
-      const { data, error } = await supabase.rpc("verificar_convite", { p_convite_id: id });
+      const { data, error } = await (supabase as any).rpc("verificar_convite", { p_convite_id: id });
       if (error) {
         setError("Erro ao validar convite.");
       } else if (data?.valido) {
