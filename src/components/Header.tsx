@@ -314,7 +314,7 @@ export function Header() {
                       {/* Para Admins (que não são profissionais), mostramos o atalho de Configurações para a rota /cliente */}
                       {isAdmin && !isProfissional ? (
                         <Link
-                          to="/cliente"
+                          to="/admin"
                           search={{ tab: "dados" } as any}
                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                           onClick={() => setShowProfileMenu(false)}
