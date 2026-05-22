@@ -158,6 +158,54 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_integracoes: {
+        Row: {
+          access_token: string | null
+          account_id: string | null
+          company_id: string | null
+          connected_at: string | null
+          connected_by: string | null
+          created_at: string
+          extra: Json | null
+          id: string
+          provider: string
+          refresh_token: string | null
+          scope: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_id?: string | null
+          company_id?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          extra?: Json | null
+          id?: string
+          provider: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          account_id?: string | null
+          company_id?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          created_at?: string
+          extra?: Json | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          scope?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       materiais: {
         Row: {
           ativo: boolean
