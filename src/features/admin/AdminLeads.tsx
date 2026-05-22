@@ -34,7 +34,7 @@ export function AdminLeads() {
 
   const fetchLeads = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("profissionais_pre_cadastro")
       .select("*")
       .order("created_at", { ascending: false });
@@ -52,7 +52,7 @@ export function AdminLeads() {
   }, []);
 
   const updateStatus = async (id: string, newStatus: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from("profissionais_pre_cadastro")
       .update({ status: newStatus })
       .eq("id", id);
@@ -92,7 +92,7 @@ export function AdminLeads() {
         cidade: addForm.cidade,
         especialidade_principal: addForm.especialidade
       };
-      const { error } = await supabase.from("profissionais_pre_cadastro").insert(payload);
+      const { error } = await db.from("profissionais_pre_cadastro").insert(payload);
       if (error) throw error;
       toast.success("Lead adicionado com sucesso!");
       setAddModalOpen(false);
