@@ -38,7 +38,7 @@ function ConvitePage() {
     }
 
     const checkInvite = async () => {
-      const { data, error } = await supabase.rpc("verificar_convite", { p_convite_id: id });
+      const { data, error } = await (supabase as any).rpc("verificar_convite", { p_convite_id: id });
       if (error) {
         setError("Erro ao validar convite.");
       } else if (data?.valido) {
