@@ -33,7 +33,7 @@ function decodeJwtCompanyId(token: string): string | null {
     console.error("Erro ao decodificar JWT", e);
   }
   // Sandbox default CNPJ de acordo com a documentação do BTG
-  return "30306294000145";
+  return null;
 }
 
 serve(async (req) => {
