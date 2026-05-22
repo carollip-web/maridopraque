@@ -9,6 +9,7 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/convite")({
   component: ConvitePage,
+  validateSearch: (s: Record<string, unknown>) => ({ id: s.id as string | undefined }),
 });
 
 const schema = z.object({
