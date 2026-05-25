@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -11,6 +12,7 @@ import {
   Check,
   FileText,
   QrCode,
+  CreditCard,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import { iniciarPagamentoOrcamento } from "@/lib/pagamentos.functions";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
