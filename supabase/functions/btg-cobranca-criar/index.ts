@@ -13,6 +13,14 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function resolveCompanyId(config: any): string | null {
+  return config?.company_id
+    || config?.extra?.token_response?.company_id
+    || config?.extra?.token_response?.["empresas.btgpactual.com/pix-cash-in"]
+    || config?.extra?.token_response?.["empresas.btgpactual.com/accounts"]
+    || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -74,11 +82,13 @@ serve(async (req) => {
     // Credenciais BTG
     const { data: btgConfig } = await supabaseAdmin
       .from("marketplace_integracoes")
-      .select("access_token, company_id, token_expires_at, scope")
+      .select("access_token, company_id, token_expires_at, scope, extra")
       .eq("provider", "btg")
       .maybeSingle();
 
-    if (!btgConfig || !btgConfig.access_token || !btgConfig.company_id) {
+    const companyId = resolveCompanyId(btgConfig);
+
+    if (!btgConfig || !btgConfig.access_token || !companyId) {
       return json({ error: "Configuração BTG ausente." }, 400);
     }
     const tokenExpired = btgConfig.token_expires_at
@@ -118,7 +128,7 @@ serve(async (req) => {
     const btgBaseUrl = btgEnv === "production"
       ? "https://api.empresas.btgpactual.com"
       : "https://api.sandbox.empresas.btgpactual.com";
-    const btgRequestUrl = `${btgBaseUrl}/v1/companies/${btgConfig.company_id}/pix-cash-in/instant-collections`;
+    const btgRequestUrl = `${btgBaseUrl}/v1/companies/${companyId}/pix-cash-in/instant-collections`;
 
     console.log("[btg-cobranca-criar] chamando BTG", { env: btgEnv, amount: valorServico });
 
