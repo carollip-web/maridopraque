@@ -76,26 +76,6 @@ serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    // Idempotência: reaproveita boleto pendente recente
-    const { data: boletoAtivo } = await supabaseAdmin
-      .from("btg_boletos")
-      .select("*")
-      .eq("orcamento_id", orcamento_id)
-      .eq("status", "pendente")
-      .order("created_at", { ascending: false })
-      .maybeSingle();
-
-    if (boletoAtivo && new Date(boletoAtivo.due_date) >= new Date()) {
-      if (boletoAtivo.cliente_id !== user.id) return json({ error: "Sem permissão." }, 403);
-      return json({
-        id: boletoAtivo.id,
-        paymentUrl: boletoAtivo.payment_url,
-        amount: Number(boletoAtivo.amount),
-        dueDate: boletoAtivo.due_date,
-        status: boletoAtivo.status,
-      });
-    }
-
     // Credenciais BTG
     const { data: btgConfig } = await supabaseAdmin
       .from("marketplace_integracoes")
