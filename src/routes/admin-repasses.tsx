@@ -758,8 +758,30 @@ function AdminRepassesPage() {
                       label: rep.status,
                     };
 
+                    const selectable =
+                      rep.status === "pendente" && rep.orcamentos?.status !== "pago";
                     return (
                       <tr key={rep.id} className="hover:bg-slate-50/40 transition group">
+                        {/* Checkbox para bulk */}
+                        <td className="px-3 py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(rep.id)}
+                            disabled={!selectable}
+                            onChange={(e) => {
+                              const next = new Set(selectedIds);
+                              if (e.target.checked) next.add(rep.id);
+                              else next.delete(rep.id);
+                              setSelectedIds(next);
+                            }}
+                            className="h-4 w-4 accent-brand disabled:opacity-30"
+                            title={
+                              selectable
+                                ? "Selecionar para lote"
+                                : "Não elegível (status ou retido)"
+                            }
+                          />
+                        </td>
                         {/* ID e Criação */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-1.5">
