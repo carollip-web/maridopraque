@@ -77,6 +77,69 @@ export type Database = {
         }
         Relationships: []
       }
+      btg_cobrancas: {
+        Row: {
+          amount: number
+          btg_request: Json | null
+          btg_response: Json | null
+          cliente_id: string
+          created_at: string
+          emv: string | null
+          expires_at: string | null
+          id: string
+          orcamento_id: string
+          pagamento_id: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          payer_name: string | null
+          payer_tax_id: string | null
+          qrcode_url: string | null
+          status: string
+          tx_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          btg_request?: Json | null
+          btg_response?: Json | null
+          cliente_id: string
+          created_at?: string
+          emv?: string | null
+          expires_at?: string | null
+          id?: string
+          orcamento_id: string
+          pagamento_id?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payer_name?: string | null
+          payer_tax_id?: string | null
+          qrcode_url?: string | null
+          status?: string
+          tx_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          btg_request?: Json | null
+          btg_response?: Json | null
+          cliente_id?: string
+          created_at?: string
+          emv?: string | null
+          expires_at?: string | null
+          id?: string
+          orcamento_id?: string
+          pagamento_id?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payer_name?: string | null
+          payer_tax_id?: string | null
+          qrcode_url?: string | null
+          status?: string
+          tx_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cliente_enderecos: {
         Row: {
           bairro: string | null
