@@ -4,7 +4,7 @@ import {
   ShieldCheck,
   ArrowLeft,
   Lock,
-  Info,
+  Lock,
   Loader2,
   CheckCircle2,
   AlertCircle,
