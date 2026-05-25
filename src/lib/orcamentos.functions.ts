@@ -254,15 +254,40 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const SUPABASE_URL = process.env.SUPABASE_URL;
 
-    console.info("[enviarOrcamento] service env", {
-      supabaseUrl: SUPABASE_URL,
+    console.info("[enviarOrcamento] service env check", {
+      supabaseUrl: SUPABASE_URL || "missing",
       hasServiceKey: Boolean(SERVICE_KEY),
+    });
+
+    let serviceKeyProjectMatchesExpected = false;
+    if (SERVICE_KEY) {
+      try {
+        const parts = SERVICE_KEY.split(".");
+        if (parts.length === 3) {
+          const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+          const jsonStr = atob(payloadBase64);
+          const payload = JSON.parse(jsonStr);
+          serviceKeyProjectMatchesExpected = payload.ref === "xvrjzixmoitjbvzmmkdk";
+        }
+      } catch (err) {
+        console.error("[enviarOrcamento] Failed to validate service role JWT", err);
+      }
+    }
+
+    console.info("[enviarOrcamento] service key check", {
+      serviceKeyProjectMatchesExpected,
     });
 
     if (!SERVICE_KEY || !SUPABASE_URL) {
       console.error("[enviarOrcamento] Missing environment variables for Service Role");
       throw new Error(
         "Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL",
+      );
+    }
+
+    if (!serviceKeyProjectMatchesExpected) {
+      throw new Error(
+        "Configuração do servidor inválida: service role key não pertence ao projeto Supabase correto."
       );
     }
 
