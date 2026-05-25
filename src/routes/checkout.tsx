@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
@@ -276,7 +277,16 @@ function Checkout() {
             {cobranca && !paid && (
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex flex-col items-center gap-4">
-                  {cobranca.qrcode_url ? (
+                  {cobranca.emv ? (
+                    <div className="w-64 h-64 rounded-2xl border border-border bg-white p-3 flex items-center justify-center">
+                      <QRCodeSVG
+                        value={cobranca.emv}
+                        size={232}
+                        level="M"
+                        marginSize={0}
+                      />
+                    </div>
+                  ) : cobranca.qrcode_url ? (
                     <img
                       src={cobranca.qrcode_url}
                       alt="QR Code Pix"
