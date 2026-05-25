@@ -532,6 +532,66 @@ export type Database = {
           },
         ]
       }
+      mercadopago_preferencias: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          id: string
+          init_point: string | null
+          mp_preference_id: string | null
+          mp_request: Json | null
+          mp_response: Json | null
+          orcamento_id: string | null
+          pagamento_id: string | null
+          sandbox_init_point: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          init_point?: string | null
+          mp_preference_id?: string | null
+          mp_request?: Json | null
+          mp_response?: Json | null
+          orcamento_id?: string | null
+          pagamento_id?: string | null
+          sandbox_init_point?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          init_point?: string | null
+          mp_preference_id?: string | null
+          mp_request?: Json | null
+          mp_response?: Json | null
+          orcamento_id?: string | null
+          pagamento_id?: string | null
+          sandbox_init_point?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mercadopago_preferencias_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mercadopago_preferencias_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacoes: {
         Row: {
           created_at: string
