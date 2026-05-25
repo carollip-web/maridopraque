@@ -52,6 +52,19 @@ type Boleto = {
 
 type PaymentMethod = "pix" | "boleto";
 
+async function getFunctionErrorMessage(error: any, fallback: string) {
+  const context = error?.context;
+  try {
+    if (context instanceof Response) {
+      const payload = await context.clone().json();
+      return payload?.message || payload?.error || fallback;
+    }
+  } catch {
+    // Mantém fallback abaixo.
+  }
+  return error?.message || fallback;
+}
+
 function Checkout() {
   const { orcamentoId } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
@@ -194,7 +207,13 @@ function Checkout() {
   }
 
   const handleGerarBoleto = async () => {
-    if (!orcamentoId) { toast.error("Pedido ausente."); return; }
+    if (isProcessing) return;
+    if (!orcamentoId) { toast.error("Pedido inválido para pagamento."); return; }
+    if (!orcamento) { toast.error("Pedido ainda não carregado."); return; }
+    if (orcamento.status !== "aprovado") {
+      toast.error("Este pedido ainda não está liberado para pagamento.");
+      return;
+    }
     const whatsappDigits = whatsapp.replace(/\D/g, "");
     if (![10, 11, 12, 13].includes(whatsappDigits.length)) {
       toast.error("Informe um WhatsApp válido para receber o boleto.");
@@ -203,12 +222,35 @@ function Checkout() {
     setIsProcessing(true);
     try {
       if (!user?.id) { toast.error("Faça login novamente para continuar."); return; }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Sua sessão expirou. Faça login novamente.");
+        return;
+      }
       await supabase.from("profiles").update({ whatsapp }).eq("id", user.id);
+      console.info("[checkout] chamando btg-boleto-criar", {
+        orcamentoId,
+        status: orcamento?.status,
+        valor_servico: orcamento?.valor_servico,
+        userId: user.id,
+      });
       const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
         body: { orcamentoId, whatsapp },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+      console.info("[checkout] btg-boleto-criar result", { data, error });
       if (error || !data?.paymentUrl) {
-        toast.error(data?.error || error?.message || "Erro ao gerar boleto.");
+        if (error) {
+          console.error("[checkout] erro btg-boleto-criar", {
+            message: error.message,
+            name: error.name,
+            context: error.context,
+          });
+        }
+        toast.error(data?.message || data?.error || await getFunctionErrorMessage(error, "Não foi possível iniciar o pagamento."));
         return;
       }
       const bol = data as Boleto;
