@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Lock,
   Loader2,
-  Loader2,
   CheckCircle2,
   AlertCircle,
   Copy,
