@@ -1,145 +1,194 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   DollarSign,
-  Download,
   Loader2,
   TrendingUp,
   Clock,
-  CreditCard,
-  Calendar,
-  Filter,
+  Wallet,
+  CheckCircle2,
+  AlertCircle,
+  ArrowDownToLine,
 } from "lucide-react";
 
-type Linha = {
-  id: string;
-  service_name: string;
-  cliente_nome: string;
-  status: string;
-  valor: number;
-  valor_servico: number;
-  taxa_material: number;
-  data_pagamento: string | null;
-  data_aprovacao: string | null;
-  created_at: string;
-  updated_at: string;
+type Saldo = {
+  saldo_disponivel: number;
+  saldo_a_liberar: number;
+  saldo_pago: number;
+  saldo_retido: number;
 };
 
-const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  enviado: { label: "Aguardando cliente", color: "bg-sky-100 text-sky-700" },
-  aprovado: { label: "Aprovado — a receber", color: "bg-amber-100 text-amber-700" },
+type Split = {
+  id: string;
+  valor_total: number;
+  valor_profissional: number;
+  taxa_plataforma: number;
+  taxa_gateway: number;
+  status: string;
+  disponivel_em: string | null;
+  pago_em: string | null;
+  created_at: string;
+  orcamento_id: string;
+  orcamentos?: { service_name: string | null; status: string | null } | null;
+};
+
+type Saque = {
+  id: string;
+  valor: number;
+  status: string;
+  chave_pix: string | null;
+  observacao: string | null;
+  solicitado_em: string;
+  aprovado_em: string | null;
+  pago_em: string | null;
+  comprovante_url: string | null;
+};
+
+const SPLIT_STATUS: Record<string, { label: string; color: string }> = {
+  aguardando_conclusao: { label: "A liberar", color: "bg-amber-100 text-amber-700" },
+  disponivel: { label: "Disponível", color: "bg-emerald-100 text-emerald-700" },
+  solicitado: { label: "Em saque", color: "bg-sky-100 text-sky-700" },
+  pago: { label: "Pago", color: "bg-slate-100 text-slate-700" },
+  retido: { label: "Retido", color: "bg-rose-100 text-rose-700" },
+  estornado: { label: "Estornado", color: "bg-slate-100 text-slate-600" },
+  cancelado: { label: "Cancelado", color: "bg-slate-100 text-slate-600" },
+};
+
+const SAQUE_STATUS: Record<string, { label: string; color: string }> = {
+  solicitado: { label: "Solicitado", color: "bg-amber-100 text-amber-700" },
+  aprovado: { label: "Aprovado", color: "bg-sky-100 text-sky-700" },
   pago: { label: "Pago", color: "bg-emerald-100 text-emerald-700" },
-  concluido: { label: "Concluído", color: "bg-emerald-100 text-emerald-700" },
   recusado: { label: "Recusado", color: "bg-rose-100 text-rose-700" },
   cancelado: { label: "Cancelado", color: "bg-slate-100 text-slate-600" },
 };
 
-type Periodo = "30d" | "90d" | "ano" | "tudo";
-type Filtro = "todos" | "pagos" | "areceber";
+const brl = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ProfissionalFinanceiro() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [linhas, setLinhas] = useState<Linha[]>([]);
-  const [periodo, setPeriodo] = useState<Periodo>("90d");
-  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [saldo, setSaldo] = useState<Saldo | null>(null);
+  const [splits, setSplits] = useState<Split[]>([]);
+  const [saques, setSaques] = useState<Saque[]>([]);
+  const [chavePix, setChavePix] = useState<string>("");
+  const [open, setOpen] = useState(false);
+  const [valor, setValor] = useState("");
+  const [obs, setObs] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+
+    const [{ data: s }, { data: sp }, { data: sq }, { data: perfil }] =
+      await Promise.all([
+        supabase
+          .from("profissional_saldos")
+          .select("saldo_disponivel,saldo_a_liberar,saldo_pago,saldo_retido")
+          .eq("profissional_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("pagamento_splits")
+          .select(
+            "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,orcamentos(service_name,status)",
+          )
+          .eq("profissional_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("profissional_saques")
+          .select(
+            "id,valor,status,chave_pix,observacao,solicitado_em,aprovado_em,pago_em,comprovante_url",
+          )
+          .eq("profissional_id", user.id)
+          .order("solicitado_em", { ascending: false })
+          .limit(20),
+        supabase
+          .from("profissional_perfil")
+          .select("pix_key,chave_pix")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+    setSaldo(
+      (s as Saldo) ?? {
+        saldo_disponivel: 0,
+        saldo_a_liberar: 0,
+        saldo_pago: 0,
+        saldo_retido: 0,
+      },
+    );
+    setSplits((sp as Split[]) ?? []);
+    setSaques((sq as Saque[]) ?? []);
+    setChavePix(
+      ((perfil as any)?.pix_key as string) ||
+        ((perfil as any)?.chave_pix as string) ||
+        "",
+    );
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      if (!user) return;
-      setLoading(true);
-      const { data: orcs } = await supabase
-        .from("orcamentos")
-        .select(
-          "id, service_name, status, valor, valor_servico, taxa_material, data_pagamento, data_aprovacao, created_at, updated_at, cliente_id",
-        )
-        .eq("profissional_id", user.id)
-        .order("updated_at", { ascending: false });
-      if (!alive) return;
-      const ids = Array.from(new Set((orcs ?? []).map((o: any) => o.cliente_id)));
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id, nome").in("id", ids)
-        : { data: [] as any[] };
-      const nomeMap: Record<string, string> = {};
-      (profs ?? []).forEach((p: any) => {
-        nomeMap[p.id] = p.nome ?? "Cliente";
-      });
-      const list: Linha[] = (orcs ?? []).map((o: any) => ({
-        id: o.id,
-        service_name: o.service_name,
-        cliente_nome: nomeMap[o.cliente_id] ?? "Cliente",
-        status: o.status,
-        valor: Number(o.valor ?? 0),
-        valor_servico: Number(o.valor_servico ?? 0),
-        taxa_material: Number(o.taxa_material ?? 0),
-        data_pagamento: o.data_pagamento,
-        data_aprovacao: o.data_aprovacao,
-        created_at: o.created_at,
-        updated_at: o.updated_at,
-      }));
-      setLinhas(list);
-      setLoading(false);
-    };
     load();
-    return () => {
-      alive = false;
-    };
-  }, [user?.id]);
+  }, [load]);
 
-  const filtradas = useMemo(() => {
-    const agora = new Date();
-    const corte = new Date();
-    if (periodo === "30d") corte.setDate(agora.getDate() - 30);
-    else if (periodo === "90d") corte.setDate(agora.getDate() - 90);
-    else if (periodo === "ano") corte.setFullYear(agora.getFullYear() - 1);
-    else corte.setFullYear(2000);
+  const podeSacar = useMemo(
+    () => Number(saldo?.saldo_disponivel ?? 0) > 0 && !!chavePix,
+    [saldo, chavePix],
+  );
 
-    return linhas.filter((l) => {
-      const data = new Date(l.data_pagamento ?? l.data_aprovacao ?? l.updated_at);
-      if (data < corte) return false;
-      if (filtro === "pagos") return l.status === "pago" || l.status === "concluido";
-      if (filtro === "areceber") return l.status === "aprovado";
-      return true;
+  const abrirSaque = () => {
+    setValor(String(Number(saldo?.saldo_disponivel ?? 0).toFixed(2)));
+    setObs("");
+    setOpen(true);
+  };
+
+  const submitSaque = async () => {
+    if (!user) return;
+    const v = Number(String(valor).replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    if (v > Number(saldo?.saldo_disponivel ?? 0)) {
+      toast.error("Valor maior que o saldo disponível");
+      return;
+    }
+    if (!chavePix) {
+      toast.error("Cadastre uma chave Pix antes de solicitar saque");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("profissional_saques").insert({
+      profissional_id: user.id,
+      valor: v,
+      chave_pix: chavePix,
+      observacao: obs || null,
+      status: "solicitado",
     });
-  }, [linhas, periodo, filtro]);
-
-  const totais = useMemo(() => {
-    const pagos = filtradas.filter((l) => l.status === "pago" || l.status === "concluido");
-    const aReceber = filtradas.filter((l) => l.status === "aprovado");
-    const totalPagos = pagos.reduce((a, l) => a + l.valor, 0);
-    const totalReceber = aReceber.reduce((a, l) => a + l.valor, 0);
-    const ticket = pagos.length ? totalPagos / pagos.length : 0;
-    return {
-      totalPagos,
-      totalReceber,
-      ticket,
-      qtdPagos: pagos.length,
-      qtdReceber: aReceber.length,
-    };
-  }, [filtradas]);
-
-  const exportarCSV = () => {
-    const headers = ["Data", "Serviço", "Cliente", "Status", "Mão de obra", "Materiais", "Total"];
-    const rows = filtradas.map((l) => [
-      new Date(l.data_pagamento ?? l.data_aprovacao ?? l.updated_at).toLocaleDateString("pt-BR"),
-      `"${l.service_name.replace(/"/g, "''")}"`,
-      `"${l.cliente_nome.replace(/"/g, "''")}"`,
-      STATUS_LABEL[l.status]?.label ?? l.status,
-      l.valor_servico.toFixed(2).replace(".", ","),
-      l.taxa_material.toFixed(2).replace(".", ","),
-      l.valor.toFixed(2).replace(".", ","),
-    ]);
-    const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `extrato-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    setSubmitting(false);
+    if (error) {
+      toast.error("Falha ao solicitar saque: " + error.message);
+      return;
+    }
+    toast.success("Saque solicitado! O financeiro irá processar.");
+    setOpen(false);
+    load();
   };
 
   if (loading) {
@@ -152,139 +201,124 @@ export function ProfissionalFinanceiro() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Financeiro</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Acompanhe ganhos, recebimentos pendentes e exporte seu extrato.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Financeiro</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Acompanhe seu saldo e solicite saques via Pix.
+          </p>
+        </div>
+        <Button
+          onClick={abrirSaque}
+          disabled={!podeSacar}
+          className="rounded-full bg-brand hover:bg-brand/90"
+        >
+          <ArrowDownToLine className="h-4 w-4 mr-1.5" /> Solicitar saque
+        </Button>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatBox
-          icon={DollarSign}
-          label="Recebido no período"
-          value={`R$ ${totais.totalPagos.toFixed(2)}`}
-          sub={`${totais.qtdPagos} pagamentos`}
+          icon={Wallet}
+          label="Disponível"
+          value={brl(Number(saldo?.saldo_disponivel ?? 0))}
+          sub="pronto para saque"
           accent="bg-emerald-50 text-emerald-700 border-emerald-200"
         />
         <StatBox
           icon={Clock}
-          label="A receber"
-          value={`R$ ${totais.totalReceber.toFixed(2)}`}
-          sub={`${totais.qtdReceber} aprovados`}
+          label="A liberar"
+          value={brl(Number(saldo?.saldo_a_liberar ?? 0))}
+          sub="serviços em andamento"
           accent="bg-amber-50 text-amber-700 border-amber-200"
         />
         <StatBox
+          icon={CheckCircle2}
+          label="Já pago"
+          value={brl(Number(saldo?.saldo_pago ?? 0))}
+          sub="histórico de saques"
+          accent="bg-slate-50 text-slate-700 border-slate-200"
+        />
+        <StatBox
           icon={TrendingUp}
-          label="Ticket médio"
-          value={`R$ ${totais.ticket.toFixed(2)}`}
-          sub="por serviço pago"
-          accent="bg-sky-50 text-sky-700 border-sky-200"
+          label="Retido"
+          value={brl(Number(saldo?.saldo_retido ?? 0))}
+          sub="em revisão"
+          accent="bg-rose-50 text-rose-700 border-rose-200"
         />
       </section>
 
-      <section className="rounded-3xl bg-white border border-border p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex flex-wrap gap-2">
-            {(["30d", "90d", "ano", "tudo"] as Periodo[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriodo(p)}
-                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${periodo === p ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand"}`}
-              >
-                {p === "30d"
-                  ? "Últimos 30 dias"
-                  : p === "90d"
-                    ? "Últimos 90 dias"
-                    : p === "ano"
-                      ? "Último ano"
-                      : "Tudo"}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Filter className="h-3.5 w-3.5" /> Filtro:
-            </div>
-            {(["todos", "pagos", "areceber"] as Filtro[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFiltro(f)}
-                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${filtro === f ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"}`}
-              >
-                {f === "todos" ? "Todos" : f === "pagos" ? "Pagos" : "A receber"}
-              </button>
-            ))}
-            <Button
-              onClick={exportarCSV}
-              variant="outline"
-              size="sm"
-              className="rounded-full text-xs h-8"
-              disabled={filtradas.length === 0}
-            >
-              <Download className="h-3.5 w-3.5 mr-1" /> CSV
-            </Button>
+      {!chavePix && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 mt-0.5" />
+          <div>
+            Você ainda não cadastrou uma <b>chave Pix</b>. Adicione na aba "Conta"
+            para conseguir solicitar saques.
           </div>
         </div>
+      )}
 
-        {filtradas.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
-            Nenhuma movimentação no período selecionado.
-          </div>
+      <section className="rounded-3xl bg-white border border-border p-4 sm:p-6 shadow-sm">
+        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-brand" /> Pagamentos recebidos
+        </h3>
+        {splits.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Nenhum pagamento ainda.
+          </p>
         ) : (
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
-                  <th className="px-4 py-2 font-bold">Data</th>
-                  <th className="px-4 py-2 font-bold">Serviço</th>
-                  <th className="px-4 py-2 font-bold hidden md:table-cell">Cliente</th>
-                  <th className="px-4 py-2 font-bold">Status</th>
-                  <th className="px-4 py-2 font-bold text-right">Total</th>
+                  <th className="px-3 py-2 font-bold">Data</th>
+                  <th className="px-3 py-2 font-bold">Serviço</th>
+                  <th className="px-3 py-2 font-bold">Status</th>
+                  <th className="px-3 py-2 font-bold text-right">Bruto</th>
+                  <th className="px-3 py-2 font-bold text-right">Taxa</th>
+                  <th className="px-3 py-2 font-bold text-right">Você recebe</th>
                 </tr>
               </thead>
               <tbody>
-                {filtradas.map((l) => {
-                  const meta = STATUS_LABEL[l.status] ?? {
-                    label: l.status,
-                    color: "bg-slate-100 text-slate-700",
-                  };
-                  const data = new Date(l.data_pagamento ?? l.data_aprovacao ?? l.updated_at);
-                  const isPago = l.status === "pago" || l.status === "concluido";
-                  const isReceber = l.status === "aprovado";
-                  // estimativa: 2 dias úteis após aprovação
-                  const previsao =
-                    isReceber && l.data_aprovacao
-                      ? new Date(new Date(l.data_aprovacao).getTime() + 2 * 86400000)
-                      : null;
+                {splits.map((sp) => {
+                  const meta =
+                    SPLIT_STATUS[sp.status] ?? {
+                      label: sp.status,
+                      color: "bg-slate-100 text-slate-700",
+                    };
+                  const taxa = Number(sp.taxa_plataforma) + Number(sp.taxa_gateway);
                   return (
                     <tr
-                      key={l.id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition"
+                      key={sp.id}
+                      className="border-b border-slate-100 hover:bg-slate-50"
                     >
-                      <td className="px-4 py-3 text-xs text-slate-700 tabular-nums">
-                        {data.toLocaleDateString("pt-BR")}
-                        {previsao && (
-                          <div className="text-[10px] text-amber-700 flex items-center gap-1 mt-0.5">
-                            <Calendar className="h-3 w-3" /> previsão{" "}
-                            {previsao.toLocaleDateString("pt-BR")}
-                          </div>
-                        )}
+                      <td className="px-3 py-2.5 text-xs text-slate-600 tabular-nums">
+                        {new Date(sp.created_at).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">{l.service_name}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">
-                        {l.cliente_nome}
+                      <td className="px-3 py-2.5 font-medium text-slate-900">
+                        {sp.orcamentos?.service_name ?? "Serviço"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2.5">
                         <span
                           className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
                         >
-                          {isPago && <CreditCard className="inline h-3 w-3 mr-0.5 -mt-0.5" />}
                           {meta.label}
                         </span>
+                        {sp.status === "aguardando_conclusao" && sp.disponivel_em && (
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            libera{" "}
+                            {new Date(sp.disponivel_em).toLocaleDateString("pt-BR")}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-bold">
-                        R$ {l.valor.toFixed(2)}
+                      <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
+                        {brl(Number(sp.valor_total))}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
+                        − {brl(taxa)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums font-bold text-emerald-700">
+                        {brl(Number(sp.valor_profissional))}
                       </td>
                     </tr>
                   );
@@ -294,6 +328,103 @@ export function ProfissionalFinanceiro() {
           </div>
         )}
       </section>
+
+      <section className="rounded-3xl bg-white border border-border p-4 sm:p-6 shadow-sm">
+        <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <ArrowDownToLine className="h-4 w-4 text-brand" /> Meus saques
+        </h3>
+        {saques.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Nenhum saque solicitado.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {saques.map((sq) => {
+              const meta =
+                SAQUE_STATUS[sq.status] ?? {
+                  label: sq.status,
+                  color: "bg-slate-100 text-slate-700",
+                };
+              return (
+                <div
+                  key={sq.id}
+                  className="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3"
+                >
+                  <div className="text-sm">
+                    <div className="font-bold text-slate-900 tabular-nums">
+                      {brl(Number(sq.valor))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Solicitado em{" "}
+                      {new Date(sq.solicitado_em).toLocaleString("pt-BR")}
+                    </div>
+                    {sq.chave_pix && (
+                      <div className="text-xs text-muted-foreground">
+                        Pix: {sq.chave_pix}
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
+                  >
+                    {meta.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar saque via Pix</DialogTitle>
+            <DialogDescription>
+              O financeiro processa em até 1 dia útil. O valor será enviado para a
+              sua chave Pix cadastrada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Chave Pix</Label>
+              <Input value={chavePix} disabled />
+            </div>
+            <div>
+              <Label>Valor (R$)</Label>
+              <Input
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                inputMode="decimal"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Disponível: {brl(Number(saldo?.saldo_disponivel ?? 0))}
+              </p>
+            </div>
+            <div>
+              <Label>Observação (opcional)</Label>
+              <Textarea
+                rows={3}
+                value={obs}
+                onChange={(e) => setObs(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submitSaque}
+              disabled={submitting}
+              className="bg-brand hover:bg-brand/90"
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

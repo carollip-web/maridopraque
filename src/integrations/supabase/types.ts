@@ -355,6 +355,33 @@ export type Database = {
           },
         ]
       }
+      financeiro_config: {
+        Row: {
+          dias_liberacao: number
+          id: boolean
+          taxa_gateway_fixa: number
+          taxa_gateway_percent: number
+          taxa_plataforma_percent: number
+          updated_at: string
+        }
+        Insert: {
+          dias_liberacao?: number
+          id?: boolean
+          taxa_gateway_fixa?: number
+          taxa_gateway_percent?: number
+          taxa_plataforma_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          dias_liberacao?: number
+          id?: boolean
+          taxa_gateway_fixa?: number
+          taxa_gateway_percent?: number
+          taxa_plataforma_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       indicacoes: {
         Row: {
           codigo: string
@@ -867,6 +894,81 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamento_splits: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          disponivel_em: string | null
+          gateway: string | null
+          gateway_payment_id: string | null
+          id: string
+          metadata: Json
+          orcamento_id: string
+          pagamento_id: string
+          pago_em: string | null
+          profissional_id: string
+          status: string
+          taxa_gateway: number
+          taxa_plataforma: number
+          updated_at: string
+          valor_profissional: number
+          valor_total: number
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          disponivel_em?: string | null
+          gateway?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          metadata?: Json
+          orcamento_id: string
+          pagamento_id: string
+          pago_em?: string | null
+          profissional_id: string
+          status?: string
+          taxa_gateway?: number
+          taxa_plataforma?: number
+          updated_at?: string
+          valor_profissional: number
+          valor_total: number
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          disponivel_em?: string | null
+          gateway?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          metadata?: Json
+          orcamento_id?: string
+          pagamento_id?: string
+          pago_em?: string | null
+          profissional_id?: string
+          status?: string
+          taxa_gateway?: number
+          taxa_plataforma?: number
+          updated_at?: string
+          valor_profissional?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_splits_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_splits_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: true
+            referencedRelation: "pagamentos"
             referencedColumns: ["id"]
           },
         ]
@@ -1387,6 +1489,75 @@ export type Database = {
           },
         ]
       }
+      profissional_saldos: {
+        Row: {
+          profissional_id: string
+          saldo_a_liberar: number
+          saldo_disponivel: number
+          saldo_pago: number
+          saldo_retido: number
+          updated_at: string
+        }
+        Insert: {
+          profissional_id: string
+          saldo_a_liberar?: number
+          saldo_disponivel?: number
+          saldo_pago?: number
+          saldo_retido?: number
+          updated_at?: string
+        }
+        Update: {
+          profissional_id?: string
+          saldo_a_liberar?: number
+          saldo_disponivel?: number
+          saldo_pago?: number
+          saldo_retido?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profissional_saques: {
+        Row: {
+          aprovado_em: string | null
+          chave_pix: string | null
+          comprovante_url: string | null
+          created_at: string
+          id: string
+          observacao: string | null
+          pago_em: string | null
+          profissional_id: string
+          solicitado_em: string
+          status: string
+          valor: number
+        }
+        Insert: {
+          aprovado_em?: string | null
+          chave_pix?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          pago_em?: string | null
+          profissional_id: string
+          solicitado_em?: string
+          status?: string
+          valor: number
+        }
+        Update: {
+          aprovado_em?: string | null
+          chave_pix?: string | null
+          comprovante_url?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          pago_em?: string | null
+          profissional_id?: string
+          solicitado_em?: string
+          status?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       proposta_materiais: {
         Row: {
           created_at: string
@@ -1846,6 +2017,34 @@ export type Database = {
         Args: { p_pagamento_id: string }
         Returns: string
       }
+      criar_split_pagamento: {
+        Args: { _pagamento_id: string }
+        Returns: {
+          cliente_id: string
+          created_at: string
+          disponivel_em: string | null
+          gateway: string | null
+          gateway_payment_id: string | null
+          id: string
+          metadata: Json
+          orcamento_id: string
+          pagamento_id: string
+          pago_em: string | null
+          profissional_id: string
+          status: string
+          taxa_gateway: number
+          taxa_plataforma: number
+          updated_at: string
+          valor_profissional: number
+          valor_total: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pagamento_splits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1854,10 +2053,37 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      liberar_splits_vencidos: { Args: never; Returns: number }
       limpar_reservas_temporarias_expiradas: { Args: never; Returns: undefined }
       marcar_orcamento_enviado: {
         Args: { _orcamento_id: string }
         Returns: Json
+      }
+      processar_saque_pago: {
+        Args: { _saque_id: string }
+        Returns: {
+          aprovado_em: string | null
+          chave_pix: string | null
+          comprovante_url: string | null
+          created_at: string
+          id: string
+          observacao: string | null
+          pago_em: string | null
+          profissional_id: string
+          solicitado_em: string
+          status: string
+          valor: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profissional_saques"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      recalcular_saldos_profissional: {
+        Args: { _profissional_id: string }
+        Returns: undefined
       }
       validar_codigo_indicacao: {
         Args: { _codigo: string }
