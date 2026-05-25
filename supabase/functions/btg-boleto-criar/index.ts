@@ -113,22 +113,48 @@ serve(async (req) => {
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
-    const btgPayload = {
+    const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
+    const btgBaseUrl = btgEnv === "production"
+      ? "https://api.empresas.btgpactual.com"
+      : "https://api.sandbox.empresas.btgpactual.com";
+
+    // Buscar conta bancária BTG (account é obrigatório)
+    const accountsResp = await fetch(`${btgBaseUrl}/${companyId}/banking/accounts`, {
+      headers: {
+        Authorization: `Bearer ${btgConfig.access_token}`,
+        Accept: "application/json",
+      },
+    });
+    const accountsText = await accountsResp.text();
+    let accountsJson: any = null;
+    try { if (accountsText) accountsJson = JSON.parse(accountsText); } catch { /* ignore */ }
+    if (!accountsResp.ok) {
+      console.log("[btg-boleto-criar] erro accounts", { status: accountsResp.status, body: accountsJson });
+      return json({ error: "Não foi possível obter a conta BTG da empresa." }, 502);
+    }
+    const btgAccount = Array.isArray(accountsJson?.data) ? accountsJson.data[0] : null;
+    if (!btgAccount) {
+      return json({ error: "Empresa BTG sem conta bancária disponível." }, 502);
+    }
+
+    const btgPayload: any = {
       name: `Pedido #${codigoCurto}`,
       amount: valor,
       description: `Marido pra Quê - ${orcamento.service_name || "Serviço"} (#${codigoCurto})`,
       type: "SINGLE",
       paymentMethods: ["BANKSLIP"],
+      account: {
+        accountId: btgAccount.accountId,
+        bankCode: btgAccount.bankCode,
+        branchCode: btgAccount.branchCode,
+        number: btgAccount.number,
+      },
       schedule: {
         startAt: fmt(now),
         endAt: fmt(dueDate),
       },
     };
 
-    const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
-    const btgBaseUrl = btgEnv === "production"
-      ? "https://api.empresas.btgpactual.com"
-      : "https://api.sandbox.empresas.btgpactual.com";
     const btgRequestUrl = `${btgBaseUrl}/${companyId}/banking/payment-link`;
 
     console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr, url: btgRequestUrl });
