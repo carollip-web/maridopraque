@@ -66,7 +66,7 @@ serve(async (req) => {
 
     // 4. Montar URL de autorização BTG
     const scopes =
-      "openid empresas.btgpactual.com/accounts empresas.btgpactual.com/accounts.readonly empresas.btgpactual.com/pix-cash-in brn:btg:empresas:banking:payments brn:btg:empresas:banking:payments.readonly brn:btg:empresas:credit-conciliation";
+      "openid empresas.btgpactual.com/accounts empresas.btgpactual.com/accounts.readonly empresas.btgpactual.com/pix-cash-in brn:btg:empresas:banking:payments brn:btg:empresas:banking:payments.readonly brn:btg:empresas:credit-conciliation brn:btg:empresas:payment-link";
 
     // Gerar um state aleatório
     const state = crypto.randomUUID();
