@@ -1,4 +1,4 @@
-project_id = "xvrjzixmoitjbvzmmkdk"
+project_id = "rbfonmpuepqfhivvoqku"
 
 [functions.cron-limpeza-agenda]
 verify_jwt = false
