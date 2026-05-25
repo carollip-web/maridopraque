@@ -175,6 +175,42 @@ function Checkout() {
     }
   };
 
+  function startBoletoPolling(bol: Boleto) {
+    pollingRef.current = window.setInterval(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("btg-boleto-status", {
+          body: { boletoId: bol.id },
+        });
+        if (!error && data?.status === "pago") onPaidConfirmed();
+      } catch (e) {
+        console.warn("[checkout] boleto polling error", e);
+      }
+    }, 15000);
+  }
+
+  const handleGerarBoleto = async () => {
+    if (!orcamentoId) { toast.error("Pedido ausente."); return; }
+    setIsProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
+        body: { orcamentoId },
+      });
+      if (error || !data?.paymentUrl) {
+        toast.error(data?.error || error?.message || "Erro ao gerar boleto.");
+        return;
+      }
+      const bol = data as Boleto;
+      setBoleto(bol);
+      startBoletoPolling(bol);
+      window.open(bol.paymentUrl, "_blank", "noopener,noreferrer");
+      toast.success("Boleto gerado! Abrimos em uma nova aba.");
+    } catch (err: any) {
+      toast.error(err.message || "Falha na comunicação.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!cobranca?.emv) return;
     await navigator.clipboard.writeText(cobranca.emv);
