@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -11,6 +12,7 @@ import {
   Check,
   FileText,
   QrCode,
+  CreditCard,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import { iniciarPagamentoOrcamento } from "@/lib/pagamentos.functions";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
@@ -50,7 +53,7 @@ type Boleto = {
   status: string;
 };
 
-type PaymentMethod = "pix" | "boleto";
+type PaymentMethod = "pix" | "boleto" | "cartao";
 
 async function getFunctionErrorMessage(error: any, fallback: string) {
   const context = error?.context;
@@ -273,6 +276,32 @@ function Checkout() {
     }
   };
 
+  const iniciarMpFn = useServerFn(iniciarPagamentoOrcamento);
+
+  const handlePagarCartao = async () => {
+    if (isProcessing) return;
+    if (!orcamentoId) { toast.error("Pedido inválido."); return; }
+    if (!orcamento || orcamento.status !== "aprovado") {
+      toast.error("Este pedido ainda não está liberado para pagamento.");
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const result = await iniciarMpFn({ data: { orcamentoId } });
+      if (!result?.checkoutUrl) {
+        toast.error("Não foi possível iniciar o pagamento com cartão.");
+        return;
+      }
+      toast.success("Redirecionando para o Mercado Pago...");
+      window.location.href = result.checkoutUrl;
+    } catch (err: any) {
+      console.error("[checkout] erro cartão MP", err);
+      toast.error(err?.message || "Falha ao iniciar pagamento com cartão.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!cobranca?.emv) return;
     await navigator.clipboard.writeText(cobranca.emv);
@@ -346,13 +375,13 @@ function Checkout() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Pagamento do Pedido</h2>
             <p className="text-muted-foreground mt-2">
-              Escolha Pix (instantâneo) ou Boleto bancário (até 3 dias úteis).
+              Escolha Pix (instantâneo), Cartão (crédito/débito via Mercado Pago) ou Boleto bancário.
             </p>
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
             {!cobranca && !boleto && !paid && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setMethod("pix")}
@@ -363,6 +392,17 @@ function Checkout() {
                   <QrCode className="h-5 w-5 text-brand mb-2" />
                   <div className="font-bold text-sm">Pix</div>
                   <div className="text-xs text-muted-foreground">Confirmação na hora</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("cartao")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "cartao" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <CreditCard className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Cartão</div>
+                  <div className="text-xs text-muted-foreground">Crédito ou débito</div>
                 </button>
                 <button
                   type="button"
@@ -402,7 +442,7 @@ function Checkout() {
 
             <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
               <span className="text-brand font-bold text-lg">
-                Valor a pagar agora ({method === "pix" ? "Pix" : "Boleto"})
+                Valor a pagar agora ({method === "pix" ? "Pix" : method === "cartao" ? "Cartão" : "Boleto"})
               </span>
               <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
@@ -417,6 +457,25 @@ function Checkout() {
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Pix...</>
                 ) : "Gerar Pix para pagamento"}
               </Button>
+            )}
+
+            {!cobranca && !boleto && !paid && method === "cartao" && (
+              <div className="space-y-3">
+                <Button
+                  onClick={handlePagarCartao}
+                  disabled={isProcessing}
+                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+                >
+                  {isProcessing ? (
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Redirecionando...</>
+                  ) : (
+                    <><CreditCard className="mr-2 h-5 w-5" /> Pagar com Cartão</>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Você será redirecionado para o ambiente seguro do Mercado Pago para concluir o pagamento.
+                </p>
+              </div>
             )}
 
             {!cobranca && !boleto && !paid && method === "boleto" && (
