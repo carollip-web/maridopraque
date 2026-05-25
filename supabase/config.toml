@@ -30,3 +30,9 @@ verify_jwt = true
 
 [functions.btg-token-refresh]
 verify_jwt = false
+
+[functions.btg-pix-webhook]
+verify_jwt = false
+
+[functions.btg-cobranca-status]
+verify_jwt = true

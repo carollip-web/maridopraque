@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { z } from "zod";
+import { useEffect, useRef, useState } from "react";
 import {
   ShieldCheck,
   ArrowLeft,
@@ -9,74 +8,65 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useServerFn } from "@tanstack/react-start";
-import { iniciarPagamentoOrcamento } from "@/lib/pagamentos.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      orcamentoId: (search.orcamentoId as string) || undefined,
-      // Fallback para legado ou novos fluxos sem ID inicial
-      service: (search.service as string) || undefined,
-      step: Number(search.step) || 1,
-    };
-  },
+  validateSearch: (search: Record<string, unknown>) => ({
+    orcamentoId: (search.orcamentoId as string) || undefined,
+    service: (search.service as string) || undefined,
+    step: Number(search.step) || 1,
+  }),
 });
 
 function CheckoutGuard() {
   return <Checkout />;
 }
 
+type Cobranca = {
+  txId: string;
+  emv: string;
+  qrcode_url: string | null;
+  status: string;
+  expiresAt: string;
+  amount: number;
+  cobrancaId: string;
+};
+
 function Checkout() {
-  const { orcamentoId, service: queryService, step } = Route.useSearch();
+  const { orcamentoId } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const startPayment = useServerFn(iniciarPagamentoOrcamento);
+  const [cobranca, setCobranca] = useState<Cobranca | null>(null);
+  const [paid, setPaid] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const pollingRef = useRef<number | null>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!orcamentoId) {
-      setLoading(false);
-      return;
-    }
-
+    if (!orcamentoId) { setLoading(false); return; }
     if (authLoading) return;
-
-    if (!user) {
-      setLoading(false);
-      navigate({ to: "/login" });
-      return;
-    }
-
+    if (!user) { setLoading(false); navigate({ to: "/login" }); return; }
     loadOrcamento(orcamentoId);
   }, [orcamentoId, user, authLoading]);
 
   async function loadOrcamento(id: string) {
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    console.info("[Checkout.loadOrcamento] Sessão atual:", {
-      sessionUserId: sessionData.session?.user?.id,
-      hookUserId: user?.id,
-      authLoading,
-    });
-
     const { data, error } = await supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", id)
       .maybeSingle();
-
-    console.info("[Checkout.loadOrcamento] Resultado Bruto:", { data, error, id });
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
@@ -84,7 +74,6 @@ function Checkout() {
       navigate({ to: "/cliente" });
       return;
     }
-
     if (data.cliente_id !== user?.id) {
       toast.error("Você não tem permissão para acessar este pedido.");
       setLoading(false);
@@ -92,47 +81,90 @@ function Checkout() {
       return;
     }
 
-    const { data: materiais, error: materiaisError } = await supabase
+    const { data: materiais } = await supabase
       .from("orcamento_materiais")
       .select("id, nome_snapshot, quantidade, preco_unitario")
       .eq("orcamento_id", id);
 
-    if (materiaisError) {
-      console.error("[Checkout.loadOrcamento] Erro ao carregar materiais:", materiaisError);
-    }
-
-    setOrcamento({ ...data, orcamento_materiais: materiaisError ? [] : materiais || [] });
+    setOrcamento({ ...data, orcamento_materiais: materiais || [] });
     setLoading(false);
   }
 
-  const handlePreparePayment = async () => {
-    if (!orcamentoId) {
-      toast.error("Identificador do pedido ausente.");
-      return;
-    }
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) window.clearInterval(pollingRef.current);
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+    };
+  }, []);
 
+  function onPaidConfirmed() {
+    if (paid) return;
+    setPaid(true);
+    if (pollingRef.current) window.clearInterval(pollingRef.current);
+    if (channelRef.current) supabase.removeChannel(channelRef.current);
+    toast.success("Pagamento confirmado!");
+    setTimeout(() => {
+      window.location.href = "/cliente?tab=pedidos&payment=success";
+    }, 1500);
+  }
+
+  function startWatchers(cob: Cobranca) {
+    // Realtime
+    const channel = supabase
+      .channel(`btg-cobranca-${cob.cobrancaId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "btg_cobrancas", filter: `id=eq.${cob.cobrancaId}` },
+        (payload) => {
+          const newStatus = (payload.new as any)?.status;
+          if (newStatus === "paga") onPaidConfirmed();
+        },
+      )
+      .subscribe();
+    channelRef.current = channel;
+
+    // Polling fallback (a cada 8s)
+    pollingRef.current = window.setInterval(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("btg-cobranca-status", {
+          body: { txId: cob.txId },
+        });
+        if (!error && data?.status === "paga") onPaidConfirmed();
+      } catch (e) {
+        console.warn("[checkout] polling error", e);
+      }
+    }, 8000);
+  }
+
+  const handlePreparePayment = async () => {
+    if (!orcamentoId) { toast.error("Pedido ausente."); return; }
     setIsProcessing(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const res = await startPayment({
-        data: { orcamentoId },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
+      const { data, error } = await supabase.functions.invoke("btg-cobranca-criar", {
+        body: { orcamentoId },
       });
-      if (res.ok && res.checkoutUrl) {
-        toast.success("Redirecionando para pagamento seguro...");
-        window.location.href = res.checkoutUrl;
-      } else {
-        toast.error((res as any).message || "Erro ao preparar pagamento.");
+      if (error || !data?.txId) {
+        toast.error(data?.error || error?.message || "Erro ao gerar cobrança Pix.");
+        return;
       }
+      const cob = data as Cobranca;
+      setCobranca(cob);
+      startWatchers(cob);
+      toast.success("Pix gerado! Escaneie ou copie o código.");
     } catch (err: any) {
-      toast.error(err.message || "Falha na comunicação com o servidor.");
+      toast.error(err.message || "Falha na comunicação.");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCopy = async () => {
+    if (!cobranca?.emv) return;
+    await navigator.clipboard.writeText(cobranca.emv);
+    setCopied(true);
+    toast.success("Código Pix copiado!");
+    setTimeout(() => setCopied(false), 2500);
   };
 
   if (authLoading || loading) {
@@ -168,29 +200,24 @@ function Checkout() {
   const valorMateriais =
     materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
   const valorTotal = valorServico + valorMateriais;
-  const upfrontAmount = valorTotal * 0.5;
-  const remainingAmount = valorTotal - upfrontAmount;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
       <div className="mb-12 flex items-center justify-between">
-        <Link
-          to="/cliente"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link to="/cliente" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Lock className="h-3 w-3" /> Checkout Seguro em implantação
+          <Lock className="h-3 w-3" /> Pagamento Pix • BTG
         </div>
       </div>
 
       <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="space-y-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Pagamento do Pedido</h2>
             <p className="text-muted-foreground mt-2">
-              Confira os detalhes e prepare seu pagamento de forma segura.
+              Pague via Pix de forma instantânea e segura.
             </p>
           </div>
 
@@ -200,10 +227,9 @@ function Checkout() {
                 <Info className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-bold text-lg">Como funciona o pagamento?</h3>
+                <h3 className="font-bold text-lg">Como funciona?</h3>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Para sua segurança, processamos o pagamento do sinal (50%) através de nossa
-                  plataforma. O valor restante é pago diretamente ao profissional após a conclusão.
+                  Gere o Pix abaixo, pague pelo app do seu banco, e a confirmação chega aqui automaticamente.
                 </p>
               </div>
             </div>
@@ -214,17 +240,13 @@ function Checkout() {
               </h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-foreground font-medium">{orcamento.service_name}</span>
-                  <span className="text-muted-foreground text-sm">
-                    R$ {valorServico.toFixed(2)}
-                  </span>
+                  <span className="font-medium">{orcamento.service_name}</span>
+                  <span className="text-muted-foreground text-sm">R$ {valorServico.toFixed(2)}</span>
                 </div>
                 {valorMateriais > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-foreground font-medium">Materiais previstos</span>
-                    <span className="text-muted-foreground text-sm">
-                      R$ {valorMateriais.toFixed(2)}
-                    </span>
+                    <span className="font-medium">Materiais previstos</span>
+                    <span className="text-muted-foreground text-sm">R$ {valorMateriais.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="pt-4 border-t border-border flex justify-between items-center font-bold text-lg">
@@ -234,35 +256,74 @@ function Checkout() {
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-brand font-bold text-lg">Sinal a pagar (50%)</span>
-                <span className="text-brand font-black text-2xl">
-                  R$ {upfrontAmount.toFixed(2)}
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                Saldo de R$ {remainingAmount.toFixed(2)} após o serviço
-              </p>
+            <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
+              <span className="text-brand font-bold text-lg">Valor a pagar agora (Pix)</span>
+              <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
 
-            <Button
-              onClick={handlePreparePayment}
-              disabled={isProcessing}
-              className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processando...
-                </>
-              ) : (
-                "Preparar Pagamento"
-              )}
-            </Button>
+            {!cobranca && !paid && (
+              <Button
+                onClick={handlePreparePayment}
+                disabled={isProcessing}
+                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+              >
+                {isProcessing ? (
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Pix...</>
+                ) : "Gerar Pix para pagamento"}
+              </Button>
+            )}
 
-            <p className="text-center text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
-              Ambiente Seguro · Sem cobrança imediata
-            </p>
+            {cobranca && !paid && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="flex flex-col items-center gap-4">
+                  {cobranca.qrcode_url ? (
+                    <img
+                      src={cobranca.qrcode_url}
+                      alt="QR Code Pix"
+                      className="w-64 h-64 rounded-2xl border border-border bg-white p-3"
+                    />
+                  ) : (
+                    <div className="w-64 h-64 rounded-2xl border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                      QR indisponível — use o código abaixo
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Escaneie no app do seu banco
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Pix copia e cola
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={cobranca.emv}
+                      className="flex-1 min-w-0 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs font-mono"
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                    <Button onClick={handleCopy} variant="outline" className="rounded-xl shrink-0">
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      <span className="ml-2">{copied ? "Copiado" : "Copiar"}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Aguardando confirmação do pagamento...
+                </div>
+              </div>
+            )}
+
+            {paid && (
+              <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
+                <CheckCircle2 className="h-16 w-16 text-emerald-500" />
+                <h3 className="text-xl font-bold">Pagamento confirmado!</h3>
+                <p className="text-sm text-muted-foreground">Redirecionando para seus pedidos...</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -274,28 +335,17 @@ function Checkout() {
             <ul className="space-y-4 text-sm">
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Seu dinheiro fica protegido até a conclusão do serviço.
+                Pagamento processado via BTG Pactual.
               </li>
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Profissionais verificados e com antecedentes criminais checados.
+                Profissionais verificados e com antecedentes checados.
               </li>
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Suporte dedicado para qualquer eventualidade durante o reparo.
+                Suporte dedicado durante todo o serviço.
               </li>
             </ul>
-          </div>
-
-          <div className="rounded-3xl bg-brand p-8 text-white">
-            <h3 className="font-bold mb-2">Dúvidas sobre o sinal?</h3>
-            <p className="text-sm text-white/80 leading-relaxed mb-4">
-              O sinal de 50% é uma segurança para o profissional reservar a data e para você
-              garantir a prioridade no atendimento.
-            </p>
-            <Link to="/ajuda" className="text-xs font-bold underline uppercase tracking-widest">
-              Saiba mais sobre pagamentos
-            </Link>
           </div>
         </div>
       </div>
