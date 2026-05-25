@@ -250,82 +250,36 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
     }
 
-    // 3. Update budget status to 'enviado' using Service Role to bypass RLS blocks FIRST
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-
-    console.info("[enviarOrcamento] service env check", {
-      supabaseUrl: SUPABASE_URL || "missing",
-      hasServiceKey: Boolean(SERVICE_KEY),
-    });
-
-    let serviceKeyProjectMatchesExpected = false;
-    if (SERVICE_KEY) {
-      try {
-        const parts = SERVICE_KEY.split(".");
-        if (parts.length === 3) {
-          const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-          const jsonStr = atob(payloadBase64);
-          const payload = JSON.parse(jsonStr);
-          serviceKeyProjectMatchesExpected = payload.ref === "xvrjzixmoitjbvzmmkdk";
-        }
-      } catch (err) {
-        console.error("[enviarOrcamento] Failed to validate service role JWT", err);
-      }
-    }
-
-    console.info("[enviarOrcamento] service key check", {
-      serviceKeyProjectMatchesExpected,
-    });
-
-    if (!SERVICE_KEY || !SUPABASE_URL) {
-      console.error("[enviarOrcamento] Missing environment variables for Service Role");
-      throw new Error(
-        "Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL",
-      );
-    }
-
-    if (!serviceKeyProjectMatchesExpected) {
-      throw new Error(
-        "Configuração do servidor inválida: service role key não pertence ao projeto Supabase correto."
-      );
-    }
-
-    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    console.info("[enviarOrcamento] atualizando status via service role", {
+    // 3. Update budget status to 'enviado' using RPC
+    console.info("[enviarOrcamento] chamando RPC marcar_orcamento_enviado", {
       orcamentoId: data.orcamentoId,
       statusAtual: orc.status,
-      supabaseUrl: process.env.SUPABASE_URL,
-      hasServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     });
 
-    const { data: updatedOrc, error: updateError } = await serviceClient
-      .from("orcamentos")
-      .update({
-        status: "enviado",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.orcamentoId)
-      .in("status", STATUS_QUE_ACEITAM_PROPOSTA)
-      .select("id, status, service_name, valor_servico")
-      .single();
+    const { data: updatedRows, error: updateError } = await (supabase as any)
+      .rpc("marcar_orcamento_enviado", {
+        _orcamento_id: data.orcamentoId,
+      });
 
-    if (updateError || !updatedOrc) {
-      console.error("[enviarOrcamento] erro ao atualizar status", {
-        code: updateError?.code,
-        message: updateError?.message,
-        details: updateError?.details,
-        hint: updateError?.hint,
+    if (updateError) {
+      console.error("[enviarOrcamento] erro na RPC marcar_orcamento_enviado", {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
         orcamentoId: data.orcamentoId,
         statusAtual: orc.status,
       });
 
       throw new Error(
-        `Não foi possível marcar o pedido como enviado. Status atual: ${orc.status}. ${updateError?.message || ""}`
+        `Não foi possível marcar o pedido como enviado. Status atual: ${orc.status}. ${updateError.message}`
       );
+    }
+
+    const updatedOrc = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
+
+    if (!updatedOrc) {
+      throw new Error("Pedido não encontrado ou status atual não permite receber proposta.");
     }
 
     // Check for existing pending/accepted proposal from this professional
@@ -412,7 +366,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
     // 4. Create Notification for the client
     if (orc.cliente_id) {
-      const { error: notifError } = await serviceClient.from("notificacoes").insert({
+      const { error: notifError } = await supabase.from("notificacoes").insert({
         user_id: orc.cliente_id,
         titulo: "Nova Proposta Recebida",
         mensagem: `Um profissional enviou uma proposta para o pedido "${orc.service_name || "Serviço"}".`,
@@ -420,7 +374,15 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         link: `/cliente?tab=pedidos&pedidoId=${data.orcamentoId}`,
         lida: false,
       });
-      if (notifError) console.error("[enviarOrcamento] Failed to insert notification:", notifError);
+
+      if (notifError) {
+        console.warn("[enviarOrcamento] notificação não criada", {
+          code: notifError.code,
+          message: notifError.message,
+          details: notifError.details,
+          hint: notifError.hint,
+        });
+      }
     }
 
     return { proposta: propRow, orcamento: updatedOrc };
