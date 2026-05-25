@@ -376,7 +376,7 @@ function Checkout() {
               </h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">{orcamento.service_name}</span>
+                  <span className="font-medium">{orcamento.service_name || "Serviço"}</span>
                   <span className="text-muted-foreground text-sm">R$ {valorServico.toFixed(2)}</span>
                 </div>
                 {valorMateriais > 0 && (
