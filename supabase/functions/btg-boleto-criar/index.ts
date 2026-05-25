@@ -204,11 +204,11 @@ serve(async (req) => {
     try { if (accountsText) accountsJson = JSON.parse(accountsText); } catch { /* ignore */ }
     if (!accountsResp.ok) {
       console.log("[btg-boleto-criar] erro accounts", { status: accountsResp.status, body: accountsJson });
-      return json({ error: "Não foi possível obter a conta BTG da empresa." }, 502);
+      return json({ error: "BTG_ACCOUNTS_ERROR", message: "Não foi possível obter a conta BTG da empresa." }, 502);
     }
     const btgAccount = Array.isArray(accountsJson?.data) ? accountsJson.data[0] : null;
     if (!btgAccount) {
-      return json({ error: "Empresa BTG sem conta bancária disponível." }, 502);
+      return json({ error: "BTG_ACCOUNT_NOT_FOUND", message: "Empresa BTG sem conta bancária disponível." }, 502);
     }
 
     const account: Record<string, string | undefined> = {
@@ -241,7 +241,7 @@ serve(async (req) => {
         hasBranch: !!account.branch,
         hasNumber: !!account.number,
       });
-      return json({ error: "Conta BTG incompleta para emissão de boleto." }, 502);
+      return json({ error: "BTG_ACCOUNT_INCOMPLETE", message: "Conta BTG incompleta para emissão de boleto." }, 502);
     }
 
     const btgPayload: any = {
@@ -284,7 +284,10 @@ serve(async (req) => {
 
     if (!btgResponse.ok) {
       console.log("[btg-boleto-criar] falha BTG", { status: btgResponse.status, body: responseJson });
-      return json({ error: "Erro ao criar boleto BTG." },
+      return json({
+        error: "BTG_PAYMENT_LINK_ERROR",
+        message: responseJson?.message || responseJson?.error || "Erro ao criar boleto BTG.",
+      },
         btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
     }
 
@@ -296,7 +299,7 @@ serve(async (req) => {
 
     if (!paymentUrl) {
       console.log("[btg-boleto-criar] BTG retornou sem url", responseJson);
-      return json({ error: "Resposta BTG sem link de pagamento." }, 502);
+      return json({ error: "BTG_PAYMENT_URL_MISSING", message: "Resposta BTG sem link de pagamento." }, 502);
     }
 
     // Cria pagamento
@@ -317,7 +320,7 @@ serve(async (req) => {
 
     if (pagErr) {
       console.error("[btg-boleto-criar] erro insert pagamentos", pagErr);
-      return json({ error: "Erro ao registrar pagamento." }, 500);
+      return json({ error: "PAYMENT_INSERT_ERROR", message: "Erro ao registrar pagamento." }, 500);
     }
 
     const { data: boleto, error: bolErr } = await supabaseAdmin
@@ -340,7 +343,7 @@ serve(async (req) => {
 
     if (bolErr) {
       console.error("[btg-boleto-criar] erro insert btg_boletos", bolErr);
-      return json({ error: "Erro ao registrar boleto." }, 500);
+      return json({ error: "BOLETO_INSERT_ERROR", message: "Erro ao registrar boleto." }, 500);
     }
 
     console.log("[btg-boleto-criar] boleto criado", { id: boleto.id, paymentLinkId });
@@ -354,6 +357,6 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("[btg-boleto-criar] erro fatal", error);
-    return json({ error: "Erro ao criar boleto BTG." }, 500);
+    return json({ error: "UNEXPECTED_ERROR", message: "Erro ao criar boleto BTG." }, 500);
   }
 });
