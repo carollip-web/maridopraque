@@ -1002,12 +1002,16 @@ export type Database = {
       repasses_profissionais: {
         Row: {
           approved_at: string | null
+          btg_contract_guid: string | null
+          btg_response: Json | null
+          btg_transfer_id: string | null
           cancelled_at: string | null
           cliente_id: string | null
           created_at: string
           erro: string | null
           failed_at: string | null
           id: string
+          operation_needs_approval: boolean
           orcamento_id: string | null
           pagamento_id: string | null
           paid_at: string | null
@@ -1015,6 +1019,7 @@ export type Database = {
           pix_holder_name: string | null
           pix_key: string | null
           pix_key_type: string | null
+          processing_at: string | null
           profissional_id: string
           status: string
           updated_at: string
@@ -1024,12 +1029,16 @@ export type Database = {
         }
         Insert: {
           approved_at?: string | null
+          btg_contract_guid?: string | null
+          btg_response?: Json | null
+          btg_transfer_id?: string | null
           cancelled_at?: string | null
           cliente_id?: string | null
           created_at?: string
           erro?: string | null
           failed_at?: string | null
           id?: string
+          operation_needs_approval?: boolean
           orcamento_id?: string | null
           pagamento_id?: string | null
           paid_at?: string | null
@@ -1037,6 +1046,7 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
+          processing_at?: string | null
           profissional_id: string
           status?: string
           updated_at?: string
@@ -1046,12 +1056,16 @@ export type Database = {
         }
         Update: {
           approved_at?: string | null
+          btg_contract_guid?: string | null
+          btg_response?: Json | null
+          btg_transfer_id?: string | null
           cancelled_at?: string | null
           cliente_id?: string | null
           created_at?: string
           erro?: string | null
           failed_at?: string | null
           id?: string
+          operation_needs_approval?: boolean
           orcamento_id?: string | null
           pagamento_id?: string | null
           paid_at?: string | null
@@ -1059,6 +1073,7 @@ export type Database = {
           pix_holder_name?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
+          processing_at?: string | null
           profissional_id?: string
           status?: string
           updated_at?: string
@@ -1066,7 +1081,15 @@ export type Database = {
           valor_comissao_marketplace?: number
           valor_liquido?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_repasses_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_materiais: {
         Row: {
