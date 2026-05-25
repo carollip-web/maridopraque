@@ -184,6 +184,14 @@ serve(async (req) => {
       type: "SINGLE",
       paymentMethods: ["BANKSLIPS"],
       account,
+      notification: user.email
+        ? {
+          deliveryMediums: ["Email"],
+          email: user.email,
+        }
+        : {
+          deliveryMediums: [],
+        },
       schedule: {
         startAt: fmt(now),
         endAt: fmt(dueDate),
