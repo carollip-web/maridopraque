@@ -300,15 +300,61 @@ serve(async (req) => {
         btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
     }
 
+    console.info("[btg-boleto-criar] BTG response keys", {
+      keys: Object.keys(responseJson || {}),
+      responseJson,
+    });
+
     const paymentLinkId = responseJson?.paymentLnkId || responseJson?.id || responseJson?.paymentLinkId || externalId;
-    const rawUrl = responseJson?.linkUrl || responseJson?.url || responseJson?.paymentUrl || responseJson?.shortUrl || null;
-    const paymentUrl = rawUrl
-      ? (rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`)
+
+    const urlCandidates = [
+      responseJson?.paymentLinkUrl,
+      responseJson?.paymentLink,
+      responseJson?.link,
+      responseJson?.linkUrl,
+      responseJson?.url,
+      responseJson?.paymentUrl,
+      responseJson?.shortUrl,
+      responseJson?.data?.paymentLinkUrl,
+      responseJson?.data?.paymentLink,
+      responseJson?.data?.link,
+      responseJson?.data?.linkUrl,
+      responseJson?.data?.url,
+      responseJson?.data?.paymentUrl,
+      responseJson?.data?.shortUrl,
+    ].filter(Boolean).map((v: unknown) => String(v));
+
+    const isPlaceholder = (url: string) =>
+      url.includes("link-exemplo") || url.includes("example");
+
+    const validRaw = urlCandidates.find((url) => /^https?:\/\//.test(url) && !isPlaceholder(url))
+      || urlCandidates.find((url) => !isPlaceholder(url) && url.includes("."));
+    const paymentUrl = validRaw
+      ? (validRaw.startsWith("http") ? validRaw : `https://${validRaw}`)
       : null;
 
+    const placeholderUrl = urlCandidates.find((url) => isPlaceholder(url)) || null;
+
+    if (!paymentUrl && placeholderUrl) {
+      console.warn("[btg-boleto-criar] BTG sandbox retornou link placeholder", {
+        placeholderUrl,
+        env: btgEnv,
+      });
+      return json({
+        error: "BTG_SANDBOX_PLACEHOLDER",
+        message: "Ambiente BTG sandbox: a API retornou um link de exemplo (link-exemplo.btgpactual.com) que não resolve. Use credenciais BTG de produção para gerar boletos reais.",
+        btgEnv,
+        btgBody: responseJson,
+      }, 502);
+    }
+
     if (!paymentUrl) {
-      console.log("[btg-boleto-criar] BTG retornou sem url", responseJson);
-      return json({ error: "BTG_PAYMENT_URL_MISSING", message: "Resposta BTG sem link de pagamento." }, 502);
+      console.error("[btg-boleto-criar] BTG retornou sem link válido", { responseJson, urlCandidates });
+      return json({
+        error: "BTG_PAYMENT_URL_INVALID",
+        message: "O BTG criou a cobrança, mas não retornou um link de pagamento válido.",
+        btgBody: responseJson,
+      }, 502);
     }
 
     // Cria pagamento
