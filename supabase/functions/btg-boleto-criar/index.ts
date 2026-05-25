@@ -287,10 +287,18 @@ serve(async (req) => {
     catch { responseJson = { rawText: responseText }; }
 
     if (!btgResponse.ok) {
-      console.log("[btg-boleto-criar] falha BTG", { status: btgResponse.status, body: responseJson });
+      console.error("[btg-boleto-criar] falha BTG", { status: btgResponse.status, body: responseJson });
+      const btgMessage =
+        responseJson?.message ||
+        responseJson?.error ||
+        responseJson?.details?.[0]?.message ||
+        (typeof responseJson?.rawText === "string" ? responseJson.rawText : null) ||
+        "Erro ao criar boleto BTG.";
       return json({
-        error: "BTG_PAYMENT_LINK_ERROR",
-        message: responseJson?.message || responseJson?.error || "Erro ao criar boleto BTG.",
+        error: "BTG_API_ERROR",
+        message: btgMessage,
+        status: btgResponse.status,
+        btgBody: responseJson,
       },
         btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
     }
