@@ -22,8 +22,10 @@ function resolveCompanyId(config: any): string | null {
 }
 
 function pickFirstString(...values: unknown[]): string | undefined {
-  const value = values.find((item) => typeof item === "string" && item.trim().length > 0);
-  return typeof value === "string" ? value.trim() : undefined;
+  const value = values.find((item) =>
+    (typeof item === "string" && item.trim().length > 0) || typeof item === "number"
+  );
+  return typeof value === "number" ? String(value) : typeof value === "string" ? value.trim() : undefined;
 }
 
 serve(async (req) => {
