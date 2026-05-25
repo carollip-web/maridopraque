@@ -123,7 +123,7 @@ serve(async (req) => {
       .eq("id", user.id)
       .maybeSingle();
     const notificationPhone = normalizeBrazilPhone(
-      pickFirstString(clienteProfile?.whatsapp, user.phone, user.user_metadata?.whatsapp, user.user_metadata?.phone),
+      pickFirstString(body.whatsapp, body.phone, clienteProfile?.whatsapp, user.phone, user.user_metadata?.whatsapp, user.user_metadata?.phone),
     );
     if (!notificationPhone) {
       return json({ error: "Informe um WhatsApp válido no perfil antes de gerar boleto." }, 400);

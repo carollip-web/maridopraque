@@ -65,6 +65,7 @@ function Checkout() {
   const [boleto, setBoleto] = useState<Boleto | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [whatsapp, setWhatsapp] = useState("");
   const pollingRef = useRef<number | null>(null);
   const channelRef = useRef<any>(null);
 
@@ -77,11 +78,15 @@ function Checkout() {
 
   async function loadOrcamento(id: string) {
     setLoading(true);
-    const { data, error } = await supabase
+    if (!user?.id) { setLoading(false); return; }
+    const [{ data, error }, { data: profile }] = await Promise.all([
+      supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", id)
-      .maybeSingle();
+        .maybeSingle(),
+      supabase.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
+    ]);
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
@@ -102,6 +107,7 @@ function Checkout() {
       .eq("orcamento_id", id);
 
     setOrcamento({ ...data, orcamento_materiais: materiais || [] });
+    if (profile?.whatsapp) setWhatsapp(profile.whatsapp);
     setLoading(false);
   }
 
@@ -189,10 +195,17 @@ function Checkout() {
 
   const handleGerarBoleto = async () => {
     if (!orcamentoId) { toast.error("Pedido ausente."); return; }
+    const whatsappDigits = whatsapp.replace(/\D/g, "");
+    if (![10, 11, 12, 13].includes(whatsappDigits.length)) {
+      toast.error("Informe um WhatsApp válido para receber o boleto.");
+      return;
+    }
     setIsProcessing(true);
     try {
+      if (!user?.id) { toast.error("Faça login novamente para continuar."); return; }
+      await supabase.from("profiles").update({ whatsapp }).eq("id", user.id);
       const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
-        body: { orcamentoId },
+        body: { orcamentoId, whatsapp },
       });
       if (error || !data?.paymentUrl) {
         toast.error(data?.error || error?.message || "Erro ao gerar boleto.");
@@ -342,15 +355,29 @@ function Checkout() {
             )}
 
             {!cobranca && !boleto && !paid && method === "boleto" && (
-              <Button
-                onClick={handleGerarBoleto}
-                disabled={isProcessing}
-                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
-                ) : "Gerar boleto bancário"}
-              </Button>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    WhatsApp para o boleto
+                  </label>
+                  <input
+                    value={whatsapp}
+                    onChange={(event) => setWhatsapp(event.target.value)}
+                    inputMode="tel"
+                    placeholder="(11) 99999-9999"
+                    className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base outline-none transition focus:border-brand"
+                  />
+                </div>
+                <Button
+                  onClick={handleGerarBoleto}
+                  disabled={isProcessing}
+                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+                >
+                  {isProcessing ? (
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
+                  ) : "Gerar boleto bancário"}
+                </Button>
+              </div>
             )}
 
             {cobranca && !paid && (
