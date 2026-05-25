@@ -53,7 +53,7 @@ type Boleto = {
   status: string;
 };
 
-type PaymentMethod = "pix" | "boleto";
+type PaymentMethod = "pix" | "boleto" | "cartao";
 
 async function getFunctionErrorMessage(error: any, fallback: string) {
   const context = error?.context;
