@@ -124,6 +124,10 @@ function AdminRepassesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
+  // Seleção em lote
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   const navigate = useNavigate();
 
   const hasAccess =
@@ -207,6 +211,49 @@ function AdminRepassesPage() {
       toast.error(err.message || "Falha ao iniciar pagamento via BTG.");
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  // Aprovação em lote (bulk PIX BTG)
+  const handleAprovarSelecionados = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      toast.warning("Selecione ao menos um repasse pendente liberado.");
+      return;
+    }
+    if (!btgStatus?.connected) {
+      toast.error("Conecte a conta BTG antes de disparar repasses.");
+      return;
+    }
+    const ok = window.confirm(
+      `Confirmar disparo via PIX BTG de ${ids.length} repasse(s)? Esta ação é irreversível.`,
+    );
+    if (!ok) return;
+
+    try {
+      setBulkProcessing(true);
+      const { data, error } = await supabase.functions.invoke("btg-repasse-disparar", {
+        body: { repasse_ids: ids },
+      });
+      if (error) throw new Error(error.message || "Erro na Edge Function");
+      if (data?.error) throw new Error(data.error);
+
+      const sucessos = Array.isArray(data?.results)
+        ? data.results.filter((r: any) => r.success).length
+        : ids.length;
+      const falhas = ids.length - sucessos;
+      if (falhas === 0) {
+        toast.success(`${sucessos} repasse(s) enviados ao BTG.`);
+      } else {
+        toast.warning(`${sucessos} ok, ${falhas} falharam. Verifique a fila.`);
+      }
+      setSelectedIds(new Set());
+      loadData();
+    } catch (err: any) {
+      console.error("[handleAprovarSelecionados]", err);
+      toast.error(err.message || "Falha ao disparar repasses em lote.");
+    } finally {
+      setBulkProcessing(false);
     }
   };
 
@@ -610,6 +657,65 @@ function AdminRepassesPage() {
             </div>
           </div>
 
+          {/* Barra de Bulk Action */}
+          {(() => {
+            const elegiveis = filteredRepasses.filter(
+              (r) => r.status === "pendente" && r.orcamentos?.status !== "pago",
+            );
+            const elegiveisIds = elegiveis.map((r) => r.id);
+            const allSelected =
+              elegiveisIds.length > 0 && elegiveisIds.every((id) => selectedIds.has(id));
+            const valorSel = elegiveis
+              .filter((r) => selectedIds.has(r.id))
+              .reduce((acc, r) => acc + Number(r.valor_liquido), 0);
+            return (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      disabled={elegiveisIds.length === 0}
+                      onChange={(e) => {
+                        const next = new Set(selectedIds);
+                        if (e.target.checked) elegiveisIds.forEach((id) => next.add(id));
+                        else elegiveisIds.forEach((id) => next.delete(id));
+                        setSelectedIds(next);
+                      }}
+                      className="h-4 w-4 accent-brand"
+                    />
+                    Selecionar todos pendentes liberados ({elegiveisIds.length})
+                  </label>
+                  {selectedIds.size > 0 && (
+                    <span className="text-slate-500">
+                      · {selectedIds.size} selecionado(s) · Total líquido R${" "}
+                      {valorSel.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  onClick={handleAprovarSelecionados}
+                  disabled={
+                    bulkProcessing || selectedIds.size === 0 || !btgStatus?.connected
+                  }
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2"
+                  title={
+                    !btgStatus?.connected
+                      ? "Conecte a conta BTG primeiro"
+                      : "Disparar PIX em lote via BTG"
+                  }
+                >
+                  {bulkProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4" />
+                  )}
+                  Aprovar selecionados ({selectedIds.size})
+                </Button>
+              </div>
+            );
+          })()}
+
           {/* Fila de Repasses / Tabela */}
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3">
@@ -634,6 +740,7 @@ function AdminRepassesPage() {
               <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 text-[10px] font-extrabold uppercase tracking-wider bg-slate-50/50">
+                    <th className="px-3 py-4 w-10"></th>
                     <th className="px-6 py-4">ID / Criação</th>
                     <th className="px-6 py-4">Profissional</th>
                     <th className="px-6 py-4 text-right">Valores</th>
@@ -651,8 +758,30 @@ function AdminRepassesPage() {
                       label: rep.status,
                     };
 
+                    const selectable =
+                      rep.status === "pendente" && rep.orcamentos?.status !== "pago";
                     return (
                       <tr key={rep.id} className="hover:bg-slate-50/40 transition group">
+                        {/* Checkbox para bulk */}
+                        <td className="px-3 py-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(rep.id)}
+                            disabled={!selectable}
+                            onChange={(e) => {
+                              const next = new Set(selectedIds);
+                              if (e.target.checked) next.add(rep.id);
+                              else next.delete(rep.id);
+                              setSelectedIds(next);
+                            }}
+                            className="h-4 w-4 accent-brand disabled:opacity-30"
+                            title={
+                              selectable
+                                ? "Selecionar para lote"
+                                : "Não elegível (status ou retido)"
+                            }
+                          />
+                        </td>
                         {/* ID e Criação */}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-1.5">
