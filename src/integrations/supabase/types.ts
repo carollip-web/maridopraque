@@ -865,23 +865,43 @@ export type Database = {
       profissional_perfil: {
         Row: {
           anos_experiencia: number | null
+          aprovacao_status: string
+          aprovado_em: string | null
+          aprovado_por: string | null
           atende_emergencias: boolean | null
           ativo: boolean
+          bairro: string | null
           bio: string | null
+          cadastro_completo: boolean
+          cadastro_submetido_em: string | null
+          cep: string | null
           chave_pix: string | null
           cidade: string | null
+          como_conheceu: string | null
+          complemento: string | null
+          cpf: string | null
           created_at: string
+          data_nascimento: string | null
           duracao_padrao_min: number
+          endereco: string | null
           especialidades: string[] | null
+          estado: string | null
+          experiencia_anos: number | null
+          foto_documento_frente: string | null
+          foto_documento_verso: string | null
+          foto_selfie: string | null
           foto_url: string | null
           genero: string | null
           lat: number | null
           lng: number | null
+          motivo_rejeicao: string | null
           mp_access_token: string | null
           mp_connected_at: string | null
           mp_refresh_token: string | null
           mp_token_expires_at: string | null
           mp_user_id: string | null
+          numero: string | null
+          observacoes_cadastro: string | null
           oferece_apoio_feminino: boolean
           onboarding_completo: boolean
           pix_dados_confirmados: boolean
@@ -892,6 +912,7 @@ export type Database = {
           raio_atendimento_km: number
           repasse_automatico: boolean
           slug: string | null
+          telefone: string | null
           termo_aceito_em: string | null
           termo_versao: string | null
           updated_at: string
@@ -900,23 +921,43 @@ export type Database = {
         }
         Insert: {
           anos_experiencia?: number | null
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           atende_emergencias?: boolean | null
           ativo?: boolean
+          bairro?: string | null
           bio?: string | null
+          cadastro_completo?: boolean
+          cadastro_submetido_em?: string | null
+          cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          como_conheceu?: string | null
+          complemento?: string | null
+          cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           duracao_padrao_min?: number
+          endereco?: string | null
           especialidades?: string[] | null
+          estado?: string | null
+          experiencia_anos?: number | null
+          foto_documento_frente?: string | null
+          foto_documento_verso?: string | null
+          foto_selfie?: string | null
           foto_url?: string | null
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
           mp_refresh_token?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
+          numero?: string | null
+          observacoes_cadastro?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           pix_dados_confirmados?: boolean
@@ -927,6 +968,7 @@ export type Database = {
           raio_atendimento_km?: number
           repasse_automatico?: boolean
           slug?: string | null
+          telefone?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
@@ -935,23 +977,43 @@ export type Database = {
         }
         Update: {
           anos_experiencia?: number | null
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           atende_emergencias?: boolean | null
           ativo?: boolean
+          bairro?: string | null
           bio?: string | null
+          cadastro_completo?: boolean
+          cadastro_submetido_em?: string | null
+          cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          como_conheceu?: string | null
+          complemento?: string | null
+          cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           duracao_padrao_min?: number
+          endereco?: string | null
           especialidades?: string[] | null
+          estado?: string | null
+          experiencia_anos?: number | null
+          foto_documento_frente?: string | null
+          foto_documento_verso?: string | null
+          foto_selfie?: string | null
           foto_url?: string | null
           genero?: string | null
           lat?: number | null
           lng?: number | null
+          motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
           mp_refresh_token?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
+          numero?: string | null
+          observacoes_cadastro?: string | null
           oferece_apoio_feminino?: boolean
           onboarding_completo?: boolean
           pix_dados_confirmados?: boolean
@@ -962,6 +1024,7 @@ export type Database = {
           raio_atendimento_km?: number
           repasse_automatico?: boolean
           slug?: string | null
+          telefone?: string | null
           termo_aceito_em?: string | null
           termo_versao?: string | null
           updated_at?: string
@@ -1329,6 +1392,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirmar_convite: { Args: { p_convite_id: string }; Returns: undefined }
       criar_repasse_profissional_pendente: {
         Args: { p_pagamento_id: string }
         Returns: string
@@ -1354,6 +1418,7 @@ export type Database = {
           valido: boolean
         }[]
       }
+      verificar_convite: { Args: { p_convite_id: string }; Returns: Json }
     }
     Enums: {
       admin_level: "super_admin" | "admin" | "financeiro" | "suporte"
