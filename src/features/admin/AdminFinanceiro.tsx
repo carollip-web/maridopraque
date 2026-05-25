@@ -1,7 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { ArrowUpRight, Calendar, Clock, Landmark } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+type SaqueRow = {
+  id: string;
+  profissional_id: string;
+  valor: number;
+  status: string;
+  chave_pix: string | null;
+  observacao: string | null;
+  solicitado_em: string;
+  comprovante_url: string | null;
+  profissional_nome?: string | null;
+};
+
+const brl = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+
 
 export function AdminFinanceiro() {
   const [data, setData] = useState<{
