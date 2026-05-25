@@ -459,6 +459,25 @@ function Checkout() {
               </Button>
             )}
 
+            {!cobranca && !boleto && !paid && method === "cartao" && (
+              <div className="space-y-3">
+                <Button
+                  onClick={handlePagarCartao}
+                  disabled={isProcessing}
+                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+                >
+                  {isProcessing ? (
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Redirecionando...</>
+                  ) : (
+                    <><CreditCard className="mr-2 h-5 w-5" /> Pagar com Cartão</>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Você será redirecionado para o ambiente seguro do Mercado Pago para concluir o pagamento.
+                </p>
+              </div>
+            )}
+
             {!cobranca && !boleto && !paid && method === "boleto" && (
               <div className="space-y-4">
                 <div className="space-y-2">
