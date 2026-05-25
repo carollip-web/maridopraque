@@ -27,21 +27,38 @@ serve(async (req) => {
   console.log("[btg-cobranca-criar] start");
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({
+        error: "AUTH_MISSING",
+        message: "Authorization Bearer ausente.",
+      }, 401);
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: req.headers.get("Authorization")! } } },
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) return json({ error: "Não autorizado" }, 401);
+    if (authError || !user) {
+      return json({ error: "AUTH_INVALID", message: "Sessão inválida." }, 401);
+    }
 
     const body = await req.json().catch(() => ({}));
     const orcamento_id = body.orcamentoId || body.orcamento_id;
-    if (!orcamento_id) return json({ error: "Pedido não encontrado." }, 400);
+    if (!orcamento_id) {
+      return json({ error: "BAD_REQUEST", message: "orcamentoId obrigatório." }, 400);
+    }
 
     const btgPixKey = Deno.env.get("BTG_PIX_KEY_RECEBEDORA");
-    if (!btgPixKey) return json({ error: "Configuração BTG ausente." }, 500);
+    if (!btgPixKey) {
+      return json({
+        error: "BTG_PIX_KEY_MISSING",
+        message: "BTG_PIX_KEY_RECEBEDORA ausente nas secrets da Edge Function.",
+      }, 500);
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -57,7 +74,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (cobrancaAtiva && cobrancaAtiva.expires_at && new Date(cobrancaAtiva.expires_at) > new Date()) {
-      if (cobrancaAtiva.cliente_id !== user.id) return json({ error: "Sem permissão." }, 403);
+      if (cobrancaAtiva.cliente_id !== user.id) {
+        return json({ error: "FORBIDDEN", message: "Sem permissão." }, 403);
+      }
       console.log("[btg-cobranca-criar] reaproveitando cobrança ativa", { txId: cobrancaAtiva.tx_id });
       return json({
         txId: cobrancaAtiva.tx_id,
@@ -71,7 +90,6 @@ serve(async (req) => {
       });
     }
 
-    // Se existe ativa mas expirada, marca expirada
     if (cobrancaAtiva) {
       await supabaseAdmin
         .from("btg_cobrancas")
@@ -89,16 +107,29 @@ serve(async (req) => {
     const companyId = resolveCompanyId(btgConfig);
 
     if (!btgConfig || !btgConfig.access_token || !companyId) {
-      return json({ error: "Configuração BTG ausente." }, 400);
+      return json({
+        error: "BTG_CONFIG_MISSING",
+        message: "Configuração BTG ausente ou incompleta em marketplace_integracoes.",
+      }, 400);
     }
     const tokenExpired = btgConfig.token_expires_at
       ? new Date(btgConfig.token_expires_at) <= new Date()
       : true;
-    if (tokenExpired) return json({ error: "Configuração BTG ausente." }, 401);
+    if (tokenExpired) {
+      return json({
+        error: "BTG_TOKEN_EXPIRED",
+        message: "Sessão BTG expirada. Reconecte a integração BTG.",
+      }, 401);
+    }
 
     const hasScope = typeof btgConfig.scope === "string" &&
       btgConfig.scope.includes("empresas.btgpactual.com/pix-cash-in");
-    if (!hasScope) return json({ error: "Configuração BTG ausente." }, 403);
+    if (!hasScope) {
+      return json({
+        error: "BTG_SCOPE_MISSING",
+        message: "Permissão BTG insuficiente para Pix Cash-In. Reconecte a integração BTG.",
+      }, 403);
+    }
 
     // Orçamento
     const { data: orcamento } = await supabaseAdmin
@@ -107,15 +138,33 @@ serve(async (req) => {
       .eq("id", orcamento_id)
       .maybeSingle();
 
-    if (!orcamento) return json({ error: "Pedido não encontrado." }, 404);
-    if (orcamento.cliente_id !== user.id) return json({ error: "Sem permissão." }, 403);
+    if (!orcamento) {
+      return json({ error: "ORCAMENTO_NOT_FOUND", message: "Pedido não encontrado." }, 404);
+    }
+    if (orcamento.cliente_id !== user.id) {
+      return json({ error: "FORBIDDEN", message: "Sem permissão." }, 403);
+    }
     if (!["aprovado", "fixo_auto"].includes(orcamento.status)) {
-      return json({ error: "Pedido ainda não está aprovado para pagamento." }, 400);
+      return json({
+        error: "INVALID_STATUS",
+        message: "Pedido ainda não está aprovado para pagamento.",
+      }, 400);
     }
     const valorServico = Number(orcamento.valor_servico || 0);
-    if (valorServico <= 0) return json({ error: "Valor do pedido inválido." }, 400);
+    if (valorServico <= 0) {
+      return json({ error: "INVALID_VALUE", message: "Valor do pedido inválido." }, 400);
+    }
 
-    // Payload BTG
+    console.info("[btg-cobranca-criar] validado", {
+      orcamentoId: orcamento_id,
+      userId: user.id,
+      valorServico,
+      status: orcamento.status,
+    });
+
+    // Payload BTG. Idempotency key única por tentativa para evitar reaproveitamento
+    // de tx_id no sandbox quando a cobrança anterior já expirou.
+    const idempotencyKey = `${orcamento_id}-${Date.now()}`;
     const codigoCurto = String(orcamento_id).slice(0, 8).toUpperCase();
     const btgPayload = {
       pixKey: btgPixKey,
@@ -123,6 +172,12 @@ serve(async (req) => {
       expiresIn: 3600,
       displayText: `Marido pra Quê - Pedido #${codigoCurto}`,
     };
+
+    console.info("[btg-cobranca-criar] payload keys", {
+      keys: Object.keys(btgPayload),
+      hasPixKey: !!btgPixKey,
+      amount: valorServico,
+    });
 
     const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
     const btgBaseUrl = btgEnv === "production"
@@ -137,7 +192,7 @@ serve(async (req) => {
       headers: {
         Authorization: `Bearer ${btgConfig.access_token}`,
         "Content-Type": "application/json",
-        "x-idempotency-key": orcamento_id,
+        "x-idempotency-key": idempotencyKey,
       },
       body: JSON.stringify(btgPayload),
     });
@@ -147,20 +202,91 @@ serve(async (req) => {
     try { if (responseText) responseJson = JSON.parse(responseText); }
     catch { responseJson = { rawText: responseText }; }
 
+    console.info("[btg-cobranca-criar] response keys", {
+      keys: Object.keys(responseJson || {}),
+      status: btgResponse.status,
+    });
+
     if (!btgResponse.ok) {
-      console.log("[btg-cobranca-criar] falha BTG", { status: btgResponse.status, body: responseJson });
-      return json({ error: "Erro ao criar cobrança Pix BTG." },
-        btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
+      console.error("[btg-cobranca-criar] falha BTG", {
+        status: btgResponse.status,
+        body: responseJson,
+      });
+      const btgMessage =
+        responseJson?.message ||
+        responseJson?.error ||
+        responseJson?.details?.[0]?.message ||
+        responseJson?.rawText ||
+        "Erro ao criar cobrança Pix BTG.";
+      return json({
+        error: "BTG_PIX_API_ERROR",
+        message: btgMessage,
+        status: btgResponse.status,
+        btgBody: responseJson,
+      }, btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
     }
 
-    const txId = responseJson?.txId;
-    const emv = responseJson?.emv;
-    const qrcodeUrl = responseJson?.location?.url ?? responseJson?.qrCodeUrl ?? null;
+    const txId = responseJson?.txId || responseJson?.id || responseJson?.data?.txId;
+    const emv = responseJson?.emv || responseJson?.brCode || responseJson?.copyPaste || responseJson?.data?.emv;
+    const qrcodeUrl =
+      responseJson?.location?.url ||
+      responseJson?.qrCodeUrl ||
+      responseJson?.data?.location?.url ||
+      null;
     const expiresAt = responseJson?.expiresAt || new Date(Date.now() + 3600 * 1000).toISOString();
 
-    if (!txId) {
-      console.log("[btg-cobranca-criar] BTG retornou sem txId", responseJson);
-      return json({ error: "Resposta BTG inválida." }, 502);
+    if (!txId || !emv) {
+      console.error("[btg-cobranca-criar] resposta BTG inválida", {
+        keys: Object.keys(responseJson || {}),
+        hasTxId: !!txId,
+        hasEmv: !!emv,
+      });
+      return json({
+        error: "BTG_PIX_RESPONSE_INVALID",
+        message: "BTG retornou cobrança Pix sem txId ou código copia e cola.",
+        btgBody: responseJson,
+      }, 502);
+    }
+
+    // Se BTG (sandbox) devolveu o mesmo tx_id de uma cobrança anterior,
+    // reaproveita o registro em vez de violar unique constraint.
+    const { data: existenteByTx } = await supabaseAdmin
+      .from("btg_cobrancas")
+      .select("id, cliente_id")
+      .eq("tx_id", txId)
+      .maybeSingle();
+
+    if (existenteByTx) {
+      if (existenteByTx.cliente_id !== user.id) {
+        return json({ error: "FORBIDDEN", message: "Sem permissão." }, 403);
+      }
+      await supabaseAdmin
+        .from("btg_cobrancas")
+        .update({
+          status: "ativa",
+          emv,
+          qrcode_url: qrcodeUrl,
+          amount: valorServico,
+          expires_at: expiresAt,
+          btg_request: btgPayload,
+          btg_response: responseJson,
+        })
+        .eq("id", existenteByTx.id);
+
+      console.log("[btg-cobranca-criar] tx_id reaproveitado pelo BTG; reusando registro", {
+        txId, cobrancaId: existenteByTx.id,
+      });
+
+      return json({
+        txId,
+        emv,
+        qrcode_url: qrcodeUrl,
+        status: "ATIVA",
+        expiresAt,
+        amount: valorServico,
+        orcamentoId: orcamento_id,
+        cobrancaId: existenteByTx.id,
+      });
     }
 
     // Cria pagamento + cobrança
@@ -181,7 +307,13 @@ serve(async (req) => {
 
     if (pagErr) {
       console.error("[btg-cobranca-criar] erro insert pagamentos", pagErr);
-      return json({ error: "Erro ao registrar pagamento." }, 500);
+      return json({
+        error: "PAYMENT_INSERT_ERROR",
+        message: pagErr.message,
+        details: pagErr.details,
+        hint: pagErr.hint,
+        code: pagErr.code,
+      }, 500);
     }
 
     const { data: cobranca, error: cobErr } = await supabaseAdmin
@@ -204,7 +336,13 @@ serve(async (req) => {
 
     if (cobErr) {
       console.error("[btg-cobranca-criar] erro insert btg_cobrancas", cobErr);
-      return json({ error: "Erro ao registrar cobrança." }, 500);
+      return json({
+        error: "BTG_COBRANCA_INSERT_ERROR",
+        message: cobErr.message,
+        details: cobErr.details,
+        hint: cobErr.hint,
+        code: cobErr.code,
+      }, 500);
     }
 
     console.log("[btg-cobranca-criar] cobrança criada", { txId, cobrancaId: cobranca.id });
@@ -221,6 +359,9 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("[btg-cobranca-criar] erro fatal", error);
-    return json({ error: "Erro ao criar cobrança Pix BTG." }, 500);
+    return json({
+      error: "UNEXPECTED_PIX_ERROR",
+      message: error?.message || "Erro inesperado ao criar Pix BTG.",
+    }, 500);
   }
 });
