@@ -142,7 +142,7 @@ serve(async (req) => {
       return json({ error: "Empresa BTG sem conta bancária disponível." }, 502);
     }
 
-    const account = {
+    const account: Record<string, string | undefined> = {
       branch: pickFirstString(
         btgAccount.branch,
         btgAccount.branchCode,
@@ -165,7 +165,7 @@ serve(async (req) => {
     };
 
     Object.keys(account).forEach((key) => {
-      if (!account[key as keyof typeof account]) delete account[key as keyof typeof account];
+      if (!account[key]) delete account[key];
     });
 
     if (!account.branch || !account.number) {
