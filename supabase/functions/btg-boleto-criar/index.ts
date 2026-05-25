@@ -250,7 +250,6 @@ serve(async (req) => {
       type: "SINGLE",
       paymentMethods: ["BANKSLIPS"],
       account,
-      dueDate: dueDateStr,
       notification: {
         deliveryMediums: user.email ? ["Email", "Sms"] : ["Sms"],
         ...(user.email ? { email: user.email } : {}),
@@ -262,11 +261,11 @@ serve(async (req) => {
 
     console.info("[btg-boleto-criar] payload BTG keys", {
       keys: Object.keys(btgPayload),
-      notificationKeys: Object.keys(btgPayload.notification),
+      paymentMethods: btgPayload.paymentMethods,
       hasAmount: !!btgPayload.amount,
-      hasDueDate: !!btgPayload.dueDate,
+      hasAccount: !!btgPayload.account,
     });
-    console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr, url: btgRequestUrl });
+    console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, url: btgRequestUrl });
 
     const btgResponse = await fetch(btgRequestUrl, {
       method: "POST",
