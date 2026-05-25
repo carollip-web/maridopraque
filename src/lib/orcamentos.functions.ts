@@ -442,41 +442,11 @@ const aceitarPropostaSchema = z.object({
   orcamentoId: z.string().uuid().optional(),
 });
 
-function calcularIntervaloReserva(
-  dataPreferida: string | Date,
-  periodo?: string | null,
-  horario?: string | null,
-) {
-  const data = String(dataPreferida).slice(0, 10);
-
-  if (periodo === "manha") {
-    return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
-  }
-
-  if (periodo === "tarde") {
-    return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
-  }
-
-  if (periodo === "noite") {
-    return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
-  }
-
-  if (periodo === "horario_especifico" && horario) {
-    const hora = String(horario).slice(0, 5);
-    const inicioDate = new Date(`${data}T${hora}:00-03:00`);
-    const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
-
-    return { inicio: inicioDate.toISOString(), fim: fimDate.toISOString() };
-  }
-
-  return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
-}
-
 export const aceitarProposta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => aceitarPropostaSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const { supabase, userId } = context;
 
     console.info("[aceitarProposta] start", {
       propostaId: data.propostaId,
@@ -484,263 +454,35 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       userId,
     });
 
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-
-    if (!SERVICE_KEY || !SUPABASE_URL) {
-      console.error("[aceitarProposta] Missing environment variables for Service Role");
-      throw new Error(
-        "Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
-      );
-    }
-
-    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false },
-    });
-    const serviceSupabase = serviceClient;
-
-    // 1. Fetch proposal first - THIS IS THE SOURCE OF TRUTH
-    const { data: prop, error: e_prop } = await serviceClient
-      .from("propostas")
-      .select("id, orcamento_id, profissional_id, valor_servico, observacoes, status")
-      .eq("id", data.propostaId)
-      .maybeSingle();
-
-    if (e_prop) {
-      console.error("[aceitarProposta] erro ao buscar proposta", e_prop);
-      throw new Error(`Erro ao carregar proposta: ${e_prop.message}`);
-    }
-
-    if (!prop) {
-      throw new Error("Proposta não encontrada.");
-    }
-
-    const orcamentoId = prop.orcamento_id;
-    if (!orcamentoId) {
-      throw new Error("Proposta sem pedido vinculado.");
-    }
-
-    if (data.orcamentoId && data.orcamentoId !== orcamentoId) {
-      console.warn("[aceitarProposta] orcamentoId divergente, usando proposta.orcamento_id", {
-        recebido: data.orcamentoId,
-        real: orcamentoId,
+    const { data: resultRows, error } = await (supabase as any)
+      .rpc("aceitar_proposta_cliente", {
+        _proposta_id: data.propostaId,
       });
-    }
 
-    if (prop.status !== "pendente") {
-      throw new Error("Essa proposta não está mais disponível.");
-    }
-
-    // 2. Fetch basic budget first.
-    const { data: orc, error: e_orc } = await serviceClient
-      .from("orcamentos")
-      .select("id, cliente_id, status")
-      .eq("id", orcamentoId)
-      .maybeSingle();
-
-    if (e_orc) {
-      console.error("[aceitarProposta] erro ao buscar orçamento", {
-        code: e_orc.code,
-        message: e_orc.message,
-        orcamentoId,
+    if (error) {
+      console.error("[aceitarProposta] erro na RPC aceitar_proposta_cliente", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        propostaId: data.propostaId,
+        orcamentoIdRecebido: data.orcamentoId,
       });
-      throw new Error(`Erro ao carregar pedido: ${e_orc.message}`);
+
+      throw new Error(error.message || "Erro ao aprovar proposta.");
     }
 
-    if (!orc) {
-      throw new Error("Pedido não encontrado.");
-    }
+    const result = Array.isArray(resultRows) ? resultRows[0] : resultRows;
 
-    // 3. Ownership validation
-    if (orc.cliente_id !== userId) {
-      console.warn("[aceitarProposta] Sem permissão: cliente_id mismatch", {
-        userId,
-        orcClienteId: orc.cliente_id,
-      });
-      throw new Error("Você não tem permissão para aprovar esta proposta.");
-    }
-
-    let preferencias = {
-      tipo_atendimento: null as string | null,
-      data_preferida: null as string | null,
-      periodo_preferido: null as string | null,
-      horario_preferido: null as string | null,
-      flexibilidade_agenda: null as string | null,
-    };
-
-    const { data: pref, error: prefError } = await (serviceClient as any)
-      .from("orcamentos")
-      .select(
-        "tipo_atendimento,data_preferida,periodo_preferido,horario_preferido,flexibilidade_agenda",
-      )
-      .eq("id", orcamentoId)
-      .maybeSingle();
-
-    if (prefError) {
-      console.warn(
-        `[aceitarProposta] Erro ao carregar preferências do pedido: ${prefError.message}`,
-        {
-          code: prefError.code,
-          message: prefError.message,
-          details: prefError.details,
-          hint: prefError.hint,
-          orcamentoId,
-        },
-      );
-    } else if (pref) {
-      preferencias = {
-        tipo_atendimento: pref.tipo_atendimento ?? null,
-        data_preferida: pref.data_preferida ?? null,
-        periodo_preferido: pref.periodo_preferido ?? null,
-        horario_preferido: pref.horario_preferido ?? null,
-        flexibilidade_agenda: pref.flexibilidade_agenda ?? null,
-      };
-    }
-
-    // Permitir somente pedidos em aberto para proposta.
-    const isAllowedStatus = ["customizado_pendente", "enviado"].includes(orc.status);
-
-    if (!isAllowedStatus) {
-      console.warn("[aceitarProposta] Pedido com status invalido", { status: orc.status });
-      throw new Error("Pedido não está mais aberto para propostas.");
-    }
-
-    console.info("[aceitarProposta] dados validados, processando aceite", {
-      orcamentoId: orc.id,
-      profissionalId: prop.profissional_id,
-    });
-
-    // 4. Update proposals status
-    // Accept this one
-    await serviceClient
-      .from("propostas")
-      .update({ status: "aceita", updated_at: new Date().toISOString() })
-      .eq("id", prop.id);
-
-    // Reject others
-    await serviceClient
-      .from("propostas")
-      .update({ status: "recusada" })
-      .eq("orcamento_id", orc.id)
-      .neq("id", prop.id);
-
-    // 5. Update Budget status and professional assignment
-    const { data: updatedOrc, error: e_up_orc } = await serviceClient
-      .from("orcamentos")
-      .update({
-        status: "aprovado",
-        profissional_id: prop.profissional_id,
-        valor_servico: prop.valor_servico,
-        valor: prop.valor_servico, // Mantendo paridade se usado
-        observacoes_profissional: prop.observacoes,
-        data_aprovacao: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orc.id)
-      .select()
-      .single();
-
-    if (e_up_orc) {
-      console.error("[aceitarProposta] erro ao atualizar orçamento", e_up_orc);
-      throw new Error(`Falha ao atualizar pedido: ${e_up_orc.message}`);
-    }
-
-    // 6. Agenda Reservation (Optional - don't crash if it fails)
-    let reservaStatus: "temporaria" | "ja_existia" | "erro" | "sem_data" | "sem_profissional" =
-      "sem_data";
-
-    console.info("[aceitarProposta] dados para reserva", {
-      propostaId: prop?.id,
-      orcamentoId,
-      profissionalId: prop?.profissional_id,
-      data_preferida: preferencias?.data_preferida,
-      periodo_preferido: preferencias?.periodo_preferido,
-      horario_preferido: preferencias?.horario_preferido,
-    });
-
-    if (!prop.profissional_id) {
-      console.warn("[aceitarProposta] proposta sem profissional_id, reserva não criada", {
-        propostaId: prop.id,
-      });
-      reservaStatus = "sem_profissional";
-    } else if (preferencias.data_preferida) {
-      try {
-        const intervalo = calcularIntervaloReserva(
-          preferencias.data_preferida,
-          preferencias.periodo_preferido,
-          preferencias.horario_preferido,
-        );
-
-        const { data: reservaExistente } = await (serviceSupabase as any)
-          .from("profissional_bloqueios_agenda")
-          .select("id")
-          .eq("orcamento_id", orcamentoId)
-          .maybeSingle();
-
-        if (reservaExistente) {
-          console.info("[aceitarProposta] reserva já existia para orçamento", reservaExistente);
-          reservaStatus = "ja_existia";
-        } else {
-          const payloadReserva = {
-            profissional_id: prop.profissional_id,
-            orcamento_id: orcamentoId,
-            inicio: intervalo.inicio,
-            fim: intervalo.fim,
-            status: "temporario",
-            motivo: "Reserva temporária aguardando pagamento",
-            expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          };
-
-          console.info("[aceitarProposta] inserindo reserva temporária", payloadReserva);
-
-          const { data: reserva, error: reservaError } = await (serviceSupabase as any)
-            .from("profissional_bloqueios_agenda")
-            .insert(payloadReserva)
-            .select("*")
-            .single();
-
-          if (reservaError) {
-            console.error("[aceitarProposta] erro ao criar reserva temporária", {
-              code: reservaError.code,
-              message: reservaError.message,
-              details: reservaError.details,
-              hint: reservaError.hint,
-              payload: payloadReserva,
-            });
-            reservaStatus = "erro";
-          } else {
-            console.info("[aceitarProposta] reserva temporária criada", reserva);
-            reservaStatus = "temporaria";
-          }
-        }
-      } catch (err) {
-        console.error("[aceitarProposta] erro inesperado na lógica de reserva", err);
-        reservaStatus = "erro";
-      }
-    } else {
-      console.warn("[aceitarProposta] reserva não criada: pedido sem data_preferida", {
-        orcamentoId: orc.id,
-      });
-    }
-
-    // 7. Create Notification for the professional
-    if (prop.profissional_id) {
-      const { error: notifError } = await serviceSupabase.from("notificacoes").insert({
-        user_id: prop.profissional_id,
-        titulo: "Proposta Aceita",
-        mensagem: `O cliente aceitou sua proposta! Aguardando o pagamento para confirmar o agendamento.`,
-        orcamento_id: orcamentoId,
-        link: `/profissional?tab=orcamentos&orcamentoId=${orcamentoId}`,
-        lida: false,
-      });
-      if (notifError) console.error("[aceitarProposta] Erro ao criar notificação:", notifError);
+    if (!result?.ok) {
+      throw new Error("Não foi possível aprovar a proposta.");
     }
 
     return {
       ok: true,
-      orcamento: updatedOrc,
-      propostaId: prop.id,
-      agendaReserva: reservaStatus,
+      orcamentoId: result.orcamento_id,
+      propostaId: result.proposta_id,
+      agendaReserva: result.agenda_reserva,
     };
   });
 
