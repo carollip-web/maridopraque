@@ -28,6 +28,13 @@ function pickFirstString(...values: unknown[]): string | undefined {
   return typeof value === "number" ? String(value) : typeof value === "string" ? value.trim() : undefined;
 }
 
+function normalizeBrazilPhone(value?: string | null): string | null {
+  const digits = (value || "").replace(/\D/g, "");
+  if (digits.length === 10 || digits.length === 11) return digits;
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) return digits.slice(2);
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -110,6 +117,18 @@ serve(async (req) => {
     const valor = Number(orcamento.valor_servico || 0);
     if (valor <= 0) return json({ error: "Valor do pedido inválido." }, 400);
 
+    const { data: clienteProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("whatsapp")
+      .eq("id", user.id)
+      .maybeSingle();
+    const notificationPhone = normalizeBrazilPhone(
+      pickFirstString(clienteProfile?.whatsapp, user.phone, user.user_metadata?.whatsapp, user.user_metadata?.phone),
+    );
+    if (!notificationPhone) {
+      return json({ error: "Informe um WhatsApp válido no perfil antes de gerar boleto." }, 400);
+    }
+
     const codigoCurto = String(orcamento_id).slice(0, 8).toUpperCase();
     const externalId = `BOL-${codigoCurto}-${Date.now().toString(36)}`;
     const now = new Date();
@@ -184,14 +203,11 @@ serve(async (req) => {
       type: "SINGLE",
       paymentMethods: ["BANKSLIPS"],
       account,
-      notification: user.email
-        ? {
-          deliveryMediums: ["Email"],
-          email: user.email,
-        }
-        : {
-          deliveryMediums: [],
-        },
+      notification: {
+        deliveryMediums: user.email ? ["Email", "Sms"] : ["Sms"],
+        ...(user.email ? { email: user.email } : {}),
+        phone: notificationPhone,
+      },
       schedule: {
         startAt: fmt(now),
         endAt: fmt(dueDate),
