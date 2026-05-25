@@ -254,6 +254,14 @@ function Checkout() {
         return;
       }
       const bol = data as Boleto;
+      const url = bol.paymentUrl || "";
+      const isInvalidUrl =
+        !url.startsWith("http") || url.includes("link-exemplo") || url.includes("example");
+      if (isInvalidUrl) {
+        console.warn("[checkout] BTG retornou link inválido/placeholder", data);
+        toast.error("Boleto criado, mas o BTG retornou um link inválido (ambiente sandbox). Verifique a configuração BTG.");
+        return;
+      }
       setBoleto(bol);
       startBoletoPolling(bol);
       window.open(bol.paymentUrl, "_blank", "noopener,noreferrer");
