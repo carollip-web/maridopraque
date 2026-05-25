@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 function json(body: unknown, status = 200) {
@@ -38,26 +39,42 @@ function normalizeBrazilPhone(value?: string | null): string | null {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  console.log("[btg-boleto-criar] start");
+  console.info("[btg-boleto-criar] start");
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: req.headers.get("Authorization")! } } },
-    );
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "AUTH_MISSING", message: "Authorization Bearer ausente." }, 401);
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !anonKey || !serviceKey) {
+      return json({ error: "ENV_MISSING", message: "Configuração Supabase ausente." }, 500);
+    }
+
+    const supabaseClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) return json({ error: "Não autorizado" }, 401);
+    if (authError || !user) {
+      return json({ error: "AUTH_INVALID", message: "Usuário não autenticado." }, 401);
+    }
 
-    const body = await req.json().catch(() => ({}));
-    const orcamento_id = body.orcamentoId || body.orcamento_id;
-    if (!orcamento_id) return json({ error: "Pedido não encontrado." }, 400);
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "INVALID_JSON", message: "Body inválido." }, 400);
+    }
+    const orcamento_id = body?.orcamentoId || body?.orcamento_id;
+    if (!orcamento_id) {
+      return json({ error: "ORCAMENTO_ID_MISSING", message: "orcamentoId é obrigatório." }, 400);
+    }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     // Idempotência: reaproveita boleto pendente recente
     const { data: boletoAtivo } = await supabaseAdmin
