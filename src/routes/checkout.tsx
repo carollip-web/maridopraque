@@ -381,7 +381,7 @@ function Checkout() {
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
             {!cobranca && !boleto && !paid && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setMethod("pix")}
@@ -392,6 +392,17 @@ function Checkout() {
                   <QrCode className="h-5 w-5 text-brand mb-2" />
                   <div className="font-bold text-sm">Pix</div>
                   <div className="text-xs text-muted-foreground">Confirmação na hora</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("cartao")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "cartao" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <CreditCard className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Cartão</div>
+                  <div className="text-xs text-muted-foreground">Crédito ou débito</div>
                 </button>
                 <button
                   type="button"
