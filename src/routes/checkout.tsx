@@ -442,7 +442,7 @@ function Checkout() {
 
             <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
               <span className="text-brand font-bold text-lg">
-                Valor a pagar agora ({method === "pix" ? "Pix" : "Boleto"})
+                Valor a pagar agora ({method === "pix" ? "Pix" : method === "cartao" ? "Cartão" : "Boleto"})
               </span>
               <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
