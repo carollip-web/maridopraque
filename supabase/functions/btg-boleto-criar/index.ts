@@ -73,7 +73,7 @@ serve(async (req) => {
     // Credenciais BTG
     const { data: btgConfig } = await supabaseAdmin
       .from("marketplace_integracoes")
-      .select("access_token, company_id, token_expires_at, scope, extra")
+      .select("access_token, company_id, account_id, token_expires_at, scope, extra")
       .eq("provider", "btg")
       .maybeSingle();
 
