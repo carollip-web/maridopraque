@@ -37,6 +37,15 @@ export function FavoritosTab() {
       `)
       .eq("cliente_id", user.id);
 
+    if (error) {
+      console.error("[FavoritosTab] load cliente_favoritos failed", {
+        table: "cliente_favoritos",
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+    }
     if (data) {
       setFavoritos(data as any[]);
     }
@@ -48,7 +57,17 @@ export function FavoritosTab() {
   }, [user]);
 
   const handleRemoveFavorito = async (id: string) => {
-    await (supabase as any).from("cliente_favoritos").delete().eq("id", id);
+    const { error } = await (supabase as any).from("cliente_favoritos").delete().eq("id", id);
+    if (error) {
+      console.error("[FavoritosTab] delete cliente_favoritos failed", {
+        table: "cliente_favoritos",
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      return;
+    }
     setFavoritos(prev => prev.filter(f => f.id !== id));
   };
 

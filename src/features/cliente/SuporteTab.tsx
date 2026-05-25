@@ -25,12 +25,21 @@ export function SuporteTab() {
   const loadTickets = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await (supabase as any)
+    const { data, error } = await (supabase as any)
       .from("suporte_tickets")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
+    if (error) {
+      console.error("[SuporteTab] load suporte_tickets failed", {
+        table: "suporte_tickets",
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+    }
     if (data) setTickets(data as Ticket[]);
     setLoading(false);
   };
@@ -61,6 +70,13 @@ export function SuporteTab() {
       setMensagem("");
       import("sonner").then((m) => m.toast.success("Mensagem enviada com sucesso! Nossa equipe retornará em breve."));
     } else {
+      console.error("[SuporteTab] insert suporte_tickets failed", {
+        table: "suporte_tickets",
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+      });
       import("sonner").then((m) => m.toast.error("Erro ao enviar mensagem. Tente novamente."));
     }
     setEnviando(false);
