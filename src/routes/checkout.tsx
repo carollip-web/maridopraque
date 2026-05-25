@@ -260,7 +260,7 @@ function Checkout() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Lock className="h-3 w-3" /> Pagamento Pix • BTG
+          <Lock className="h-3 w-3" /> Pagamento • BTG
         </div>
       </div>
 
