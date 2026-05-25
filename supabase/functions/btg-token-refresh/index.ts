@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function resolveCompanyId(tokenData: any, fallback?: string | null): string | null {
+  return tokenData?.company_id
+    || tokenData?.["empresas.btgpactual.com/pix-cash-in"]
+    || tokenData?.["empresas.btgpactual.com/accounts"]
+    || fallback
+    || null;
+}
+
 serve(async (req) => {
   try {
     const supabaseAdmin = createClient(
@@ -72,6 +80,7 @@ serve(async (req) => {
     } = tokenData;
 
     const newExpiresAt = expires_in ? new Date(Date.now() + expires_in * 1000).toISOString() : null;
+    const resolvedCompanyId = resolveCompanyId(tokenData, btgData.company_id);
 
     const { error: updateErr } = await supabaseAdmin
       .from("marketplace_integracoes")
@@ -81,7 +90,7 @@ serve(async (req) => {
         token_expires_at: newExpiresAt,
         scope,
         account_id: account_id || btgData.account_id,
-        company_id: company_id || btgData.company_id,
+        company_id: resolvedCompanyId,
         extra: {
           ...btgData.extra,
           last_refresh: new Date().toISOString(),
