@@ -21,6 +21,11 @@ function resolveCompanyId(config: any): string | null {
     || null;
 }
 
+function pickFirstString(...values: unknown[]): string | undefined {
+  const value = values.find((item) => typeof item === "string" && item.trim().length > 0);
+  return typeof value === "string" ? value.trim() : undefined;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -137,18 +142,48 @@ serve(async (req) => {
       return json({ error: "Empresa BTG sem conta bancária disponível." }, 502);
     }
 
+    const account = {
+      branch: pickFirstString(
+        btgAccount.branch,
+        btgAccount.branchCode,
+        btgAccount.branch_code,
+        btgAccount.agency,
+        btgAccount.agencyNumber,
+        btgAccount.agency_number,
+        "50",
+      ),
+      number: pickFirstString(
+        btgAccount.number,
+        btgAccount.accountNumber,
+        btgAccount.account_number,
+        btgAccount.account,
+        btgAccount.accountId,
+        btgConfig.account_id,
+      ),
+      bankCode: pickFirstString(btgAccount.bankCode, btgAccount.bank_code, btgAccount.bank),
+      accountId: pickFirstString(btgAccount.accountId, btgAccount.account_id),
+    };
+
+    Object.keys(account).forEach((key) => {
+      if (!account[key as keyof typeof account]) delete account[key as keyof typeof account];
+    });
+
+    if (!account.branch || !account.number) {
+      console.log("[btg-boleto-criar] conta BTG incompleta", {
+        accountKeys: Object.keys(btgAccount),
+        hasBranch: !!account.branch,
+        hasNumber: !!account.number,
+      });
+      return json({ error: "Conta BTG incompleta para emissão de boleto." }, 502);
+    }
+
     const btgPayload: any = {
       name: `Pedido #${codigoCurto}`,
       amount: valor,
       description: `Marido pra Quê - ${orcamento.service_name || "Serviço"} (#${codigoCurto})`,
       type: "SINGLE",
       paymentMethods: ["BANKSLIP"],
-      account: {
-        accountId: btgAccount.accountId,
-        bankCode: btgAccount.bankCode,
-        branchCode: btgAccount.branchCode,
-        number: btgAccount.number,
-      },
+      account,
       schedule: {
         startAt: fmt(now),
         endAt: fmt(dueDate),
