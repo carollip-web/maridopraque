@@ -78,13 +78,14 @@ function Checkout() {
 
   async function loadOrcamento(id: string) {
     setLoading(true);
+    if (!user?.id) { setLoading(false); return; }
     const [{ data, error }, { data: profile }] = await Promise.all([
       supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
       .eq("id", id)
         .maybeSingle(),
-      supabase.from("profiles").select("whatsapp").eq("id", user?.id).maybeSingle(),
+      supabase.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
     ]);
 
     if (error || !data) {
@@ -201,7 +202,8 @@ function Checkout() {
     }
     setIsProcessing(true);
     try {
-      await supabase.from("profiles").update({ whatsapp }).eq("id", user?.id);
+      if (!user?.id) { toast.error("Faça login novamente para continuar."); return; }
+      await supabase.from("profiles").update({ whatsapp }).eq("id", user.id);
       const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
         body: { orcamentoId, whatsapp },
       });
