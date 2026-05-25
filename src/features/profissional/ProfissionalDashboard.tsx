@@ -15,7 +15,7 @@ import { NivelBadge } from "@/components/NivelBadge";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { ProfissionalHeader } from "./ProfissionalHeader";
-import { MercadoPagoConnect } from "./MercadoPagoConnect";
+
 import { PixRepasseSettings } from "./PixRepasseSettings";
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
@@ -64,8 +64,6 @@ export function ProfissionalDashboard({
       />
 
       <ProfileCompletenessCard />
-
-      <MercadoPagoConnect />
 
       <PixRepasseSettings />
 
