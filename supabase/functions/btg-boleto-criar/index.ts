@@ -162,8 +162,6 @@ serve(async (req) => {
         btgAccount.accountId,
         btgConfig.account_id,
       ),
-      bankCode: pickFirstString(btgAccount.bankCode, btgAccount.bank_code, btgAccount.bank),
-      accountId: pickFirstString(btgAccount.accountId, btgAccount.account_id),
     };
 
     Object.keys(account).forEach((key) => {
