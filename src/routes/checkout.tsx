@@ -375,7 +375,7 @@ function Checkout() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Pagamento do Pedido</h2>
             <p className="text-muted-foreground mt-2">
-              Escolha Pix (instantâneo) ou Boleto bancário (até 3 dias úteis).
+              Escolha Pix (instantâneo), Cartão (crédito/débito via Mercado Pago) ou Boleto bancário.
             </p>
           </div>
 
