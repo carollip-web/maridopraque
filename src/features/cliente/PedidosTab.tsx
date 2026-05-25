@@ -173,7 +173,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
             profsMap[p.id] = {
               nome: p.nome,
-              slug: perf?.slug,
+              slug: perf?.slug ?? undefined,
               media,
               totalAvaliacoes: avs.length,
             };
