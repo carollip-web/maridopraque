@@ -105,32 +105,40 @@ serve(async (req) => {
 
     const codigoCurto = String(orcamento_id).slice(0, 8).toUpperCase();
     const externalId = `BOL-${codigoCurto}-${Date.now().toString(36)}`;
-    const dueDate = new Date();
+    const now = new Date();
+    const dueDate = new Date(now);
     dueDate.setDate(dueDate.getDate() + 3);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
     const btgPayload = {
-      externalId,
+      name: `Pedido #${codigoCurto}`,
+      amount: valor,
+      description: `Marido pra Quê - ${orcamento.service_name || "Serviço"} (#${codigoCurto})`,
       type: "SINGLE",
       paymentMethods: ["BANKSLIP"],
-      amount: valor,
-      dueDate: dueDateStr,
-      description: `Marido pra Quê - Pedido #${codigoCurto}`,
+      schedule: {
+        startAt: fmt(now),
+        endAt: fmt(dueDate),
+      },
     };
 
     const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
     const btgBaseUrl = btgEnv === "production"
       ? "https://api.empresas.btgpactual.com"
       : "https://api.sandbox.empresas.btgpactual.com";
-    const btgRequestUrl = `${btgBaseUrl}/v1/${companyId}/banking/payment-link`;
+    const btgRequestUrl = `${btgBaseUrl}/${companyId}/banking/payment-link`;
 
-    console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr });
+    console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr, url: btgRequestUrl });
 
     const btgResponse = await fetch(btgRequestUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${btgConfig.access_token}`,
         "Content-Type": "application/json",
+        Accept: "application/json",
         "x-idempotency-key": externalId,
       },
       body: JSON.stringify(btgPayload),
