@@ -247,7 +247,6 @@ serve(async (req) => {
     const btgPayload: any = {
       name: `Pedido #${codigoCurto}`,
       amount: valor,
-      description: `Marido pra Quê - ${orcamento.service_name || "Serviço"} (#${codigoCurto})`,
       type: "SINGLE",
       paymentMethods: ["BANKSLIPS"],
       account,
@@ -264,6 +263,11 @@ serve(async (req) => {
 
     const btgRequestUrl = `${btgBaseUrl}/${companyId}/banking/payment-link`;
 
+    console.info("[btg-boleto-criar] payload BTG sanitizado", {
+      hasAmount: !!btgPayload.amount,
+      amount: btgPayload.amount,
+      keys: Object.keys(btgPayload),
+    });
     console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr, url: btgRequestUrl });
 
     const btgResponse = await fetch(btgRequestUrl, {
