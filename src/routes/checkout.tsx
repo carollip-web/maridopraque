@@ -274,17 +274,32 @@ function Checkout() {
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
-                <Info className="h-6 w-6" />
+            {!cobranca && !boleto && !paid && (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMethod("pix")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "pix" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <QrCode className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Pix</div>
+                  <div className="text-xs text-muted-foreground">Confirmação na hora</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("boleto")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "boleto" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <FileText className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Boleto</div>
+                  <div className="text-xs text-muted-foreground">Vence em 3 dias</div>
+                </button>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Como funciona?</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Gere o Pix abaixo, pague pelo app do seu banco, e a confirmação chega aqui automaticamente.
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="pt-8 border-t border-border">
               <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">
@@ -309,11 +324,13 @@ function Checkout() {
             </div>
 
             <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
-              <span className="text-brand font-bold text-lg">Valor a pagar agora (Pix)</span>
+              <span className="text-brand font-bold text-lg">
+                Valor a pagar agora ({method === "pix" ? "Pix" : "Boleto"})
+              </span>
               <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
 
-            {!cobranca && !paid && (
+            {!cobranca && !boleto && !paid && method === "pix" && (
               <Button
                 onClick={handlePreparePayment}
                 disabled={isProcessing}
@@ -322,6 +339,18 @@ function Checkout() {
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Pix...</>
                 ) : "Gerar Pix para pagamento"}
+              </Button>
+            )}
+
+            {!cobranca && !boleto && !paid && method === "boleto" && (
+              <Button
+                onClick={handleGerarBoleto}
+                disabled={isProcessing}
+                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+              >
+                {isProcessing ? (
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
+                ) : "Gerar boleto bancário"}
               </Button>
             )}
 
@@ -378,11 +407,36 @@ function Checkout() {
               </div>
             )}
 
-            {paid && (
-              <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
-                <CheckCircle2 className="h-16 w-16 text-emerald-500" />
-                <h3 className="text-xl font-bold">Pagamento confirmado!</h3>
-                <p className="text-sm text-muted-foreground">Redirecionando para seus pedidos...</p>
+            {boleto && !paid && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="rounded-2xl border border-border bg-muted/30 p-6 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Valor</span>
+                    <span className="font-bold">R$ {boleto.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Vencimento</span>
+                    <span className="font-bold">
+                      {new Date(boleto.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                </div>
+
+                <Button asChild className="w-full h-14 rounded-full text-base font-bold">
+                  <a href={boleto.paymentUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Abrir boleto BTG
+                  </a>
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                  O boleto bancário leva até 2 dias úteis para compensar após o pagamento.
+                  O profissional só será notificado da confirmação após a compensação.
+                </p>
+
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Aguardando compensação do boleto...
+                </div>
               </div>
             )}
           </div>
