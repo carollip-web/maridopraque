@@ -178,11 +178,32 @@ function Checkout() {
     if (!orcamentoId) { toast.error("Pedido ausente."); return; }
     setIsProcessing(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Sua sessão expirou. Faça login novamente.");
+        return;
+      }
+
+      console.info("[checkout] chamando btg-cobranca-criar", {
+        orcamentoId,
+        status: orcamento?.status,
+        valor_servico: orcamento?.valor_servico,
+        userId: user?.id,
+      });
+
       const { data, error } = await supabase.functions.invoke("btg-cobranca-criar", {
         body: { orcamentoId },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.info("[checkout] btg-cobranca-criar result", { data, error });
+
       if (error || !data?.txId) {
-        toast.error(data?.error || error?.message || "Erro ao gerar cobrança Pix.");
+        const message = error
+          ? await getFunctionErrorMessage(error, "Erro ao gerar cobrança Pix.")
+          : data?.message || data?.error || "Erro ao gerar cobrança Pix.";
+        toast.error(message);
         return;
       }
       const cob = data as Cobranca;
@@ -190,6 +211,7 @@ function Checkout() {
       startWatchers(cob);
       toast.success("Pix gerado! Escaneie ou copie o código.");
     } catch (err: any) {
+      console.error("[checkout] erro Pix BTG", err);
       toast.error(err.message || "Falha na comunicação.");
     } finally {
       setIsProcessing(false);
