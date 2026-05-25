@@ -85,18 +85,27 @@ serve(async (req) => {
 
     const companyId = resolveCompanyId(btgConfig);
 
+    const btgClientId = Deno.env.get("BTG_CLIENT_ID");
+    const btgClientSecret = Deno.env.get("BTG_CLIENT_SECRET");
+    if (!btgClientId || !btgClientSecret) {
+      return json({ error: "BTG_ENV_MISSING", message: "Credenciais BTG ausentes na Edge Function." }, 500);
+    }
+
     if (!btgConfig || !btgConfig.access_token || !companyId) {
-      return json({ error: "Configuração BTG ausente." }, 400);
+      return json({ error: "BTG_CONFIG_MISSING", message: "Configuração BTG ausente." }, 400);
     }
     const tokenExpired = btgConfig.token_expires_at
       ? new Date(btgConfig.token_expires_at) <= new Date()
       : true;
-    if (tokenExpired) return json({ error: "Sessão BTG expirada. Reconecte." }, 401);
+    if (tokenExpired) return json({ error: "BTG_TOKEN_EXPIRED", message: "Sessão BTG expirada. Reconecte." }, 401);
 
     const hasScope = typeof btgConfig.scope === "string" &&
       btgConfig.scope.includes("brn:btg:empresas:payment-link");
     if (!hasScope) {
-      return json({ error: "Permissão BTG insuficiente para boleto. Reconecte a integração BTG." }, 403);
+      return json({
+        error: "BTG_SCOPE_MISSING",
+        message: "Permissão BTG insuficiente para boleto. Reconecte a integração BTG.",
+      }, 403);
     }
 
     // Orçamento
@@ -155,7 +164,10 @@ serve(async (req) => {
       pickFirstString(body.whatsapp, body.phone, clienteProfile?.whatsapp, user.phone, user.user_metadata?.whatsapp, user.user_metadata?.phone),
     );
     if (!notificationPhone) {
-      return json({ error: "Informe um WhatsApp válido no perfil antes de gerar boleto." }, 400);
+      return json({
+        error: "CUSTOMER_PHONE_MISSING",
+        message: "Informe um WhatsApp válido no perfil antes de gerar boleto.",
+      }, 400);
     }
 
     const codigoCurto = String(orcamento_id).slice(0, 8).toUpperCase();
@@ -169,9 +181,16 @@ serve(async (req) => {
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
     const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
-    const btgBaseUrl = btgEnv === "production"
+    const btgBaseUrl = Deno.env.get("BTG_BASE_URL") || (btgEnv === "production"
       ? "https://api.empresas.btgpactual.com"
-      : "https://api.sandbox.empresas.btgpactual.com";
+      : "https://api.sandbox.empresas.btgpactual.com");
+
+    console.info("[btg-boleto-criar] validado", {
+      orcamentoId: orcamento_id,
+      userId: user.id,
+      valor,
+      status: orcamento.status,
+    });
 
     // Buscar conta bancária BTG (account é obrigatório)
     const accountsResp = await fetch(`${btgBaseUrl}/${companyId}/banking/accounts`, {
