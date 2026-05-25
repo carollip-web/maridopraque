@@ -23,7 +23,7 @@ export function FavoritosTab() {
   const loadFavoritos = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("cliente_favoritos")
       .select(`
         id,
@@ -48,7 +48,7 @@ export function FavoritosTab() {
   }, [user]);
 
   const handleRemoveFavorito = async (id: string) => {
-    await supabase.from("cliente_favoritos").delete().eq("id", id);
+    await (supabase as any).from("cliente_favoritos").delete().eq("id", id);
     setFavoritos(prev => prev.filter(f => f.id !== id));
   };
 
