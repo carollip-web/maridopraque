@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import {
   ShieldCheck,
   ArrowLeft,
@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { iniciarPagamentoOrcamento } from "@/lib/pagamentos.functions";
+
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
@@ -276,26 +276,74 @@ function Checkout() {
     }
   };
 
-  const iniciarMpFn = useServerFn(iniciarPagamentoOrcamento);
-
   const handlePagarCartao = async () => {
     if (isProcessing) return;
-    if (!orcamentoId) { toast.error("Pedido inválido."); return; }
-    if (!orcamento || orcamento.status !== "aprovado") {
+    if (!orcamentoId) {
+      toast.error("Pedido inválido.");
+      return;
+    }
+    if (!orcamento) {
+      toast.error("Pedido ainda não carregado.");
+      return;
+    }
+    if (orcamento.status !== "aprovado") {
       toast.error("Este pedido ainda não está liberado para pagamento.");
       return;
     }
+
     setIsProcessing(true);
+
     try {
-      const result = await iniciarMpFn({ data: { orcamentoId } });
-      if (!result?.checkoutUrl) {
-        toast.error("Não foi possível iniciar o pagamento com cartão.");
+      if (!user?.id) {
+        toast.error("Faça login novamente para continuar.");
         return;
       }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
+        toast.error("Sua sessão expirou. Faça login novamente.");
+        return;
+      }
+
+      console.info("[checkout] chamando mercadopago-cartao-criar", {
+        orcamentoId,
+        status: orcamento.status,
+        valor_servico: orcamento.valor_servico,
+        userId: user.id,
+      });
+
+      const { data, error } = await supabase.functions.invoke("mercadopago-cartao-criar", {
+        body: { orcamentoId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.info("[checkout] mercadopago-cartao-criar result", { data, error });
+
+      if (error || !data?.checkoutUrl) {
+        if (error) {
+          console.error("[checkout] erro mercadopago-cartao-criar", {
+            message: error.message,
+            name: error.name,
+            context: error.context,
+          });
+        }
+
+        const message = error
+          ? await getFunctionErrorMessage(error, "Não foi possível iniciar o pagamento com cartão.")
+          : data?.message || data?.error || "Mercado Pago não retornou link de checkout.";
+
+        toast.error(message);
+        return;
+      }
+
       toast.success("Redirecionando para o Mercado Pago...");
-      window.location.href = result.checkoutUrl;
+      window.location.href = data.checkoutUrl;
     } catch (err: any) {
-      console.error("[checkout] erro cartão MP", err);
+      console.error("[checkout] erro cartão Mercado Pago", err);
       toast.error(err?.message || "Falha ao iniciar pagamento com cartão.");
     } finally {
       setIsProcessing(false);
