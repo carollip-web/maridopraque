@@ -13,6 +13,8 @@ type Agendamento = {
   data_agendada: string;
   status: string;
   duracao_min: number;
+  valor?: number;
+  cliente?: { nome: string };
 };
 type ReservaAgenda = {
   id: string;
@@ -94,7 +96,7 @@ export function AgendaCalendar() {
             .gt("data_fim", weekStart.toISOString()),
           supabase
             .from("orcamentos")
-            .select("id,service_name,data_agendada,status")
+            .select("id,service_name,data_agendada,status,valor,cliente:profiles!cliente_id(nome)")
             .eq("profissional_id", user.id)
             .not("data_agendada", "is", null)
             .gte("data_agendada", weekStart.toISOString())
@@ -106,7 +108,7 @@ export function AgendaCalendar() {
             .maybeSingle(),
           (supabase as any)
             .from("profissional_bloqueios_agenda")
-            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name)")
+            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name, valor, cliente:profiles!cliente_id(nome))")
             .eq("profissional_id", user.id)
             .in("status", ["temporario", "confirmado"])
             .lt("inicio", weekEnd.toISOString())
@@ -126,6 +128,8 @@ export function AgendaCalendar() {
         .map((r) => ({
           ...r,
           service_name: r.orcamentos?.service_name || "Serviço",
+          valor: r.orcamentos?.valor,
+          cliente: r.orcamentos?.cliente,
         }));
 
       setJanelas((jans as Janela[]) ?? []);
@@ -339,12 +343,21 @@ export function AgendaCalendar() {
                       const startMin = dt.getHours() * 60 + dt.getMinutes();
                       const top = (startMin / 60 - HOUR_START) * PX_PER_HOUR;
                       const height = (duracao / 60) * PX_PER_HOUR;
+                      
+                      const fullLabel = [
+                        "Agendamento",
+                        a.service_name || "Serviço",
+                        a.cliente?.nome ? `Cliente: ${a.cliente.nome}` : null,
+                        a.valor != null ? `Valor: R$ ${Number(a.valor).toFixed(2)}` : null,
+                        dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                      ].filter(Boolean).join(" • ");
+
                       return (
                         <div
                           key={a.id}
                           className="absolute left-1 right-1 bg-brand text-white rounded-md px-1.5 py-1 shadow-sm overflow-hidden"
                           style={{ top, height, minHeight: 28 }}
-                          title={`${a.service_name} • ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                          title={fullLabel}
                         >
                           <p className="text-[10px] font-bold leading-tight truncate">
                             {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -375,12 +388,21 @@ export function AgendaCalendar() {
                         ? "bg-amber-100 border border-amber-400 text-amber-900"
                         : "bg-emerald-100 border border-emerald-500 text-emerald-900";
                       const label = isPendente ? "Reserva pendente" : "Confirmado";
+                      
+                      const fullLabel = [
+                        label,
+                        r.service_name || "Serviço",
+                        r.cliente?.nome ? `Cliente: ${r.cliente.nome}` : null,
+                        r.valor != null ? `Valor: R$ ${Number(r.valor).toFixed(2)}` : null,
+                        `${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+                      ].filter(Boolean).join(" • ");
+
                       return (
                         <div
                           key={r.id}
                           className={`absolute left-1 right-1 rounded-md px-1.5 py-1 shadow-sm overflow-hidden ${cls}`}
                           style={{ top, height }}
-                          title={`${label} • ${r.service_name || "Serviço"} • ${ini.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–${fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                          title={fullLabel}
                         >
                           <p className="text-[10px] font-bold leading-tight truncate">{label}</p>
                           <p className="text-[10px] leading-tight truncate opacity-90">

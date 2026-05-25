@@ -106,7 +106,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const statusLabelOverride = isAguardandoPagamento
     ? "Aguardando pagamento"
     : isPagamentoConfirmado
-      ? "Agendado (Aguardando cliente)"
+      ? "Pagamento confirmado"
       : isServicoConcluido
         ? "Finalizado (Aguardando liberação)"
         : (meta?.label ?? o.status);
@@ -417,13 +417,10 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 space-y-2">
             <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
               <CheckCircle2 className="h-4 w-4" />
-              {isReservaConfirmada ? "Agenda confirmada" : "Pagamento recebido"}
+              Pagamento confirmado
             </div>
             <p className="text-blue-700 text-[11px] leading-relaxed">
-              {isReservaConfirmada
-                ? `Este serviço está confirmado na sua agenda para ${agendaLabel}. `
-                : "Pagamento confirmado. Combine o horário exato com a cliente pelo chat. "}
-              Após executar o serviço, peça para o cliente confirmar a conclusão no aplicativo dele.
+              Pagamento confirmado — serviço reservado na sua agenda.
             </p>
           </div>
         )}
