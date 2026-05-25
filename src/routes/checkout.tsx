@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { iniciarPagamentoOrcamento } from "@/lib/pagamentos.functions";
+
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
