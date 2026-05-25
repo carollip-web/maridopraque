@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function resolveCompanyId(tokenData: any): string | null {
+  return tokenData?.company_id
+    || tokenData?.["empresas.btgpactual.com/pix-cash-in"]
+    || tokenData?.["empresas.btgpactual.com/accounts"]
+    || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -110,6 +117,7 @@ serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
     const { access_token, refresh_token, expires_in, scope, account_id, company_id } = tokenData;
+    const resolvedCompanyId = company_id || resolveCompanyId(tokenData);
 
     const expiresAt = expires_in ? new Date(Date.now() + expires_in * 1000).toISOString() : null;
 
@@ -124,7 +132,7 @@ serve(async (req) => {
         token_expires_at: expiresAt,
         scope,
         account_id: account_id || null,
-        company_id: company_id || null,
+        company_id: resolvedCompanyId,
         connected_at: new Date().toISOString(),
         connected_by: integrationData.connected_by,
         extra: {
