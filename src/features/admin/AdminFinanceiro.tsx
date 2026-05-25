@@ -228,6 +228,94 @@ export function AdminFinanceiro() {
           </section>
         </>
       )}
+
+      {ledger && (
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <p className="text-sm text-slate-500 mb-1 flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5"/> Total recebido (ledger)</p>
+            <h3 className="text-2xl font-bold">{brl(ledger.totalRecebido)}</h3>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <p className="text-sm text-slate-500 mb-1">Taxas da plataforma</p>
+            <h3 className="text-2xl font-bold text-emerald-600">{brl(ledger.totalTaxa)}</h3>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-amber-400">
+            <p className="text-sm text-slate-500 mb-1">A pagar aos profissionais</p>
+            <h3 className="text-2xl font-bold">{brl(ledger.totalAPagar)}</h3>
+          </div>
+        </div>
+      )}
+
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="p-6 border-b border-slate-100 font-bold flex items-center gap-2">
+          <Landmark className="h-4 w-4 text-brand" /> Saques solicitados
+        </div>
+        <div className="p-6 space-y-3">
+          {saques.length === 0 && (
+            <p className="text-sm text-slate-400">Nenhum saque solicitado.</p>
+          )}
+          {saques.map((s) => {
+            const isFinal = s.status === "pago" || s.status === "recusado" || s.status === "cancelado";
+            return (
+              <div key={s.id} className="border border-slate-100 rounded-xl p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold">{s.profissional_nome || "Profissional"}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(s.solicitado_em).toLocaleString("pt-BR")} · Pix: {s.chave_pix || "—"}
+                    </p>
+                    {s.observacao && (
+                      <p className="text-xs text-slate-500 mt-1">Obs: {s.observacao}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-bold tabular-nums">{brl(Number(s.valor))}</p>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                      s.status === "pago" ? "bg-emerald-100 text-emerald-700"
+                      : s.status === "solicitado" ? "bg-amber-100 text-amber-700"
+                      : s.status === "aprovado" ? "bg-sky-100 text-sky-700"
+                      : "bg-slate-100 text-slate-700"
+                    }`}>{s.status}</span>
+                  </div>
+                </div>
+
+                {!isFinal && (
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <Input
+                      placeholder="URL do comprovante (opcional)"
+                      value={comprovantes[s.id] ?? s.comprovante_url ?? ""}
+                      onChange={(e) => setComprovantes((m) => ({ ...m, [s.id]: e.target.value }))}
+                      className="text-xs"
+                    />
+                    {s.status === "solicitado" && (
+                      <Button size="sm" variant="outline" onClick={() => aprovar(s.id)} disabled={processandoId === s.id}>
+                        Aprovar
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => marcarPago(s.id)}
+                      disabled={processandoId === s.id}
+                    >
+                      {processandoId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : <CheckCircle2 className="h-3.5 w-3.5"/>}
+                      <span className="ml-1">Marcar pago</span>
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => recusar(s.id)} disabled={processandoId === s.id}>
+                      Recusar
+                    </Button>
+                  </div>
+                )}
+                {s.comprovante_url && (
+                  <a href={s.comprovante_url} target="_blank" rel="noreferrer" className="text-xs text-brand underline mt-2 inline-block">
+                    Ver comprovante
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
