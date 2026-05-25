@@ -4,12 +4,14 @@ import {
   ShieldCheck,
   ArrowLeft,
   Lock,
-  Info,
   Loader2,
   CheckCircle2,
   AlertCircle,
   Copy,
   Check,
+  FileText,
+  QrCode,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +42,16 @@ type Cobranca = {
   cobrancaId: string;
 };
 
+type Boleto = {
+  id: string;
+  paymentUrl: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+};
+
+type PaymentMethod = "pix" | "boleto";
+
 function Checkout() {
   const { orcamentoId } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
@@ -48,7 +60,9 @@ function Checkout() {
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [method, setMethod] = useState<PaymentMethod>("pix");
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
+  const [boleto, setBoleto] = useState<Boleto | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const pollingRef = useRef<number | null>(null);
@@ -160,6 +174,42 @@ function Checkout() {
     }
   };
 
+  function startBoletoPolling(bol: Boleto) {
+    pollingRef.current = window.setInterval(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("btg-boleto-status", {
+          body: { boletoId: bol.id },
+        });
+        if (!error && data?.status === "pago") onPaidConfirmed();
+      } catch (e) {
+        console.warn("[checkout] boleto polling error", e);
+      }
+    }, 15000);
+  }
+
+  const handleGerarBoleto = async () => {
+    if (!orcamentoId) { toast.error("Pedido ausente."); return; }
+    setIsProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
+        body: { orcamentoId },
+      });
+      if (error || !data?.paymentUrl) {
+        toast.error(data?.error || error?.message || "Erro ao gerar boleto.");
+        return;
+      }
+      const bol = data as Boleto;
+      setBoleto(bol);
+      startBoletoPolling(bol);
+      window.open(bol.paymentUrl, "_blank", "noopener,noreferrer");
+      toast.success("Boleto gerado! Abrimos em uma nova aba.");
+    } catch (err: any) {
+      toast.error(err.message || "Falha na comunicação.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!cobranca?.emv) return;
     await navigator.clipboard.writeText(cobranca.emv);
@@ -209,7 +259,7 @@ function Checkout() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Lock className="h-3 w-3" /> Pagamento Pix • BTG
+          <Lock className="h-3 w-3" /> Pagamento • BTG
         </div>
       </div>
 
@@ -218,22 +268,37 @@ function Checkout() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Pagamento do Pedido</h2>
             <p className="text-muted-foreground mt-2">
-              Pague via Pix de forma instantânea e segura.
+              Escolha Pix (instantâneo) ou Boleto bancário (até 3 dias úteis).
             </p>
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
-            <div className="flex items-start gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
-                <Info className="h-6 w-6" />
+            {!cobranca && !boleto && !paid && (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMethod("pix")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "pix" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <QrCode className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Pix</div>
+                  <div className="text-xs text-muted-foreground">Confirmação na hora</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("boleto")}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    method === "boleto" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <FileText className="h-5 w-5 text-brand mb-2" />
+                  <div className="font-bold text-sm">Boleto</div>
+                  <div className="text-xs text-muted-foreground">Vence em 3 dias</div>
+                </button>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Como funciona?</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Gere o Pix abaixo, pague pelo app do seu banco, e a confirmação chega aqui automaticamente.
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="pt-8 border-t border-border">
               <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-6">
@@ -258,11 +323,13 @@ function Checkout() {
             </div>
 
             <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
-              <span className="text-brand font-bold text-lg">Valor a pagar agora (Pix)</span>
+              <span className="text-brand font-bold text-lg">
+                Valor a pagar agora ({method === "pix" ? "Pix" : "Boleto"})
+              </span>
               <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
 
-            {!cobranca && !paid && (
+            {!cobranca && !boleto && !paid && method === "pix" && (
               <Button
                 onClick={handlePreparePayment}
                 disabled={isProcessing}
@@ -271,6 +338,18 @@ function Checkout() {
                 {isProcessing ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Pix...</>
                 ) : "Gerar Pix para pagamento"}
+              </Button>
+            )}
+
+            {!cobranca && !boleto && !paid && method === "boleto" && (
+              <Button
+                onClick={handleGerarBoleto}
+                disabled={isProcessing}
+                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+              >
+                {isProcessing ? (
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
+                ) : "Gerar boleto bancário"}
               </Button>
             )}
 
@@ -323,6 +402,39 @@ function Checkout() {
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Aguardando confirmação do pagamento...
+                </div>
+              </div>
+            )}
+
+            {boleto && !paid && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="rounded-2xl border border-border bg-muted/30 p-6 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Valor</span>
+                    <span className="font-bold">R$ {boleto.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Vencimento</span>
+                    <span className="font-bold">
+                      {new Date(boleto.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                </div>
+
+                <Button asChild className="w-full h-14 rounded-full text-base font-bold">
+                  <a href={boleto.paymentUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Abrir boleto BTG
+                  </a>
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                  O boleto bancário leva até 2 dias úteis para compensar após o pagamento.
+                  O profissional só será notificado da confirmação após a compensação.
+                </p>
+
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Aguardando compensação do boleto...
                 </div>
               </div>
             )}
