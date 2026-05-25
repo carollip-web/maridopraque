@@ -114,6 +114,72 @@ export type Database = {
           },
         ]
       }
+      btg_boletos: {
+        Row: {
+          amount: number
+          btg_payment_link_id: string
+          btg_request: Json | null
+          btg_response: Json | null
+          cliente_id: string
+          created_at: string
+          due_date: string
+          external_id: string
+          id: string
+          last_status_check_at: string | null
+          orcamento_id: string
+          pagamento_id: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          payer_name: string | null
+          payer_tax_id: string | null
+          payment_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          btg_payment_link_id: string
+          btg_request?: Json | null
+          btg_response?: Json | null
+          cliente_id: string
+          created_at?: string
+          due_date: string
+          external_id: string
+          id?: string
+          last_status_check_at?: string | null
+          orcamento_id: string
+          pagamento_id?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payer_name?: string | null
+          payer_tax_id?: string | null
+          payment_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          btg_payment_link_id?: string
+          btg_request?: Json | null
+          btg_response?: Json | null
+          cliente_id?: string
+          created_at?: string
+          due_date?: string
+          external_id?: string
+          id?: string
+          last_status_check_at?: string | null
+          orcamento_id?: string
+          pagamento_id?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payer_name?: string | null
+          payer_tax_id?: string | null
+          payment_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       btg_cobrancas: {
         Row: {
           amount: number
