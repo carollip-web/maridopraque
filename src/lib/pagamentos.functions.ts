@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 
 const checkoutSchema = z.object({
   orcamentoId: z.string().uuid(),
@@ -120,58 +118,49 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     }
 
     try {
-      // 4. Criar registro de pagamento no servidor após validar posse/status.
-      const SUPABASE_URL = process.env.SUPABASE_URL;
-      const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (!SUPABASE_URL || !SERVICE_KEY) {
-        throw new Error(
-          "Configuração do servidor ausente: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY.",
-        );
-      }
-
-      const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-        auth: { persistSession: false },
-      });
-
-      const { data: pag, error: e2 } = (await serviceClient
-        .from("pagamentos")
-        .insert({
-          orcamento_id: orc.id,
-          cliente_id: userId,
-          profissional_id: orc.profissional_id,
-          valor_total: valorTotal,
-          valor_sinal: valorSinal,
-          valor_restante: valorRestante,
-          status: "checkout_created",
-          gateway: gateway,
-          gateway_preference_id: preferenceId,
-          checkout_url: checkoutUrl || null,
-          metadata: {
+      // 4. Criar registro de pagamento no servidor usando RPC.
+      const { data: pagRows, error: pagError } = await (supabase as any)
+        .rpc("criar_checkout_pagamento", {
+          _orcamento_id: orc.id,
+          _valor_total: valorTotal,
+          _valor_sinal: valorSinal,
+          _valor_restante: valorRestante,
+          _gateway: gateway,
+          _gateway_preference_id: preferenceId,
+          _checkout_url: checkoutUrl || "",
+          _metadata: {
             service_name: orc.service_name,
             mp_preference_id: preferenceId,
             initiated_at: new Date().toISOString(),
           },
-        })
-        .select()
-        .single()) as any;
+        });
 
-      if (e2) throw new Error(`Erro ao salvar registro de pagamento: ${e2.message}`);
+      if (pagError) {
+        console.error("[iniciarPagamentoOrcamento] erro na RPC criar_checkout_pagamento", {
+          code: pagError.code,
+          message: pagError.message,
+          details: pagError.details,
+          hint: pagError.hint,
+          orcamentoId: orc.id,
+        });
+
+        throw new Error(`Erro ao salvar registro de pagamento: ${pagError.message}`);
+      }
+
+      const pag = Array.isArray(pagRows) ? pagRows[0] : pagRows;
+
+      if (!pag?.id) {
+        throw new Error("Pagamento não foi criado.");
+      }
 
       // If it's mock, we set the checkoutUrl to our internal simulator now that we have the payment ID
       if (gateway === "mock") {
         checkoutUrl = `/checkout/simular?pagamentoId=${pag.id}`;
-
-        // Update the payment record with the mock url
-        await serviceClient
-          .from("pagamentos")
-          .update({ checkout_url: checkoutUrl })
-          .eq("id", pag.id);
       }
 
       return {
         ok: true,
-        checkoutUrl: checkoutUrl,
+        checkoutUrl,
         pagamentoId: pag.id,
       };
     } catch (err: any) {
@@ -190,78 +179,27 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!SUPABASE_URL || !SERVICE_KEY) {
-      throw new Error("Configuração do servidor ausente.");
-    }
-
-    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    // 1. Fetch Payment
-    const { data: pag, error: e1 } = (await serviceClient
-      .from("pagamentos")
-      .select("*")
-      .eq("id", data.pagamentoId)
-      .single()) as any;
-
-    if (e1 || !pag) throw new Error("Pagamento não encontrado.");
-    if (pag.cliente_id !== userId) throw new Error("Sem permissão para este pagamento.");
-    if (pag.status === "paid") return { ok: true, message: "Já estava pago." };
-
-    // 2. Update Pagamento -> paid
-    await serviceClient.from("pagamentos").update({ status: "paid" }).eq("id", pag.id);
-
-    // 3. Update Orcamento -> pago
-    await serviceClient.from("orcamentos").update({ status: "pago" }).eq("id", pag.orcamento_id);
-
-    // 4. Update Bloqueio de Agenda -> confirmado
-    await serviceClient
-      .from("profissional_bloqueios_agenda")
-      .update({ status: "confirmado", expires_at: null })
-      .eq("orcamento_id", pag.orcamento_id);
-
-    // 5. Notifications
-    // For the Professional
-    if (pag.profissional_id) {
-      await serviceClient.from("notificacoes").insert({
-        user_id: pag.profissional_id,
-        titulo: "Pagamento Confirmado!",
-        mensagem: `O cliente realizou o pagamento e o serviço foi agendado definitivamente na sua agenda.`,
-        orcamento_id: pag.orcamento_id,
-        link: `/profissional?tab=servicos&orcamentoId=${pag.orcamento_id}`,
-        lida: false,
+    const { data: resultRows, error } = await (supabase as any)
+      .rpc("simular_pagamento_aprovado_cliente", {
+        _pagamento_id: data.pagamentoId,
       });
-    }
 
-    // For the Client
-    await serviceClient.from("notificacoes").insert({
-      user_id: pag.cliente_id,
-      titulo: "Pagamento Aprovado",
-      mensagem: `Seu pagamento foi confirmado! O serviço já consta na agenda do profissional.`,
-      orcamento_id: pag.orcamento_id,
-      link: `/cliente?tab=pedidos&pedidoId=${pag.orcamento_id}`,
-      lida: false,
-    });
-
-    // 6. Criar repasse profissional pendente
-    try {
-      const { error: rpcErr } = await serviceClient.rpc("criar_repasse_profissional_pendente", {
-        p_pagamento_id: pag.id,
+    if (error) {
+      console.error("[simularPagamentoAprovado] erro na RPC", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        pagamentoId: data.pagamentoId,
       });
-      if (rpcErr) {
-        console.error("[simularPagamentoAprovado] erro ao criar repasse:", rpcErr);
-      } else {
-        console.log(
-          `[simularPagamentoAprovado] Repasse pendente criado com sucesso para pagamento ${pag.id}`,
-        );
-      }
-    } catch (e_rpc) {
-      console.error("[simularPagamentoAprovado] erro ao criar repasse:", e_rpc);
+
+      throw new Error(error.message || "Erro ao simular pagamento.");
     }
 
-    return { ok: true };
+    const result = Array.isArray(resultRows) ? resultRows[0] : resultRows;
+
+    return {
+      ok: !!result?.ok,
+      orcamentoId: result?.orcamento_id,
+    };
   });
