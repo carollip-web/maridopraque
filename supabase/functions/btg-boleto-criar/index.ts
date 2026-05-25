@@ -244,29 +244,27 @@ serve(async (req) => {
       return json({ error: "BTG_ACCOUNT_INCOMPLETE", message: "Conta BTG incompleta para emissão de boleto." }, 502);
     }
 
-    const btgPayload: any = {
+    const btgPayload = {
       name: `Pedido #${codigoCurto}`,
       amount: valor,
       type: "SINGLE",
       paymentMethods: ["BANKSLIPS"],
       account,
+      dueDate: dueDateStr,
       notification: {
         deliveryMediums: user.email ? ["Email", "Sms"] : ["Sms"],
         ...(user.email ? { email: user.email } : {}),
         phone: notificationPhone,
       },
-      schedule: {
-        startAt: fmt(now),
-        endAt: fmt(dueDate),
-      },
     };
 
     const btgRequestUrl = `${btgBaseUrl}/${companyId}/banking/payment-link`;
 
-    console.info("[btg-boleto-criar] payload BTG sanitizado", {
-      hasAmount: !!btgPayload.amount,
-      amount: btgPayload.amount,
+    console.info("[btg-boleto-criar] payload BTG keys", {
       keys: Object.keys(btgPayload),
+      notificationKeys: Object.keys(btgPayload.notification),
+      hasAmount: !!btgPayload.amount,
+      hasDueDate: !!btgPayload.dueDate,
     });
     console.log("[btg-boleto-criar] chamando BTG", { env: btgEnv, amount: valor, dueDate: dueDateStr, url: btgRequestUrl });
 
