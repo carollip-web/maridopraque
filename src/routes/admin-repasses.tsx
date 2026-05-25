@@ -124,6 +124,10 @@ function AdminRepassesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
+  // Seleção em lote
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   const navigate = useNavigate();
 
   const hasAccess =
@@ -207,6 +211,49 @@ function AdminRepassesPage() {
       toast.error(err.message || "Falha ao iniciar pagamento via BTG.");
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  // Aprovação em lote (bulk PIX BTG)
+  const handleAprovarSelecionados = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      toast.warning("Selecione ao menos um repasse pendente liberado.");
+      return;
+    }
+    if (!btgStatus?.connected) {
+      toast.error("Conecte a conta BTG antes de disparar repasses.");
+      return;
+    }
+    const ok = window.confirm(
+      `Confirmar disparo via PIX BTG de ${ids.length} repasse(s)? Esta ação é irreversível.`,
+    );
+    if (!ok) return;
+
+    try {
+      setBulkProcessing(true);
+      const { data, error } = await supabase.functions.invoke("btg-repasse-disparar", {
+        body: { repasse_ids: ids },
+      });
+      if (error) throw new Error(error.message || "Erro na Edge Function");
+      if (data?.error) throw new Error(data.error);
+
+      const sucessos = Array.isArray(data?.results)
+        ? data.results.filter((r: any) => r.success).length
+        : ids.length;
+      const falhas = ids.length - sucessos;
+      if (falhas === 0) {
+        toast.success(`${sucessos} repasse(s) enviados ao BTG.`);
+      } else {
+        toast.warning(`${sucessos} ok, ${falhas} falharam. Verifique a fila.`);
+      }
+      setSelectedIds(new Set());
+      loadData();
+    } catch (err: any) {
+      console.error("[handleAprovarSelecionados]", err);
+      toast.error(err.message || "Falha ao disparar repasses em lote.");
+    } finally {
+      setBulkProcessing(false);
     }
   };
 
