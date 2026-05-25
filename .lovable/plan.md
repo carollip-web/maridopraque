@@ -1,66 +1,100 @@
-# Modo de Teste da Plataforma
+## Objetivo
 
-Vou implementar em **4 fases**, cada uma entregando valor sozinha. Você pode pausar entre fases ou pedir para pular alguma.
+Trocar o checkout (hoje Mercado Pago) por **Pix BTG cash-in**. O cliente vê QR Code + Pix copia-e-cola na tela, paga, e o status é confirmado por **webhook do BTG** com **polling** como fallback (porque a doc do BTG diz que o webhook em sandbox ainda está "em desenvolvimento").
 
----
-
-## Fase 1 — Seed de dados de teste (base de tudo)
-
-**Objetivo:** ter sempre um conjunto previsível de usuários e pedidos para testar.
-
-- Edge function `seed-test-data` (protegida, só super_admin chama) que:
-  - Cria/atualiza 1 admin, 3 profissionais, 5 clientes — todos com sufixo `@teste.maridopraque.local` ou flag `is_test=true` no `profiles`.
-  - Cria pedidos cobrindo cada status: `customizado_pendente`, `enviado`, `aprovado`, `agendado`, `pago`, `concluido`.
-  - Senha padrão única (ex: `Teste@2026!`) documentada na UI.
-- Edge function `reset-test-data` que apaga tudo marcado `is_test=true` e recria do zero.
-- Migração: adicionar coluna `is_test boolean default false` em `profiles` e `orcamentos`.
-- Banner sutil no header quando logado como conta de teste: "🧪 Conta de teste".
-
-## Fase 2 — Painel Modo Demo no /admin
-
-**Objetivo:** botões para disparar ações e avançar fluxos sem trocar de conta.
-
-- Nova aba `/admin` → "Modo Teste" (visível só para super_admin).
-- Cards:
-  - **Contas de teste** — lista todas as contas `is_test`, com email/senha e botão "Copiar credenciais".
-  - **Seed/Reset** — chama as edge functions da Fase 1.
-  - **Simular fluxo** — selecionar um pedido de teste e botões: "Enviar orçamento", "Aprovar", "Agendar", "Marcar pago", "Concluir". Cada um chama um server function que avança o status.
-  - **Criar pedido fake** — formulário rápido (cliente + serviço) que insere um orçamento `is_test=true`.
-
-## Fase 3 — Impersonação (logar como)
-
-**Objetivo:** super_admin entra como qualquer usuário em 1 clique.
-
-- Edge function `impersonate-user` (super_admin only):
-  - Recebe `user_id`, valida que o alvo é `is_test=true` (segurança: só permite impersonar contas de teste por padrão; flag opcional para liberar contas reais).
-  - Usa `supabase.auth.admin.generateLink({ type: 'magiclink' })` e devolve o link.
-- Botão "Entrar como" em cada conta de teste do painel.
-- Ao clicar: abre nova aba com o magic link → sessão da conta alvo.
-- Banner laranja persistente "Você está vendo como [nome] — sair da impersonação".
-
-## Fase 4 — Testes E2E automatizados (Playwright)
-
-**Objetivo:** rodar o fluxo cliente → profissional → admin de uma vez via terminal.
-
-- `bun add -d @playwright/test` + `bunx playwright install chromium`.
-- Pasta `tests/e2e/`:
-  - `fluxo-completo.spec.ts` — cliente cria pedido → profissional envia orçamento → cliente aprova → profissional faz check-in/out → cliente avalia → admin vê tudo.
-  - `auth.spec.ts` — login dos 3 perfis, redirect correto.
-  - `helpers/` — login utilitário, seed via API.
-- Script `bun test:e2e` no `package.json`.
-- README curto explicando como rodar local e contra a preview publicada.
+Achei a doc do webhook de cash-in que estava faltando:
+- Eventos: `instant-collection.paid` e `instant-collection.unlinked`
+- Auth: header `Authorization: Bearer <webhook-secret>` (timing-safe compare)
+- Payload do `.paid` traz `txId`, `status: "PAID"`, `paidAt`, `paidAmount`, `paidBy.{taxId,name}`
 
 ---
 
-## Detalhes técnicos
+## Etapa 1 — Migration: tabela `btg_cobrancas` (Caminho A)
 
-- **Segurança das edge functions de teste:** todas validam `super_admin` via `user_roles.admin_level`. `seed/reset` recusam executar em produção se não houver flag `ENABLE_TEST_MODE=true` nos secrets (você habilita só onde quiser).
-- **Isolamento:** flag `is_test` em `profiles` e `orcamentos` permite filtrar facilmente em queries do admin "real" para não poluir métricas — adicionarei filtros `.eq('is_test', false)` nos dashboards de produção.
-- **Senhas de teste:** geradas determinísticas (`Teste@2026!`) e exibidas no painel. Não envia email de confirmação (auto-confirm via `auth.admin.createUser`).
-- **Playwright contra preview publicada:** usa `https://maridopraque.lovable.app` por padrão; variável `BASE_URL` para apontar local.
+- `id`, `orcamento_id`, `pagamento_id`, `cliente_id`
+- `tx_id` (text, único — ID da cobrança no BTG)
+- `emv` (Pix copia-e-cola), `qrcode_url`, `amount`
+- `status`: `ativa | paga | expirada | desvinculada | falhou`
+- `expires_at`, `paid_at`, `paid_amount`, `payer_tax_id`, `payer_name`
+- `btg_request` (jsonb), `btg_response` (jsonb), `created_at`, `updated_at`
+
+**RLS:** cliente vê as suas (`cliente_id = auth.uid()`); financeiro/super_admin vê tudo; insert/update só via service role.
+
+**Índice único parcial** `(orcamento_id) WHERE status='ativa'` → garante 1 cobrança ativa por orçamento (idempotência real, substitui o TODO do código).
+
+**Realtime** habilitado nessa tabela (pro frontend reagir sem polling).
 
 ---
 
-## Por onde começar?
+## Etapa 2 — Atualizar `btg-cobranca-criar`
 
-Sugiro **Fase 1 primeiro** porque tudo depende dela. Quer que eu comece por ela, ou prefere uma ordem diferente?
+- Antes de chamar a BTG: SELECT em `btg_cobrancas` por `orcamento_id` + `status='ativa'` + `expires_at > now()` → se existir, retorna a mesma (sem nova chamada à BTG).
+- Após sucesso da BTG: INSERT em `btg_cobrancas`. Também cria registro em `pagamentos` (gateway = `btg_pix`, status = `pending`, valor = `valor_servico`) e grava o id no `btg_cobrancas.pagamento_id`.
+- Mantém validação de scope `pix-cash-in` que já existe.
+
+---
+
+## Etapa 3 — Trocar o checkout (frontend)
+
+`src/routes/checkout.tsx`:
+- **Remover** chamada a `iniciarPagamentoOrcamento` (Mercado Pago).
+- Substituir por `supabase.functions.invoke("btg-cobranca-criar", { body: { orcamentoId } })`.
+- Mostrar QR Code (imagem `qrcode_url`) + botão "Copiar código Pix" (campo `emv`) + valor + countdown da expiração.
+- Subscrever Realtime na linha da cobrança: quando `status` virar `paga`, mostrar "Pagamento confirmado ✓" e redirecionar para `/cliente?tab=pedidos&payment=success`.
+- Polling de segurança: a cada 8 s chama a edge function `btg-cobranca-status` (Etapa 5) — só executa se Realtime não respondeu.
+
+`pagamentos.functions.ts`: deixa `iniciarPagamentoOrcamento` no arquivo mas marcado como deprecated (não é mais chamado pelo checkout).
+
+---
+
+## Etapa 4 — Webhook `btg-pix-webhook` (NOVO)
+
+`supabase/functions/btg-pix-webhook/index.ts` + `verify_jwt = false` em `supabase/config.toml`.
+
+- Lê header `Authorization: Bearer <secret>` e compara com `BTG_WEBHOOK_SECRET` (timing-safe).
+- Body: `{ webhookId, event, data }`. Eventos tratados:
+  - `instant-collection.paid` → update `btg_cobrancas` (`status='paga'`, `paid_at`, `paid_amount`, `payer_*`, `btg_response=data`) by `tx_id = data.txId`. Em seguida, marca o `pagamentos.status='approved'`, `paid_at=now()`, e chama a RPC já existente `criar_repasse_profissional_pendente(p_pagamento_id)` para gerar o repasse.
+  - `instant-collection.unlinked` → marca `status='desvinculada'`.
+- Sempre responde **200** quando OK (BTG retenta em 4xx/5xx).
+- Logs estruturados sem vazar o secret.
+
+**Vou pedir o secret novo `BTG_WEBHOOK_SECRET` via add_secret** depois que você aprovar o plano. Esse mesmo secret você cola no painel BTG → Developers → seu app → Webhooks, apontando para `https://rbfonmpuepqfhivvoqku.supabase.co/functions/v1/btg-pix-webhook` e assinando os eventos `instant-collection.paid` + `.unlinked`.
+
+---
+
+## Etapa 5 — Fallback: `btg-cobranca-status` (polling)
+
+Como o webhook do sandbox pode não estar disponível, crio uma edge function `btg-cobranca-status` (GET, JWT obrigatório).
+
+- Recebe `txId`, valida que pertence ao usuário (via `btg_cobrancas.cliente_id`).
+- Chama `GET https://api.sandbox.empresas.btgpactual.com/v1/companies/{companyId}/pix-cash-in/instant-collections/{txId}` com o `access_token` da `marketplace_integracoes`.
+- Se BTG responder `status='PAID'` e a linha local ainda não estiver `paga`, faz o mesmo update que o webhook faria (incluindo criar repasse). Idempotente.
+
+Assim funciona mesmo sem webhook, e quando o webhook entrar no ar o polling vira só rede de proteção.
+
+---
+
+## Etapa 6 — Teste E2E
+
+1. Confirmar que existe orçamento `aprovado` com `valor_servico > 0` (ou criar um via seed).
+2. Logar como o cliente desse orçamento, abrir `/checkout?orcamentoId=<id>`.
+3. Conferir no banco: 1 linha em `btg_cobrancas` (`status='ativa'`), 1 em `pagamentos` (`status='pending'`).
+4. No painel **BTG Empresas Sandbox**, simular pagamento daquele QR (tem botão de "simular pagamento").
+5. Conferir, em sequência:
+   - `btg_cobrancas.status = 'paga'`, `paid_at` preenchido.
+   - `pagamentos.status = 'approved'`.
+   - `repasses_profissionais` nova linha com `status='pendente'` para o profissional.
+   - Frontend (sem reload) trocou pra "Pagamento confirmado" e redirecionou.
+6. Repetir clicando "Preparar Pagamento" 2x seguidas → deve reaproveitar a mesma cobrança (mesmo `tx_id`).
+
+---
+
+## Fora de escopo (não vou mexer agora)
+
+- Remover Mercado Pago do banco/código (apenas paro de chamar). Limpeza fica para depois.
+- Webhook em produção do BTG (só sandbox por enquanto).
+- Mudar valor cobrado de "valor_servico" para "sinal de 50% do total" — hoje a edge cobra o `valor_servico` cheio; mantenho assim. Se quiser cobrar só o sinal, me avisa que ajusto.
+
+---
+
+Posso começar pela migration?
