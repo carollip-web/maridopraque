@@ -135,6 +135,38 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       orc = orcCompleto;
     }
 
+    // 1. Log orcamento carregado
+    console.info("[enviarOrcamento] orçamento carregado", {
+      orcamentoId: data.orcamentoId,
+      status: orc?.status,
+      serviceId: orc?.service_id,
+      userId,
+    });
+
+    if (!orc) {
+      throw new Error("Pedido não encontrado.");
+    }
+
+    // 2. Definir lista centralizada de status que aceitam proposta
+    const STATUS_QUE_ACEITAM_PROPOSTA: Database["public"]["Enums"]["orcamento_status"][] = [
+      "customizado_pendente",
+      "fixo_auto",
+      "enviado",
+    ];
+
+    // 3. Validar status do orçamento
+    if (!STATUS_QUE_ACEITAM_PROPOSTA.includes(orc.status)) {
+      console.warn("[enviarOrcamento] status não permite proposta", {
+        orcamentoId: orc.id,
+        statusAtual: orc.status,
+        permitidos: STATUS_QUE_ACEITAM_PROPOSTA,
+      });
+
+      throw new Error(
+        `Pedido com status "${orc.status}" não permite receber proposta.`
+      );
+    }
+
     // 0.1 Valida range do catálogo
     if (orc.service_id) {
       const { data: cat } = await supabase
@@ -218,13 +250,66 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
     }
 
-    // Check for existing pending proposal from this professional
+    // 3. Update budget status to 'enviado' using Service Role to bypass RLS blocks FIRST
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+
+    console.info("[enviarOrcamento] service env", {
+      supabaseUrl: SUPABASE_URL,
+      hasServiceKey: Boolean(SERVICE_KEY),
+    });
+
+    if (!SERVICE_KEY || !SUPABASE_URL) {
+      console.error("[enviarOrcamento] Missing environment variables for Service Role");
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL",
+      );
+    }
+
+    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
+      auth: { persistSession: false },
+    });
+
+    console.info("[enviarOrcamento] atualizando status via service role", {
+      orcamentoId: data.orcamentoId,
+      statusAtual: orc.status,
+      supabaseUrl: process.env.SUPABASE_URL,
+      hasServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    });
+
+    const { data: updatedOrc, error: updateError } = await serviceClient
+      .from("orcamentos")
+      .update({
+        status: "enviado",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.orcamentoId)
+      .in("status", STATUS_QUE_ACEITAM_PROPOSTA)
+      .select("id, status, service_name, valor_servico")
+      .single();
+
+    if (updateError || !updatedOrc) {
+      console.error("[enviarOrcamento] erro ao atualizar status", {
+        code: updateError?.code,
+        message: updateError?.message,
+        details: updateError?.details,
+        hint: updateError?.hint,
+        orcamentoId: data.orcamentoId,
+        statusAtual: orc.status,
+      });
+
+      throw new Error(
+        `Não foi possível marcar o pedido como enviado. Status atual: ${orc.status}. ${updateError?.message || ""}`
+      );
+    }
+
+    // Check for existing pending/accepted proposal from this professional
     const { data: existingProp } = await supabase
       .from("propostas")
       .select("id")
       .eq("orcamento_id", data.orcamentoId)
       .eq("profissional_id", userId)
-      .eq("status", "pendente")
+      .in("status", ["pendente", "aceita"])
       .maybeSingle();
 
     let proposalId: string;
@@ -293,40 +378,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         const { error: e3 } = await supabase.from("proposta_materiais").insert(items);
         if (e3) throw new Error(e3.message);
       }
-    }
-
-    // 3. Update budget status to 'enviado' using Service Role to bypass RLS blocks
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-
-    if (!SERVICE_KEY || !SUPABASE_URL) {
-      console.error("[enviarOrcamento] Missing environment variables for Service Role");
-      throw new Error(
-        "Configuração do servidor ausente: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_URL",
-      );
-    }
-
-    const serviceClient = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    console.info("[enviarOrcamento] Updating status via Service Role", {
-      orcamentoId: data.orcamentoId,
-    });
-    const { data: updatedOrc, error: updateError } = await serviceClient
-      .from("orcamentos")
-      .update({
-        status: "enviado",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.orcamentoId)
-      .in("status", ["customizado_pendente", "enviado"])
-      .select("id, status, service_name, valor_servico")
-      .single();
-
-    if (updateError || !updatedOrc) {
-      console.error("[enviarOrcamento] Status Update Error:", updateError);
-      throw new Error("Pedido não encontrado ou status atual não permite receber proposta.");
     }
 
     console.info("[enviarOrcamento] Success", {
