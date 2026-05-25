@@ -47,7 +47,7 @@ export function FavoritosTab() {
       });
     }
     if (data) {
-      setFavoritos(data as any[]);
+      setFavoritos(data as unknown as Favorito[]);
     }
     setLoading(false);
   };

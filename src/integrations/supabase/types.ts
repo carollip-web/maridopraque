@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      cliente_favoritos: {
+        Row: {
+          id: string
+          cliente_id: string
+          profissional_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          cliente_id: string
+          profissional_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          cliente_id?: string
+          profissional_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_favoritos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_favoritos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      suporte_tickets: {
+        Row: {
+          id: string
+          user_id: string
+          assunto: string
+          mensagem: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          assunto: string
+          mensagem: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          assunto?: string
+          mensagem?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suporte_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
