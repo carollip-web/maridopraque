@@ -43,6 +43,16 @@ type Cobranca = {
   cobrancaId: string;
 };
 
+type Boleto = {
+  id: string;
+  paymentUrl: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+};
+
+type PaymentMethod = "pix" | "boleto";
+
 function Checkout() {
   const { orcamentoId } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
@@ -51,7 +61,9 @@ function Checkout() {
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [method, setMethod] = useState<PaymentMethod>("pix");
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
+  const [boleto, setBoleto] = useState<Boleto | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const pollingRef = useRef<number | null>(null);
