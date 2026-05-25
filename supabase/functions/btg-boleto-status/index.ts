@@ -74,7 +74,7 @@ serve(async (req) => {
       ? "https://api.empresas.btgpactual.com"
       : "https://api.sandbox.empresas.btgpactual.com";
 
-    const url = `${btgBaseUrl}/v1/${companyId}/banking/payment-link/${encodeURIComponent(boleto.btg_payment_link_id)}`;
+    const url = `${btgBaseUrl}/${companyId}/banking/payment-link/${encodeURIComponent(boleto.btg_payment_link_id)}`;
     const resp = await fetch(url, {
       headers: { Authorization: `Bearer ${btgConfig.access_token}`, accept: "application/json" },
     });
