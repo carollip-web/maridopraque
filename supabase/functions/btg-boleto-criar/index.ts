@@ -155,8 +155,11 @@ serve(async (req) => {
         btgResponse.status === 401 || btgResponse.status === 403 ? btgResponse.status : 400);
     }
 
-    const paymentLinkId = responseJson?.id || responseJson?.paymentLinkId || externalId;
-    const paymentUrl = responseJson?.url || responseJson?.paymentUrl || responseJson?.shortUrl || null;
+    const paymentLinkId = responseJson?.paymentLnkId || responseJson?.id || responseJson?.paymentLinkId || externalId;
+    const rawUrl = responseJson?.linkUrl || responseJson?.url || responseJson?.paymentUrl || responseJson?.shortUrl || null;
+    const paymentUrl = rawUrl
+      ? (rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`)
+      : null;
 
     if (!paymentUrl) {
       console.log("[btg-boleto-criar] BTG retornou sem url", responseJson);
