@@ -297,6 +297,21 @@ function Checkout() {
     );
   }
 
+  if (!orcamento) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-32 text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-amber-500 mb-4" />
+        <h1 className="text-xl font-bold">Pedido não encontrado</h1>
+        <p className="mt-2 text-muted-foreground text-sm">
+          Não foi possível carregar os dados deste pedido.
+        </p>
+        <Button asChild className="mt-6 rounded-full" variant="outline">
+          <Link to="/cliente">Voltar para Meus Pedidos</Link>
+        </Button>
+      </div>
+    );
+  }
+
   const valorServico = Number(orcamento?.valor_servico || 0);
   const materiais = orcamento?.orcamento_materiais || [];
   const valorMateriaisCalculado = materiais.reduce(
@@ -361,7 +376,7 @@ function Checkout() {
               </h4>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">{orcamento.service_name}</span>
+                  <span className="font-medium">{orcamento.service_name || "Serviço"}</span>
                   <span className="text-muted-foreground text-sm">R$ {valorServico.toFixed(2)}</span>
                 </div>
                 {valorMateriais > 0 && (
