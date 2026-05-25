@@ -10,6 +10,9 @@ import {
   AlertCircle,
   Copy,
   Check,
+  FileText,
+  QrCode,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
