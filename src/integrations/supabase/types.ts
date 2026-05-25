@@ -131,6 +131,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cliente_favoritos: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          id: string
+          profissional_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          id?: string
+          profissional_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          id?: string
+          profissional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_favoritos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cliente_favoritos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indicacoes: {
         Row: {
           codigo: string
@@ -632,6 +668,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profissionais_pre_cadastro: {
+        Row: {
+          cidade: string
+          created_at: string
+          especialidade_principal: string
+          id: string
+          nome: string
+          status: string
+          telefone: string
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          especialidade_principal: string
+          id?: string
+          nome: string
+          status?: string
+          telefone: string
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          especialidade_principal?: string
+          id?: string
+          nome?: string
+          status?: string
+          telefone?: string
+        }
+        Relationships: []
+      }
       profissional_bloqueios: {
         Row: {
           created_at: string
@@ -1109,6 +1175,44 @@ export type Database = {
           urgencia_noturno_factor?: number | null
         }
         Relationships: []
+      }
+      suporte_tickets: {
+        Row: {
+          assunto: string
+          created_at: string | null
+          id: string
+          mensagem: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assunto: string
+          created_at?: string | null
+          id?: string
+          mensagem: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assunto?: string
+          created_at?: string | null
+          id?: string
+          mensagem?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suporte_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
