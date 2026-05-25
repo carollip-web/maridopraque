@@ -1706,6 +1706,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aceitar_proposta_cliente: {
+        Args: { _proposta_id: string }
+        Returns: {
+          agenda_reserva: string
+          ok: boolean
+          orcamento_id: string
+          proposta_id: string
+        }[]
+      }
       confirmar_convite: { Args: { p_convite_id: string }; Returns: undefined }
       criar_repasse_profissional_pendente: {
         Args: { p_pagamento_id: string }
