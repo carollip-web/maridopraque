@@ -276,6 +276,32 @@ function Checkout() {
     }
   };
 
+  const iniciarMpFn = useServerFn(iniciarPagamentoOrcamento);
+
+  const handlePagarCartao = async () => {
+    if (isProcessing) return;
+    if (!orcamentoId) { toast.error("Pedido inválido."); return; }
+    if (!orcamento || orcamento.status !== "aprovado") {
+      toast.error("Este pedido ainda não está liberado para pagamento.");
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const result = await iniciarMpFn({ data: { orcamentoId } });
+      if (!result?.checkoutUrl) {
+        toast.error("Não foi possível iniciar o pagamento com cartão.");
+        return;
+      }
+      toast.success("Redirecionando para o Mercado Pago...");
+      window.location.href = result.checkoutUrl;
+    } catch (err: any) {
+      console.error("[checkout] erro cartão MP", err);
+      toast.error(err?.message || "Falha ao iniciar pagamento com cartão.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleCopy = async () => {
     if (!cobranca?.emv) return;
     await navigator.clipboard.writeText(cobranca.emv);
