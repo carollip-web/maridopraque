@@ -182,7 +182,7 @@ serve(async (req) => {
       amount: valor,
       description: `Marido pra Quê - ${orcamento.service_name || "Serviço"} (#${codigoCurto})`,
       type: "SINGLE",
-      paymentMethods: ["BANKSLIP"],
+      paymentMethods: ["BANKSLIPS"],
       account,
       schedule: {
         startAt: fmt(now),
