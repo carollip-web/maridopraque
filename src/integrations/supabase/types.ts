@@ -39,7 +39,22 @@ export type Database = {
           id?: string
           target_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_aud_actor"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_aud_target"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       avaliacoes: {
         Row: {
@@ -75,7 +90,29 @@ export type Database = {
           resposta_em?: string | null
           resposta_profissional?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_aval_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_aval_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: true
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_aval_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       btg_cobrancas: {
         Row: {
@@ -192,7 +229,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_end_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cliente_favoritos: {
         Row: {
@@ -228,6 +273,20 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_fav_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_fav_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       indicacoes: {
@@ -255,7 +314,15 @@ export type Database = {
           user_id?: string
           usos?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ind_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_integracoes: {
         Row: {
@@ -375,7 +442,29 @@ export type Database = {
           remetente_id?: string
           texto?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_msg_destinatario"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_msg_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_msg_remetente"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notificacoes: {
         Row: {
@@ -409,6 +498,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_notif_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_notif_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notificacoes_orcamento_id_fkey"
             columns: ["orcamento_id"]
@@ -452,7 +555,22 @@ export type Database = {
           subtotal?: number | null
           unidade_snapshot?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_om_material"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_om_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamento_recusas: {
         Row: {
@@ -476,7 +594,22 @@ export type Database = {
           orcamento_id?: string
           profissional_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_or_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_or_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamentos: {
         Row: {
@@ -583,6 +716,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_orc_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orc_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orc_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orcamentos_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -657,6 +811,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_pag_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pag_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pag_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pagamentos_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
@@ -696,7 +871,22 @@ export type Database = {
           resolvido?: boolean
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_pe_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pe_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -786,7 +976,15 @@ export type Database = {
           motivo?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_pb_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profissional_bloqueios_agenda: {
         Row: {
@@ -827,6 +1025,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_pba_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pba_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profissional_bloqueios_agenda_orcamento_id_fkey"
             columns: ["orcamento_id"]
             isOneToOne: false
@@ -860,7 +1072,15 @@ export type Database = {
           id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_pd_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profissional_perfil: {
         Row: {
@@ -1031,7 +1251,15 @@ export type Database = {
           user_id?: string
           veiculo_proprio?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_pp_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proposta_materiais: {
         Row: {
@@ -1068,6 +1296,20 @@ export type Database = {
           unidade_snapshot?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_pm_material"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pm_proposta"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "proposta_materiais_material_id_fkey"
             columns: ["material_id"]
@@ -1116,6 +1358,20 @@ export type Database = {
           valor_servico?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_prop_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_prop_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "propostas_orcamento_id_fkey"
             columns: ["orcamento_id"]
@@ -1209,6 +1465,34 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_rep_cliente"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rep_orcamento"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rep_pagamento"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_rep_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_repasses_orcamento"
             columns: ["orcamento_id"]
             isOneToOne: false
@@ -1239,7 +1523,22 @@ export type Database = {
           quantidade_sugerida?: number
           service_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_sm_material"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materiais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_sm_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services_catalog: {
         Row: {
@@ -1355,6 +1654,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_st_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "suporte_tickets_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1385,7 +1691,15 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ur_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
