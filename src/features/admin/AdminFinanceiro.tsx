@@ -31,52 +31,130 @@ export function AdminFinanceiro() {
     pagos: any[];
   } | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      // Busca repasses, com junção aos orçamentos para pegar o nome do serviço
-      const { data: repasses, error } = await supabase
-        .from("repasses_profissionais")
-        .select(
-          `
-          id, 
-          status, 
-          valor_bruto, 
-          valor_comissao_marketplace, 
-          valor_taxa_gateway,
-          valor_liquido,
-          created_at,
-          orcamentos ( service_name, data_pagamento )
-        `,
-        )
-        .order("created_at", { ascending: false })
-        .limit(200);
+  const [ledger, setLedger] = useState<{
+    totalRecebido: number;
+    totalTaxa: number;
+    totalAPagar: number;
+  } | null>(null);
+  const [saques, setSaques] = useState<SaqueRow[]>([]);
+  const [comprovantes, setComprovantes] = useState<Record<string, string>>({});
+  const [processandoId, setProcessandoId] = useState<string | null>(null);
 
-      const list = repasses || [];
+  const loadAll = useCallback(async () => {
+    // legacy repasses para compatibilidade com tela existente
+    const { data: repasses } = await supabase
+      .from("repasses_profissionais")
+      .select(
+        `id, status, valor_bruto, valor_comissao_marketplace, valor_liquido, created_at,
+         orcamentos ( service_name, data_pagamento )`,
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    const list = repasses || [];
+    const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_bruto || 0), 0);
+    const lucroPlataforma = list.reduce(
+      (s: number, r: any) => s + Number(r.valor_comissao_marketplace || 0),
+      0,
+    );
+    const saldoPendenteBtg = list
+      .filter((r: any) => ["pendente", "aprovado", "processando"].includes(r.status))
+      .reduce((s: number, r: any) => s + Number(r.valor_liquido || 0), 0);
+    const pagos = list.map((r: any) => ({
+      id: r.id,
+      service_name: r.orcamentos?.service_name || "Serviço",
+      data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
+      valor: r.valor_bruto,
+    }));
+    setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, pagos });
 
-      // Volume Transacionado = Soma do valor bruto (tudo que o cliente pagou)
-      const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_bruto || 0), 0);
+    // novo ledger (pagamento_splits)
+    const { data: splits } = await supabase
+      .from("pagamento_splits")
+      .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status");
+    const sList = splits || [];
+    const totalRecebido = sList.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
+    const totalTaxa = sList.reduce(
+      (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
+      0,
+    );
+    const totalAPagar = sList
+      .filter((x: any) => ["aguardando_conclusao", "disponivel", "solicitado"].includes(x.status))
+      .reduce((s, x: any) => s + Number(x.valor_profissional || 0), 0);
+    setLedger({ totalRecebido, totalTaxa, totalAPagar });
 
-      // Lucro da Plataforma = Soma das comissões
-      const lucroPlataforma = list.reduce(
-        (s: number, r: any) => s + Number(r.valor_comissao_marketplace || 0),
-        0,
-      );
-
-      // Saldo Parado no BTG = O que a plataforma deve aos profissionais (ainda não pago)
-      const saldoPendenteBtg = list
-        .filter((r: any) => ["pendente", "aprovado", "processando"].includes(r.status))
-        .reduce((s: number, r: any) => s + Number(r.valor_liquido || 0), 0);
-
-      const pagos = list.map((r: any) => ({
-        id: r.id,
-        service_name: r.orcamentos?.service_name || "Serviço",
-        data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
-        valor: r.valor_bruto,
-      }));
-
-      setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, pagos });
-    })();
+    // saques
+    const { data: sqRows } = await supabase
+      .from("profissional_saques")
+      .select("id, profissional_id, valor, status, chave_pix, observacao, solicitado_em, comprovante_url")
+      .order("solicitado_em", { ascending: false })
+      .limit(100);
+    const rows = (sqRows || []) as SaqueRow[];
+    const ids = Array.from(new Set(rows.map((r) => r.profissional_id)));
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, nome")
+        .in("id", ids);
+      const nameMap = new Map((profs || []).map((p: any) => [p.id, p.nome]));
+      rows.forEach((r) => (r.profissional_nome = nameMap.get(r.profissional_id) ?? null));
+    }
+    setSaques(rows);
   }, []);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const atualizarSaque = async (
+    id: string,
+    patch: { status: string; comprovante_url?: string | null; aprovado_em?: string },
+  ) => {
+    const { error } = await supabase.from("profissional_saques").update(patch).eq("id", id);
+    if (error) {
+      toast.error("Erro: " + error.message);
+      return false;
+    }
+    return true;
+  };
+
+  const aprovar = async (id: string) => {
+    setProcessandoId(id);
+    const ok = await atualizarSaque(id, { status: "aprovado", aprovado_em: new Date().toISOString() });
+    setProcessandoId(null);
+    if (ok) {
+      toast.success("Saque aprovado");
+      loadAll();
+    }
+  };
+
+  const recusar = async (id: string) => {
+    if (!confirm("Recusar este saque?")) return;
+    setProcessandoId(id);
+    const ok = await atualizarSaque(id, { status: "recusado" });
+    setProcessandoId(null);
+    if (ok) {
+      toast.success("Saque recusado");
+      loadAll();
+    }
+  };
+
+  const marcarPago = async (id: string) => {
+    setProcessandoId(id);
+    const comp = comprovantes[id];
+    if (comp) {
+      await atualizarSaque(id, { status: "aprovado", comprovante_url: comp });
+    }
+    const { error } = await supabase.rpc("processar_saque_pago", { _saque_id: id });
+    setProcessandoId(null);
+    if (error) {
+      toast.error("Erro ao marcar pago: " + error.message);
+      return;
+    }
+    toast.success("Saque pago e splits liquidados");
+    loadAll();
+  };
+
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
