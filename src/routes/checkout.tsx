@@ -439,6 +439,14 @@ function Checkout() {
                 </div>
               </div>
             )}
+
+            {paid && (
+              <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
+                <CheckCircle2 className="h-16 w-16 text-emerald-500" />
+                <h3 className="text-xl font-bold">Pagamento confirmado!</h3>
+                <p className="text-sm text-muted-foreground">Redirecionando para seus pedidos...</p>
+              </div>
+            )}
           </div>
         </div>
 
