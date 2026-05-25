@@ -355,15 +355,29 @@ function Checkout() {
             )}
 
             {!cobranca && !boleto && !paid && method === "boleto" && (
-              <Button
-                onClick={handleGerarBoleto}
-                disabled={isProcessing}
-                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
-                ) : "Gerar boleto bancário"}
-              </Button>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    WhatsApp para o boleto
+                  </label>
+                  <input
+                    value={whatsapp}
+                    onChange={(event) => setWhatsapp(event.target.value)}
+                    inputMode="tel"
+                    placeholder="(11) 99999-9999"
+                    className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base outline-none transition focus:border-brand"
+                  />
+                </div>
+                <Button
+                  onClick={handleGerarBoleto}
+                  disabled={isProcessing}
+                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
+                >
+                  {isProcessing ? (
+                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
+                  ) : "Gerar boleto bancário"}
+                </Button>
+              </div>
             )}
 
             {cobranca && !paid && (
