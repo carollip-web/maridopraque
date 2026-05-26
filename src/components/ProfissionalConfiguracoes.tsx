@@ -18,6 +18,8 @@ const profileSchema = z.object({
   pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM", ""]).optional(),
   pix_holder_name: z.string().optional(),
   pix_holder_document: z.string().optional(),
+  cpf: z.string().optional(),
+  cnpj: z.string().optional(),
   anos_experiencia: z.coerce.number().min(0).optional(),
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
@@ -36,6 +38,8 @@ type ProfissionalPerfilData = {
   pix_key_type?: string | null;
   pix_holder_name?: string | null;
   pix_holder_document?: string | null;
+  cpf?: string | null;
+  cnpj?: string | null;
   anos_experiencia?: number | null;
   raio_atendimento_km?: number | null;
   atende_emergencias?: boolean | null;
@@ -43,6 +47,41 @@ type ProfissionalPerfilData = {
   genero?: string | null;
   oferece_apoio_feminino?: boolean | null;
 };
+
+function fmtCnpj(v: string) {
+  return v
+    .replace(/\D/g, "")
+    .slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function fmtCpf(v: string) {
+  return v
+    .replace(/\D/g, "")
+    .slice(0, 11)
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})/, ".$1-$2");
+}
+
+function isValidCnpj(v: string) {
+  const c = v.replace(/\D/g, "");
+  if (c.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(c)) return false;
+  const calc = (base: string, pesos: number[]) => {
+    const sum = pesos.reduce((acc, p, i) => acc + parseInt(base[i], 10) * p, 0);
+    const r = sum % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const p1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const p2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const d1 = calc(c.slice(0, 12), p1);
+  const d2 = calc(c.slice(0, 12) + d1, p2);
+  return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
+}
 
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
@@ -57,7 +96,7 @@ export function ProfissionalConfiguracoes() {
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
-          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng",
+          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng, cpf, cnpj",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -72,6 +111,8 @@ export function ProfissionalConfiguracoes() {
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -83,6 +124,8 @@ export function ProfissionalConfiguracoes() {
       pix_key_type: "",
       pix_holder_name: "",
       pix_holder_document: "",
+      cpf: "",
+      cnpj: "",
       anos_experiencia: 0,
       raio_atendimento_km: 15,
       atende_emergencias: false,
@@ -103,6 +146,8 @@ export function ProfissionalConfiguracoes() {
       pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? "",
       pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
       pix_holder_document: profissionalPerfil?.pix_holder_document ?? "",
+      cpf: profissionalPerfil?.cpf ?? "",
+      cnpj: profissionalPerfil?.cnpj ?? "",
       anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
       raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
       atende_emergencias: !!profissionalPerfil?.atende_emergencias,
@@ -117,6 +162,13 @@ export function ProfissionalConfiguracoes() {
     setSaving(true);
 
     try {
+      // Validar CNPJ se preenchido
+      if (values.cnpj && !isValidCnpj(values.cnpj)) {
+        toast.error("CNPJ inválido — confira os dígitos");
+        setSaving(false);
+        return;
+      }
+
       // 1. Update profiles table (Basic)
       const { error: profileError } = await supabase
         .from("profiles")
@@ -148,6 +200,8 @@ export function ProfissionalConfiguracoes() {
         pix_key_type: values.pix_key_type || null,
         pix_holder_name: values.pix_holder_name || null,
         pix_holder_document: values.pix_holder_document || null,
+        cpf: values.cpf ? values.cpf.replace(/\D/g, "") : null,
+        cnpj: values.cnpj ? values.cnpj.replace(/\D/g, "") : null,
         anos_experiencia: Number(values.anos_experiencia ?? 0),
         raio_atendimento_km: Number(values.raio_atendimento_km ?? 15),
         atende_emergencias: !!values.atende_emergencias,
@@ -335,6 +389,33 @@ export function ProfissionalConfiguracoes() {
                 {...register("cidade")}
                 className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
                 placeholder="Ex: São Paulo - SP"
+              />
+            </div>
+
+            {/* Dados de Identificação */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                CPF (opcional)
+              </label>
+              <input
+                value={watch("cpf") || ""}
+                onChange={(e) => setValue("cpf", fmtCpf(e.target.value), { shouldValidate: false })}
+                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                CNPJ do MEI (opcional)
+              </label>
+              <input
+                value={watch("cnpj") || ""}
+                onChange={(e) => setValue("cnpj", fmtCnpj(e.target.value), { shouldValidate: false })}
+                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                placeholder="00.000.000/0000-00"
+                inputMode="numeric"
               />
             </div>
 
