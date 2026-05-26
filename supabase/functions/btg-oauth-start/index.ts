@@ -99,7 +99,12 @@ serve(async (req) => {
       );
     }
 
-    const authUrl = `https://id.sandbox.btgpactual.com/oauth2/authorize?client_id=${btgClientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&prompt=login`;
+    const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
+    const idBaseUrl = btgEnv === "production"
+      ? "https://id.btgpactual.com"
+      : "https://id.sandbox.btgpactual.com";
+    console.log("[btg-oauth-start] BTG_ENV lido:", btgEnv, "idBaseUrl:", idBaseUrl);
+    const authUrl = `${idBaseUrl}/oauth2/authorize?client_id=${btgClientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${state}&prompt=login`;
 
     return new Response(JSON.stringify({ authUrl }), {
       status: 200,
