@@ -123,7 +123,7 @@ export function ProfissionalConfiguracoes() {
       bio: "",
       cidade: "",
       chave_pix: "",
-      pix_key_type: "",
+      pix_key_type: undefined,
       pix_holder_name: "",
       pix_holder_document: "",
       cpf: "",
