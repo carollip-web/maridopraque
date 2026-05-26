@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,7 +6,21 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, ShieldCheck, Briefcase, Camera, Loader2, Info } from "lucide-react";
+import {
+  User,
+  ShieldCheck,
+  Briefcase,
+  Camera,
+  Loader2,
+  Info,
+  CheckCircle2,
+  AlertCircle,
+  IdCard,
+  Banknote,
+  Users,
+  MapPin,
+  Save,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 const profileSchema = z.object({
@@ -69,6 +83,24 @@ function fmtCpf(v: string) {
     .replace(/\.(\d{3})(\d{1,2})/, ".$1-$2");
 }
 
+function fmtPhone(v: string) {
+  const d = v.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 10) {
+    return d
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2");
+}
+
+function fmtDoc(v: string) {
+  const d = v.replace(/\D/g, "");
+  if (d.length <= 11) return fmtCpf(v);
+  return fmtCnpj(v);
+}
+
 function isValidCnpj(v: string) {
   const c = v.replace(/\D/g, "");
   if (c.length !== 14) return false;
@@ -85,11 +117,19 @@ function isValidCnpj(v: string) {
   return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
 }
 
+const inputBase =
+  "w-full text-sm font-medium px-3.5 py-2.5 rounded-xl border bg-white transition-all focus:outline-none focus:ring-2 focus:ring-brand/20";
+const inputOk = "border-border focus:border-brand";
+const inputErr = "border-red-400 focus:border-red-500 focus:ring-red-200";
+const labelCls =
+  "text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5";
+
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("basico");
 
   const { data: profissionalPerfil, refetch: refetchPerfil } = useQuery({
     queryKey: ["profissional_perfil", user?.id],
@@ -111,7 +151,7 @@ export function ProfissionalConfiguracoes() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
     watch,
     setValue,
@@ -141,15 +181,17 @@ export function ProfissionalConfiguracoes() {
     if (!profile) return;
     reset({
       nome: profile.nome ?? "",
-      whatsapp: profile.whatsapp ?? "",
+      whatsapp: profile.whatsapp ? fmtPhone(profile.whatsapp) : "",
       bio: profissionalPerfil?.bio ?? "",
       cidade: profissionalPerfil?.cidade ?? "",
       chave_pix: profissionalPerfil?.chave_pix ?? "",
       pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? undefined,
       pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
-      pix_holder_document: profissionalPerfil?.pix_holder_document ?? "",
-      cpf: profissionalPerfil?.cpf ?? "",
-      cnpj: profissionalPerfil?.cnpj ?? "",
+      pix_holder_document: profissionalPerfil?.pix_holder_document
+        ? fmtDoc(profissionalPerfil.pix_holder_document)
+        : "",
+      cpf: profissionalPerfil?.cpf ? fmtCpf(profissionalPerfil.cpf) : "",
+      cnpj: profissionalPerfil?.cnpj ? fmtCnpj(profissionalPerfil.cnpj) : "",
       anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
       raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
       atende_emergencias: !!profissionalPerfil?.atende_emergencias,
@@ -159,19 +201,36 @@ export function ProfissionalConfiguracoes() {
     });
   }, [profile, profissionalPerfil, reset]);
 
+  const watched = watch();
+  const completeness = useMemo(() => {
+    const checks = [
+      !!watched.nome && watched.nome.length >= 2,
+      !!watched.whatsapp && watched.whatsapp.replace(/\D/g, "").length >= 10,
+      !!watched.bio && watched.bio.length > 10,
+      !!watched.cidade,
+      !!watched.cpf && watched.cpf.replace(/\D/g, "").length === 11,
+      !!watched.cnpj && watched.cnpj.replace(/\D/g, "").length === 14,
+      !!watched.chave_pix,
+      !!watched.pix_key_type,
+      !!watched.pix_holder_name,
+      !!watched.pix_holder_document &&
+        watched.pix_holder_document.replace(/\D/g, "").length >= 11,
+    ];
+    const done = checks.filter(Boolean).length;
+    return Math.round((done / checks.length) * 100);
+  }, [watched]);
+
   const handleSaveProfile = async (values: ProfileValues) => {
     if (!user) return;
     setSaving(true);
 
     try {
-      // Validar CNPJ se preenchido
       if (values.cnpj && !isValidCnpj(values.cnpj)) {
         toast.error("CNPJ inválido — confira os dígitos");
         setSaving(false);
         return;
       }
 
-      // 1. Update profiles table (Basic)
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ nome: values.nome, whatsapp: values.whatsapp })
@@ -179,7 +238,6 @@ export function ProfissionalConfiguracoes() {
 
       if (profileError) throw profileError;
 
-      // 2. Geocode city (best-effort)
       let geo: { lat: number; lng: number } | null = null;
       if (values.cidade?.trim()) {
         try {
@@ -190,7 +248,6 @@ export function ProfissionalConfiguracoes() {
         }
       }
 
-      // 3. Upsert profissional_perfil (single payload, all fields)
       const profissionalPayload = {
         user_id: user.id,
         bio: values.bio || null,
@@ -229,14 +286,11 @@ export function ProfissionalConfiguracoes() {
         throw perfilError;
       }
 
-      // 4. Confirm persistence
       const { data: savedPerfil } = await supabase
         .from("profissional_perfil")
         .select("genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix")
         .eq("user_id", user.id)
         .maybeSingle();
-
-      console.info("[ProfissionalConfiguracoes] perfil salvo confirmado", savedPerfil);
 
       if (savedPerfil && (savedPerfil as any).genero !== profissionalPayload.genero) {
         toast.error("Perfil enviado, mas os dados não foram confirmados no banco.");
@@ -248,16 +302,30 @@ export function ProfissionalConfiguracoes() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (error: any) {
-      console.error("[ProfissionalConfiguracoes] erro ao salvar perfil", {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
+      console.error("[ProfissionalConfiguracoes] erro ao salvar perfil", error);
       toast.error("Erro ao salvar perfil", { description: error.message });
     } finally {
       setSaving(false);
     }
+  };
+
+  const onInvalid = (errs: typeof errors) => {
+    const firstKey = Object.keys(errs)[0];
+    if (!firstKey) return;
+    const map: Record<string, string> = {
+      nome: "basico",
+      whatsapp: "basico",
+      bio: "basico",
+      cidade: "basico",
+      cpf: "documentos",
+      cnpj: "documentos",
+      chave_pix: "pix",
+      pix_key_type: "pix",
+      pix_holder_name: "pix",
+      pix_holder_document: "pix",
+    };
+    setActiveSection(map[firstKey] ?? "basico");
+    toast.error("Confira os campos destacados antes de salvar.");
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,13 +346,21 @@ export function ProfissionalConfiguracoes() {
     else toast.success("E-mail de redefinição enviado!");
   };
 
+  const sections = [
+    { id: "basico", label: "Perfil básico", icon: User },
+    { id: "documentos", label: "Documentos", icon: IdCard },
+    { id: "pix", label: "Dados Pix", icon: Banknote },
+    { id: "atendimento", label: "Atendimento", icon: MapPin },
+    { id: "compatibilidade", label: "Compatibilidade", icon: Users },
+  ];
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_2fr] animate-in fade-in duration-500">
-      {/* Sidebar Info */}
-      <div className="space-y-6">
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm text-center">
+    <div className="grid gap-8 lg:grid-cols-[280px_1fr] animate-in fade-in duration-500 pb-28">
+      {/* Sidebar */}
+      <aside className="space-y-6 lg:sticky lg:top-6 self-start">
+        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm text-center">
           <div
-            className="relative mx-auto w-24 h-24 mb-6 group cursor-pointer"
+            className="relative mx-auto w-24 h-24 mb-4 group cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -309,315 +385,494 @@ export function ProfissionalConfiguracoes() {
               <Camera className="h-4 w-4" />
             </div>
           </div>
-          <h3 className="text-xl font-bold">{profile?.nome || "Profissional"}</h3>
-          <p className="text-sm text-muted-foreground">{profile?.email}</p>
+          <h3 className="text-lg font-bold leading-tight">{profile?.nome || "Profissional"}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{profile?.email}</p>
+
+          {/* Completude */}
+          <div className="mt-5 text-left">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Completude
+              </span>
+              <span className="text-xs font-bold text-brand">{completeness}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-brand/10 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-brand to-brand/70 transition-all duration-500"
+                style={{ width: `${completeness}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+              {completeness === 100
+                ? "Perfil completo — pronto para receber clientes."
+                : "Preencha todos os campos para destacar seu perfil."}
+            </p>
+          </div>
         </section>
 
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm">
-          <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
+        {/* Section nav */}
+        <nav className="bg-white rounded-3xl border border-border p-3 shadow-sm hidden lg:block">
+          {sections.map((s) => {
+            const Icon = s.icon;
+            const active = activeSection === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setActiveSection(s.id);
+                  document
+                    .getElementById(`sec-${s.id}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-brand/10 text-brand"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {s.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm">
+          <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
           </h4>
           <Button
             variant="outline"
-            className="w-full rounded-xl text-xs font-bold py-6"
+            className="w-full rounded-xl text-xs font-bold"
             onClick={handleResetPassword}
           >
-            Redefinir Senha
+            Redefinir senha
           </Button>
-          <p className="text-[11px] text-muted-foreground mt-3 text-center">
+          <p className="text-[11px] text-muted-foreground mt-2 text-center leading-relaxed">
             Um link será enviado para o seu e-mail.
           </p>
         </section>
-      </div>
+      </aside>
 
       {/* Main Form */}
-      <div className="space-y-8">
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <Briefcase className="h-5 w-5 text-brand" />
-              <h3 className="font-bold text-lg">Seu Perfil Profissional</h3>
+      <form
+        onSubmit={handleSubmit(handleSaveProfile, onInvalid)}
+        className="space-y-6"
+      >
+        {/* Header card */}
+        <header className="bg-gradient-to-br from-brand/5 via-white to-white border border-brand/10 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-2xl bg-brand/10 flex items-center justify-center shrink-0">
+              <Briefcase className="h-6 w-6 text-brand" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                Configurações do perfil profissional
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                Mantenha seus dados sempre atualizados para receber mais pedidos e seus repasses
+                sem atraso.
+              </p>
             </div>
           </div>
+        </header>
 
-          <form
-            onSubmit={handleSubmit(handleSaveProfile)}
-            className="grid gap-x-8 gap-y-6 sm:grid-cols-2"
-          >
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Nome de Exibição
-              </label>
+        {/* Seção: Básico */}
+        <section
+          id="sec-basico"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle icon={User} title="Perfil básico" hint="Como você aparece para clientes." />
+
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="Nome de exibição" error={errors.nome?.message} required>
               <input
                 {...register("nome")}
-                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.nome ? "border-red-500" : "border-brand focus:border-brand"}`}
+                className={`${inputBase} ${errors.nome ? inputErr : inputOk}`}
                 placeholder="Como os clientes te chamam"
               />
-              {errors.nome && (
-                <p className="text-[10px] text-red-500 font-bold">{errors.nome.message}</p>
-              )}
-            </div>
+            </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                WhatsApp Profissional
-              </label>
+            <Field label="WhatsApp profissional" error={errors.whatsapp?.message} required>
               <input
-                {...register("whatsapp")}
-                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.whatsapp ? "border-red-500" : "border-brand focus:border-brand"}`}
-                placeholder="(00) 00000-0000"
+                value={watch("whatsapp") || ""}
+                onChange={(e) =>
+                  setValue("whatsapp", fmtPhone(e.target.value), { shouldDirty: true })
+                }
+                className={`${inputBase} ${errors.whatsapp ? inputErr : inputOk}`}
+                placeholder="(11) 90000-0000"
+                inputMode="numeric"
               />
-              {errors.whatsapp && (
-                <p className="text-[10px] text-red-500 font-bold">{errors.whatsapp.message}</p>
-              )}
-            </div>
+            </Field>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Bio / Sobre você
-              </label>
+            <Field
+              label="Bio / sobre você"
+              hint="Conta sua experiência e diferenciais (max. 280 caracteres)."
+              className="sm:col-span-2"
+            >
               <textarea
                 {...register("bio")}
-                className="w-full text-sm font-medium p-3 rounded-xl border border-border focus:outline-none transition-colors bg-transparent focus:border-brand resize-none"
-                placeholder="Ex: Trabalho com elétrica há 10 anos, sou especialista em instalações residenciais..."
+                maxLength={280}
+                className={`${inputBase} ${inputOk} resize-none min-h-[90px]`}
+                placeholder="Ex: Trabalho com elétrica há 10 anos, especialista em instalações residenciais..."
                 rows={3}
               />
-            </div>
+              <p className="text-[11px] text-muted-foreground text-right mt-1">
+                {(watch("bio") || "").length}/280
+              </p>
+            </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Cidade de Atendimento
-              </label>
+            <Field
+              label="Cidade de atendimento"
+              hint="Usada para mostrar pedidos próximos."
+              className="sm:col-span-2"
+            >
               <input
                 {...register("cidade")}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`${inputBase} ${inputOk}`}
                 placeholder="Ex: São Paulo - SP"
               />
-            </div>
+            </Field>
+          </div>
+        </section>
 
-            {/* Dados de Identificação */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CPF *
-              </label>
+        {/* Seção: Documentos */}
+        <section
+          id="sec-documentos"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={IdCard}
+            title="Documentos"
+            hint="Usados para emissão de notas e validação cadastral."
+          />
+
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="CPF" error={errors.cpf?.message} required>
               <input
                 value={watch("cpf") || ""}
-                onChange={(e) => setValue("cpf", fmtCpf(e.target.value), { shouldValidate: false })}
-                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cpf ? "border-red-500" : "border-brand focus:border-brand"}`}
+                onChange={(e) =>
+                  setValue("cpf", fmtCpf(e.target.value), { shouldDirty: true })
+                }
+                className={`${inputBase} ${errors.cpf ? inputErr : inputOk}`}
                 placeholder="000.000.000-00"
                 inputMode="numeric"
               />
-              {errors.cpf && (
-                <p className="text-[10px] text-red-500 font-bold">{errors.cpf.message}</p>
-              )}
-            </div>
+            </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CNPJ do MEI *
-              </label>
+            <Field label="CNPJ do MEI" error={errors.cnpj?.message} required>
               <input
                 value={watch("cnpj") || ""}
-                onChange={(e) => setValue("cnpj", fmtCnpj(e.target.value), { shouldValidate: false })}
-                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cnpj ? "border-red-500" : "border-brand focus:border-brand"}`}
+                onChange={(e) =>
+                  setValue("cnpj", fmtCnpj(e.target.value), { shouldDirty: true })
+                }
+                className={`${inputBase} ${errors.cnpj ? inputErr : inputOk}`}
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
               />
-              {errors.cnpj && (
-                <p className="text-[10px] text-red-500 font-bold">{errors.cnpj.message}</p>
-              )}
-            </div>
+            </Field>
+          </div>
+        </section>
 
-            {/* Dados do Pix */}
-            <div className="sm:col-span-2 rounded-2xl border border-brand/10 bg-brand-soft/10 p-5">
-              <div className="mb-5">
-                <h4 className="text-sm font-bold text-slate-900">Dados Bancários (Pix)</h4>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Para receber os repasses, informe a sua chave Pix e os dados do titular.
-                </p>
-              </div>
+        {/* Seção: Pix */}
+        <section
+          id="sec-pix"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={Banknote}
+            title="Dados Pix para repasse"
+            hint="Confira com cuidado — usamos exatamente esses dados para te pagar."
+          />
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Chave Pix *
-                  </label>
-                  <input
-                    {...register("chave_pix")}
-                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.chave_pix ? "border-red-500" : "border-brand focus:border-brand"}`}
-                    placeholder="Chave Pix"
-                  />
-                  {errors.chave_pix && (
-                    <p className="text-[10px] text-red-500 font-bold">{errors.chave_pix.message}</p>
-                  )}
-                </div>
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="Tipo de chave" error={errors.pix_key_type?.message} required>
+              <select
+                {...register("pix_key_type")}
+                className={`${inputBase} ${errors.pix_key_type ? inputErr : inputOk}`}
+              >
+                <option value="">Selecione...</option>
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+                <option value="EMAIL">E-mail</option>
+                <option value="PHONE">Telefone</option>
+                <option value="RANDOM">Chave aleatória</option>
+              </select>
+            </Field>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Tipo de Chave *
-                  </label>
-                  <select
-                    {...register("pix_key_type")}
-                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_key_type ? "border-red-500" : "border-brand focus:border-brand"}`}
-                  >
-                    <option value="">Selecione...</option>
-                    <option value="CPF">CPF</option>
-                    <option value="CNPJ">CNPJ</option>
-                    <option value="EMAIL">E-mail</option>
-                    <option value="PHONE">Telefone</option>
-                    <option value="RANDOM">Chave Aleatória</option>
-                  </select>
-                  {errors.pix_key_type && (
-                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_key_type.message}</p>
-                  )}
-                </div>
+            <Field label="Chave Pix" error={errors.chave_pix?.message} required>
+              <input
+                {...register("chave_pix")}
+                className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
+                placeholder="Sua chave Pix"
+              />
+            </Field>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Nome Completo do Titular *
-                  </label>
-                  <input
-                    {...register("pix_holder_name")}
-                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_name ? "border-red-500" : "border-brand focus:border-brand"}`}
-                    placeholder="Nome como está no banco"
-                  />
-                  {errors.pix_holder_name && (
-                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_name.message}</p>
-                  )}
-                </div>
+            <Field
+              label="Nome completo do titular"
+              error={errors.pix_holder_name?.message}
+              required
+            >
+              <input
+                {...register("pix_holder_name")}
+                className={`${inputBase} ${errors.pix_holder_name ? inputErr : inputOk}`}
+                placeholder="Nome como está no banco"
+              />
+            </Field>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    CPF/CNPJ do Titular *
-                  </label>
-                  <input
-                    {...register("pix_holder_document")}
-                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_document ? "border-red-500" : "border-brand focus:border-brand"}`}
-                    placeholder="Somente números"
-                  />
-                  {errors.pix_holder_document && (
-                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_document.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+            <Field
+              label="CPF/CNPJ do titular"
+              error={errors.pix_holder_document?.message}
+              required
+            >
+              <input
+                value={watch("pix_holder_document") || ""}
+                onChange={(e) =>
+                  setValue("pix_holder_document", fmtDoc(e.target.value), { shouldDirty: true })
+                }
+                className={`${inputBase} ${errors.pix_holder_document ? inputErr : inputOk}`}
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+              />
+            </Field>
+          </div>
+        </section>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Anos de Experiência
-              </label>
+        {/* Seção: Atendimento */}
+        <section
+          id="sec-atendimento"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={MapPin}
+            title="Atendimento"
+            hint="Defina sua experiência e raio de atendimento."
+          />
+
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="Anos de experiência">
               <input
                 type="number"
                 {...register("anos_experiencia")}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`${inputBase} ${inputOk}`}
                 placeholder="Ex: 5"
                 min="0"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Raio de Atendimento (KM)
-              </label>
+            <Field label="Raio de atendimento (KM)">
               <input
                 type="number"
                 {...register("raio_atendimento_km")}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`${inputBase} ${inputOk}`}
                 placeholder="Ex: 15"
                 min="0"
               />
-            </div>
+            </Field>
 
-            {/* Compatibilidade de Atendimento */}
-            <div className="sm:col-span-2 rounded-2xl border border-brand/10 bg-brand-soft/10 p-5">
-              <div className="mb-5">
-                <h4 className="text-sm font-bold text-slate-900">Compatibilidade de atendimento</h4>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Essa informação ajuda a mostrar pedidos compatíveis com o tipo de atendimento
-                  escolhido pela cliente.
-                </p>
-              </div>
+            <Toggle
+              label="Atende emergências"
+              hint="Aparece com prioridade em pedidos urgentes."
+              {...register("atende_emergencias")}
+            />
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Gênero para atendimento
-                  </label>
-                  <select
-                    {...register("genero")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+            <Toggle
+              label="Veículo próprio"
+              hint="Indica que você pode levar materiais e ferramentas."
+              {...register("veiculo_proprio")}
+            />
+          </div>
+        </section>
+
+        {/* Seção: Compatibilidade */}
+        <section
+          id="sec-compatibilidade"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={Users}
+            title="Compatibilidade de atendimento"
+            hint="Ajuda a mostrar pedidos compatíveis com a preferência das clientes."
+          />
+
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="Gênero para atendimento" hint="Apenas para compatibilidade operacional.">
+              <select {...register("genero")} className={`${inputBase} ${inputOk}`}>
+                <option value="nao_informar">Prefiro não informar</option>
+                <option value="mulher">Mulher</option>
+                <option value="homem">Homem</option>
+                <option value="outro">Outro</option>
+              </select>
+            </Field>
+
+            <Toggle
+              label="Apoio feminino disponível"
+              hint="Você trabalha com uma mulher de apoio para visitas acompanhadas."
+              {...register("oferece_apoio_feminino")}
+            />
+          </div>
+        </section>
+
+        {/* Especialidades (read-only) */}
+        <section className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
+          <SectionTitle
+            icon={Briefcase}
+            title="Especialidades"
+            hint="Definem quais pedidos você recebe."
+          />
+
+          <div className="mt-6">
+            {profissionalPerfil?.especialidades && profissionalPerfil.especialidades.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {profissionalPerfil.especialidades.map((esp: string) => (
+                  <span
+                    key={esp}
+                    className="px-3 py-1.5 bg-brand-soft text-brand-foreground text-xs font-bold rounded-full"
                   >
-                    <option value="nao_informar">Prefiro não informar</option>
-                    <option value="mulher">Mulher</option>
-                    <option value="homem">Homem</option>
-                    <option value="outro">Outro</option>
-                  </select>
-                  <p className="text-[11px] text-muted-foreground">
-                    Usado apenas para compatibilidade operacional dos pedidos.
-                  </p>
-                </div>
-
-                <label className="flex items-center justify-between gap-4 p-4 bg-white border border-border rounded-xl cursor-pointer">
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">Apoio feminino disponível</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Marque se você trabalha com uma mulher de apoio para visitas acompanhadas.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register("oferece_apoio_feminino")}
-                    className="h-5 w-5 accent-brand cursor-pointer shrink-0"
-                  />
-                </label>
+                    {esp}
+                  </span>
+                ))}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma especialidade cadastrada.</p>
+            )}
+
+            <div className="mt-5 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
+              <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                Para adicionar ou remover especialidades,{" "}
+                <strong>entre em contato com o suporte</strong>.
+              </p>
             </div>
-
-            <div className="sm:col-span-2 mt-4 flex justify-end">
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-brand text-white rounded-full px-8 font-bold"
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                {showSuccess ? "Salvo!" : "Salvar Perfil"}
-              </Button>
-            </div>
-          </form>
-        </section>
-
-        {/* Especialidades Read-only */}
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <User className="h-5 w-5 text-brand" />
-            <h3 className="font-bold text-lg">Especialidades (Serviços)</h3>
-          </div>
-
-          {profissionalPerfil?.especialidades && profissionalPerfil.especialidades.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profissionalPerfil.especialidades.map((esp: string) => (
-                <span
-                  key={esp}
-                  className="px-3 py-1.5 bg-brand-soft text-brand-foreground text-xs font-bold rounded-full"
-                >
-                  {esp}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Nenhuma especialidade cadastrada.</p>
-          )}
-
-          <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
-            <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              As especialidades definem quais pedidos de orçamento você recebe. Para adicionar ou
-              remover especialidades,{" "}
-              <strong>entre em contato com o suporte ou administrador</strong> da plataforma.
-            </p>
           </div>
         </section>
+
+        {/* Sticky save bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-border shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.08)]">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+              {isDirty ? (
+                <>
+                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                  <span className="font-medium">Você tem alterações não salvas</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span className="font-medium hidden sm:inline">Tudo salvo</span>
+                </>
+              )}
+            </div>
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-brand text-white rounded-full px-6 sm:px-8 font-bold gap-2"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : showSuccess ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {showSuccess ? "Salvo!" : saving ? "Salvando..." : "Salvar perfil"}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/* ---------- helpers ---------- */
+
+function SectionTitle({
+  icon: Icon,
+  title,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="h-10 w-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+        <Icon className="h-5 w-5 text-brand" />
+      </div>
+      <div>
+        <h3 className="font-bold text-base sm:text-lg text-slate-900">{title}</h3>
+        {hint && <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{hint}</p>}
       </div>
     </div>
   );
 }
+
+function Field({
+  label,
+  hint,
+  error,
+  required,
+  className,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`space-y-1.5 ${className ?? ""}`}>
+      <label className={labelCls}>
+        {label}
+        {required && <span className="text-brand">*</span>}
+      </label>
+      {children}
+      {error ? (
+        <p className="text-[11px] text-red-500 font-bold flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      ) : hint ? (
+        <p className="text-[11px] text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+const Toggle = (() => {
+  const Comp = (
+    {
+      label,
+      hint,
+      ...inputProps
+    }: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>,
+    ref: React.Ref<HTMLInputElement>,
+  ) => (
+    <label className="flex items-start justify-between gap-3 p-4 bg-slate-50 border border-border rounded-xl cursor-pointer hover:border-brand/30 transition-colors">
+      <div className="flex-1">
+        <p className="text-sm font-bold text-slate-800">{label}</p>
+        {hint && <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{hint}</p>}
+      </div>
+      <input
+        type="checkbox"
+        ref={ref}
+        {...inputProps}
+        className="h-5 w-5 accent-brand cursor-pointer shrink-0 mt-0.5"
+      />
+    </label>
+  );
+  return Object.assign(
+    // eslint-disable-next-line react/display-name
+    (props: any) => {
+      const { forwardedRef, ...rest } = props;
+      return Comp(rest, forwardedRef);
+    },
+    {},
+  ) as unknown as React.ForwardRefExoticComponent<
+    { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement> &
+      React.RefAttributes<HTMLInputElement>
+  >;
+})();
