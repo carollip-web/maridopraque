@@ -209,7 +209,11 @@ export function PixRepasseSettings() {
   }
 
   if (errorMsg) {
-    return (
+  if (profile?.pix_dados_confirmados) {
+    return null;
+  }
+
+  return (
       <Card className="p-6 border-destructive bg-destructive/5 text-destructive space-y-2">
         <div className="flex items-center gap-2 font-semibold">
           <AlertCircle className="h-5 w-5" />

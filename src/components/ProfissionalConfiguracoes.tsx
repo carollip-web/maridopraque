@@ -14,12 +14,14 @@ const profileSchema = z.object({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   bio: z.string().optional(),
   cidade: z.string().optional(),
-  chave_pix: z.string().optional(),
-  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM", ""]).optional(),
-  pix_holder_name: z.string().optional(),
-  pix_holder_document: z.string().optional(),
-  cpf: z.string().optional(),
-  cnpj: z.string().optional(),
+  chave_pix: z.string().min(1, "Chave Pix obrigatória"),
+  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"], {
+    errorMap: () => ({ message: "Selecione o tipo da chave" }),
+  }),
+  pix_holder_name: z.string().min(2, "Nome do titular obrigatório"),
+  pix_holder_document: z.string().min(11, "Documento do titular obrigatório"),
+  cpf: z.string().min(14, "CPF obrigatório"),
+  cnpj: z.string().min(18, "CNPJ obrigatório"),
   anos_experiencia: z.coerce.number().min(0).optional(),
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
@@ -121,7 +123,7 @@ export function ProfissionalConfiguracoes() {
       bio: "",
       cidade: "",
       chave_pix: "",
-      pix_key_type: "",
+      pix_key_type: undefined,
       pix_holder_name: "",
       pix_holder_document: "",
       cpf: "",
@@ -143,7 +145,7 @@ export function ProfissionalConfiguracoes() {
       bio: profissionalPerfil?.bio ?? "",
       cidade: profissionalPerfil?.cidade ?? "",
       chave_pix: profissionalPerfil?.chave_pix ?? "",
-      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? "",
+      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? undefined,
       pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
       pix_holder_document: profissionalPerfil?.pix_holder_document ?? "",
       cpf: profissionalPerfil?.cpf ?? "",
@@ -208,6 +210,7 @@ export function ProfissionalConfiguracoes() {
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        pix_dados_confirmados: true,
         updated_at: new Date().toISOString(),
       };
 
@@ -395,28 +398,34 @@ export function ProfissionalConfiguracoes() {
             {/* Dados de Identificação */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CPF (opcional)
+                CPF *
               </label>
               <input
                 value={watch("cpf") || ""}
                 onChange={(e) => setValue("cpf", fmtCpf(e.target.value), { shouldValidate: false })}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cpf ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="000.000.000-00"
                 inputMode="numeric"
               />
+              {errors.cpf && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.cpf.message}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CNPJ do MEI (opcional)
+                CNPJ do MEI *
               </label>
               <input
                 value={watch("cnpj") || ""}
                 onChange={(e) => setValue("cnpj", fmtCnpj(e.target.value), { shouldValidate: false })}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cnpj ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
               />
+              {errors.cnpj && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.cnpj.message}</p>
+              )}
             </div>
 
             {/* Dados do Pix */}
@@ -431,22 +440,25 @@ export function ProfissionalConfiguracoes() {
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Chave Pix
+                    Chave Pix *
                   </label>
                   <input
                     {...register("chave_pix")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.chave_pix ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Chave Pix"
                   />
+                  {errors.chave_pix && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.chave_pix.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Tipo de Chave
+                    Tipo de Chave *
                   </label>
                   <select
                     {...register("pix_key_type")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_key_type ? "border-red-500" : "border-brand focus:border-brand"}`}
                   >
                     <option value="">Selecione...</option>
                     <option value="CPF">CPF</option>
@@ -455,28 +467,37 @@ export function ProfissionalConfiguracoes() {
                     <option value="PHONE">Telefone</option>
                     <option value="RANDOM">Chave Aleatória</option>
                   </select>
+                  {errors.pix_key_type && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_key_type.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Nome Completo do Titular
+                    Nome Completo do Titular *
                   </label>
                   <input
                     {...register("pix_holder_name")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_name ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Nome como está no banco"
                   />
+                  {errors.pix_holder_name && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_name.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    CPF/CNPJ do Titular
+                    CPF/CNPJ do Titular *
                   </label>
                   <input
                     {...register("pix_holder_document")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_document ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Somente números"
                   />
+                  {errors.pix_holder_document && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_document.message}</p>
+                  )}
                 </div>
               </div>
             </div>
