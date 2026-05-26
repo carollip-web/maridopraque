@@ -1325,6 +1325,7 @@ export type Database = {
           cep: string | null
           chave_pix: string | null
           cidade: string | null
+          cnpj: string | null
           como_conheceu: string | null
           complemento: string | null
           cpf: string | null
@@ -1381,6 +1382,7 @@ export type Database = {
           cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          cnpj?: string | null
           como_conheceu?: string | null
           complemento?: string | null
           cpf?: string | null
@@ -1437,6 +1439,7 @@ export type Database = {
           cep?: string | null
           chave_pix?: string | null
           cidade?: string | null
+          cnpj?: string | null
           como_conheceu?: string | null
           complemento?: string | null
           cpf?: string | null

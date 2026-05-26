@@ -1,0 +1,2 @@
+ALTER TABLE public.profissional_perfil ADD COLUMN IF NOT EXISTS cnpj text;
+COMMENT ON COLUMN public.profissional_perfil.cnpj IS 'CNPJ do MEI (apenas dígitos). Opcional para perfis legados; obrigatório em novos cadastros (validado no frontend).';
