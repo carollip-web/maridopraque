@@ -180,6 +180,11 @@ serve(async (req) => {
     });
 
     const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
+    console.log("[btg-cobranca-criar] BTG_ENV lido:", btgEnv, "baseUrl será:",
+      btgEnv === "production"
+        ? "https://api.empresas.btgpactual.com"
+        : "https://api.sandbox.empresas.btgpactual.com"
+    );
     const btgBaseUrl = btgEnv === "production"
       ? "https://api.empresas.btgpactual.com"
       : "https://api.sandbox.empresas.btgpactual.com";
