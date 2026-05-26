@@ -145,7 +145,7 @@ export function ProfissionalConfiguracoes() {
       bio: profissionalPerfil?.bio ?? "",
       cidade: profissionalPerfil?.cidade ?? "",
       chave_pix: profissionalPerfil?.chave_pix ?? "",
-      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? "",
+      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? undefined,
       pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
       pix_holder_document: profissionalPerfil?.pix_holder_document ?? "",
       cpf: profissionalPerfil?.cpf ?? "",
