@@ -440,22 +440,25 @@ export function ProfissionalConfiguracoes() {
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Chave Pix
+                    Chave Pix *
                   </label>
                   <input
                     {...register("chave_pix")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.chave_pix ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Chave Pix"
                   />
+                  {errors.chave_pix && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.chave_pix.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Tipo de Chave
+                    Tipo de Chave *
                   </label>
                   <select
                     {...register("pix_key_type")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_key_type ? "border-red-500" : "border-brand focus:border-brand"}`}
                   >
                     <option value="">Selecione...</option>
                     <option value="CPF">CPF</option>
@@ -464,28 +467,37 @@ export function ProfissionalConfiguracoes() {
                     <option value="PHONE">Telefone</option>
                     <option value="RANDOM">Chave Aleatória</option>
                   </select>
+                  {errors.pix_key_type && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_key_type.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Nome Completo do Titular
+                    Nome Completo do Titular *
                   </label>
                   <input
                     {...register("pix_holder_name")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_name ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Nome como está no banco"
                   />
+                  {errors.pix_holder_name && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_name.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                    CPF/CNPJ do Titular
+                    CPF/CNPJ do Titular *
                   </label>
                   <input
                     {...register("pix_holder_document")}
-                    className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                    className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.pix_holder_document ? "border-red-500" : "border-brand focus:border-brand"}`}
                     placeholder="Somente números"
                   />
+                  {errors.pix_holder_document && (
+                    <p className="text-[10px] text-red-500 font-bold">{errors.pix_holder_document.message}</p>
+                  )}
                 </div>
               </div>
             </div>
