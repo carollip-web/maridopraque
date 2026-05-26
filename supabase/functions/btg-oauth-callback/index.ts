@@ -89,7 +89,12 @@ serve(async (req) => {
     const credentialsBase64 = btoa(`${btgClientId}:${btgClientSecret}`);
 
     // 3. Trocar o authorization code pelos tokens de acesso do BTG
-    const tokenResponse = await fetch("https://id.sandbox.btgpactual.com/oauth2/token", {
+    const btgEnv = Deno.env.get("BTG_ENV") || "sandbox";
+    const idBaseUrl = btgEnv === "production"
+      ? "https://id.btgpactual.com"
+      : "https://id.sandbox.btgpactual.com";
+    console.log("[btg-oauth-callback] BTG_ENV lido:", btgEnv, "idBaseUrl:", idBaseUrl);
+    const tokenResponse = await fetch(`${idBaseUrl}/oauth2/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
