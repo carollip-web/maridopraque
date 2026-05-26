@@ -178,8 +178,10 @@ function Checkout() {
     if (!orcamentoId) { toast.error("Pedido ausente."); return; }
     setIsProcessing(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.auth.refreshSession();
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      const token = freshSession?.access_token;
       if (!token) {
         toast.error("Sua sessão expirou. Faça login novamente.");
         return;
