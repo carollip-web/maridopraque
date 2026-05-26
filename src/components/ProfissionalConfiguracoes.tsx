@@ -48,6 +48,41 @@ type ProfissionalPerfilData = {
   oferece_apoio_feminino?: boolean | null;
 };
 
+function fmtCnpj(v: string) {
+  return v
+    .replace(/\D/g, "")
+    .slice(0, 14)
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function fmtCpf(v: string) {
+  return v
+    .replace(/\D/g, "")
+    .slice(0, 11)
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})/, ".$1-$2");
+}
+
+function isValidCnpj(v: string) {
+  const c = v.replace(/\D/g, "");
+  if (c.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(c)) return false;
+  const calc = (base: string, pesos: number[]) => {
+    const sum = pesos.reduce((acc, p, i) => acc + parseInt(base[i], 10) * p, 0);
+    const r = sum % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const p1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const p2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const d1 = calc(c.slice(0, 12), p1);
+  const d2 = calc(c.slice(0, 12) + d1, p2);
+  return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
+}
+
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
