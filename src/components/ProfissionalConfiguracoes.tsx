@@ -842,15 +842,9 @@ function Field({
   );
 }
 
-const Toggle = (() => {
-  const Comp = (
-    {
-      label,
-      hint,
-      ...inputProps
-    }: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>,
-    ref: React.Ref<HTMLInputElement>,
-  ) => (
+type ToggleProps = { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>;
+const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
+  ({ label, hint, ...inputProps }, ref) => (
     <label className="flex items-start justify-between gap-3 p-4 bg-slate-50 border border-border rounded-xl cursor-pointer hover:border-brand/30 transition-colors">
       <div className="flex-1">
         <p className="text-sm font-bold text-slate-800">{label}</p>
@@ -863,16 +857,6 @@ const Toggle = (() => {
         className="h-5 w-5 accent-brand cursor-pointer shrink-0 mt-0.5"
       />
     </label>
-  );
-  return Object.assign(
-    // eslint-disable-next-line react/display-name
-    (props: any) => {
-      const { forwardedRef, ...rest } = props;
-      return Comp(rest, forwardedRef);
-    },
-    {},
-  ) as unknown as React.ForwardRefExoticComponent<
-    { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement> &
-      React.RefAttributes<HTMLInputElement>
-  >;
-})();
+  ),
+);
+Toggle.displayName = "Toggle";
