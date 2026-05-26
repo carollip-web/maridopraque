@@ -208,10 +208,12 @@ export function PixRepasseSettings() {
     );
   }
 
-  if (errorMsg) {
   if (profile?.pix_dados_confirmados) {
     return null;
   }
+
+  if (errorMsg) {
+
 
   return (
       <Card className="p-6 border-destructive bg-destructive/5 text-destructive space-y-2">
