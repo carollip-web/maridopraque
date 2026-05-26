@@ -398,28 +398,34 @@ export function ProfissionalConfiguracoes() {
             {/* Dados de Identificação */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CPF (opcional)
+                CPF *
               </label>
               <input
                 value={watch("cpf") || ""}
                 onChange={(e) => setValue("cpf", fmtCpf(e.target.value), { shouldValidate: false })}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cpf ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="000.000.000-00"
                 inputMode="numeric"
               />
+              {errors.cpf && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.cpf.message}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                CNPJ do MEI (opcional)
+                CNPJ do MEI *
               </label>
               <input
                 value={watch("cnpj") || ""}
                 onChange={(e) => setValue("cnpj", fmtCnpj(e.target.value), { shouldValidate: false })}
-                className="w-full text-sm font-medium pb-2 border-b border-brand focus:outline-none transition-colors bg-transparent focus:border-brand"
+                className={`w-full text-sm font-medium pb-2 border-b focus:outline-none transition-colors bg-transparent ${errors.cnpj ? "border-red-500" : "border-brand focus:border-brand"}`}
                 placeholder="00.000.000/0000-00"
                 inputMode="numeric"
               />
+              {errors.cnpj && (
+                <p className="text-[10px] text-red-500 font-bold">{errors.cnpj.message}</p>
+              )}
             </div>
 
             {/* Dados do Pix */}
