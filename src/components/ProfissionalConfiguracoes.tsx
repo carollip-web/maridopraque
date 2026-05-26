@@ -210,6 +210,7 @@ export function ProfissionalConfiguracoes() {
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        pix_dados_confirmados: true,
         updated_at: new Date().toISOString(),
       };
 
