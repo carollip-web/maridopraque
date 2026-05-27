@@ -33,6 +33,7 @@ import { Route as AdminRepassesRouteImport } from './routes/admin-repasses'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
+import { Route as MpCallbackRouteImport } from './routes/mp.callback'
 import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
 import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
 import { Route as BtgCallbackRouteImport } from './routes/btg.callback'
@@ -159,6 +160,11 @@ const ServicosCategoriaRoute = ServicosCategoriaRouteImport.update({
   path: '/$categoria',
   getParentRoute: () => ServicosRoute,
 } as any)
+const MpCallbackRoute = MpCallbackRouteImport.update({
+  id: '/mp/callback',
+  path: '/mp/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
   id: '/profissional',
   path: '/profissional',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
+  '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
 }
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/btg/callback'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/btg/callback'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   id:
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/btg/callback'
     | '/checkout/simular'
     | '/login/profissional'
+    | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
   fileRoutesById: FileRoutesById
@@ -401,6 +413,7 @@ export interface RootRouteChildren {
   ServicosAdminRoute: typeof ServicosAdminRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
   BtgCallbackRoute: typeof BtgCallbackRoute
+  MpCallbackRoute: typeof MpCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -573,6 +586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicosCategoriaRouteImport
       parentRoute: typeof ServicosRoute
     }
+    '/mp/callback': {
+      id: '/mp/callback'
+      path: '/mp/callback'
+      fullPath: '/mp/callback'
+      preLoaderRoute: typeof MpCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/profissional': {
       id: '/login/profissional'
       path: '/profissional'
@@ -683,6 +703,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicosAdminRoute: ServicosAdminRoute,
   AuthRedirectRoute: AuthRedirectRoute,
   BtgCallbackRoute: BtgCallbackRoute,
+  MpCallbackRoute: MpCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
