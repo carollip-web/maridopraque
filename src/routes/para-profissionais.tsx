@@ -28,6 +28,12 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/para-profissionais")({
+  validateSearch: (search: Record<string, unknown>): { apoio?: boolean } => ({
+    apoio:
+      search.apoio === "1" || search.apoio === "true" || search.apoio === true
+        ? true
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Para Profissionais — Marido pra Quê?" },
@@ -58,6 +64,7 @@ function ParaProfissionaisPage() {
   const { isLoggedIn, isProfissional, userData } = useAuth();
   const [stats, setStats] = useState<DashStats | null>(null);
 
+  const { apoio } = Route.useSearch();
   const [preCadastroOpen, setPreCadastroOpen] = useState(false);
   const [preCadLoading, setPreCadLoading] = useState(false);
   const [preCadForm, setPreCadForm] = useState({
@@ -65,7 +72,14 @@ function ParaProfissionaisPage() {
     telefone: "",
     cidade: "",
     especialidade: "Elétrica",
+    oferece_apoio_feminino: apoio === true,
   });
+
+  useEffect(() => {
+    if (apoio) {
+      setPreCadastroOpen(true);
+    }
+  }, [apoio]);
 
   const handlePreCadastroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,13 +90,14 @@ function ParaProfissionaisPage() {
         telefone: preCadForm.telefone.replace(/\D/g, ""),
         cidade: preCadForm.cidade,
         especialidade_principal: preCadForm.especialidade,
+        oferece_apoio_feminino: preCadForm.oferece_apoio_feminino,
       };
       // Allow public insert to profissionais_pre_cadastro
       const { error } = await (supabase as any).from("profissionais_pre_cadastro").insert(payload);
       if (error) throw error;
       toast.success("Interesse registrado! Entraremos em contato via WhatsApp em breve.");
       setPreCadastroOpen(false);
-      setPreCadForm({ nome: "", telefone: "", cidade: "", especialidade: "Elétrica" });
+      setPreCadForm({ nome: "", telefone: "", cidade: "", especialidade: "Elétrica", oferece_apoio_feminino: false });
     } catch (err: any) {
       toast.error("Erro ao enviar pré-cadastro", { description: err.message });
     } finally {
@@ -457,6 +472,18 @@ function ParaProfissionaisPage() {
                 <option value="Limpeza">Limpeza</option>
                 <option value="Outro">Outro</option>
               </select>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="apoioFeminino"
+                checked={preCadForm.oferece_apoio_feminino}
+                onChange={(e) => setPreCadForm({ ...preCadForm, oferece_apoio_feminino: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              <label htmlFor="apoioFeminino" className="text-sm font-medium">
+                Ofereço apoio feminino (atendimento por profissional mulher)
+              </label>
             </div>
             <Button
               type="submit"

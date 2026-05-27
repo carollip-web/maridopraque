@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/profissional-cadastro")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { apoio?: boolean } => ({
     apoio:
       search.apoio === "1" || search.apoio === "true" || search.apoio === true
         ? true

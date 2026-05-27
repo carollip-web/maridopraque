@@ -56,7 +56,7 @@ function ApoioFemininoPage() {
                 size="lg"
                 className="rounded-full bg-brand text-brand-foreground font-bold shadow-brand h-12 px-8"
               >
-                <Link to="/profissional-cadastro" search={{ apoio: true }}>
+                <Link to="/para-profissionais" search={{ apoio: true }}>
                   Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -168,7 +168,7 @@ function ApoioFemininoPage() {
               size="lg"
               className="rounded-full bg-brand text-brand-foreground font-bold h-12 px-8 shadow-brand"
             >
-              <Link to="/profissional-cadastro" search={{ apoio: true }}>
+              <Link to="/para-profissionais" search={{ apoio: true }}>
                 Quero me cadastrar <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

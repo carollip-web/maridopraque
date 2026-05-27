@@ -29,6 +29,7 @@ type Lead = {
   cidade: string;
   especialidade_principal: string;
   status: string;
+  oferece_apoio_feminino?: boolean;
 };
 const db = supabase as any;
 
@@ -107,6 +108,7 @@ export function AdminLeads() {
         telefone: addForm.telefone.replace(/\D/g, ""),
         cidade: addForm.cidade,
         especialidade_principal: addForm.especialidade,
+        oferece_apoio_feminino: false,
       };
       const { error } = await db.from("profissionais_pre_cadastro").insert(payload);
       if (error) throw error;
@@ -177,7 +179,16 @@ export function AdminLeads() {
                       <TableCell className="whitespace-nowrap">
                         {new Date(lead.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="font-medium">{lead.nome}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span>{lead.nome}</span>
+                          {lead.oferece_apoio_feminino && (
+                            <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200">
+                              Apoio feminino
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{lead.especialidade_principal}</TableCell>
                       <TableCell>{lead.cidade}</TableCell>
                       <TableCell>
