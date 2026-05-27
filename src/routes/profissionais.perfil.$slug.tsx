@@ -20,6 +20,28 @@ export const Route = createFileRoute("/profissionais/perfil/$slug")({
   component: PerfilProfissional,
 });
 
+export type ProfissionalPublico = {
+  user_id: string;
+  slug: string | null;
+  bio: string | null;
+  especialidades: string[] | null;
+  foto_url: string | null;
+  cidade: string | null;
+  ativo: boolean;
+  aprovacao_status: string;
+  lat: number | null;
+  lng: number | null;
+  raio_atendimento_km: number;
+  oferece_apoio_feminino: boolean;
+  anos_experiencia: number | null;
+  experiencia_anos: number | null;
+  atende_emergencias: boolean | null;
+  veiculo_proprio: boolean | null;
+  duracao_padrao_min: number;
+  genero: string | null;
+  created_at: string;
+};
+
 type Perfil = {
   user_id: string;
   slug: string | null;
@@ -48,11 +70,11 @@ function PerfilProfissional() {
 
   useEffect(() => {
     (async () => {
-      const { data: p } = await supabase
-        .from("profissional_perfil")
+      const { data: p } = (await supabase
+        .from("profissionais_publicos" as any)
         .select("*")
         .eq("slug", slug)
-        .maybeSingle();
+        .maybeSingle()) as { data: ProfissionalPublico | null };
       if (p) {
         setPerfil(p as Perfil);
         const { data: prof } = await supabase
