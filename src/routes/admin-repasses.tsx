@@ -17,6 +17,7 @@ import {
   Inbox,
   Link2,
   Loader2,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -298,6 +299,36 @@ function AdminRepassesPage() {
     }
   };
 
+  // Marcar repasse como pago manualmente
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const handleMarcarPago = async (repasse: Repasse) => {
+    const profName = profiles[repasse.profissional_id]?.nome || "profissional";
+    const ok = window.confirm(
+      `Você confirmou o Pix manual pra ${profName}?\n\nValor líquido: R$ ${Number(repasse.valor_liquido).toFixed(2)}\nChave Pix: ${repasse.pix_key || "—"}`,
+    );
+    if (!ok) return;
+
+    try {
+      setMarkingPaidId(repasse.id);
+      const { error } = await supabase
+        .from("repasses_profissionais")
+        .update({
+          status: "pago",
+          paid_at: new Date().toISOString(),
+        })
+        .eq("id", repasse.id);
+
+      if (error) throw error;
+      toast.success(`Repasse para ${profName} marcado como pago!`);
+      loadData();
+    } catch (err: any) {
+      console.error("[handleMarcarPago]", err);
+      toast.error(err.message || "Falha ao marcar repasse como pago.");
+    } finally {
+      setMarkingPaidId(null);
+    }
+  };
+
   // Cópia para área de transferência
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -450,14 +481,14 @@ function AdminRepassesPage() {
               <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao Financeiro
             </Link>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl flex items-center gap-3">
-              Fila de Repasses Pix{" "}
-              <span className="text-xs bg-brand/20 text-brand px-3 py-1 rounded-full uppercase tracking-wider border border-brand/30">
-                Ambiente Protegido
+              Fila de Repasses{" "}
+              <span className="text-xs bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full uppercase tracking-wider border border-amber-500/30">
+                Repasse Manual
               </span>
             </h1>
             <p className="text-slate-400 max-w-xl text-sm leading-relaxed">
-              Consulte, valide e libere de forma manual e segura os recebimentos dos profissionais
-              parceiros gerados via BTG.
+              Consulte, valide e libere de forma manual e segura os repasses aos profissionais
+              parceiros. Pagamentos recebidos via Mercado Pago — repasse manual via Pix.
             </p>
           </div>
 
@@ -615,6 +646,89 @@ function AdminRepassesPage() {
             </div>
           </div>
         </div>
+
+        {/* ===== SEÇÃO: Repasses Pendentes (Manual) ===== */}
+        {(() => {
+          const pendentes = repasses.filter((r) => r.status === "pendente");
+          const totalPendente = pendentes.reduce((acc, r) => acc + Number(r.valor_liquido), 0);
+          if (pendentes.length === 0) return null;
+          return (
+            <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+              <div className="bg-amber-50 border-b border-amber-200 px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                    <Banknote className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 text-lg">Repasses Pendentes (Manual)</h3>
+                    <p className="text-xs text-slate-500">{pendentes.length} repasse(s) aguardando Pix manual</p>
+                  </div>
+                </div>
+                <div className="bg-white border border-amber-200 rounded-xl px-5 py-3 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total a pagar</p>
+                  <p className="text-2xl font-black text-amber-600">
+                    R$ {totalPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+              <div className="p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {pendentes.map((rep) => {
+                  const prof = profiles[rep.profissional_id];
+                  return (
+                    <div
+                      key={rep.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-5 space-y-3 hover:border-brand/30 transition"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                            <User className="h-3.5 w-3.5 text-slate-400" />
+                            {prof?.nome || "Profissional"}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            Orçamento #{rep.orcamento_id?.slice(0, 8) || "—"}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-lg text-slate-900">
+                            R$ {Number(rep.valor_liquido).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-[10px] text-slate-400">líquido</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                          <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[9px] uppercase font-bold tracking-wide">
+                            {rep.pix_key_type || "—"}
+                          </span>
+                          <span className="font-mono text-slate-700">
+                            {rep.pix_key || "Chave Pix não informada"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                          <Calendar className="h-3 w-3" />
+                          Criado em {new Date(rep.created_at).toLocaleDateString("pt-BR")}
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleMarcarPago(rep)}
+                        disabled={markingPaidId === rep.id}
+                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 rounded-xl"
+                      >
+                        {markingPaidId === rep.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                        {markingPaidId === rep.id ? "Marcando..." : "Marcar como pago"}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Área de Filtros e Busca */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm space-y-6">

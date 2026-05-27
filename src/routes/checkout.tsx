@@ -19,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { QRCodeSVG } from "qrcode.react";
+// BTG desativado temporariamente — não homologado em produção, aguardando split MP
+// import { QRCodeSVG } from "qrcode.react";
 
 
 export const Route = createFileRoute("/checkout")({
@@ -76,7 +77,7 @@ function Checkout() {
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [method, setMethod] = useState<PaymentMethod>("pix");
+  const [method, setMethod] = useState<PaymentMethod>("cartao");
   const [cobranca, setCobranca] = useState<Cobranca | null>(null);
   const [boleto, setBoleto] = useState<Boleto | null>(null);
   const [paid, setPaid] = useState(false);
@@ -438,7 +439,7 @@ function Checkout() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Lock className="h-3 w-3" /> Pagamento • BTG
+          <Lock className="h-3 w-3" /> Pagamento seguro
         </div>
       </div>
 
@@ -447,46 +448,19 @@ function Checkout() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Pagamento do Pedido</h2>
             <p className="text-muted-foreground mt-2">
-              Escolha Pix (instantâneo), Cartão (crédito/débito via Mercado Pago) ou Boleto bancário.
+              Pagamento seguro via cartão de crédito ou débito pelo Mercado Pago.
             </p>
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
+            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP */}
             {!cobranca && !boleto && !paid && (
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setMethod("pix")}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    method === "pix" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
-                  }`}
-                >
-                  <QrCode className="h-5 w-5 text-brand mb-2" />
-                  <div className="font-bold text-sm">Pix</div>
-                  <div className="text-xs text-muted-foreground">Confirmação na hora</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMethod("cartao")}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    method === "cartao" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
-                  }`}
-                >
+              <div className="flex gap-3">
+                <div className="rounded-2xl border border-brand bg-brand-soft/40 p-4 text-left flex-1">
                   <CreditCard className="h-5 w-5 text-brand mb-2" />
                   <div className="font-bold text-sm">Cartão</div>
-                  <div className="text-xs text-muted-foreground">Crédito ou débito</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMethod("boleto")}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    method === "boleto" ? "border-brand bg-brand-soft/40" : "border-border hover:border-foreground/30"
-                  }`}
-                >
-                  <FileText className="h-5 w-5 text-brand mb-2" />
-                  <div className="font-bold text-sm">Boleto</div>
-                  <div className="text-xs text-muted-foreground">Vence em 3 dias</div>
-                </button>
+                  <div className="text-xs text-muted-foreground">Crédito ou débito via Mercado Pago</div>
+                </div>
               </div>
             )}
 
@@ -514,11 +488,12 @@ function Checkout() {
 
             <div className="bg-slate-50 rounded-3xl p-6 flex justify-between items-center">
               <span className="text-brand font-bold text-lg">
-                Valor a pagar agora ({method === "pix" ? "Pix" : method === "cartao" ? "Cartão" : "Boleto"})
+                Valor a pagar agora (Cartão)
               </span>
               <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
             </div>
 
+            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
             {!cobranca && !boleto && !paid && method === "pix" && (
               <Button
                 onClick={handlePreparePayment}
@@ -530,6 +505,7 @@ function Checkout() {
                 ) : "Gerar Pix para pagamento"}
               </Button>
             )}
+            */}
 
             {!cobranca && !boleto && !paid && method === "cartao" && (
               <div className="space-y-3">
@@ -550,6 +526,7 @@ function Checkout() {
               </div>
             )}
 
+            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
             {!cobranca && !boleto && !paid && method === "boleto" && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -575,7 +552,9 @@ function Checkout() {
                 </Button>
               </div>
             )}
+            */}
 
+            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
             {cobranca && !paid && (
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex flex-col items-center gap-4">
@@ -661,6 +640,7 @@ function Checkout() {
                 </div>
               </div>
             )}
+            */}
 
             {paid && (
               <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
@@ -680,7 +660,7 @@ function Checkout() {
             <ul className="space-y-4 text-sm">
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Pagamento processado via BTG Pactual.
+                Pagamento processado via Mercado Pago.
               </li>
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
