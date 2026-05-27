@@ -26,6 +26,7 @@ import { Route as ConviteRouteImport } from './routes/convite'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as ApoioFemininoRouteImport } from './routes/apoio-feminino'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminValidacaoRouteImport } from './routes/admin-validacao'
 import { Route as AdminRepassesRouteImport } from './routes/admin-repasses'
@@ -123,6 +124,11 @@ const CheckoutRoute = CheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApoioFemininoRoute = ApoioFemininoRouteImport.update({
+  id: '/apoio-feminino',
+  path: '/apoio-feminino',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AjudaRoute = AjudaRouteImport.update({
   id: '/ajuda',
   path: '/ajuda',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
+  '/apoio-feminino': typeof ApoioFemininoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
+  '/apoio-feminino': typeof ApoioFemininoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
+  '/apoio-feminino': typeof ApoioFemininoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
+    | '/apoio-feminino'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
+    | '/apoio-feminino'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin-repasses'
     | '/admin-validacao'
     | '/ajuda'
+    | '/apoio-feminino'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -369,6 +381,7 @@ export interface RootRouteChildren {
   AdminRepassesRoute: typeof AdminRepassesRoute
   AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
+  ApoioFemininoRoute: typeof ApoioFemininoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
@@ -511,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apoio-feminino': {
+      id: '/apoio-feminino'
+      path: '/apoio-feminino'
+      fullPath: '/apoio-feminino'
+      preLoaderRoute: typeof ApoioFemininoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ajuda': {
       id: '/ajuda'
       path: '/ajuda'
@@ -643,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRepassesRoute: AdminRepassesRoute,
   AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,
+  ApoioFemininoRoute: ApoioFemininoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,

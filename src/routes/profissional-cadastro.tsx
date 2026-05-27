@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/profissional-cadastro")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    apoio:
+      search.apoio === "1" || search.apoio === "true" || search.apoio === true
+        ? true
+        : undefined,
+  }),
   component: ProfissionalCadastro,
 });
 
@@ -202,8 +208,12 @@ function FileUploadBox({
 function ProfissionalCadastro() {
   const { user, loading, isProfissional } = useAuth();
   const navigate = useNavigate();
+  const { apoio } = Route.useSearch();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormData>(emptyForm);
+  const [form, setForm] = useState<FormData>(() => ({
+    ...emptyForm(),
+    oferece_apoio_feminino: apoio === true,
+  }));
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [fetchingCep, setFetchingCep] = useState(false);
