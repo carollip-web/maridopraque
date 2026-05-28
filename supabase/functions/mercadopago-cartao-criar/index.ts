@@ -24,23 +24,12 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const accessToken =
-      Deno.env.get("MERCADOPAGO_ACCESS_TOKEN") ||
-      Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
     const baseUrl =
       Deno.env.get("APP_BASE_URL") ||
       Deno.env.get("APP_URL") ||
       "https://maridopraque.lovable.app";
 
-    if (!accessToken) {
-      return json(
-        {
-          error: "MP_ENV_MISSING",
-          message: "MERCADOPAGO_ACCESS_TOKEN ausente nas Edge Functions.",
-        },
-        500,
-      );
-    }
+    const MARKETPLACE_FEE_PERCENT = 15;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -95,13 +84,61 @@ serve(async (req) => {
       return json({ error: "INVALID_VALUE", message: "Valor inválido." }, 400);
     }
 
-    console.info("[mercadopago-cartao-criar] validado", {
+    // === SPLIT 1:1 — Buscar access_token do profissional (seller) ===
+    const { data: profPerfil, error: profErr } = await admin
+      .from("profissional_perfil")
+      .select("mp_access_token, mp_expires_at, mp_user_id")
+      .eq("user_id", orcamento.profissional_id)
+      .maybeSingle();
+
+    if (profErr || !profPerfil?.mp_access_token) {
+      console.error("[mercadopago-cartao-criar] profissional sem MP conectado", {
+        profissionalId: orcamento.profissional_id,
+        profErr,
+      });
+      return json(
+        {
+          error: "MP_NOT_CONNECTED",
+          message:
+            "O profissional deste serviço ainda não conectou sua conta Mercado Pago. " +
+            "Aguarde a conexão ou entre em contato com o suporte.",
+        },
+        400,
+      );
+    }
+
+    // Verificar expiração do token OAuth do profissional
+    if (
+      profPerfil.mp_expires_at &&
+      new Date(profPerfil.mp_expires_at) < new Date()
+    ) {
+      console.warn("[mercadopago-cartao-criar] token MP do profissional expirado", {
+        profissionalId: orcamento.profissional_id,
+        expiresAt: profPerfil.mp_expires_at,
+      });
+      return json(
+        {
+          error: "MP_TOKEN_EXPIRED",
+          message:
+            "O token Mercado Pago do profissional expirou. " +
+            "Peça para ele reconectar em Configurações > Mercado Pago.",
+        },
+        400,
+      );
+    }
+
+    const sellerAccessToken = profPerfil.mp_access_token;
+    const marketplaceFee = Math.round(valor * (MARKETPLACE_FEE_PERCENT / 100) * 100) / 100;
+
+    console.info("[mercadopago-cartao-criar] validado (split 1:1)", {
       orcamentoId,
       userId: user.id,
       valor,
+      marketplaceFee,
+      mpSellerId: profPerfil.mp_user_id,
     });
 
-    // Cria registro de pagamento
+    // Cria registro de pagamento com informações do split
     const { data: pagamento, error: pagErr } = await admin
       .from("pagamentos")
       .insert({
@@ -114,7 +151,13 @@ serve(async (req) => {
         metodo: "cartao",
         gateway: "mercado_pago",
         status: "pending",
-      })
+        metadata: {
+          split_type: "marketplace_1_1",
+          marketplace_fee_percent: MARKETPLACE_FEE_PERCENT,
+          marketplace_fee_amount: marketplaceFee,
+          mp_seller_user_id: profPerfil.mp_user_id,
+        },
+      } as any)
       .select("id")
       .single();
 
@@ -138,6 +181,7 @@ serve(async (req) => {
       ],
       payer: { email: user.email },
       external_reference: pagamento.id,
+      marketplace_fee: marketplaceFee,
       metadata: {
         orcamento_id: orcamento.id,
         pagamento_id: pagamento.id,
@@ -161,10 +205,11 @@ serve(async (req) => {
       },
     };
 
+    // SPLIT 1:1: usar access_token do profissional (seller), não do marketplace
     const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${sellerAccessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(preferencePayload),
