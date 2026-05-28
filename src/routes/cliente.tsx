@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 // Feature modules
 import { Tab, ALL_SIDEBAR_ITEMS } from "@/features/cliente/constants";
@@ -25,16 +26,37 @@ export const Route = createFileRoute("/cliente")({
       pedidoId: search.pedidoId ? String(search.pedidoId) : undefined,
       chat: search.chat ? String(search.chat) : undefined,
       details: search.details === "true" || search.details === true ? true : undefined,
+      payment: typeof search.payment === "string" ? search.payment : undefined,
     } as any;
   },
   component: ClienteArea,
 });
 
 function ClienteArea() {
-  const { tab: activeTab } = Route.useSearch();
+  const { tab: activeTab, payment } = Route.useSearch();
   const { logout, userData, isProfissional, isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!payment) return;
+    if (payment === "success") {
+      toast.success("Pagamento aprovado! Seu pedido foi confirmado.");
+    } else if (payment === "failure") {
+      toast.error("O pagamento não foi concluído. Tente novamente.");
+    } else if (payment === "pending") {
+      toast.info("Pagamento em análise. Você será notificado quando for confirmado.");
+    }
+    // Limpa o parâmetro da URL sem recarregar a página
+    navigate({
+      to: "/cliente",
+      search: (prev: any) => {
+        const { payment: _, ...rest } = prev;
+        return rest;
+      },
+      replace: true,
+    });
+  }, [payment]);
 
   const setActiveTab = (newTab: Tab) => {
     navigate({
