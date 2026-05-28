@@ -39,7 +39,7 @@ const profileSchema = z.object({
   chave_pix: z.string().optional(),
   pix_key_type: z.string().optional(),
 }).superRefine((val, ctx) => {
-  if (val.oferece_apoio_feminino && (!val.chave_pix || val.chave_pix.trim() === "")) {
+  if ((val.oferece_apoio_feminino || val.genero === "apoio_feminino") && (!val.chave_pix || val.chave_pix.trim() === "")) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["chave_pix"],
@@ -661,7 +661,7 @@ export function ProfissionalConfiguracoes() {
               </select>
             </Field>
 
-            <Field label="Chave PIX" error={errors.chave_pix?.message} required={watch("oferece_apoio_feminino")}>
+            <Field label="Chave PIX" error={errors.chave_pix?.message} required={watch("oferece_apoio_feminino") || watch("genero") === "apoio_feminino"}>
               <input
                 {...register("chave_pix")}
                 className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
@@ -735,6 +735,7 @@ export function ProfissionalConfiguracoes() {
                 <option value="mulher">Mulher</option>
                 <option value="homem">Homem</option>
                 <option value="outro">Outro</option>
+                <option value="apoio_feminino">Apoio Feminino</option>
               </select>
             </Field>
 
