@@ -344,11 +344,29 @@ export function ProfissionalConfiguracoes() {
   const handleConnectMercadoPago = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
-      if (error || !data?.authUrl) {
-        toast.error("Erro ao iniciar conexão com Mercado Pago", { description: error?.message });
-      } else {
-        window.location.href = data.authUrl;
+      
+      if (error) {
+        let errorBody = "Erro desconhecido";
+        try {
+          if (error.context) {
+            const parsed = await error.context.json();
+            errorBody = parsed.error || JSON.stringify(parsed);
+          } else {
+            errorBody = error.message;
+          }
+        } catch(e) {}
+        
+        console.error("MP Connect Error RAW:", error);
+        toast.error("Erro do Servidor", { description: errorBody });
+        return;
       }
+      
+      if (!data?.authUrl) {
+        toast.error("Erro ao iniciar conexão com Mercado Pago", { description: "URL de auth não retornada" });
+        return;
+      }
+      
+      window.location.href = data.authUrl;
     } catch (err: any) {
       toast.error("Erro ao iniciar conexão com Mercado Pago", { description: err.message });
     }
