@@ -21,7 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoRepasses";
 
 type PagamentoRow = Database["public"]["Tables"]["pagamentos"]["Row"] & {
   orcamentos?: { service_name: string | null } | null;
@@ -62,8 +61,6 @@ function AdminPagamentosPage() {
   const [profiles, setProfiles] = useState<Record<string, { nome: string; email: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  const [activeTab, setActiveTab] = useState<"mp" | "apoio">("mp");
 
   // Filtros e busca
   const [selectedStatus, setSelectedStatus] = useState<string>("todos");
@@ -246,35 +243,8 @@ function AdminPagamentosPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6">
-        <div className="flex border-b border-slate-200 mb-6">
-          <button
-            onClick={() => setActiveTab("mp")}
-            className={`py-3 px-6 font-bold text-sm border-b-2 transition-colors ${
-              activeTab === "mp"
-                ? "border-brand text-brand"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Transações MP (Split Automático)
-          </button>
-          <button
-            onClick={() => setActiveTab("apoio")}
-            className={`py-3 px-6 font-bold text-sm border-b-2 transition-colors ${
-              activeTab === "apoio"
-                ? "border-brand text-brand"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Repasses PIX (Apoio Feminino)
-          </button>
-        </div>
-        
-        {activeTab === "apoio" ? (
-          <AdminApoioFemininoRepasses />
-        ) : (
-          <div className="space-y-8">
-            {/* Cards de Métricas Premium */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-10 space-y-8">
+        {/* Cards de Métricas Premium */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
@@ -516,8 +486,6 @@ function AdminPagamentosPage() {
             </div>
           )}
         </div>
-      </div>
-      )}
       </div>
     </div>
   );
