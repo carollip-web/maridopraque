@@ -20,6 +20,7 @@ import {
   Users,
   MapPin,
   Save,
+  Wallet,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -28,12 +29,10 @@ const profileSchema = z.object({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   bio: z.string().optional(),
   cidade: z.string().optional(),
-  chave_pix: z.string().min(1, "Chave Pix obrigatória"),
-  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"], {
-    errorMap: () => ({ message: "Selecione o tipo da chave" }),
-  }),
-  pix_holder_name: z.string().min(2, "Nome do titular obrigatório"),
-  pix_holder_document: z.string().min(11, "Documento do titular obrigatório"),
+  chave_pix: z.string().optional(),
+  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"]).optional(),
+  pix_holder_name: z.string().optional(),
+  pix_holder_document: z.string().optional(),
   cpf: z.string().min(14, "CPF obrigatório"),
   cnpj: z.string().min(18, "CNPJ obrigatório"),
   anos_experiencia: z.coerce.number().min(0).optional(),
@@ -62,6 +61,8 @@ type ProfissionalPerfilData = {
   veiculo_proprio?: boolean | null;
   genero?: string | null;
   oferece_apoio_feminino?: boolean | null;
+  mp_user_id?: string | null;
+  mp_connected_at?: string | null;
 };
 
 function fmtCnpj(v: string) {
@@ -138,7 +139,7 @@ export function ProfissionalConfiguracoes() {
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
-          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng, cpf, cnpj",
+          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng, cpf, cnpj, mp_user_id, mp_connected_at",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -210,11 +211,6 @@ export function ProfissionalConfiguracoes() {
       !!watched.cidade,
       !!watched.cpf && watched.cpf.replace(/\D/g, "").length === 11,
       !!watched.cnpj && watched.cnpj.replace(/\D/g, "").length === 14,
-      !!watched.chave_pix,
-      !!watched.pix_key_type,
-      !!watched.pix_holder_name,
-      !!watched.pix_holder_document &&
-        watched.pix_holder_document.replace(/\D/g, "").length >= 11,
     ];
     const done = checks.filter(Boolean).length;
     return Math.round((done / checks.length) * 100);
@@ -346,10 +342,24 @@ export function ProfissionalConfiguracoes() {
     else toast.success("E-mail de redefinição enviado!");
   };
 
+  const handleConnectMercadoPago = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
+      if (error || !data?.authUrl) {
+        toast.error("Erro ao iniciar conexão com Mercado Pago", { description: error?.message });
+      } else {
+        window.location.href = data.authUrl;
+      }
+    } catch (err: any) {
+      toast.error("Erro ao iniciar conexão com Mercado Pago", { description: err.message });
+    }
+  };
+
   const sections = [
     { id: "basico", label: "Perfil básico", icon: User },
     { id: "documentos", label: "Documentos", icon: IdCard },
     { id: "pix", label: "Dados Pix", icon: Banknote },
+    { id: "mercadopago", label: "Mercado Pago", icon: Wallet },
     { id: "atendimento", label: "Atendimento", icon: MapPin },
     { id: "compatibilidade", label: "Compatibilidade", icon: Users },
   ];
@@ -587,7 +597,7 @@ export function ProfissionalConfiguracoes() {
           />
 
           <div className="grid gap-5 sm:grid-cols-2 mt-6">
-            <Field label="Tipo de chave" error={errors.pix_key_type?.message} required>
+            <Field label="Tipo de chave" error={errors.pix_key_type?.message}>
               <select
                 {...register("pix_key_type")}
                 className={`${inputBase} ${errors.pix_key_type ? inputErr : inputOk}`}
@@ -601,7 +611,7 @@ export function ProfissionalConfiguracoes() {
               </select>
             </Field>
 
-            <Field label="Chave Pix" error={errors.chave_pix?.message} required>
+            <Field label="Chave Pix" error={errors.chave_pix?.message}>
               <input
                 {...register("chave_pix")}
                 className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
@@ -612,7 +622,6 @@ export function ProfissionalConfiguracoes() {
             <Field
               label="Nome completo do titular"
               error={errors.pix_holder_name?.message}
-              required
             >
               <input
                 {...register("pix_holder_name")}
@@ -624,7 +633,6 @@ export function ProfissionalConfiguracoes() {
             <Field
               label="CPF/CNPJ do titular"
               error={errors.pix_holder_document?.message}
-              required
             >
               <input
                 value={watch("pix_holder_document") || ""}
@@ -636,6 +644,61 @@ export function ProfissionalConfiguracoes() {
                 inputMode="numeric"
               />
             </Field>
+          </div>
+        </section>
+
+        {/* Seção: Mercado Pago */}
+        <section
+          id="sec-mercadopago"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={Wallet}
+            title="Conta Mercado Pago"
+            hint="Necessário para receber os repasses dos seus serviços."
+          />
+
+          <div className="mt-6">
+            {profissionalPerfil?.mp_user_id ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-green-50 border border-green-200 rounded-2xl">
+                <div>
+                  <h4 className="font-bold text-green-900 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    Conta Mercado Pago conectada
+                  </h4>
+                  <p className="text-sm text-green-800 mt-1">
+                    Conectada em: {profissionalPerfil.mp_connected_at ? new Date(profissionalPerfil.mp_connected_at).toLocaleDateString() : "Data desconhecida"}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="bg-white text-green-800 border-green-200 hover:bg-green-100"
+                  onClick={handleConnectMercadoPago}
+                >
+                  Reconectar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+                <div>
+                  <h4 className="font-bold text-amber-900 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    Atenção
+                  </h4>
+                  <p className="text-sm text-amber-800 mt-1">
+                    Conecte sua conta Mercado Pago para receber pagamentos dos serviços.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  className="bg-[#009EE3] hover:bg-[#008ACA] text-white font-bold"
+                  onClick={handleConnectMercadoPago}
+                >
+                  Conectar Mercado Pago
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 

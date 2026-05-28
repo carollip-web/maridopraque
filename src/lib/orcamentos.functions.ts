@@ -202,7 +202,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     let perfilProfissional: any = null;
     const { data: perfCompleto, error: perfilError } = await (supabase as any)
       .from("profissional_perfil")
-      .select("genero, oferece_apoio_feminino")
+      .select("genero, oferece_apoio_feminino, mp_user_id")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -214,7 +214,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
       const { data: perfBasico } = await supabase
         .from("profissional_perfil")
-        .select("id")
+        .select("id, mp_user_id")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -224,6 +224,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           id: pb.id,
           genero: null,
           oferece_apoio_feminino: false,
+          mp_user_id: pb.mp_user_id ?? null,
         };
       } else {
         perfilProfissional = null;
@@ -247,6 +248,15 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     if (!compat.compatible && compat.blockProposal) {
       throw new Error(
         compat.reason || "Este pedido exige um tipo de atendimento incompatível com seu perfil.",
+      );
+    }
+
+    // Bloquear envio se profissional não conectou Mercado Pago (necessário pro split)
+    if (!perfilProfissional?.mp_user_id) {
+      console.warn("[enviarOrcamento] bloqueado: profissional sem Mercado Pago conectado", { userId });
+      throw new Error(
+        "Você precisa conectar sua conta Mercado Pago antes de enviar orçamentos. " +
+        "Acesse Configurações de Perfil > Mercado Pago para conectar."
       );
     }
 
