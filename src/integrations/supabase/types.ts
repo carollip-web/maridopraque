@@ -619,6 +619,57 @@ export type Database = {
           },
         ]
       }
+      notas_fiscais: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_path: string | null
+          competencia_ano: number
+          competencia_mes: number
+          created_at: string
+          enviada_em: string | null
+          id: string
+          motivo_rejeicao: string | null
+          profissional_id: string
+          revisada_em: string | null
+          revisada_por: string | null
+          status: string
+          updated_at: string
+          valor_total: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_path?: string | null
+          competencia_ano: number
+          competencia_mes: number
+          created_at?: string
+          enviada_em?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          profissional_id: string
+          revisada_em?: string | null
+          revisada_por?: string | null
+          status?: string
+          updated_at?: string
+          valor_total?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_path?: string | null
+          competencia_ano?: number
+          competencia_mes?: number
+          created_at?: string
+          enviada_em?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          profissional_id?: string
+          revisada_em?: string | null
+          revisada_por?: string | null
+          status?: string
+          updated_at?: string
+          valor_total?: number | null
+        }
+        Relationships: []
+      }
       notificacoes: {
         Row: {
           created_at: string
@@ -1156,6 +1207,7 @@ export type Database = {
           especialidade_principal: string
           id: string
           nome: string
+          oferece_apoio_feminino: boolean
           status: string
           telefone: string
         }
@@ -1165,6 +1217,7 @@ export type Database = {
           especialidade_principal: string
           id?: string
           nome: string
+          oferece_apoio_feminino?: boolean
           status?: string
           telefone: string
         }
@@ -1174,6 +1227,7 @@ export type Database = {
           especialidade_principal?: string
           id?: string
           nome?: string
+          oferece_apoio_feminino?: boolean
           status?: string
           telefone?: string
         }
@@ -1346,7 +1400,12 @@ export type Database = {
           motivo_rejeicao: string | null
           mp_access_token: string | null
           mp_connected_at: string | null
+          mp_expires_at: string | null
+          mp_oauth_state: string | null
+          mp_oauth_state_expires_at: string | null
+          mp_public_key: string | null
           mp_refresh_token: string | null
+          mp_scope: string | null
           mp_token_expires_at: string | null
           mp_user_id: string | null
           numero: string | null
@@ -1403,7 +1462,12 @@ export type Database = {
           motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
+          mp_expires_at?: string | null
+          mp_oauth_state?: string | null
+          mp_oauth_state_expires_at?: string | null
+          mp_public_key?: string | null
           mp_refresh_token?: string | null
+          mp_scope?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
           numero?: string | null
@@ -1460,7 +1524,12 @@ export type Database = {
           motivo_rejeicao?: string | null
           mp_access_token?: string | null
           mp_connected_at?: string | null
+          mp_expires_at?: string | null
+          mp_oauth_state?: string | null
+          mp_oauth_state_expires_at?: string | null
+          mp_public_key?: string | null
           mp_refresh_token?: string | null
+          mp_scope?: string | null
           mp_token_expires_at?: string | null
           mp_user_id?: string | null
           numero?: string | null
@@ -2003,7 +2072,80 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profissionais_publicos: {
+        Row: {
+          anos_experiencia: number | null
+          aprovacao_status: string | null
+          atende_emergencias: boolean | null
+          ativo: boolean | null
+          bio: string | null
+          cidade: string | null
+          created_at: string | null
+          duracao_padrao_min: number | null
+          especialidades: string[] | null
+          experiencia_anos: number | null
+          foto_url: string | null
+          genero: string | null
+          lat: number | null
+          lng: number | null
+          oferece_apoio_feminino: boolean | null
+          raio_atendimento_km: number | null
+          slug: string | null
+          user_id: string | null
+          veiculo_proprio: boolean | null
+        }
+        Insert: {
+          anos_experiencia?: number | null
+          aprovacao_status?: string | null
+          atende_emergencias?: boolean | null
+          ativo?: boolean | null
+          bio?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          duracao_padrao_min?: number | null
+          especialidades?: string[] | null
+          experiencia_anos?: number | null
+          foto_url?: string | null
+          genero?: string | null
+          lat?: number | null
+          lng?: number | null
+          oferece_apoio_feminino?: boolean | null
+          raio_atendimento_km?: number | null
+          slug?: string | null
+          user_id?: string | null
+          veiculo_proprio?: boolean | null
+        }
+        Update: {
+          anos_experiencia?: number | null
+          aprovacao_status?: string | null
+          atende_emergencias?: boolean | null
+          ativo?: boolean | null
+          bio?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          duracao_padrao_min?: number | null
+          especialidades?: string[] | null
+          experiencia_anos?: number | null
+          foto_url?: string | null
+          genero?: string | null
+          lat?: number | null
+          lng?: number | null
+          oferece_apoio_feminino?: boolean | null
+          raio_atendimento_km?: number | null
+          slug?: string | null
+          user_id?: string | null
+          veiculo_proprio?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_pp_user"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       aceitar_proposta_cliente: {
