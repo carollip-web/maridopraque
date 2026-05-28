@@ -571,7 +571,7 @@ function ProfissionalArea() {
         );
       }
       if (type === "ativos") {
-        const isApoioAceito = (o as any).apoio_profissional_id === user?.id && o.status === "pago";
+        const isApoioAceito = (o as any).apoio_profissional_id === user?.id && !["concluido", "recusado", "cancelado"].includes(o.status);
         return (["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id) || isApoioAceito;
       }
       if (type === "finalizados") {
