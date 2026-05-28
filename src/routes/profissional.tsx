@@ -532,7 +532,11 @@ function ProfissionalArea() {
            o.status === "pago" && 
            (o as any).status_apoio === "buscando";
 
-        if (!isApoioFemininoTarget && !(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+        if (profApoioFeminino) {
+          if (!isApoioFemininoTarget) return false;
+        } else {
+          if (!(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+        }
 
         if (jaEnvieiProposta(o.id)) return false;
         if (recusados.has(o.id)) return false;
