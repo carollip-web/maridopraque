@@ -127,7 +127,7 @@ function catColor(cat: string) {
 }
 
 function ServicosAdmin() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, session } = useAuth();
   const navigate = useNavigate();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -336,6 +336,7 @@ function ServicosAdmin() {
             onSave={async (s) => {
               try {
                 await salvar({
+                  headers: { Authorization: `Bearer ${session?.access_token}` },
                   data: {
                     id: creating ? undefined : s.id,
                     nome: s.nome,
@@ -505,7 +506,7 @@ function ServicosAdmin() {
                         className="rounded-full text-xs font-bold"
                         onClick={async () => {
                           try {
-                            await toggleAtivo({ data: { id: s.id, ativo: !s.ativo } });
+                            await toggleAtivo({ headers: { Authorization: `Bearer ${session?.access_token}` }, data: { id: s.id, ativo: !s.ativo } });
                             await refresh();
                           } catch (e: any) {
                             toast.error("Falha", { description: e?.message });
@@ -522,7 +523,7 @@ function ServicosAdmin() {
                             className="rounded-full text-xs"
                             onClick={async () => {
                               try {
-                                await deletar({ data: { id: s.id } });
+                                await deletar({ headers: { Authorization: `Bearer ${session?.access_token}` }, data: { id: s.id } });
                                 toast.success("Excluído");
                                 setConfirmDelete(null);
                                 await refresh();

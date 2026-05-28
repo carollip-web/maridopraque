@@ -36,19 +36,24 @@ const STEPS = [
 ];
 
 const ESPECIALIDADES_OPCOES = [
-  "Elétrica",
-  "Hidráulica",
-  "Pintura",
-  "Montagem de Móveis",
-  "Reparos Gerais",
-  "Alvenaria",
-  "Gesso",
-  "Ar Condicionado",
-  "Serviços de Limpeza",
-  "Instalações",
-  "Jardinagem",
-  "Outro",
+  "chaveiro",
+  "elétrica",
+  "engenharia",
+  "hidráulica",
+  "instalação",
+  "montagem",
+  "reparos",
 ];
+
+const ESPECIALIDADES_LABEL: Record<string, string> = {
+  chaveiro: "Chaveiro",
+  "elétrica": "Elétrica",
+  engenharia: "Engenharia",
+  "hidráulica": "Hidráulica",
+  "instalação": "Instalação",
+  montagem: "Montagem de Móveis",
+  reparos: "Reparos Gerais",
+};
 
 const COMO_CONHECEU = [
   "Instagram",
@@ -691,7 +696,7 @@ function ProfissionalCadastro() {
                         }
                         className={`px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${form.especialidades.includes(e) ? "bg-brand text-white border-brand" : "border-border bg-slate-50 hover:border-brand/40"}`}
                       >
-                        {e}
+                        {ESPECIALIDADES_LABEL[e] ?? e}
                       </button>
                     ))}
                   </div>

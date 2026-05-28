@@ -23,6 +23,16 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
+const ESPECIALIDADES_LABEL: Record<string, string> = {
+  chaveiro: "Chaveiro",
+  "elétrica": "Elétrica",
+  engenharia: "Engenharia",
+  "hidráulica": "Hidráulica",
+  "instalação": "Instalação",
+  montagem: "Montagem de Móveis",
+  reparos: "Reparos Gerais",
+};
+
 const profileSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   whatsapp: z.string().min(10, "WhatsApp inválido"),
@@ -780,7 +790,7 @@ export function ProfissionalConfiguracoes() {
                     key={esp}
                     className="px-3 py-1.5 bg-brand-soft text-brand-foreground text-xs font-bold rounded-full"
                   >
-                    {esp}
+                    {ESPECIALIDADES_LABEL[esp] ?? esp}
                   </span>
                 ))}
               </div>
@@ -791,7 +801,7 @@ export function ProfissionalConfiguracoes() {
             <div className="mt-5 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
               <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-800 leading-relaxed">
-                Para adicionar ou remover especialidades,{" "}
+                Suas especialidades definem quais pedidos você recebe. Para alterá-las,{" "}
                 <strong>entre em contato com o suporte</strong>.
               </p>
             </div>

@@ -556,6 +556,17 @@ function ProfissionalArea() {
           if (!compat.compatible && compat.blockProposal) return false;
         }
 
+        // Filtro por categoria: profissional técnico só vê pedidos da sua especialidade
+        // Profissional de apoio feminino já foi tratado acima e não chega aqui
+        if (especialidades.length > 0) {
+          const serviceId = (o as any).service_id;
+          if (serviceId) {
+            const cat = catalog[serviceId]?.categoria;
+            if (cat && !especialidades.includes(cat)) return false;
+          }
+          // Se o pedido não tem service_id (pedido customizado), mostra para todos
+        }
+
         return true;
       }
       if (type === "elaboracao") {
