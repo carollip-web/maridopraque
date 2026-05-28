@@ -283,7 +283,7 @@ function ProfissionalArea() {
           raio: perfil.raio_atendimento_km ?? 15,
         });
         setProfGenero(perfil.genero ?? null);
-        setProfApoioFeminino(Boolean(perfil.oferece_apoio_feminino));
+        setProfApoioFeminino(perfil.genero === "apoio_feminino");
       }
 
       if (avs && avs.length > 0) {
