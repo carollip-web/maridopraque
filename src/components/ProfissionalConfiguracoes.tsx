@@ -348,22 +348,21 @@ export function ProfissionalConfiguracoes() {
       console.log("MP Connect Response:", { data, error });
       
       if (error) {
-        let errorBody = "Erro desconhecido";
-        try {
-          if (error.context) {
+        let errorBody = error.message || "Erro desconhecido";
+        if (error.context) {
+          try {
             const parsed = await error.context.json();
             errorBody = parsed.error || JSON.stringify(parsed);
-          } else {
-            errorBody = error.message;
+          } catch {
+            errorBody = error.message || "Erro ao processar resposta do servidor";
           }
-        } catch(e) {}
-        
-        console.error("MP Connect Error RAW:", error);
+        }
+        console.error("MP Connect Error:", error);
         toast.error("Erro do Servidor", { description: errorBody });
         return;
       }
-      
-      const targetUrl = data?.authUrl || data?.url || data?.auth_url || data?.checkoutUrl;
+
+      const targetUrl = data?.authUrl;
       
       if (!targetUrl) {
         toast.error("Erro ao iniciar conexão com Mercado Pago", { 

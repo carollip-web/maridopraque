@@ -120,13 +120,14 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
       if (orcBasico && typeof orcBasico === "object" && !Array.isArray(orcBasico)) {
         const ob = orcBasico as any;
+        const tipoFallback = (orcCompleto as any)?.tipo_atendimento ?? null;
         orc = {
           id: ob.id,
           status: ob.status,
           cliente_id: ob.cliente_id,
           service_id: ob.service_id ?? null,
           service_name: ob.service_name ?? null,
-          tipo_atendimento: null,
+          tipo_atendimento: tipoFallback,
         };
       } else {
         orc = null;
@@ -252,7 +253,11 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // Bloquear envio se profissional não conectou Mercado Pago (necessário pro split)
-    if (!perfilProfissional?.mp_user_id) {
+    if (!perfilProfissional) {
+      console.error("[enviarOrcamento] perfil do profissional não encontrado", { userId });
+      throw new Error("Perfil de profissional não encontrado. Complete seu cadastro antes de enviar orçamentos.");
+    }
+    if (!perfilProfissional.mp_user_id) {
       console.warn("[enviarOrcamento] bloqueado: profissional sem Mercado Pago conectado", { userId });
       throw new Error(
         "Você precisa conectar sua conta Mercado Pago antes de enviar orçamentos. " +

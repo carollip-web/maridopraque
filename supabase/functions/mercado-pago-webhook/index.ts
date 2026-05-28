@@ -4,6 +4,35 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const MP_ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const MP_WEBHOOK_SECRET = Deno.env.get("MERCADO_PAGO_WEBHOOK_SECRET");
+
+async function verificarAssinaturaMP(req: Request, requestId: string): Promise<boolean> {
+  if (!MP_WEBHOOK_SECRET) {
+    console.warn(`[Webhook ${requestId}] MERCADO_PAGO_WEBHOOK_SECRET não configurada. Configure no painel MP Developers para máxima segurança.`);
+    return true;
+  }
+  const xSignature = req.headers.get("x-signature");
+  const xRequestId = req.headers.get("x-request-id");
+  const { searchParams } = new URL(req.url);
+  const dataId = searchParams.get("data.id") || searchParams.get("id");
+  if (!xSignature || !xRequestId || !dataId) return false;
+
+  const ts = xSignature.match(/ts=([^,]+)/)?.[1];
+  const v1 = xSignature.match(/v1=([^,]+)/)?.[1];
+  if (!ts || !v1) return false;
+
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(MP_WEBHOOK_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(manifest));
+  const computed = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return computed === v1;
+}
 
 function calcularIntervaloReserva(
   dataPreferida: string | Date,
@@ -40,6 +69,14 @@ serve(async (req) => {
   console.log(`[Webhook ${requestId}] Request received`);
 
   try {
+    const assinaturaValida = await verificarAssinaturaMP(req, requestId);
+    if (!assinaturaValida) {
+      console.error(`[Webhook ${requestId}] Assinatura inválida — requisição rejeitada`);
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     // Mercado Pago envia o ID do recurso via query param
     const { searchParams } = new URL(req.url);
 
@@ -103,13 +140,18 @@ serve(async (req) => {
     else if (mpStatus === "rejected") finalStatus = "failed";
     else if (mpStatus === "in_mediation") finalStatus = "pending";
 
-    // Buscar metadata existente para não sobrescrever os cálculos de split de pagamento
-    const { data: existingPagamento } = await supabase
-      .from("pagamentos")
-      .select("metadata")
-      .eq("orcamento_id", orcamentoId)
-      .maybeSingle();
-    const currentMetadata = (existingPagamento?.metadata as Record<string, any>) || {};
+    // Buscar metadata existente. Retenta uma vez se não encontrar (webhook pode chegar antes do insert).
+    let existingPagamento: { metadata: unknown } | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { data } = await supabase
+        .from("pagamentos")
+        .select("metadata")
+        .eq("orcamento_id", orcamentoId)
+        .maybeSingle();
+      if (data) { existingPagamento = data; break; }
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
+    }
+    const currentMetadata = (existingPagamento?.metadata as Record<string, unknown>) || {};
 
     // 4. Atualizar registro de pagamento
     const { data: pagamento, error: payError } = await supabase

@@ -109,9 +109,6 @@ serve(async (req) => {
             "Aguarde a conexão ou entre em contato com o suporte.",
         },
         400,
-      );
-    }
-
     // Verificar expiração do token OAuth do profissional
     if (
       profPerfil.mp_expires_at &&
@@ -132,7 +129,21 @@ serve(async (req) => {
       );
     }
 
-    const sellerAccessToken = profPerfil.mp_access_token;
+    // Re-buscar token imediatamente antes de usar para evitar race condition com expiração
+    const { data: profPerfilFresh } = await admin
+      .from("profissional_perfil")
+      .select("mp_access_token, mp_expires_at")
+      .eq("user_id", orcamento.profissional_id)
+      .maybeSingle();
+
+    if (!profPerfilFresh?.mp_access_token) {
+      return json({ error: "MP_NOT_CONNECTED", message: "Token do profissional não disponível." }, 400);
+    }
+    if (profPerfilFresh.mp_expires_at && new Date(profPerfilFresh.mp_expires_at) < new Date()) {
+      return json({ error: "MP_TOKEN_EXPIRED", message: "O token Mercado Pago do profissional expirou. Peça para ele reconectar em Configurações > Mercado Pago." }, 400);
+    }
+
+    const sellerAccessToken = profPerfilFresh.mp_access_token;
     
     // 15% sobre o valor base do profissional + retenção total do valor do apoio
     const marketplaceFeeBase = Math.round(valorBase * (MARKETPLACE_FEE_PERCENT / 100) * 100) / 100;
@@ -183,14 +194,14 @@ serve(async (req) => {
       items: [
         {
           id: orcamento.id,
-          title: orcamento.service_name || "Serviço Marido pra Quê",
+          title: orcamento.service_name || "Serviço Marido pra Que",
           quantity: 1,
           currency_id: "BRL",
           unit_price: Number(valorTotal),
         },
       ],
       payer: { email: user.email },
-      external_reference: pagamento.id,
+      external_reference: orcamento.id,
       marketplace_fee: marketplaceFee,
       metadata: {
         orcamento_id: orcamento.id,
