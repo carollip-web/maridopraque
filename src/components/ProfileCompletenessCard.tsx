@@ -29,7 +29,7 @@ export function ProfileCompletenessCard() {
         {
           key: "cidade",
           label: "Cidade de atendimento",
-          done: !!perfil?.cidade?.trim() && perfil?.lat != null,
+          done: !!perfil?.cidade?.trim(),
         },
         {
           key: "raio",

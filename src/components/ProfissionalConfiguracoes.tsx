@@ -36,6 +36,16 @@ const profileSchema = z.object({
   veiculo_proprio: z.boolean().optional(),
   genero: z.enum(["homem", "mulher", "outro", "nao_informar"]).optional(),
   oferece_apoio_feminino: z.boolean().optional(),
+  chave_pix: z.string().optional(),
+  pix_key_type: z.string().optional(),
+}).superRefine((val, ctx) => {
+  if (val.oferece_apoio_feminino && (!val.chave_pix || val.chave_pix.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["chave_pix"],
+      message: "Chave PIX é obrigatória para profissionais de Apoio Feminino.",
+    });
+  }
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
@@ -162,6 +172,8 @@ export function ProfissionalConfiguracoes() {
       veiculo_proprio: false,
       genero: "nao_informar",
       oferece_apoio_feminino: false,
+      chave_pix: "",
+      pix_key_type: "cpf",
     },
   });
 
@@ -180,6 +192,8 @@ export function ProfissionalConfiguracoes() {
       veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
       genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
       oferece_apoio_feminino: !!profissionalPerfil?.oferece_apoio_feminino,
+      chave_pix: profissionalPerfil?.chave_pix ?? "",
+      pix_key_type: profissionalPerfil?.pix_key_type ?? "cpf",
     });
   }, [profile, profissionalPerfil, reset]);
 
@@ -239,6 +253,8 @@ export function ProfissionalConfiguracoes() {
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        chave_pix: values.chave_pix || null,
+        pix_key_type: values.pix_key_type || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -342,6 +358,7 @@ export function ProfissionalConfiguracoes() {
     { id: "basico", label: "Perfil básico", icon: User },
     { id: "documentos", label: "Documentos", icon: IdCard },
     { id: "mercadopago", label: "Mercado Pago", icon: Wallet },
+    { id: "pix", label: "Chave PIX", icon: Wallet },
     { id: "atendimento", label: "Atendimento", icon: MapPin },
     { id: "compatibilidade", label: "Compatibilidade", icon: Users },
   ];
@@ -619,6 +636,38 @@ export function ProfissionalConfiguracoes() {
                 </Button>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* Seção: PIX */}
+        <section
+          id="sec-pix"
+          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
+        >
+          <SectionTitle
+            icon={Wallet}
+            title="Chave PIX (Apoio Feminino)"
+            hint="Necessário para realizar seus repasses caso você seja uma profissional de apoio feminino."
+          />
+
+          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+            <Field label="Tipo de Chave PIX">
+              <select {...register("pix_key_type")} className={`${inputBase} ${inputOk}`}>
+                <option value="cpf">CPF</option>
+                <option value="cnpj">CNPJ</option>
+                <option value="email">E-mail</option>
+                <option value="telefone">Telefone</option>
+                <option value="aleatoria">Chave Aleatória</option>
+              </select>
+            </Field>
+
+            <Field label="Chave PIX" error={errors.chave_pix?.message} required={watch("oferece_apoio_feminino")}>
+              <input
+                {...register("chave_pix")}
+                className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
+                placeholder="Insira sua chave PIX"
+              />
+            </Field>
           </div>
         </section>
 

@@ -1,6 +1,6 @@
 export type TipoAtendimento = "homem" | "mulher" | "homem_com_apoio_feminino" | null | undefined;
 
-export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar" | null | undefined;
+export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar" | "apoio_feminino" | null | undefined;
 
 export type AtendimentoCompatibility = {
   compatible: boolean;
@@ -21,6 +21,7 @@ export function generoProfissionalLabel(genero: GeneroProfissional): string {
   if (genero === "mulher") return "Mulher";
   if (genero === "homem") return "Homem";
   if (genero === "outro") return "Outro";
+  if (genero === "apoio_feminino") return "Apoio Feminino";
   if (genero === "nao_informar") return "Prefiro não informar";
   return "Não informado";
 }
@@ -92,6 +93,15 @@ export function isProfissionalCompativelComTipoAtendimento(args: {
         compatible: true,
         level: "exact",
         label: "Compatível: apoio feminino disponível",
+      };
+    }
+
+    if (genero === "apoio_feminino") {
+      return {
+        compatible: true,
+        level: "exact",
+        label: "Compatível: apoio feminino",
+        reason: "Profissional focada em prestar suporte e acompanhamento.",
       };
     }
 
