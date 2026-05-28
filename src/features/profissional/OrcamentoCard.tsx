@@ -145,8 +145,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
   const isApoioFemininoVacancy =
     profApoioFeminino &&
-    o.status === "pago" &&
-    (o as any).status_apoio === "buscando";
+    (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
+    !(o as any).apoio_profissional_id;
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));

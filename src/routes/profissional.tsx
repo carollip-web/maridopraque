@@ -133,7 +133,7 @@ function ProfissionalArea() {
       supabase
         .from("orcamentos")
         .select("*")
-        .or(`profissional_id.is.null,profissional_id.eq.${user.id},status_apoio.eq.buscando,apoio_profissional_id.eq.${user.id}`)
+        .or(`profissional_id.is.null,profissional_id.eq.${user.id},status_apoio.eq.buscando,apoio_profissional_id.eq.${user.id},tipo_atendimento.eq.homem_com_apoio_feminino`)
         .order("created_at", { ascending: false }),
     ]);
 
@@ -526,11 +526,11 @@ function ProfissionalArea() {
 
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        // Lógica para Apoio Feminino
+        // Lógica para Apoio Feminino — aparece IMEDIATAMENTE quando o cliente cria o pedido
         const isApoioFemininoTarget = 
            profApoioFeminino && 
-           o.status === "pago" && 
-           (o as any).status_apoio === "buscando";
+           (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
+           !(o as any).apoio_profissional_id;
 
         if (profApoioFeminino) {
           if (!isApoioFemininoTarget) return false;
