@@ -650,6 +650,10 @@ function ProfissionalArea() {
       service_name: testServiceName,
       status: "customizado_pendente",
       descricao: "⚠️ Pedido de teste gerado pelo sistema para demonstrar o Radar de Oportunidades.",
+      ...(profApoioFeminino ? {
+        tipo_atendimento: "homem_com_apoio_feminino",
+        status_apoio: "buscando"
+      } : {})
     });
 
     if (error) {
