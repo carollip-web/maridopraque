@@ -117,12 +117,11 @@ export function isProfissionalCompativelComTipoAtendimento(args: {
 
     if (genero === "homem" && !ofereceApoioFeminino) {
       return {
-        compatible: false,
-        level: "blocked",
-        label: "Apoio feminino solicitado",
+        compatible: true,
+        level: "alternative",
+        label: "Compatível: plataforma fornece apoio",
         reason:
-          "Este pedido solicita apoio feminino. Ative essa opção no perfil para poder enviar proposta.",
-        blockProposal: true,
+          "O cliente solicitou apoio feminino. Uma profissional da nossa base será enviada com você.",
       };
     }
 
