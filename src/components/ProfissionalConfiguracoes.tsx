@@ -752,7 +752,7 @@ export function ProfissionalConfiguracoes() {
             hint="Ajuda a mostrar pedidos compatíveis com a preferência das clientes."
           />
 
-          <div className="grid gap-5 sm:grid-cols-2 mt-6">
+          <div className="mt-6">
             <Field label="Gênero para atendimento" hint="Apenas para compatibilidade operacional.">
               <select {...register("genero")} className={`${inputBase} ${inputOk}`}>
                 <option value="nao_informar">Prefiro não informar</option>
@@ -762,12 +762,6 @@ export function ProfissionalConfiguracoes() {
                 <option value="apoio_feminino">Apoio Feminino</option>
               </select>
             </Field>
-
-            <Toggle
-              label="Apoio feminino disponível"
-              hint="Você trabalha com uma mulher de apoio para visitas acompanhadas."
-              {...register("oferece_apoio_feminino")}
-            />
           </div>
         </section>
 
