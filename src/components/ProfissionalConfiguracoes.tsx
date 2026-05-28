@@ -192,8 +192,8 @@ export function ProfissionalConfiguracoes() {
       veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
       genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
       oferece_apoio_feminino: !!profissionalPerfil?.oferece_apoio_feminino,
-      chave_pix: profissionalPerfil?.chave_pix ?? "",
-      pix_key_type: profissionalPerfil?.pix_key_type ?? "cpf",
+      chave_pix: (profissionalPerfil as any)?.chave_pix ?? "",
+      pix_key_type: (profissionalPerfil as any)?.pix_key_type ?? "cpf",
     });
   }, [profile, profissionalPerfil, reset]);
 
