@@ -17,8 +17,6 @@ import {
   UserRound,
   Users,
   CreditCard,
-  QrCode,
-  Wallet,
   Scale,
   FileText,
   HardHat,
@@ -146,16 +144,15 @@ const reasons = [
 ];
 
 const paymentMethods = [
-  { icon: QrCode, title: "Pix", desc: "Aprovação instantânea e 5% de desconto no valor total." },
   {
     icon: CreditCard,
-    title: "Cartão de Crédito",
-    desc: "Aceitamos todas as bandeiras em até 10x sem juros.",
+    title: "Cartão de Crédito ou Débito",
+    desc: "Pague com cartão em até 12x. Processado com segurança pelo Mercado Pago.",
   },
   {
-    icon: Wallet,
-    title: "Cartão de Débito",
-    desc: "Pagamento presencial rápido através de maquininha.",
+    icon: ShieldCheck,
+    title: "Pagamento Seguro",
+    desc: "Você só é cobrado após aceitar a proposta do profissional. Sem surpresas.",
   },
 ];
 
