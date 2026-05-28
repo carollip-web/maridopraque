@@ -83,7 +83,7 @@ function Contato() {
             <div>
               <h3 className="text-xl font-bold">Localização</h3>
               <p className="mt-1 text-muted-foreground leading-relaxed">
-                Atendemos em todo o Rio de Janeiro e região metropolitana.
+                Atendemos em Copacabana e Ipanema.
               </p>
             </div>
           </div>
