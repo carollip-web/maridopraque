@@ -60,7 +60,7 @@ serve(async (req) => {
 
     const { data: orcamento, error: orcErr } = await admin
       .from("orcamentos")
-      .select("id, cliente_id, profissional_id, status, valor, valor_servico, service_name")
+      .select("id, cliente_id, profissional_id, status, valor, valor_servico, service_name, tipo_atendimento")
       .eq("id", orcamentoId)
       .maybeSingle();
 
@@ -79,10 +79,15 @@ serve(async (req) => {
         400,
       );
     }
-    const valor = Number(orcamento.valor || orcamento.valor_servico || 0);
-    if (!(valor > 0)) {
+    const valorBase = Number(orcamento.valor || orcamento.valor_servico || 0);
+    if (!(valorBase > 0)) {
       return json({ error: "INVALID_VALUE", message: "Valor inválido." }, 400);
     }
+    
+    // Apoio Feminino logic
+    const requiresApoio = orcamento.tipo_atendimento === "homem_com_apoio_feminino";
+    const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
+    const valorTotal = valorBase + valorApoio;
 
     // === SPLIT 1:1 — Buscar access_token do profissional (seller) ===
     const { data: profPerfil, error: profErr } = await admin
@@ -128,14 +133,18 @@ serve(async (req) => {
     }
 
     const sellerAccessToken = profPerfil.mp_access_token;
-    const marketplaceFee = Math.round(valor * (MARKETPLACE_FEE_PERCENT / 100) * 100) / 100;
+    
+    // 15% sobre o valor base do profissional + retenção total do valor do apoio
+    const marketplaceFeeBase = Math.round(valorBase * (MARKETPLACE_FEE_PERCENT / 100) * 100) / 100;
+    const marketplaceFee = marketplaceFeeBase + valorApoio;
 
-    console.info("[mercadopago-cartao-criar] validado (split 1:1)", {
+    console.info("[mercadopago-cartao-criar] validado", {
       orcamentoId,
       userId: user.id,
-      valor,
+      valorTotal,
       marketplaceFee,
       mpSellerId: profPerfil.mp_user_id,
+      valorApoio,
     });
 
     // Cria registro de pagamento com informações do split
@@ -145,17 +154,18 @@ serve(async (req) => {
         orcamento_id: orcamento.id,
         cliente_id: orcamento.cliente_id,
         profissional_id: orcamento.profissional_id,
-        valor_total: valor,
-        valor_sinal: valor,
+        valor_total: valorTotal,
+        valor_sinal: valorTotal,
         valor_restante: 0,
         metodo: "cartao",
         gateway: "mercado_pago",
         status: "pending",
         metadata: {
-          split_type: "marketplace_1_1",
+          split_type: requiresApoio ? "marketplace_with_apoio" : "marketplace_1_1",
           marketplace_fee_percent: MARKETPLACE_FEE_PERCENT,
           marketplace_fee_amount: marketplaceFee,
           mp_seller_user_id: profPerfil.mp_user_id,
+          valor_apoio_feminino: valorApoio,
         },
       } as any)
       .select("id")
@@ -176,7 +186,7 @@ serve(async (req) => {
           title: orcamento.service_name || "Serviço Marido pra Quê",
           quantity: 1,
           currency_id: "BRL",
-          unit_price: Number(valor),
+          unit_price: Number(valorTotal),
         },
       ],
       payer: { email: user.email },

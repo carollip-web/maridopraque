@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2, CreditCard } from "lucide-react";
+import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2, CreditCard, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export function AdminFinanceiro() {
     totalFaturado: number;
     lucroPlataforma: number;
     saldoPendenteBtg: number;
+    totalApoioFeminino: number;
     pagos: any[];
   } | null>(null);
 
@@ -54,11 +55,16 @@ export function AdminFinanceiro() {
 
     const list = pgs || [];
     const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+    
+    let totalApoioFeminino = 0;
+    
     const lucroPlataforma = list
       .filter((r: any) => r.status === "paid" || r.status === "approved")
       .reduce((s: number, r: any) => {
         const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
-        return s + Number(fee);
+        const apoioFemininoCut = (r.metadata as any)?.valor_apoio_feminino || 0;
+        totalApoioFeminino += Number(apoioFemininoCut);
+        return s + Number(fee) - Number(apoioFemininoCut);
       }, 0);
     const saldoPendenteBtg = list
       .filter((r: any) => r.status === "pending")
@@ -73,7 +79,7 @@ export function AdminFinanceiro() {
       status: r.status,
     }));
     
-    setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, pagos });
+    setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, totalApoioFeminino, pagos });
 
     // novo ledger (pagamento_splits)
     const { data: splits } = await supabase
@@ -189,14 +195,28 @@ export function AdminFinanceiro() {
                 {data.pagos.length === 1 ? "pagamento total" : "pagamentos totais"}
               </div>
             </div>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 mb-1">Lucro da Plataforma (Real)</p>
-              <h3 className="text-3xl font-bold text-emerald-600">
-                R$ {data.lucroPlataforma.toFixed(2)}
-              </h3>
-              <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
-                Proveniente das comissões
+            <div className="flex flex-col gap-6">
+              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-sm text-slate-500 mb-1">Lucro Plataforma</p>
+                <h3 className="text-3xl font-bold text-emerald-600">
+                  R$ {data.lucroPlataforma.toFixed(2)}
+                </h3>
+                <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
+                  Taxas retidas
+                </div>
               </div>
+
+              {data.totalApoioFeminino > 0 && (
+                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-pink-500">
+                  <p className="text-sm text-slate-500 mb-1">Repasses Apoio Feminino</p>
+                  <h3 className="text-3xl font-bold text-pink-600">
+                    R$ {data.totalApoioFeminino.toFixed(2)}
+                  </h3>
+                  <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
+                    Retidos via Mercado Pago
+                  </div>
+                </div>
+              )}
             </div>
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-brand">
               <p className="text-sm text-slate-500 mb-1">Pagamentos Pendentes (MP)</p>

@@ -133,7 +133,7 @@ function ProfissionalArea() {
       supabase
         .from("orcamentos")
         .select("*")
-        .or(`profissional_id.is.null,profissional_id.eq.${user.id}`)
+        .or(`profissional_id.is.null,profissional_id.eq.${user.id},status_apoio.eq.buscando,apoio_profissional_id.eq.${user.id}`)
         .order("created_at", { ascending: false }),
     ]);
 
@@ -510,22 +510,31 @@ function ProfissionalArea() {
 
     return orcamentos.filter((o) => {
       if (type === "oportunidades") {
-        if (!(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+        // Lógica para Apoio Feminino
+        const isApoioFemininoTarget = 
+           profApoioFeminino && 
+           o.status === "pago" && 
+           (o as any).status_apoio === "buscando";
+
+        if (!isApoioFemininoTarget && !(o.status === "customizado_pendente" || o.status === "enviado")) return false;
+
         if (jaEnvieiProposta(o.id)) return false;
         if (recusados.has(o.id)) return false;
 
-        // Radius filter is still active as it's a hard constraint for logistics
+        // Radius filter
         const d = distanciaCliente(o.cliente_id);
         if (d != null && d > profGeo.raio) return false;
 
-        // Atendimento Compatibility filter
-        const compat = isProfissionalCompativelComTipoAtendimento({
-          tipoAtendimento: (o as any).tipo_atendimento,
-          genero: profGenero as any,
-          ofereceApoioFeminino: profApoioFeminino,
-        });
+        if (!isApoioFemininoTarget) {
+          // Atendimento Compatibility filter only for main professional
+          const compat = isProfissionalCompativelComTipoAtendimento({
+            tipoAtendimento: (o as any).tipo_atendimento,
+            genero: profGenero as any,
+            ofereceApoioFeminino: profApoioFeminino,
+          });
 
-        if (!compat.compatible && compat.blockProposal) return false;
+          if (!compat.compatible && compat.blockProposal) return false;
+        }
 
         return true;
       }
@@ -542,13 +551,15 @@ function ProfissionalArea() {
         );
       }
       if (type === "ativos") {
-        return ["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id;
+        const isApoioAceito = (o as any).apoio_profissional_id === user?.id && o.status === "pago";
+        return (["aprovado", "pago"].includes(o.status) && o.profissional_id === user?.id) || isApoioAceito;
       }
       if (type === "finalizados") {
+        const isApoioFinalizado = (o as any).apoio_profissional_id === user?.id && ["concluido"].includes(o.status);
         return (
           ["recusado", "cancelado", "concluido"].includes(o.status) &&
           o.profissional_id === user?.id
-        );
+        ) || isApoioFinalizado;
       }
       return false;
     });

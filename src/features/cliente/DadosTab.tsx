@@ -132,8 +132,12 @@ export function DadosTab() {
         // dynamic import of toast since it's lazy in this file or we can use toastError logic
         import("sonner").then(async (m) => {
           const toastId = m.toast.loading("Enviando foto...");
-          await updatePhoto(reader.result as string);
-          m.toast.success("Foto atualizada!", { id: toastId });
+          try {
+            await updatePhoto(reader.result as string);
+            m.toast.success("Foto atualizada!", { id: toastId });
+          } catch (err: any) {
+            m.toast.error("Erro ao subir foto", { id: toastId, description: err.message });
+          }
         });
       };
       reader.readAsDataURL(file);

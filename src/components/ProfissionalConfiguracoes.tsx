@@ -305,8 +305,12 @@ export function ProfissionalConfiguracoes() {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const toastId = toast.loading("Enviando foto...");
-        await updatePhoto(reader.result as string);
-        toast.success("Foto atualizada!", { id: toastId });
+        try {
+          await updatePhoto(reader.result as string);
+          toast.success("Foto atualizada!", { id: toastId });
+        } catch (err: any) {
+          toast.error("Erro ao subir foto", { id: toastId, description: err.message });
+        }
       };
       reader.readAsDataURL(file);
     }

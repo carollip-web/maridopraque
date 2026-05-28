@@ -103,6 +103,14 @@ serve(async (req) => {
     else if (mpStatus === "rejected") finalStatus = "failed";
     else if (mpStatus === "in_mediation") finalStatus = "pending";
 
+    // Buscar metadata existente para não sobrescrever os cálculos de split de pagamento
+    const { data: existingPagamento } = await supabase
+      .from("pagamentos")
+      .select("metadata")
+      .eq("orcamento_id", orcamentoId)
+      .maybeSingle();
+    const currentMetadata = (existingPagamento?.metadata as Record<string, any>) || {};
+
     // 4. Atualizar registro de pagamento
     const { data: pagamento, error: payError } = await supabase
       .from("pagamentos")
@@ -113,6 +121,7 @@ serve(async (req) => {
         paid_at: mpStatus === "approved" ? new Date().toISOString() : null,
         webhook_last_received_at: new Date().toISOString(),
         metadata: {
+          ...currentMetadata,
           last_webhook_payload: mpPayment,
           updated_at: new Date().toISOString(),
         },
@@ -132,11 +141,23 @@ serve(async (req) => {
     // 5. Se aprovado, marcar orçamento como PAGO e confirmar reserva de agenda
     if (mpStatus === "approved") {
       console.log(`[Webhook ${requestId}] Marcando Orçamento ${orcamentoId} como PAGO...`);
+      
+      const { data: existingOrc } = await supabase
+        .from("orcamentos")
+        .select("tipo_atendimento")
+        .eq("id", orcamentoId)
+        .maybeSingle();
+      const requiresApoio = existingOrc?.tipo_atendimento === "homem_com_apoio_feminino";
+
       const { data: updatedOrc, error: orcError } = await supabase
         .from("orcamentos")
         .update({
           status: "pago",
           data_pagamento: new Date().toISOString(),
+          ...(requiresApoio ? { 
+            status_apoio: "buscando",
+            valor_apoio_feminino: currentMetadata?.valor_apoio_feminino || null
+          } : {})
         })
         .eq("id", orcamentoId)
         .select("id, profissional_id, data_preferida, periodo_preferido, horario_preferido")

@@ -231,6 +231,7 @@ export function useAuth() {
         }));
       } catch (err: any) {
         console.error("[useAuth] Erro ao atualizar foto:", err);
+        throw err;
       }
     },
     updateUserData: (_: unknown) => {},

@@ -99,7 +99,7 @@ function Checkout() {
     const [{ data, error }, { data: profile }] = await Promise.all([
       supabase
       .from("orcamentos")
-      .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material")
+      .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material, tipo_atendimento")
       .eq("id", id)
         .maybeSingle(),
       supabase.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
@@ -430,7 +430,11 @@ function Checkout() {
   );
   const valorMateriais =
     materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
-  const valorTotal = valorServico + valorMateriais;
+    
+  const requiresApoioFeminino = orcamento?.tipo_atendimento === "homem_com_apoio_feminino";
+  const taxaApoioFeminino = requiresApoioFeminino ? valorServico * 0.3 : 0;
+  
+  const valorTotal = valorServico + valorMateriais + taxaApoioFeminino;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
@@ -453,7 +457,6 @@ function Checkout() {
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
-            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP */}
             {!cobranca && !boleto && !paid && (
               <div className="flex gap-3">
                 <div className="rounded-2xl border border-brand bg-brand-soft/40 p-4 text-left flex-1">
@@ -471,17 +474,24 @@ function Checkout() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{orcamento.service_name || "Serviço"}</span>
-                  <span className="text-muted-foreground text-sm">R$ {valorServico.toFixed(2)}</span>
+                  <span className="text-muted-foreground text-sm">{formatCurrency(valorServico)}</span>
                 </div>
                 {valorMateriais > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Materiais previstos</span>
-                    <span className="text-muted-foreground text-sm">R$ {valorMateriais.toFixed(2)}</span>
+                    <span className="text-muted-foreground text-sm">{formatCurrency(valorMateriais)}</span>
                   </div>
                 )}
+                {requiresApoioFeminino && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Taxa Apoio Feminino (30%)</span>
+                    <span className="text-muted-foreground text-sm">{formatCurrency(taxaApoioFeminino)}</span>
+                  </div>
+                )}
+                <Separator />
                 <div className="pt-4 border-t border-border flex justify-between items-center font-bold text-lg">
                   <span>Valor Total</span>
-                  <span>R$ {valorTotal.toFixed(2)}</span>
+                  <span>{formatCurrency(valorTotal)}</span>
                 </div>
               </div>
             </div>
@@ -490,22 +500,8 @@ function Checkout() {
               <span className="text-brand font-bold text-lg">
                 Valor a pagar agora (Cartão)
               </span>
-              <span className="text-brand font-black text-2xl">R$ {valorServico.toFixed(2)}</span>
+              <span className="text-brand font-black text-2xl">{formatCurrency(valorTotal)}</span>
             </div>
-
-            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
-            {!cobranca && !boleto && !paid && method === "pix" && (
-              <Button
-                onClick={handlePreparePayment}
-                disabled={isProcessing}
-                className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando Pix...</>
-                ) : "Gerar Pix para pagamento"}
-              </Button>
-            )}
-            */}
 
             {!cobranca && !boleto && !paid && method === "cartao" && (
               <div className="space-y-3">
@@ -523,88 +519,6 @@ function Checkout() {
                 <p className="text-xs text-muted-foreground text-center">
                   Você será redirecionado para o ambiente seguro do Mercado Pago para concluir o pagamento.
                 </p>
-              </div>
-            )}
-
-            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
-            {!cobranca && !boleto && !paid && method === "boleto" && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    WhatsApp para o boleto
-                  </label>
-                  <input
-                    value={whatsapp}
-                    onChange={(event) => setWhatsapp(event.target.value)}
-                    inputMode="tel"
-                    placeholder="(11) 99999-9999"
-                    className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base outline-none transition focus:border-brand"
-                  />
-                </div>
-                <Button
-                  onClick={handleGerarBoleto}
-                  disabled={isProcessing}
-                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-                >
-                  {isProcessing ? (
-                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Gerando boleto...</>
-                  ) : "Gerar boleto bancário"}
-                </Button>
-              </div>
-            )}
-            */}
-
-            {/* BTG desativado temporariamente — não homologado em produção, aguardando split MP
-            {cobranca && !paid && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="flex flex-col items-center gap-4">
-                  {cobranca.emv ? (
-                    <div className="w-64 h-64 rounded-2xl border border-border bg-white p-3 flex items-center justify-center">
-                      <QRCodeSVG
-                        value={cobranca.emv}
-                        size={232}
-                        level="M"
-                        marginSize={0}
-                      />
-                    </div>
-                  ) : cobranca.qrcode_url ? (
-                    <img
-                      src={cobranca.qrcode_url}
-                      alt="QR Code Pix"
-                      className="w-64 h-64 rounded-2xl border border-border bg-white p-3"
-                    />
-                  ) : (
-                    <div className="w-64 h-64 rounded-2xl border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                      QR indisponível — use o código abaixo
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Escaneie no app do seu banco
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Pix copia e cola
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      readOnly
-                      value={cobranca.emv}
-                      className="flex-1 min-w-0 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs font-mono"
-                      onFocus={(e) => e.currentTarget.select()}
-                    />
-                    <Button onClick={handleCopy} variant="outline" className="rounded-xl shrink-0">
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      <span className="ml-2">{copied ? "Copiado" : "Copiar"}</span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Aguardando confirmação do pagamento...
-                </div>
               </div>
             )}
 

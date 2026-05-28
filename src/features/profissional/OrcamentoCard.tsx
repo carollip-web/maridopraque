@@ -143,6 +143,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             ? o.horario_preferido?.slice(0, 5) || "Horário específico"
             : "A combinar";
 
+  const isApoioFemininoVacancy =
+    profApoioFeminino &&
+    o.status === "pago" &&
+    (o as any).status_apoio === "buscando";
+
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
     if (isNaN(v) || v < 0) {
@@ -221,6 +226,39 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
   const handlePegar = async () => {
     setSaving(true);
+    
+    if (isApoioFemininoVacancy) {
+      const { data } = await supabase
+        .from("orcamentos")
+        .select("apoio_profissional_id")
+        .eq("id", o.id)
+        .single();
+        
+      if (data?.apoio_profissional_id) {
+        toast.error("Poxa! Outra profissional aceitou esta vaga 1 segundo antes de você.");
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("orcamentos")
+        .update({ 
+          apoio_profissional_id: userId,
+          status_apoio: "confirmado" 
+        })
+        .eq("id", o.id)
+        .is("apoio_profissional_id", null);
+
+      if (error) {
+        toast.error("Erro ao aceitar vaga", { description: error.message });
+      } else {
+        toast.success("Boa! Você confirmou presença neste serviço como Apoio Feminino.");
+        refresh?.();
+      }
+      setSaving(false);
+      return;
+    }
+
     const { data } = await supabase
       .from("orcamentos")
       .select("profissional_id")
@@ -542,7 +580,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 Investimento
               </p>
               <p className="text-xl font-black text-slate-800">
-                {initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir"}
+                {isApoioFemininoVacancy 
+                  ? `R$ ${Number((o as any).valor_apoio_feminino || 0).toFixed(2)}` 
+                  : (initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -553,7 +593,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     disabled={saving || bloquearEnvioPorAtendimento}
                     className="rounded-full bg-brand hover:bg-brand/90 text-white font-bold px-6 shadow-md"
                   >
-                    {saving ? "Processando…" : "Pegar Pedido"}
+                    {saving ? "Processando…" : isApoioFemininoVacancy ? "Aceitar Vaga" : "Pegar Pedido"}
                   </Button>
                   <Button
                     variant="ghost"
