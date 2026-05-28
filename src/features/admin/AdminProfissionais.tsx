@@ -14,6 +14,7 @@ import {
   Mail,
   ArrowUpRight,
   Trash2,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,6 +149,11 @@ const ESPECIALIDADES_OPCOES = [
       "Habite-se e Alvarás",
       "Projetos Arquitetônicos",
     ],
+  },
+  {
+    categoria: "Apoio e Segurança",
+    icon: Users,
+    opcoes: ["Apoio Feminino"],
   },
 ];
 

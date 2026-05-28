@@ -461,7 +461,14 @@ function ParaProfissionaisPage() {
                 required
                 className="input-field"
                 value={preCadForm.especialidade}
-                onChange={(e) => setPreCadForm({ ...preCadForm, especialidade: e.target.value })}
+                onChange={(e) => {
+                  const especialidade = e.target.value;
+                  setPreCadForm({
+                    ...preCadForm,
+                    especialidade,
+                    ...(especialidade === "Apoio Feminino" ? { oferece_apoio_feminino: true } : {})
+                  });
+                }}
               >
                 <option value="Elétrica">Elétrica</option>
                 <option value="Hidráulica">Hidráulica</option>
@@ -470,21 +477,24 @@ function ParaProfissionaisPage() {
                 <option value="Chaveiro">Chaveiro</option>
                 <option value="Reformas e Alvenaria">Reformas e Alvenaria</option>
                 <option value="Limpeza">Limpeza</option>
+                <option value="Apoio Feminino">Apoio Feminino</option>
                 <option value="Outro">Outro</option>
               </select>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <input
-                type="checkbox"
-                id="apoioFeminino"
-                checked={preCadForm.oferece_apoio_feminino}
-                onChange={(e) => setPreCadForm({ ...preCadForm, oferece_apoio_feminino: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-              />
-              <label htmlFor="apoioFeminino" className="text-sm font-medium">
-                Ofereço apoio feminino (atendimento por profissional mulher)
-              </label>
-            </div>
+            {preCadForm.especialidade !== "Apoio Feminino" && (
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="apoioFeminino"
+                  checked={preCadForm.oferece_apoio_feminino}
+                  onChange={(e) => setPreCadForm({ ...preCadForm, oferece_apoio_feminino: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                />
+                <label htmlFor="apoioFeminino" className="text-sm font-medium">
+                  Ofereço apoio feminino (atendimento por profissional mulher)
+                </label>
+              </div>
+            )}
             <Button
               type="submit"
               disabled={preCadLoading}
