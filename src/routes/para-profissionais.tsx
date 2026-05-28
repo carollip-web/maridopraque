@@ -46,7 +46,7 @@ export const Route = createFileRoute("/para-profissionais")({
       {
         property: "og:description",
         content:
-          "Mais clientes, menos esforço. Cadastre-se e comece a receber chamados na sua região.",
+          "Mais clientes, menos esforço. Cadastre-se e comece a receber chamados em Copacabana e Ipanema.",
       },
     ],
   }),
