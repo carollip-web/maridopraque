@@ -241,6 +241,7 @@ function LoginPage() {
           </div>
 
           <button
+            type="button"
             onClick={handleGoogle}
             className="w-full flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-white hover:bg-muted transition-colors font-medium text-sm"
           >
@@ -251,6 +252,7 @@ function LoginPage() {
         <p className="text-center mt-8 text-sm text-muted-foreground">
           {isRegistering ? "Já tem uma conta?" : "Ainda não tem conta?"}{" "}
           <button
+            type="button"
             onClick={() => setIsRegistering(!isRegistering)}
             className="font-bold text-brand hover:underline"
           >
