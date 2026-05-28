@@ -240,7 +240,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         return;
       }
 
-      const { error, data } = await supabase
+      const { error, data: updated } = await supabase
         .from("orcamentos")
         .update({ 
           apoio_profissional_id: userId,
@@ -251,7 +251,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         .select()
         .single();
 
-      if (error || !data) {
+      if (error || !updated) {
         toast.error("Erro ao aceitar vaga", { description: error.message });
       } else {
         toast.success("Boa! Você confirmou presença neste serviço como Apoio Feminino.");
