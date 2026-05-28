@@ -554,7 +554,8 @@ function Checkout() {
                 </div>
               </div>
             )}
-            */}
+
+
 
             {paid && (
               <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
