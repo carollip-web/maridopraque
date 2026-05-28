@@ -71,10 +71,15 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     profApoioFeminino,
   } = props;
 
+  const isApoioFemininoVacancy =
+    profApoioFeminino &&
+    (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
+    !(o as any).apoio_profissional_id;
+
   const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
   const isOportunidade = !minhaProposta && mode === "pegar";
   const isEnviado = !!minhaProposta && minhaProposta.status === "pendente";
-  const [editing, setEditing] = useState(isOportunidade);
+  const [editing, setEditing] = useState(isOportunidade && !isApoioFemininoVacancy);
 
   const initialValor = minhaProposta?.valor_servico ?? o.valor_servico ?? o.valor ?? null;
   const [valor, setValor] = useState(
@@ -142,11 +147,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           : o.periodo_preferido === "horario_especifico"
             ? o.horario_preferido?.slice(0, 5) || "Horário específico"
             : "A combinar";
-
-  const isApoioFemininoVacancy =
-    profApoioFeminino &&
-    (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
-    !(o as any).apoio_profissional_id;
 
   const handleEnviar = async () => {
     const v = parseFloat(valor.replace(",", "."));
