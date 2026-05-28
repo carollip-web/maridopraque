@@ -260,24 +260,7 @@ export function AdminClientes() {
             <FileDown className="h-4 w-4" /> Exportar Base
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-10 rounded-full gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold px-5 transition-all shadow-sm"
-            onClick={async () => {
-              const count = filtered.length;
-              if (count === 0) return;
-              const confirmText = prompt(
-                `ATENÇÃO: Você está prestes a remover PERMANENTEMENTE os ${count} clientes selecionados.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`,
-              );
-              if (confirmText === "EXCLUIR TUDO") {
-                setSelectedIds(filtered.map((c) => c.id));
-                setTimeout(() => handleBulkDelete(), 100);
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4" /> Excluir Selecionados
-          </Button>
+
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

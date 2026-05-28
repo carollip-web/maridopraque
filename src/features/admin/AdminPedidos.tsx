@@ -456,24 +456,7 @@ export function AdminPedidos() {
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} /> Atualizar
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 rounded-full gap-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 border-red-100 font-bold px-4 transition-all shadow-sm"
-              onClick={async () => {
-                const count = filtered.length;
-                if (count === 0) return;
-                const confirmText = prompt(
-                  `ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE os ${count} pedidos selecionados.\n\nPara confirmar, digite "EXCLUIR TUDO" abaixo:`,
-                );
-                if (confirmText === "EXCLUIR TUDO") {
-                  setSelectedIds(filtered.map((o) => o.id));
-                  setTimeout(() => handleBulkDelete(), 100);
-                }
-              }}
-            >
-              <Trash2 className="h-4 w-4" /> Excluir Selecionados
-            </Button>
+
           </div>
         </div>
       </div>
