@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
   IdCard,
-  Banknote,
   Users,
   MapPin,
   Save,
@@ -29,10 +28,6 @@ const profileSchema = z.object({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   bio: z.string().optional(),
   cidade: z.string().optional(),
-  chave_pix: z.string().optional(),
-  pix_key_type: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"]).optional(),
-  pix_holder_name: z.string().optional(),
-  pix_holder_document: z.string().optional(),
   cpf: z.string().min(14, "CPF obrigatório"),
   cnpj: z.string().min(18, "CNPJ obrigatório"),
   anos_experiencia: z.coerce.number().min(0).optional(),
@@ -49,10 +44,6 @@ type ProfissionalPerfilData = {
   bio: string | null;
   cidade: string | null;
   especialidades: string[] | null;
-  chave_pix?: string | null;
-  pix_key_type?: string | null;
-  pix_holder_name?: string | null;
-  pix_holder_document?: string | null;
   cpf?: string | null;
   cnpj?: string | null;
   anos_experiencia?: number | null;
@@ -163,10 +154,6 @@ export function ProfissionalConfiguracoes() {
       whatsapp: profile?.whatsapp ?? "",
       bio: "",
       cidade: "",
-      chave_pix: "",
-      pix_key_type: undefined,
-      pix_holder_name: "",
-      pix_holder_document: "",
       cpf: "",
       cnpj: "",
       anos_experiencia: 0,
@@ -185,12 +172,6 @@ export function ProfissionalConfiguracoes() {
       whatsapp: profile.whatsapp ? fmtPhone(profile.whatsapp) : "",
       bio: profissionalPerfil?.bio ?? "",
       cidade: profissionalPerfil?.cidade ?? "",
-      chave_pix: profissionalPerfil?.chave_pix ?? "",
-      pix_key_type: (profissionalPerfil?.pix_key_type as any) ?? undefined,
-      pix_holder_name: profissionalPerfil?.pix_holder_name ?? "",
-      pix_holder_document: profissionalPerfil?.pix_holder_document
-        ? fmtDoc(profissionalPerfil.pix_holder_document)
-        : "",
       cpf: profissionalPerfil?.cpf ? fmtCpf(profissionalPerfil.cpf) : "",
       cnpj: profissionalPerfil?.cnpj ? fmtCnpj(profissionalPerfil.cnpj) : "",
       anos_experiencia: profissionalPerfil?.anos_experiencia ?? 0,
@@ -250,11 +231,6 @@ export function ProfissionalConfiguracoes() {
         cidade: values.cidade || null,
         lat: geo?.lat ?? null,
         lng: geo?.lng ?? null,
-        chave_pix: values.chave_pix || null,
-        pix_key: values.chave_pix || null,
-        pix_key_type: values.pix_key_type || null,
-        pix_holder_name: values.pix_holder_name || null,
-        pix_holder_document: values.pix_holder_document || null,
         cpf: values.cpf ? values.cpf.replace(/\D/g, "") : null,
         cnpj: values.cnpj ? values.cnpj.replace(/\D/g, "") : null,
         anos_experiencia: Number(values.anos_experiencia ?? 0),
@@ -263,7 +239,6 @@ export function ProfissionalConfiguracoes() {
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
         oferece_apoio_feminino: !!values.oferece_apoio_feminino,
-        pix_dados_confirmados: true,
         updated_at: new Date().toISOString(),
       };
 
@@ -362,7 +337,6 @@ export function ProfissionalConfiguracoes() {
   const sections = [
     { id: "basico", label: "Perfil básico", icon: User },
     { id: "documentos", label: "Documentos", icon: IdCard },
-    { id: "pix", label: "Dados Pix", icon: Banknote },
     { id: "mercadopago", label: "Mercado Pago", icon: Wallet },
     { id: "atendimento", label: "Atendimento", icon: MapPin },
     { id: "compatibilidade", label: "Compatibilidade", icon: Users },
@@ -583,68 +557,6 @@ export function ProfissionalConfiguracoes() {
                 }
                 className={`${inputBase} ${errors.cnpj ? inputErr : inputOk}`}
                 placeholder="00.000.000/0000-00"
-                inputMode="numeric"
-              />
-            </Field>
-          </div>
-        </section>
-
-        {/* Seção: Pix */}
-        <section
-          id="sec-pix"
-          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
-        >
-          <SectionTitle
-            icon={Banknote}
-            title="Dados Pix para repasse"
-            hint="Confira com cuidado — usamos exatamente esses dados para te pagar."
-          />
-
-          <div className="grid gap-5 sm:grid-cols-2 mt-6">
-            <Field label="Tipo de chave" error={errors.pix_key_type?.message}>
-              <select
-                {...register("pix_key_type")}
-                className={`${inputBase} ${errors.pix_key_type ? inputErr : inputOk}`}
-              >
-                <option value="">Selecione...</option>
-                <option value="CPF">CPF</option>
-                <option value="CNPJ">CNPJ</option>
-                <option value="EMAIL">E-mail</option>
-                <option value="PHONE">Telefone</option>
-                <option value="RANDOM">Chave aleatória</option>
-              </select>
-            </Field>
-
-            <Field label="Chave Pix" error={errors.chave_pix?.message}>
-              <input
-                {...register("chave_pix")}
-                className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
-                placeholder="Sua chave Pix"
-              />
-            </Field>
-
-            <Field
-              label="Nome completo do titular"
-              error={errors.pix_holder_name?.message}
-            >
-              <input
-                {...register("pix_holder_name")}
-                className={`${inputBase} ${errors.pix_holder_name ? inputErr : inputOk}`}
-                placeholder="Nome como está no banco"
-              />
-            </Field>
-
-            <Field
-              label="CPF/CNPJ do titular"
-              error={errors.pix_holder_document?.message}
-            >
-              <input
-                value={watch("pix_holder_document") || ""}
-                onChange={(e) =>
-                  setValue("pix_holder_document", fmtDoc(e.target.value), { shouldDirty: true })
-                }
-                className={`${inputBase} ${errors.pix_holder_document ? inputErr : inputOk}`}
-                placeholder="000.000.000-00"
                 inputMode="numeric"
               />
             </Field>
