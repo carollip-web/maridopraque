@@ -845,13 +845,13 @@ export type Database = {
           service_id: string | null
           service_name: string
           status: Database["public"]["Enums"]["orcamento_status"]
+          status_apoio: string | null
           taxa_material: number
           tipo_atendimento: string | null
           updated_at: string
           valor: number | null
           valor_apoio_feminino: number | null
           valor_servico: number | null
-          status_apoio: string | null
         }
         Insert: {
           apoio_profissional_id?: string | null
@@ -882,13 +882,13 @@ export type Database = {
           service_id?: string | null
           service_name: string
           status?: Database["public"]["Enums"]["orcamento_status"]
+          status_apoio?: string | null
           taxa_material?: number
           tipo_atendimento?: string | null
           updated_at?: string
           valor?: number | null
           valor_apoio_feminino?: number | null
           valor_servico?: number | null
-          status_apoio?: string | null
         }
         Update: {
           apoio_profissional_id?: string | null
@@ -919,25 +919,18 @@ export type Database = {
           service_id?: string | null
           service_name?: string
           status?: Database["public"]["Enums"]["orcamento_status"]
+          status_apoio?: string | null
           taxa_material?: number
           tipo_atendimento?: string | null
           updated_at?: string
           valor?: number | null
           valor_apoio_feminino?: number | null
           valor_servico?: number | null
-          status_apoio?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "fk_orc_cliente"
             columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orcamentos_apoio_profissional_id_fkey"
-            columns: ["apoio_profissional_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -954,6 +947,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_apoio_profissional_id_fkey"
+            columns: ["apoio_profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
