@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { QrCode, CreditCard, Wallet, ShieldCheck } from "lucide-react";
+import { CreditCard, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/pagamento")({
   component: Pagamento,
@@ -21,32 +21,23 @@ function Pagamento() {
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <div className="rounded-3xl border border-border bg-card p-8 text-center transition hover:shadow-soft">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10 text-brand mb-6">
-            <QrCode className="h-7 w-7" />
-          </div>
-          <h3 className="text-xl font-bold">Pix</h3>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Pagamento instantâneo com 5% de desconto no valor total do serviço.
-          </p>
-        </div>
+      <div className="grid gap-8 md:grid-cols-2 max-w-2xl mx-auto">
         <div className="rounded-3xl border border-border bg-card p-8 text-center transition hover:shadow-soft">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10 text-brand mb-6">
             <CreditCard className="h-7 w-7" />
           </div>
-          <h3 className="text-xl font-bold">Cartão de Crédito</h3>
+          <h3 className="text-xl font-bold">Cartão de Crédito ou Débito</h3>
           <p className="mt-3 text-sm text-muted-foreground">
-            Parcele em até 10x sem juros. Aceitamos Visa, Master, Elo e Amex.
+            Pague com cartão em até 12x. Processado com segurança pelo Mercado Pago.
           </p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-8 text-center transition hover:shadow-soft">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10 text-brand mb-6">
-            <Wallet className="h-7 w-7" />
+            <ShieldCheck className="h-7 w-7" />
           </div>
-          <h3 className="text-xl font-bold">Débito</h3>
+          <h3 className="text-xl font-bold">Pagamento Seguro</h3>
           <p className="mt-3 text-sm text-muted-foreground">
-            Pagamento presencial através de maquininha moderna no local do serviço.
+            Você só é cobrado após aceitar a proposta do profissional. Sem surpresas.
           </p>
         </div>
       </div>
@@ -55,8 +46,7 @@ function Pagamento() {
         <ShieldCheck className="h-12 w-12 mx-auto mb-6" />
         <h2 className="text-3xl font-bold md:text-4xl">Segurança total no pagamento.</h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg opacity-90">
-          Você só paga quando o serviço estiver concluído e aprovado por você. Aceitamos Pix com
-          desconto ou cartão com parcelamento, tudo direto com o profissional no local.
+          Você só paga quando aceitar a proposta do profissional. O pagamento é processado via Mercado Pago com proteção antifraude. Em caso de problema, nosso suporte está disponível.
         </p>
         <div className="mt-10 flex justify-center">
           <a
