@@ -16,9 +16,15 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
+}
+
 // BTG desativado temporariamente — não homologado em produção, aguardando split MP
 // import { QRCodeSVG } from "qrcode.react";
 
@@ -554,7 +560,8 @@ function Checkout() {
                 </div>
               </div>
             )}
-            */}
+
+
 
             {paid && (
               <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
