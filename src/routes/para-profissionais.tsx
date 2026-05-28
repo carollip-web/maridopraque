@@ -69,10 +69,9 @@ function ParaProfissionaisPage() {
   const [preCadLoading, setPreCadLoading] = useState(false);
   const [preCadForm, setPreCadForm] = useState({
     nome: "",
+    email: "",
+    senha: "",
     telefone: "",
-    cidade: "",
-    especialidade: "Elétrica",
-    oferece_apoio_feminino: apoio === true,
   });
 
   useEffect(() => {
@@ -85,19 +84,29 @@ function ParaProfissionaisPage() {
     e.preventDefault();
     setPreCadLoading(true);
     try {
-      const payload = {
-        nome: preCadForm.nome,
-        telefone: preCadForm.telefone.replace(/\D/g, ""),
-        cidade: preCadForm.cidade,
-        especialidade_principal: preCadForm.especialidade,
-        oferece_apoio_feminino: preCadForm.oferece_apoio_feminino,
-      };
-      // Allow public insert to profissionais_pre_cadastro
-      const { error } = await (supabase as any).from("profissionais_pre_cadastro").insert(payload);
+      const { data, error } = await supabase.auth.signUp({
+        email: preCadForm.email,
+        password: preCadForm.senha,
+        options: {
+          data: {
+            nome: preCadForm.nome,
+            whatsapp: preCadForm.telefone.replace(/\D/g, ""),
+            is_profissional: 'true',
+          },
+        },
+      });
       if (error) throw error;
-      toast.success("Interesse registrado! Entraremos em contato via WhatsApp em breve.");
+      toast.success("Conta criada! Redirecionando para o formulário de cadastro...");
       setPreCadastroOpen(false);
-      setPreCadForm({ nome: "", telefone: "", cidade: "", especialidade: "Elétrica", oferece_apoio_feminino: false });
+      
+      // Auto-login se a sessão vier (se confirm email não for obrigatório)
+      if (data.session) {
+        setTimeout(() => {
+          window.location.href = `/profissional-cadastro${apoio ? "?apoio=true" : ""}`;
+        }, 1000);
+      } else {
+        toast.info("Confirme seu e-mail e depois faça login.");
+      }
     } catch (err: any) {
       toast.error("Erro ao enviar pré-cadastro", { description: err.message });
     } finally {
@@ -412,10 +421,9 @@ function ParaProfissionaisPage() {
       <Dialog open={preCadastroOpen} onOpenChange={setPreCadastroOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Quero ser parceiro!</DialogTitle>
+            <DialogTitle>Crie sua conta profissional!</DialogTitle>
             <DialogDescription>
-              Deixe seus contatos. Nossa equipe falará com você no WhatsApp em breve para explicar a
-              plataforma e liberar seu cadastro.
+              Preencha os dados abaixo para criar sua conta. Você será redirecionado para enviar sua documentação e concluir o cadastro.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePreCadastroSubmit} className="space-y-4 mt-2">
@@ -446,61 +454,34 @@ function ParaProfissionaisPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-semibold">Cidade de atuação</label>
+              <label className="text-sm font-semibold">E-mail</label>
               <input
                 required
+                type="email"
                 className="input-field"
-                placeholder="Ex: São Paulo - SP"
-                value={preCadForm.cidade}
-                onChange={(e) => setPreCadForm({ ...preCadForm, cidade: e.target.value })}
+                placeholder="seu@email.com"
+                value={preCadForm.email}
+                onChange={(e) => setPreCadForm({ ...preCadForm, email: e.target.value })}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-semibold">Especialidade Principal</label>
-              <select
+              <label className="text-sm font-semibold">Crie uma senha</label>
+              <input
                 required
+                type="password"
+                minLength={6}
                 className="input-field"
-                value={preCadForm.especialidade}
-                onChange={(e) => {
-                  const especialidade = e.target.value;
-                  setPreCadForm({
-                    ...preCadForm,
-                    especialidade,
-                    ...(especialidade === "Apoio Feminino" ? { oferece_apoio_feminino: true } : {})
-                  });
-                }}
-              >
-                <option value="Elétrica">Elétrica</option>
-                <option value="Hidráulica">Hidráulica</option>
-                <option value="Montagem de Móveis">Montagem de Móveis</option>
-                <option value="Pintura">Pintura</option>
-                <option value="Chaveiro">Chaveiro</option>
-                <option value="Reformas e Alvenaria">Reformas e Alvenaria</option>
-                <option value="Limpeza">Limpeza</option>
-                <option value="Apoio Feminino">Apoio Feminino</option>
-                <option value="Outro">Outro</option>
-              </select>
+                placeholder="No mínimo 6 caracteres"
+                value={preCadForm.senha}
+                onChange={(e) => setPreCadForm({ ...preCadForm, senha: e.target.value })}
+              />
             </div>
-            {preCadForm.especialidade !== "Apoio Feminino" && (
-              <div className="flex items-center gap-2 mt-2">
-                <input
-                  type="checkbox"
-                  id="apoioFeminino"
-                  checked={preCadForm.oferece_apoio_feminino}
-                  onChange={(e) => setPreCadForm({ ...preCadForm, oferece_apoio_feminino: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                />
-                <label htmlFor="apoioFeminino" className="text-sm font-medium">
-                  Ofereço apoio feminino (atendimento por profissional mulher)
-                </label>
-              </div>
-            )}
             <Button
               type="submit"
               disabled={preCadLoading}
               className="w-full font-bold bg-brand text-brand-foreground mt-4"
             >
-              {preCadLoading ? "Enviando..." : "Enviar interesse"}
+              {preCadLoading ? "Criando conta..." : "Criar conta profissional"}
             </Button>
           </form>
         </DialogContent>
