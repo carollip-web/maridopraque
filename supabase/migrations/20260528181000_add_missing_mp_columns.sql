@@ -1,0 +1,6 @@
+ALTER TABLE public.profissional_perfil
+ADD COLUMN IF NOT EXISTS mp_oauth_state TEXT,
+ADD COLUMN IF NOT EXISTS mp_oauth_state_expires_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS mp_public_key TEXT,
+ADD COLUMN IF NOT EXISTS mp_scope TEXT,
+ADD COLUMN IF NOT EXISTS mp_expires_at TIMESTAMPTZ;
