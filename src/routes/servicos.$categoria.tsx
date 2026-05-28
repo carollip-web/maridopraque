@@ -44,7 +44,7 @@ const categorias: Record<string, CategoryMeta> = {
     beneficios: [
       "Ferramentas próprias e bucha certa para cada parede",
       "Sem furo errado: marcação prévia e nivelamento a laser",
-      "Atendimento no mesmo dia em toda a cidade",
+      "Atendimento no mesmo dia em Copacabana e Ipanema",
     ],
     observacoesPadrao: [
       "Tenha o manual ou link do produto à mão para conferência rápida.",
