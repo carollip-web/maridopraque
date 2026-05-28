@@ -109,6 +109,9 @@ serve(async (req) => {
             "Aguarde a conexão ou entre em contato com o suporte.",
         },
         400,
+      );
+    }
+
     // Verificar expiração do token OAuth do profissional
     if (
       profPerfil.mp_expires_at &&
