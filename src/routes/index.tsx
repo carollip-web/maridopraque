@@ -160,17 +160,17 @@ const testimonials = [
   {
     name: "Camila R.",
     text: "Pedi atendimento com apoio feminino e me senti super segura.",
-    role: "Vila Mariana",
+    role: "Copacabana",
   },
   {
     name: "Rafael M.",
     text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.",
-    role: "Pinheiros",
+    role: "Ipanema",
   },
   {
     name: "Júlia A.",
     text: "Profissional pontual, educada e caprichosa. Virou meu contato fixo.",
-    role: "Moema",
+    role: "Copacabana",
   },
 ];
 
@@ -183,7 +183,7 @@ function Index() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-              Atendendo hoje em toda a cidade
+              Atendendo hoje em Copacabana e Ipanema
             </span>
             <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight md:text-[4rem]">
               Você não precisa de marido.{" "}
