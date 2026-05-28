@@ -580,7 +580,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 Investimento
               </p>
               <p className="text-xl font-black text-slate-800">
-                {isApoioFemininoVacancy 
+                {isApoioFemininoRole 
                   ? `R$ ${Number((o as any).valor_apoio_feminino || 0).toFixed(2)}` 
                   : (initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir")}
               </p>

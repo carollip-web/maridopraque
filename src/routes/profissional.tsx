@@ -186,19 +186,32 @@ function ProfissionalArea() {
     const pagos = meus.filter((o) => o.status === "pago" || o.status === "concluido");
     const pendentesPgto = meus.filter((o) => o.status === "aprovado");
 
-    const ganhos = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
-    const receber = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
-    const ticket = pagos.length > 0 ? ganhos / pagos.length : 0;
+    const meusApoio = list.filter((o) => (o as any).apoio_profissional_id === user?.id);
+    const pagosApoio = meusApoio.filter((o) => o.status === "pago" || o.status === "concluido");
+    const pendentesPgtoApoio = meusApoio.filter((o) => o.status === "aprovado");
+
+    const ganhosNormais = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    const ganhosApoio = pagosApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+    const ganhos = ganhosNormais + ganhosApoio;
+
+    const receberNormais = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    const receberApoio = pendentesPgtoApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+    const receber = receberNormais + receberApoio;
+
+    const ticket = (pagos.length + pagosApoio.length) > 0 ? ganhos / (pagos.length + pagosApoio.length) : 0;
 
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const ganhosM = pagos
       .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
-      .reduce((acc, o) => acc + Number(o.valor || 0), 0);
+      .reduce((acc, o) => acc + Number(o.valor || 0), 0) +
+      pagosApoio
+        .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
+        .reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
     setGanhosMes(ganhosM);
 
-    const enviadasOuFinalizadas = meus.filter((o) =>
+    const enviadasOuFinalizadas = [...meus, ...meusApoio].filter((o) =>
       ["enviado", "aprovado", "pago", "concluido", "recusado"].includes(o.status),
     );
     const aceitas = enviadasOuFinalizadas.filter((o) => o.status !== "recusado");
@@ -208,7 +221,7 @@ function ProfissionalArea() {
         : "—",
     );
 
-    const enviados = meus.filter((o) =>
+    const enviados = [...meus, ...meusApoio].filter((o) =>
       ["enviado", "aprovado", "pago", "concluido"].includes(o.status),
     );
     if (enviados.length > 0) {
@@ -220,7 +233,10 @@ function ProfissionalArea() {
       setSlaMedioH(horas < 1 ? `${Math.round(horas * 60)} min` : `${horas.toFixed(1)} h`);
     }
 
-    setTotalConcluidos(meus.filter((o) => o.status === "concluido").length);
+    setTotalConcluidos(
+      meus.filter((o) => o.status === "concluido").length +
+      meusApoio.filter((o) => o.status === "concluido").length
+    );
     setGanhosTotais(ganhos);
     setAReceber(receber);
     setTicketMedio(ticket);
