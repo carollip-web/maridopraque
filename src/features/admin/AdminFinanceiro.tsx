@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -41,30 +41,38 @@ export function AdminFinanceiro() {
   const [processandoId, setProcessandoId] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
-    // legacy repasses para compatibilidade com tela existente
-    const { data: repasses } = await supabase
-      .from("repasses_profissionais")
-      .select(
-        `id, status, valor_bruto, valor_comissao_marketplace, valor_liquido, created_at,
-         orcamentos ( service_name, data_pagamento )`,
-      )
+    // Nova consulta para pagamentos do Mercado Pago (Split 1:1)
+    const { data: pgs } = await supabase
+      .from("pagamentos")
+      .select(`
+        id, status, valor_total, created_at, gateway, metadata,
+        orcamentos ( service_name, data_pagamento )
+      `)
+      .eq("gateway", "mercado_pago")
       .order("created_at", { ascending: false })
       .limit(200);
-    const list = repasses || [];
-    const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_bruto || 0), 0);
-    const lucroPlataforma = list.reduce(
-      (s: number, r: any) => s + Number(r.valor_comissao_marketplace || 0),
-      0,
-    );
+
+    const list = pgs || [];
+    const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+    const lucroPlataforma = list
+      .filter((r: any) => r.status === "paid" || r.status === "approved")
+      .reduce((s: number, r: any) => {
+        const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
+        return s + Number(fee);
+      }, 0);
     const saldoPendenteBtg = list
-      .filter((r: any) => ["pendente", "aprovado", "processando"].includes(r.status))
-      .reduce((s: number, r: any) => s + Number(r.valor_liquido || 0), 0);
+      .filter((r: any) => r.status === "pending")
+      .reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+
     const pagos = list.map((r: any) => ({
       id: r.id,
       service_name: r.orcamentos?.service_name || "Serviço",
       data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
-      valor: r.valor_bruto,
+      valor: r.valor_total,
+      fee: (r.metadata as any)?.marketplace_fee_amount || 0,
+      status: r.status,
     }));
+    
     setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, pagos });
 
     // novo ledger (pagamento_splits)
@@ -164,7 +172,7 @@ export function AdminFinanceiro() {
           to="/admin-repasses"
           className="inline-flex h-11 items-center justify-center rounded-xl bg-brand px-6 text-sm font-bold text-white shadow-md shadow-brand/20 transition hover:-translate-y-0.5 hover:bg-brand/90 gap-2"
         >
-          <Landmark className="h-4 w-4" /> Repasses Pix BTG
+          <CreditCard className="h-4 w-4" /> Pagamentos MP
         </Link>
       </div>
 
@@ -191,10 +199,10 @@ export function AdminFinanceiro() {
               </div>
             </div>
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-brand">
-              <p className="text-sm text-slate-500 mb-1">Saldo Parado BTG (A Repassar)</p>
+              <p className="text-sm text-slate-500 mb-1">Pagamentos Pendentes (MP)</p>
               <h3 className="text-3xl font-bold">R$ {data.saldoPendenteBtg.toFixed(2)}</h3>
               <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
-                <Clock className="h-3 w-3" /> Aguardando transferência Pix
+                <Clock className="h-3 w-3" /> Aguardando pagamento
               </div>
             </div>
           </div>
@@ -213,7 +221,16 @@ export function AdminFinanceiro() {
                   className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-0 last:pb-0"
                 >
                   <div>
-                    <p className="text-sm font-bold">{f.service_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold">{f.service_name}</p>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                        f.status === 'paid' || f.status === 'approved' ? 'bg-emerald-100 text-emerald-700'
+                        : f.status === 'pending' ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-700'
+                      }`}>
+                        {f.status}
+                      </span>
+                    </div>
                     <p className="text-xs text-slate-400">
                       #{f.id.slice(0, 8)} ·{" "}
                       {f.data_pagamento
@@ -221,7 +238,12 @@ export function AdminFinanceiro() {
                         : "—"}
                     </p>
                   </div>
-                  <p className="font-bold text-slate-900">+ R$ {Number(f.valor || 0).toFixed(2)}</p>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">+ R$ {Number(f.valor || 0).toFixed(2)}</p>
+                    {f.fee > 0 && (
+                      <p className="text-[10px] text-brand font-medium mt-0.5">Fee: R$ {Number(f.fee).toFixed(2)}</p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
