@@ -92,14 +92,7 @@ function LoginPage() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/redirect` },
-    });
-    if (error) setError(error.message);
-  };
+
 
   return (
     <div className="min-h-[calc(100-64px)] flex items-center justify-center p-4 py-20 bg-slate-50/50">
@@ -231,22 +224,9 @@ function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              <span className="bg-white px-4">Ou continue com</span>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            className="w-full flex h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-white hover:bg-muted transition-colors font-medium text-sm"
-          >
-            Continuar com Google
-          </button>
+
+
         </div>
 
         <p className="text-center mt-8 text-sm text-muted-foreground">
