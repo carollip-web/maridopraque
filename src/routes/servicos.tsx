@@ -67,7 +67,7 @@ const categorias: CategoryMeta[] = [
     beneficios: [
       "Ferramenta própria e bucha certa pra cada parede",
       "Marcação prévia e nível a laser, sem furo errado",
-      "Atendimento no mesmo dia em toda a cidade",
+      "Atendimento no mesmo dia em Copacabana e Ipanema",
     ],
     observacoesPadrao: [
       "Tenha o manual ou link do produto à mão para conferência rápida.",
