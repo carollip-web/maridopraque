@@ -17,7 +17,7 @@ export function ProfileCompletenessCard() {
       if (!user) return;
       const { data: perfil } = await supabase
         .from("profissional_perfil")
-        .select("bio, cidade, foto_url, especialidades, raio_atendimento_km, lat")
+        .select("bio, cidade, foto_url, especialidades, raio_atendimento_km, lat, mp_user_id")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!alive) return;
@@ -37,6 +37,11 @@ export function ProfileCompletenessCard() {
           done: !!perfil?.raio_atendimento_km && perfil.raio_atendimento_km > 0,
         },
         { key: "esp", label: "Especialidades", done: (perfil?.especialidades?.length ?? 0) > 0 },
+        {
+          key: "mp",
+          label: "Mercado Pago conectado",
+          done: !!(perfil as any)?.mp_user_id,
+        },
       ];
       setItems(list);
       setLoaded(true);
