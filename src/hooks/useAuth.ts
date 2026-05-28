@@ -65,6 +65,7 @@ interface UserProfile {
   nome: string;
   email: string | null;
   whatsapp: string | null;
+  avatar_url: string | null;
 }
 
 interface AuthState {
@@ -107,7 +108,7 @@ export function useAuth() {
       setState((s) => ({
         ...s,
         profile: profile
-          ? { id: profile.id, nome: profile.nome, email: profile.email, whatsapp: profile.whatsapp }
+          ? { id: profile.id, nome: profile.nome, email: profile.email, whatsapp: profile.whatsapp, avatar_url: profile.avatar_url }
           : null,
         roles: roleList,
         adminLevel,
@@ -178,7 +179,7 @@ export function useAuth() {
     isReadOnly,
     allowedTabs,
     // legacy compatibility
-    profilePhoto: null as string | null,
+    profilePhoto: state.profile?.avatar_url ?? null,
     userData: {
       name: state.profile?.nome ?? "",
       whatsapp: state.profile?.whatsapp ?? "",
@@ -189,7 +190,49 @@ export function useAuth() {
     logout: async () => {
       await supabase.auth.signOut();
     },
-    updatePhoto: (_: string) => {},
+    updatePhoto: async (base64String: string) => {
+      if (!state.user) return;
+      try {
+        const fetchResponse = await fetch(base64String);
+        const blob = await fetchResponse.blob();
+        
+        const ext = blob.type.split("/")[1] || "jpg";
+        const fileName = `${state.user.id}/avatar-${Date.now()}.${ext}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, blob, { upsert: true });
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+          
+        const publicUrl = publicUrlData.publicUrl;
+        
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ avatar_url: publicUrl })
+          .eq("id", state.user.id);
+          
+        if (updateError) throw updateError;
+        
+        if (state.roles.includes("profissional")) {
+          await supabase
+            .from("profissional_perfil")
+            .update({ foto_url: publicUrl })
+            .eq("user_id", state.user.id);
+        }
+        
+        setState((s) => ({
+          ...s,
+          profile: s.profile ? { ...s.profile, avatar_url: publicUrl } : null
+        }));
+      } catch (err: any) {
+        console.error("[useAuth] Erro ao atualizar foto:", err);
+      }
+    },
     updateUserData: (_: unknown) => {},
   };
 }

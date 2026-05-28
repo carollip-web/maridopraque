@@ -328,7 +328,11 @@ export function ProfissionalConfiguracoes() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => updatePhoto(reader.result as string);
+      reader.onloadend = async () => {
+        const toastId = toast.loading("Enviando foto...");
+        await updatePhoto(reader.result as string);
+        toast.success("Foto atualizada!", { id: toastId });
+      };
       reader.readAsDataURL(file);
     }
   };

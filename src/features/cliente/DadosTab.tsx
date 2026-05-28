@@ -128,7 +128,14 @@ export function DadosTab() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => updatePhoto(reader.result as string);
+      reader.onloadend = async () => {
+        // dynamic import of toast since it's lazy in this file or we can use toastError logic
+        import("sonner").then(async (m) => {
+          const toastId = m.toast.loading("Enviando foto...");
+          await updatePhoto(reader.result as string);
+          m.toast.success("Foto atualizada!", { id: toastId });
+        });
+      };
       reader.readAsDataURL(file);
     }
   };
