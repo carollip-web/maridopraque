@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { aceitarProposta, cancelarPedido } from "@/lib/orcamentos.functions";
+import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,24 +54,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const queryClient = useQueryClient();
   const aceitarPropostaFn = useServerFn(aceitarProposta);
   const cancelarPedidoFn = useServerFn(cancelarPedido);
+  const concluirPedidoFn = useServerFn(concluirPedido);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
 
   const handleCompleteOrder = async (orderId: string) => {
-    if (
-      !confirm(
-        "Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.",
-      )
-    )
-      return;
+    if (!confirm("Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.")) return;
+    if (!session?.access_token) { toast.error("Sessão expirada. Faça login novamente."); return; }
     setIsCompleting(orderId);
     try {
-      const { error } = await supabase
-        .from("orcamentos")
-        .update({ status: "concluido" })
-        .eq("id", orderId);
-      if (error) throw error;
+      const { ok, error: serverError } = await concluirPedidoFn({
+        data: { orcamentoId: orderId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!ok) throw new Error(serverError || "Erro ao concluir pedido.");
       toast.success("Serviço marcado como concluído!");
       queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
       await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });

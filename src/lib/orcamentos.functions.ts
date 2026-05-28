@@ -771,3 +771,31 @@ export const criarCenarioTestePagamento = createServerFn({ method: "POST" })
 
     return { ok: true, orcamentoId: orc.id };
   });
+
+export const concluirPedido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => cancelarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: orc, error: e0 } = await supabase
+      .from("orcamentos")
+      .select("id, cliente_id, status")
+      .eq("id", data.orcamentoId)
+      .single();
+
+    if (e0 || !orc) return { ok: false, error: "Pedido não encontrado." };
+    if (orc.cliente_id !== userId) return { ok: false, error: "Sem permissão." };
+    if (orc.status !== "pago") {
+      return { ok: false, error: "Só é possível concluir pedidos com pagamento confirmado." };
+    }
+
+    const { error: eu } = await supabase
+      .from("orcamentos")
+      .update({ status: "concluido" })
+      .eq("id", data.orcamentoId);
+
+    if (eu) return { ok: false, error: eu.message };
+    return { ok: true };
+  });
+
