@@ -34,7 +34,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
 import { Route as MpCallbackRouteImport } from './routes/mp.callback'
-import { Route as LoginProfissionalRouteImport } from './routes/login.profissional'
+import { Route as LoginProfissionalRouteImport } from './routes/login_.profissional'
 import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
 import { Route as BtgCallbackRouteImport } from './routes/btg.callback'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
@@ -166,9 +166,9 @@ const MpCallbackRoute = MpCallbackRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
-  id: '/profissional',
-  path: '/profissional',
-  getParentRoute: () => LoginRoute,
+  id: '/login_/profissional',
+  path: '/login/profissional',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSimularRoute = CheckoutSimularRouteImport.update({
   id: '/simular',
@@ -203,7 +203,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
   '/equipe': typeof EquipeRoute
-  '/login': typeof LoginRouteWithChildren
+  '/login': typeof LoginRoute
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -235,7 +235,7 @@ export interface FileRoutesByTo {
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
   '/equipe': typeof EquipeRoute
-  '/login': typeof LoginRouteWithChildren
+  '/login': typeof LoginRoute
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -268,7 +268,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
   '/equipe': typeof EquipeRoute
-  '/login': typeof LoginRouteWithChildren
+  '/login': typeof LoginRoute
   '/materiais-admin': typeof MateriaisAdminRoute
   '/orcamentos': typeof OrcamentosRoute
   '/pagamento': typeof PagamentoRoute
@@ -283,7 +283,7 @@ export interface FileRoutesById {
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
-  '/login/profissional': typeof LoginProfissionalRoute
+  '/login_/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
@@ -381,7 +381,7 @@ export interface FileRouteTypes {
     | '/auth/redirect'
     | '/btg/callback'
     | '/checkout/simular'
-    | '/login/profissional'
+    | '/login_/profissional'
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
@@ -399,7 +399,7 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   ConviteRoute: typeof ConviteRoute
   EquipeRoute: typeof EquipeRoute
-  LoginRoute: typeof LoginRouteWithChildren
+  LoginRoute: typeof LoginRoute
   MateriaisAdminRoute: typeof MateriaisAdminRoute
   OrcamentosRoute: typeof OrcamentosRoute
   PagamentoRoute: typeof PagamentoRoute
@@ -413,6 +413,7 @@ export interface RootRouteChildren {
   ServicosAdminRoute: typeof ServicosAdminRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
   BtgCallbackRoute: typeof BtgCallbackRoute
+  LoginProfissionalRoute: typeof LoginProfissionalRoute
   MpCallbackRoute: typeof MpCallbackRoute
 }
 
@@ -593,12 +594,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MpCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login/profissional': {
-      id: '/login/profissional'
-      path: '/profissional'
+    '/login_/profissional': {
+      id: '/login_/profissional'
+      path: '/login/profissional'
       fullPath: '/login/profissional'
       preLoaderRoute: typeof LoginProfissionalRouteImport
-      parentRoute: typeof LoginRoute
+      parentRoute: typeof rootRouteImport
     }
     '/checkout/simular': {
       id: '/checkout/simular'
@@ -643,16 +644,6 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
   CheckoutRouteChildren,
 )
 
-interface LoginRouteChildren {
-  LoginProfissionalRoute: typeof LoginProfissionalRoute
-}
-
-const LoginRouteChildren: LoginRouteChildren = {
-  LoginProfissionalRoute: LoginProfissionalRoute,
-}
-
-const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
-
 interface ProfissionaisRouteChildren {
   ProfissionaisPerfilSlugRoute: typeof ProfissionaisPerfilSlugRoute
 }
@@ -689,7 +680,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   ConviteRoute: ConviteRoute,
   EquipeRoute: EquipeRoute,
-  LoginRoute: LoginRouteWithChildren,
+  LoginRoute: LoginRoute,
   MateriaisAdminRoute: MateriaisAdminRoute,
   OrcamentosRoute: OrcamentosRoute,
   PagamentoRoute: PagamentoRoute,
@@ -703,8 +694,18 @@ const rootRouteChildren: RootRouteChildren = {
   ServicosAdminRoute: ServicosAdminRoute,
   AuthRedirectRoute: AuthRedirectRoute,
   BtgCallbackRoute: BtgCallbackRoute,
+  LoginProfissionalRoute: LoginProfissionalRoute,
   MpCallbackRoute: MpCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
