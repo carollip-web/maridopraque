@@ -74,6 +74,24 @@ const USERS: SeedUser[] = [
 ];
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowed = [
+    "https://www.maridopraque.com",
+    "https://maridopraque.com",
+    "https://maridopraque.lovable.app",
+  ];
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : "",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        Vary: "Origin",
+      },
+    });
+  }
+
   const pf = preflight(req);
   if (pf) return pf;
   const originGuard = ensureOrigin(req);
