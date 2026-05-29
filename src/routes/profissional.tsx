@@ -530,7 +530,9 @@ function ProfissionalArea() {
         const isApoioFemininoTarget = 
            profApoioFeminino && 
            (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
-           !(o as any).apoio_profissional_id;
+           !(o as any).apoio_profissional_id &&
+           // Só aparece para a apoio feminino depois que o profissional homem já cotou
+           (o.status === "enviado" || o.status === "aprovado" || o.status === "agendado");
 
         if (profApoioFeminino) {
           if (!isApoioFemininoTarget) return false;
