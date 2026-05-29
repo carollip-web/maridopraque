@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ const TEST_EMAIL_DOMAIN = "teste.maridopraque.local";
 
 export function AdminModoTeste() {
   const qc = useQueryClient();
+  const { session } = useAuth();
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [creatingScenario, setCreatingScenario] = useState(false);
@@ -55,7 +57,10 @@ export function AdminModoTeste() {
   });
 
   const callFn = async (name: string, body: any = {}) => {
-    const { data, error } = await supabase.functions.invoke(name, { body });
+    const { data, error } = await supabase.functions.invoke(name, {
+      body,
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
     if (error) throw new Error(error.message);
     if (data?.error) throw new Error(data.error);
     return data;

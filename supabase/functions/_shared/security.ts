@@ -4,6 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
   "https://maridopraque.lovable.app",
   "https://id-preview--ec1fc676-bf03-4dd3-84db-f84467056948.lovable.app",
+  "https://www.maridopraque.com",
+  "https://maridopraque.com",
 ];
 
 const ALLOWED_ORIGIN_PATTERNS: RegExp[] = [
