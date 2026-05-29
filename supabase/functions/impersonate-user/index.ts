@@ -1,3 +1,4 @@
+// redeploy: 2026-05-29
 // Impersonate user: gera magic link para super_admin entrar como qualquer conta de teste.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { preflight, ensureOrigin, jsonResponse, logAudit } from "../_shared/security.ts";

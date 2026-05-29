@@ -1,3 +1,4 @@
+// redeploy: 2026-05-29
 // Seed test data: cria 1 admin, 3 profissionais, 5 clientes e pedidos cobrindo todos os status.
 // Apenas super_admin pode invocar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";

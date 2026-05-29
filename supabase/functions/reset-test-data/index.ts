@@ -1,3 +1,4 @@
+// redeploy: 2026-05-29
 // Reset test data: apaga todos os usuários e pedidos marcados is_test=true.
 // Apenas super_admin pode invocar.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
