@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
-export const Route = createFileRoute("/login/profissional")({
+export const Route = createFileRoute("/login_/profissional")({
   head: () => ({
     meta: [
       { title: "Acesso Profissional | Marido pra Quê?" },
