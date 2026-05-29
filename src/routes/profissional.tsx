@@ -163,6 +163,35 @@ function ProfissionalArea() {
     if (propsList !== null) {
       setMinhasPropostas(propsList);
     }
+    // Para pedidos de apoio feminino, buscar o valor cotado pelo profissional homem
+    // e calcular o repasse de 30% para exibir no card da apoio feminino
+    const apoioOrcs = (list as any[]).filter(
+      (o) => o.tipo_atendimento === "homem_com_apoio_feminino" && !o.apoio_profissional_id
+    );
+    if (apoioOrcs.length > 0) {
+      const apoioIds = apoioOrcs.map((o) => o.id);
+      const { data: propostasHomem } = await (supabase as any)
+        .from("propostas")
+        .select("orcamento_id, valor_servico, status, created_at")
+        .in("orcamento_id", apoioIds)
+        .order("created_at", { ascending: false });
+      if (propostasHomem) {
+        const valorPorOrc: Record<string, number> = {};
+        for (const p of propostasHomem) {
+          // Pega a proposta mais recente de cada pedido (a do homem que cotou)
+          if (valorPorOrc[p.orcamento_id] == null && p.valor_servico != null) {
+            valorPorOrc[p.orcamento_id] = Number(p.valor_servico);
+          }
+        }
+        list = (list as any[]).map((o) => {
+          if (o.tipo_atendimento === "homem_com_apoio_feminino" && valorPorOrc[o.id] != null) {
+            return { ...o, valor_apoio_feminino: Math.round(valorPorOrc[o.id] * 0.3 * 100) / 100 };
+          }
+          return o;
+        }) as typeof list;
+      }
+    }
+
     setOrcamentos(list);
 
     console.info(
