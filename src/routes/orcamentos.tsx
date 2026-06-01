@@ -615,6 +615,7 @@ function MeusOrcamentos() {
     if (!selServico) return;
 
     let userId = user?.id;
+    let novoIdCriado: string | null = null;
 
     // Visitante: criar conta antes de enviar o pedido
     if (!user) {
@@ -750,6 +751,7 @@ function MeusOrcamentos() {
 
         const novoId = novoOrcamento?.id;
         if (!novoId) throw new Error("Pedido criado sem ID retornado.");
+        novoIdCriado = novoId;
 
         const { data: confirmacao, error: confirmacaoError } = await supabase
           .from("orcamentos")
@@ -824,7 +826,20 @@ function MeusOrcamentos() {
 
       resetForm();
       setShowNew(false);
-      refresh();
+
+      // Se foi um pedido novo (não edição), leva direto para acompanhar o pedido criado
+      if (!editingId && novoIdCriado) {
+        navigate({
+          to: "/cliente",
+          search: (prev: any) => ({
+            ...prev,
+            tab: "pedidos",
+            pedidoId: novoIdCriado,
+          }),
+        });
+      } else {
+        refresh();
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível salvar.");
     } finally {
