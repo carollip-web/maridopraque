@@ -38,6 +38,25 @@ function ClienteArea() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Visitante que acabou de criar conta + pedido: abrir o pedido automaticamente
+  useEffect(() => {
+    if (!user) return;
+    let pendente: string | null = null;
+    try {
+      pendente = window.sessionStorage.getItem("abrir_pedido_apos_login");
+    } catch {}
+    if (pendente) {
+      try {
+        window.sessionStorage.removeItem("abrir_pedido_apos_login");
+      } catch {}
+      navigate({
+        to: "/cliente",
+        search: { tab: "pedidos", pedidoId: pendente } as any,
+        replace: true,
+      });
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!payment) return;
     if (payment === "success") {
