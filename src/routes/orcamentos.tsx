@@ -629,27 +629,36 @@ function MeusOrcamentos() {
         password: guestSenha,
         options: { data: { nome: guestNome.trim() } },
       });
-      if (signUpError) {
-        const jaExiste =
-          signUpError.message?.toLowerCase().includes("registered") ||
-          signUpError.message?.toLowerCase().includes("already");
-        if (jaExiste) {
-          // E-mail já tem conta: tenta logar aqui mesmo, sem sair da página
-          const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
-            email: guestEmail.trim(),
-            password: guestSenha,
-          });
-          if (loginErr) {
-            setSaving(false);
-            toast.error("Esse e-mail já tem conta, mas a senha não confere. Digite a senha correta da sua conta.");
-            return;
-          }
-          userId = loginData.user?.id;
-        } else {
+      // Caso 1: erro explícito de e-mail já registrado
+      const erroJaExiste =
+        signUpError?.message?.toLowerCase().includes("registered") ||
+        signUpError?.message?.toLowerCase().includes("already");
+
+      // Caso 2: signUp "sucesso" mas com identities vazio = e-mail já existe (proteção do Supabase)
+      const usuarioFantasma =
+        !signUpError &&
+        signUpData?.user &&
+        Array.isArray(signUpData.user.identities) &&
+        signUpData.user.identities.length === 0;
+
+      if (signUpError && !erroJaExiste) {
+        setSaving(false);
+        toast.error(`Não foi possível criar a conta: ${signUpError.message}`);
+        return;
+      }
+
+      if (erroJaExiste || usuarioFantasma) {
+        // E-mail já tem conta: loga aqui mesmo com a senha digitada
+        const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+          email: guestEmail.trim(),
+          password: guestSenha,
+        });
+        if (loginErr) {
           setSaving(false);
-          toast.error(`Não foi possível criar a conta: ${signUpError.message}`);
+          toast.error("Esse e-mail já tem conta, mas a senha não confere. Digite a senha correta da sua conta.");
           return;
         }
+        userId = loginData.user?.id;
       } else {
         userId = signUpData.user?.id;
       }
