@@ -658,6 +658,23 @@ function MeusOrcamentos() {
         toast.error("Conta criada, mas sessão não iniciada. Faça login para continuar.");
         return;
       }
+
+      // Garante que a sessão (token) já está ativa antes de inserir o pedido,
+      // senão a política RLS bloqueia porque auth.uid() ainda não propagou.
+      let sessaoOk = false;
+      for (let i = 0; i < 10; i++) {
+        const { data: sess } = await supabase.auth.getSession();
+        if (sess?.session?.user?.id === userId) {
+          sessaoOk = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (!sessaoOk) {
+        setSaving(false);
+        toast.error("Sua conta foi criada. Recarregue a página e tente enviar o pedido novamente.");
+        return;
+      }
     }
 
     const payload = {
