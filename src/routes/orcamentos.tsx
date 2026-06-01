@@ -162,6 +162,9 @@ function MeusOrcamentos() {
   const [orcMats, setOrcMats] = useState<Record<string, OrcMaterial[]>>({});
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestSenha, setGuestSenha] = useState("");
+  const [guestNome, setGuestNome] = useState("");
 
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -611,12 +614,38 @@ function MeusOrcamentos() {
   const handleNew = async () => {
     if (!selServico) return;
 
-    if (!user) {
-      toast.error("Faça login para enviar uma solicitação.");
-      return;
-    }
+    let userId = user?.id;
 
-    const userId = user.id;
+    // Visitante: criar conta antes de enviar o pedido
+    if (!user) {
+      if (!guestEmail.trim() || !guestSenha.trim() || !guestNome.trim()) {
+        toast.error("Preencha nome, e-mail e senha para enviar a solicitação.");
+        return;
+      }
+      setSaving(true);
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: guestEmail.trim(),
+        password: guestSenha,
+        options: { data: { nome: guestNome.trim() } },
+      });
+      if (signUpError) {
+        setSaving(false);
+        if (signUpError.message?.toLowerCase().includes("registered") || signUpError.message?.toLowerCase().includes("already")) {
+          toast.error("Esse e-mail já tem conta. Faça login para continuar.", {
+            action: { label: "Fazer login", onClick: () => navigate({ to: "/login" }) },
+          });
+        } else {
+          toast.error(`Não foi possível criar a conta: ${signUpError.message}`);
+        }
+        return;
+      }
+      userId = signUpData.user?.id;
+      if (!userId) {
+        setSaving(false);
+        toast.error("Conta criada, mas sessão não iniciada. Faça login para continuar.");
+        return;
+      }
+    }
 
     const payload = {
       serviceId: selServico.id,
