@@ -1601,8 +1601,7 @@ function MeusOrcamentos() {
                           className="w-full rounded-xl h-12 px-4 text-slate-800 bg-white placeholder:text-slate-400 outline-none"
                         />
                         <p className="text-[11px] text-white/60">
-                          Já tem conta?{" "}
-                          <Link to="/login" className="underline font-bold">Fazer login</Link>
+                          Já tem conta? Use o mesmo e-mail e senha — vamos te conectar automaticamente.
                         </p>
                       </div>
                     )}
