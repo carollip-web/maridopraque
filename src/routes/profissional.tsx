@@ -328,7 +328,8 @@ function ProfissionalArea() {
           raio: perfil.raio_atendimento_km ?? 15,
         });
         setProfGenero(perfil.genero ?? null);
-        setProfApoioFeminino(perfil.genero === "apoio_feminino");
+        // Apoio feminino agora é gerenciado pelo admin — nenhum profissional atua como apoio no radar
+        setProfApoioFeminino(false);
       }
 
       if (avs && avs.length > 0) {
