@@ -46,7 +46,6 @@ const ESPECIALIDADES_SUGERIDAS = [
   "Pequenas Reformas",
   "Jardinagem",
   "Limpeza Pesada",
-  "Apoio Feminino",
 ];
 
 export function OnboardingWizard() {
@@ -124,7 +123,7 @@ export function OnboardingWizard() {
           raio_atendimento_km: raio,
           bio: bio.trim(),
           especialidades,
-          oferece_apoio_feminino: especialidades.includes("Apoio Feminino"),
+          oferece_apoio_feminino: false,
           termo_aceito_em: new Date().toISOString(),
           termo_versao: TERMO_VERSAO,
           onboarding_completo: true,
