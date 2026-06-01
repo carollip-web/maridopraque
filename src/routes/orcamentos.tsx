@@ -809,7 +809,7 @@ function MeusOrcamentos() {
         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
       </div>
     );
-  if (!user) return null;
+  // Visitante pode ver e preencher o formulário; conta é criada ao enviar.
 
   return (
     <div className="max-w-[1040px] mx-auto px-4 sm:px-6 py-12">
