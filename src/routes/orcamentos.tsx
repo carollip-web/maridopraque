@@ -1544,6 +1544,42 @@ function MeusOrcamentos() {
                       )}
                     </div>
 
+                    {!user && (
+                      <div className="mt-6 space-y-3 pt-6 border-t border-brand-foreground/20">
+                        <p className="text-sm font-bold text-white">
+                          Crie sua conta para enviar o pedido
+                        </p>
+                        <p className="text-xs text-white/70 -mt-1">
+                          Rápido — só pra você acompanhar as propostas e pagar com segurança.
+                        </p>
+                        <input
+                          type="text"
+                          placeholder="Seu nome"
+                          value={guestNome}
+                          onChange={(e) => setGuestNome(e.target.value)}
+                          className="w-full rounded-xl h-12 px-4 text-slate-800 bg-white placeholder:text-slate-400 outline-none"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Seu melhor e-mail"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          className="w-full rounded-xl h-12 px-4 text-slate-800 bg-white placeholder:text-slate-400 outline-none"
+                        />
+                        <input
+                          type="password"
+                          placeholder="Crie uma senha"
+                          value={guestSenha}
+                          onChange={(e) => setGuestSenha(e.target.value)}
+                          className="w-full rounded-xl h-12 px-4 text-slate-800 bg-white placeholder:text-slate-400 outline-none"
+                        />
+                        <p className="text-[11px] text-white/60">
+                          Já tem conta?{" "}
+                          <Link to="/login" className="underline font-bold">Fazer login</Link>
+                        </p>
+                      </div>
+                    )}
+
                     <div className="mt-8 flex flex-col gap-3">
                       <Button
                         onClick={handleNew}
