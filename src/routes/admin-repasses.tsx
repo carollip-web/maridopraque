@@ -78,7 +78,7 @@ function AdminPagamentosPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from("pagamentos")
-        .select("*, orcamentos(service_name)")
+        .select("*, orcamentos!pagamentos_orcamento_id_fkey(service_name)")
         .eq("gateway", "mercado_pago")
         .order("created_at", { ascending: false });
 
