@@ -191,7 +191,8 @@ function MeusOrcamentos() {
   const [propostas, setPropostas] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
+    // Visitantes podem montar o pedido sem login; a conta é criada ao enviar o orçamento.
+    // (redirect removido intencionalmente)
   }, [loading, user, navigate]);
 
   const refresh = async () => {
