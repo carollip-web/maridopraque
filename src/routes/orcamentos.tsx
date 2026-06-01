@@ -630,17 +630,29 @@ function MeusOrcamentos() {
         options: { data: { nome: guestNome.trim() } },
       });
       if (signUpError) {
-        setSaving(false);
-        if (signUpError.message?.toLowerCase().includes("registered") || signUpError.message?.toLowerCase().includes("already")) {
-          toast.error("Esse e-mail já tem conta. Faça login para continuar.", {
-            action: { label: "Fazer login", onClick: () => navigate({ to: "/login" }) },
+        const jaExiste =
+          signUpError.message?.toLowerCase().includes("registered") ||
+          signUpError.message?.toLowerCase().includes("already");
+        if (jaExiste) {
+          // E-mail já tem conta: tenta logar aqui mesmo, sem sair da página
+          const { data: loginData, error: loginErr } = await supabase.auth.signInWithPassword({
+            email: guestEmail.trim(),
+            password: guestSenha,
           });
+          if (loginErr) {
+            setSaving(false);
+            toast.error("Esse e-mail já tem conta, mas a senha não confere. Digite a senha correta da sua conta.");
+            return;
+          }
+          userId = loginData.user?.id;
         } else {
+          setSaving(false);
           toast.error(`Não foi possível criar a conta: ${signUpError.message}`);
+          return;
         }
-        return;
+      } else {
+        userId = signUpData.user?.id;
       }
-      userId = signUpData.user?.id;
       if (!userId) {
         setSaving(false);
         toast.error("Conta criada, mas sessão não iniciada. Faça login para continuar.");
