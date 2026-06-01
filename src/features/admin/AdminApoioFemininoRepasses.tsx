@@ -17,7 +17,7 @@ export function AdminApoioFemininoRepasses() {
         .from("pagamentos")
         .select(`
           *,
-          orcamentos!inner(id, service_name, apoio_profissional_id)
+          orcamentos!inner(id, service_name, apoio_equipe_id)
         `)
         .eq("gateway", "mercado_pago")
         .in("status", ["paid", "approved"])
@@ -31,30 +31,31 @@ export function AdminApoioFemininoRepasses() {
         return metadata.valor_apoio_feminino > 0;
       });
 
-      // Busca dados dos profissionais de apoio
-      const profIds = pagamentosApoio.map((p: any) => p.orcamentos.apoio_profissional_id).filter(Boolean);
-      
-      let profsMap: Record<string, any> = {};
-      if (profIds.length > 0) {
-        const { data: profs, error: profsErr } = await supabase
-          .from("profissional_perfil")
-          .select("user_id, chave_pix, pix_key_type, profiles(nome)")
-          .in("user_id", profIds);
-          
-        if (!profsErr && profs) {
-          profs.forEach((p: any) => {
-             profsMap[p.user_id] = {
-               nome: p.profiles?.nome,
-               chave_pix: p.chave_pix,
-               pix_key_type: p.pix_key_type
-             };
+      // Busca dados da equipe de apoio feminino (nova tabela)
+      const equipeIds = pagamentosApoio.map((p: any) => p.orcamentos.apoio_equipe_id).filter(Boolean);
+
+      let equipeMap: Record<string, any> = {};
+      if (equipeIds.length > 0) {
+        const { data: equipe, error: equipeErr } = await supabase
+          .from("apoio_feminino_equipe")
+          .select("id, nome, whatsapp, chave_pix")
+          .in("id", equipeIds);
+
+        if (!equipeErr && equipe) {
+          equipe.forEach((e: any) => {
+            equipeMap[e.id] = {
+              nome: e.nome,
+              chave_pix: e.chave_pix,
+              pix_key_type: null,
+              whatsapp: e.whatsapp,
+            };
           });
         }
       }
 
       setPagamentos(pagamentosApoio.map((p: any) => ({
         ...p,
-        apoio_prof: p.orcamentos.apoio_profissional_id ? profsMap[p.orcamentos.apoio_profissional_id] : null
+        apoio_prof: p.orcamentos.apoio_equipe_id ? equipeMap[p.orcamentos.apoio_equipe_id] : null
       })));
 
     } catch (err: any) {
