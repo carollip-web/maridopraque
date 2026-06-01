@@ -269,9 +269,8 @@ function MeusOrcamentos() {
     }
   };
 
+  // Catálogo de serviços/materiais carrega para todos (inclusive visitantes)
   useEffect(() => {
-    if (!user) return;
-    refresh();
     Promise.all([
       supabase
         .from("services_catalog")
@@ -287,6 +286,12 @@ function MeusOrcamentos() {
       setMateriais((m.data ?? []).map((x: any) => ({ ...x, preco_atual: Number(x.preco_atual) })));
       setServiceMats((sm.data ?? []) as ServiceMaterial[]);
     });
+  }, []);
+
+  // Dados do usuário logado (rascunho, histórico, realtime) só quando há login
+  useEffect(() => {
+    if (!user) return;
+    refresh();
 
     const ch = supabase
       .channel("cli-realtime")
