@@ -47,6 +47,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "leads", label: "Leads (Pré-Cadastro)", icon: Users },
+  { id: "apoio_feminino", label: "Apoio Feminino", icon: Users },
   { id: "dados", label: "Meus Dados", icon: UserCog },
 ];
 
