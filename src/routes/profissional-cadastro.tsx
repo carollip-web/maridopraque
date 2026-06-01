@@ -338,7 +338,7 @@ function ProfissionalCadastro() {
         cadastro_submetido_em: new Date().toISOString(),
         ativo: false,
         genero: form.genero || "nao_informar",
-        oferece_apoio_feminino: !!form.oferece_apoio_feminino,
+        oferece_apoio_feminino: false,
       };
 
       const { error } = await (supabase.from("profissional_perfil") as any).upsert(payload);
@@ -557,19 +557,6 @@ function ProfissionalCadastro() {
                       <option value="homem">Homem</option>
                       <option value="outro">Outro</option>
                     </select>
-                  </div>
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-3 cursor-pointer mt-5">
-                      <input
-                        type="checkbox"
-                        checked={form.oferece_apoio_feminino}
-                        onChange={(e) => set("oferece_apoio_feminino", e.target.checked)}
-                        className="h-5 w-5 accent-brand rounded border-slate-300"
-                      />
-                      <span className="text-sm font-medium text-slate-700">
-                        Ofereço apoio feminino
-                      </span>
-                    </label>
                   </div>
                 </div>
               </div>
