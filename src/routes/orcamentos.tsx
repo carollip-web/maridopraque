@@ -827,15 +827,15 @@ function MeusOrcamentos() {
       resetForm();
       setShowNew(false);
 
-      // Se foi um pedido novo (não edição), leva direto para acompanhar o pedido criado
+      // Se foi um pedido novo, guarda o id para a área do cliente abrir automaticamente
+      // (sessionStorage sobrevive ao redirect de login do signup)
       if (!editingId && novoIdCriado) {
+        try {
+          window.sessionStorage.setItem("abrir_pedido_apos_login", novoIdCriado);
+        } catch {}
         navigate({
           to: "/cliente",
-          search: (prev: any) => ({
-            ...prev,
-            tab: "pedidos",
-            pedidoId: novoIdCriado,
-          }),
+          search: { tab: "pedidos", pedidoId: novoIdCriado } as any,
         });
       } else {
         refresh();
