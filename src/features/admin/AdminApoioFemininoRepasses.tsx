@@ -17,7 +17,7 @@ export function AdminApoioFemininoRepasses() {
         .from("pagamentos")
         .select(`
           *,
-          orcamentos!inner(id, service_name, apoio_equipe_id)
+          orcamentos!pagamentos_orcamento_id_fkey!inner(id, service_name, apoio_equipe_id)
         `)
         .eq("gateway", "mercado_pago")
         .in("status", ["paid", "approved"])
