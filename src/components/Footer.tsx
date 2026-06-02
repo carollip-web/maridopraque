@@ -31,6 +31,15 @@ export function Footer() {
             <Link to="/contato" className="transition hover:text-brand">
               Contato
             </Link>
+            <Link to="/termos" className="transition hover:text-brand">
+              Termos
+            </Link>
+            <Link to="/privacidade" className="transition hover:text-brand">
+              Privacidade
+            </Link>
+            <Link to="/cancelamento" className="transition hover:text-brand">
+              Cancelamento
+            </Link>
           </nav>
 
           <p className="text-[11px]">© {new Date().getFullYear()} — Marido pra Quê?</p>
