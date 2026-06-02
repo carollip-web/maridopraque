@@ -17,7 +17,7 @@ function Pagina() {
       <p className="text-sm text-slate-400 mb-8">Última atualização: [PREENCHER: data]</p>
       <div className="max-w-none space-y-4 text-slate-600 leading-relaxed">
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">1. Quem Somos</h2>
-        <p>A plataforma Marido pra Quê? é operada por [PREENCHER: razão social completa], inscrita no CNPJ sob nº [PREENCHER: número do CNPJ], com sede em [PREENCHER: endereço]. Ao longo deste documento, referida como "plataforma", "nós" ou "Marido pra Quê?".</p>
+        <p>A plataforma Marido pra Quê? é operada por MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, inscrita no CNPJ sob nº 66.782.882/0001-00, com sede em [PREENCHER: endereço]. Ao longo deste documento, referida como "plataforma", "nós" ou "Marido pra Quê?".</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">2. O Que Fazemos</h2>
         <p>A Marido pra Quê? é uma plataforma digital que conecta clientes a profissionais qualificados para a prestação de serviços domésticos de pequenos reparos, montagens, instalações e serviços relacionados, na região de Copacabana e Ipanema, no Rio de Janeiro. A plataforma atua como intermediadora, facilitando o contato, o orçamento, o agendamento e o pagamento entre cliente e profissional. A execução do serviço é de responsabilidade do profissional contratado.</p>
@@ -50,7 +50,7 @@ function Pagina() {
         <p>A plataforma pode atualizar estes Termos a qualquer momento. Mudanças relevantes serão comunicadas aos usuários. O uso continuado após as alterações implica concordância.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">12. Foro</h2>
-        <p>Fica eleito o foro da Comarca do [PREENCHER: cidade/estado] para dirimir quaisquer questões oriundas destes Termos.</p>
+        <p>Fica eleito o foro da Comarca do Rio de Janeiro/RJ para dirimir quaisquer questões oriundas destes Termos.</p>
       </div>
     </div>
   );

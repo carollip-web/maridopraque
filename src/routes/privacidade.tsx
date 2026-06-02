@@ -19,7 +19,7 @@ function Pagina() {
         <p>Esta Política de Privacidade descreve como a Marido pra Quê? coleta, usa, armazena e protege os dados pessoais dos usuários, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">1. Controladora dos Dados</h2>
-        <p>A controladora dos dados é [PREENCHER: razão social], CNPJ [PREENCHER], com sede em [PREENCHER: endereço].</p>
+        <p>A controladora dos dados é MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, CNPJ 66.782.882/0001-00, com sede em [PREENCHER: endereço].</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">2. Quais Dados Coletamos</h2>
         <p><strong>De clientes:</strong> nome, e-mail, telefone/WhatsApp, endereço para realização do serviço, dados de pagamento (processados pelo Mercado Pago — não armazenamos o número completo do cartão), histórico de pedidos e avaliações.</p>
@@ -41,7 +41,7 @@ function Pagina() {
         <p>Nos termos da LGPD, o titular pode, a qualquer momento: confirmar a existência de tratamento de seus dados; acessar seus dados; corrigir dados incompletos ou desatualizados; solicitar anonimização, bloqueio ou eliminação de dados desnecessários; solicitar a portabilidade dos dados; e revogar o consentimento.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">8. Como Exercer Seus Direitos</h2>
-        <p>Para exercer qualquer um desses direitos, o titular pode entrar em contato pelo e-mail: [PREENCHER: email de privacidade].</p>
+        <p>Para exercer qualquer um desses direitos, o titular pode entrar em contato pelo e-mail: contato@maridopraque.com.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">9. Cookies</h2>
         <p>A plataforma pode utilizar cookies e tecnologias semelhantes para melhorar a experiência de navegação. O usuário pode gerenciar os cookies nas configurações do navegador.</p>
@@ -50,7 +50,7 @@ function Pagina() {
         <p>Esta Política pode ser atualizada periodicamente. Alterações relevantes serão comunicadas aos usuários.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">11. Encarregado de Dados (DPO)</h2>
-        <p>Encarregado pelo tratamento de dados: [PREENCHER: nome do responsável, se houver]. Contato: [PREENCHER: email].</p>
+        <p>Encarregado pelo tratamento de dados: [PREENCHER: nome do responsável, se houver]. Contato: contato@maridopraque.com.</p>
       </div>
     </div>
   );
