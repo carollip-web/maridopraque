@@ -39,7 +39,7 @@ const profileSchema = z.object({
   bio: z.string().optional(),
   cidade: z.string().optional(),
   cpf: z.string().optional().refine(val => !val || val.replace(/\D/g, "").length === 11, "CPF incompleto"),
-  cnpj: z.string().optional().refine(val => !val || val.replace(/\D/g, "").length === 14, "CNPJ incompleto"),
+  cnpj: z.string().min(1, "CNPJ é obrigatório").refine(val => val.replace(/\D/g, "").length === 14, "CNPJ incompleto"),
   anos_experiencia: z.coerce.number().min(0).optional(),
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
@@ -603,7 +603,7 @@ export function ProfissionalConfiguracoes() {
               />
             </Field>
 
-            <Field label="CNPJ do MEI (Opcional)" error={errors.cnpj?.message}>
+            <Field label="CNPJ do MEI *" error={errors.cnpj?.message}>
               <input
                 value={watch("cnpj") || ""}
                 onChange={(e) =>
