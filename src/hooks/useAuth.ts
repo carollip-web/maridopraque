@@ -45,6 +45,7 @@ const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
     "servicos",
     "financeiro",
     "notificacoes",
+    "equipe",
     "leads",
     "apoio_feminino",
     "kpis",
