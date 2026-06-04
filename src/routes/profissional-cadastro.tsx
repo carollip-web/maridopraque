@@ -82,6 +82,8 @@ type FormData = {
   bio: string;
   especialidades: string[];
   experiencia_anos: string;
+  atende_emergencias: boolean;
+  veiculo_proprio: boolean;
   como_conheceu: string;
   observacoes_cadastro: string;
   foto_documento_frente: File | null;
@@ -109,6 +111,8 @@ function emptyForm(): FormData {
     bio: "",
     especialidades: [],
     experiencia_anos: "",
+    atende_emergencias: false,
+    veiculo_proprio: false,
     como_conheceu: "",
     observacoes_cadastro: "",
     foto_documento_frente: null,
@@ -327,7 +331,9 @@ function ProfissionalCadastro() {
         complemento: form.complemento || null,
         bairro: form.bairro,
         estado: form.estado,
-        experiencia_anos: form.experiencia_anos ? Number(form.experiencia_anos) : null,
+        anos_experiencia: form.experiencia_anos ? Number(form.experiencia_anos) : null,
+        atende_emergencias: form.atende_emergencias ?? false,
+        veiculo_proprio: form.veiculo_proprio ?? false,
         como_conheceu: form.como_conheceu || null,
         observacoes_cadastro: form.observacoes_cadastro || null,
         ...(urlFrente && { foto_documento_frente: urlFrente }),
@@ -702,6 +708,32 @@ function ProfissionalCadastro() {
                     placeholder="Ex: 5"
                   />
                 </div>
+                  <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                    <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-brand transition">
+                      <input
+                        type="checkbox"
+                        checked={form.atende_emergencias}
+                        onChange={(e) => set("atende_emergencias", e.target.checked)}
+                        className="h-5 w-5 accent-brand rounded"
+                      />
+                      <div>
+                        <p className="font-medium text-sm text-slate-800">Atende emergências</p>
+                        <p className="text-xs text-slate-500">Aparece com prioridade em pedidos urgentes.</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 cursor-pointer hover:border-brand transition">
+                      <input
+                        type="checkbox"
+                        checked={form.veiculo_proprio}
+                        onChange={(e) => set("veiculo_proprio", e.target.checked)}
+                        className="h-5 w-5 accent-brand rounded"
+                      />
+                      <div>
+                        <p className="font-medium text-sm text-slate-800">Veículo próprio</p>
+                        <p className="text-xs text-slate-500">Indica que você pode levar materiais e ferramentas.</p>
+                      </div>
+                    </label>
+                  </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-muted-foreground">
                     Mini bio / apresentação *

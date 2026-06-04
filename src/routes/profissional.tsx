@@ -117,7 +117,7 @@ function ProfissionalArea() {
         .select("cadastro_completo, aprovacao_status")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data && (!data.cadastro_completo || data.aprovacao_status === "pendente")) {
+      if (data && data.aprovacao_status !== "aprovado") {
         navigate({ to: "/profissional-cadastro" });
       }
     })();
