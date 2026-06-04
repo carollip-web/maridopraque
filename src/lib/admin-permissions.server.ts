@@ -18,7 +18,8 @@ export type AdminSection =
   | "equipe"
   | "modo_teste"
   | "auditoria"
-  | "apoio_feminino";
+  | "apoio_feminino"
+  | "kpis";
 
 // Espelha PERMISSIONS de src/hooks/useAuth.ts.
 const PERMISSIONS: Record<AdminLevel, AdminSection[]> = {
@@ -34,8 +35,9 @@ const PERMISSIONS: Record<AdminLevel, AdminSection[]> = {
     "modo_teste",
     "auditoria",
     "apoio_feminino",
+    "kpis",
   ],
-  admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config", "apoio_feminino"],
+  admin: ["dashboard", "pedidos", "profissionais", "clientes", "servicos", "config", "apoio_feminino", "kpis"],
   financeiro: ["dashboard", "financeiro"],
   suporte: ["pedidos", "clientes"],
 };

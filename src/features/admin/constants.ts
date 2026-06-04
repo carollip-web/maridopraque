@@ -48,6 +48,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "leads", label: "Leads (Pré-Cadastro)", icon: Users },
   { id: "apoio_feminino", label: "Apoio Feminino", icon: Users },
+  { id: "kpis", label: "KPIs", icon: BarChart3 },
   { id: "dados", label: "Meus Dados", icon: UserCog },
 ];
 
