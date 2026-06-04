@@ -66,20 +66,29 @@ function ConvitePage() {
 
     setSubmitting(true);
     try {
-      const { error: signupError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signupError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/profissional-cadastro`,
           data: {
             nome: leadInfo.nome,
-            convite_id: id, // Isso será lido pelo trigger no banco para criar o perfil!
+            convite_id: id,
           },
         },
       });
 
       if (signupError) throw signupError;
 
+      // Se a sessão veio imediatamente (confirmação de email desativada), redirecionar direto
+      if (signUpData?.session) {
+        toast.success("Conta criada! Redirecionando para o cadastro completo...");
+        setTimeout(() => {
+          window.location.href = "/profissional-cadastro";
+        }, 1000);
+        return;
+      }
+
+      // Fallback (caso confirmação de email volte a ser ativada)
       setSuccess(true);
       toast.success("Conta criada com sucesso!");
     } catch (err: any) {

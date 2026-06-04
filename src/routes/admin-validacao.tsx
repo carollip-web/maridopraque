@@ -138,6 +138,13 @@ function AdminValidacao() {
       toast.error("Erro", { description: error.message });
       return;
     }
+
+    // Atualizar o lead correspondente para "aprovado" (analytics do funil de captação)
+    await supabase
+      .from("profissionais_pre_cadastro")
+      .update({ status: "aprovado" })
+      .eq("user_id", selected.user_id);
+
     toast.success("Profissional aprovado! Acesso liberado.");
     setSelected(null);
     refresh();
