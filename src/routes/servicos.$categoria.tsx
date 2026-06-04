@@ -379,11 +379,13 @@ function CategoriaPage() {
               const min = s.preco_min != null ? Number(s.preco_min) : null;
               const max = s.preco_max != null ? Number(s.preco_max) : null;
               const priceLabel =
-                min != null && max != null
+                min != null && max != null && max > 0
                   ? min === max
                     ? brl(min)
                     : `${brl(min)} – ${brl(max)}`
-                  : "Sob consulta";
+                  : min != null && min > 0
+                    ? `A partir de ${brl(min)}`
+                    : "Sob consulta";
               const tempo = estimarTempo(min, max);
               const itens = itensTipicosFor(s.id);
               return (

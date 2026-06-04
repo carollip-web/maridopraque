@@ -1573,20 +1573,36 @@ function MeusOrcamentos() {
                       Investimento Estimado
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black tabular-nums">
-                        {brl(Number(selServico.preco_min) + subtotalMat)}
-                      </span>
-                      <span className="text-lg opacity-60 font-bold">até</span>
-                      <span className="text-3xl font-black tabular-nums">
-                        {brl(Number(selServico.preco_max) + subtotalMat)}
-                      </span>
+                      {Number(selServico.preco_max) > 0 ? (
+                        <>
+                          <span className="text-3xl font-black tabular-nums">
+                            {brl(Number(selServico.preco_min) + subtotalMat)}
+                          </span>
+                          {Number(selServico.preco_min) !== Number(selServico.preco_max) && (
+                            <>
+                              <span className="text-lg opacity-60 font-bold">até</span>
+                              <span className="text-3xl font-black tabular-nums">
+                                {brl(Number(selServico.preco_max) + subtotalMat)}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-3xl font-black tabular-nums">
+                          A partir de {brl(Number(selServico.preco_min) + subtotalMat)}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mt-6 space-y-3 pt-6 border-t border-brand-foreground/20">
                       <div className="flex justify-between text-xs">
                         <span className="opacity-70">Mão de obra</span>
                         <span className="font-bold">
-                          {brl(Number(selServico.preco_min))} - {brl(Number(selServico.preco_max))}
+                          {Number(selServico.preco_max) > 0
+                            ? Number(selServico.preco_min) === Number(selServico.preco_max)
+                              ? brl(Number(selServico.preco_min))
+                              : `${brl(Number(selServico.preco_min))} – ${brl(Number(selServico.preco_max))}`
+                            : `A partir de ${brl(Number(selServico.preco_min))}`}
                         </span>
                       </div>
                       {subtotalMat > 0 && (
