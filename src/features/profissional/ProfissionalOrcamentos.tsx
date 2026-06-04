@@ -27,7 +27,7 @@ interface ProfissionalOrcamentosProps {
   enviar: any;
   refresh: () => void;
   recusarOrcamento: (id: string) => Promise<void>;
-  handleGenerateTestOrder: () => void;
+
   minhasPropostas?: any[];
   propostasMateriais?: any[];
   especialidades?: string[];
@@ -53,7 +53,7 @@ export function ProfissionalOrcamentos({
   enviar,
   refresh,
   recusarOrcamento,
-  handleGenerateTestOrder,
+
   minhasPropostas,
   propostasMateriais,
   especialidades = [],
@@ -78,9 +78,6 @@ export function ProfissionalOrcamentos({
               Acompanhe oportunidades, propostas em elaboração e retornos de clientes.
             </p>
           </div>
-          <Button variant="outline" onClick={handleGenerateTestOrder} className="rounded-full">
-            Gerar pedido teste
-          </Button>
         </div>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

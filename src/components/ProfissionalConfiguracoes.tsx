@@ -205,14 +205,16 @@ export function ProfissionalConfiguracoes() {
     const checks = [
       !!watched.nome && watched.nome.length >= 2,
       !!watched.whatsapp && watched.whatsapp.replace(/\D/g, "").length >= 10,
+      !!profilePhoto,
       !!watched.bio && watched.bio.length > 10,
-      !!watched.cidade,
       !!watched.cpf && watched.cpf.replace(/\D/g, "").length === 11,
       !!watched.cnpj && watched.cnpj.replace(/\D/g, "").length === 14,
+      !!profissionalPerfil?.especialidades && profissionalPerfil.especialidades.length > 0,
+      !!(profissionalPerfil as any)?.mp_user_id
     ];
     const done = checks.filter(Boolean).length;
     return Math.round((done / checks.length) * 100);
-  }, [watched]);
+  }, [watched, profilePhoto, profissionalPerfil]);
 
   const handleSaveProfile = async (values: ProfileValues) => {
     if (!user) return;
