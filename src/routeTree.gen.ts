@@ -9,12 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as ServicosAdminRouteImport } from './routes/servicos-admin'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfissionalCadastroRouteImport } from './routes/profissional-cadastro'
 import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as ProfissionaisRouteImport } from './routes/profissionais'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PorqueRouteImport } from './routes/porque'
 import { Route as ParaProfissionaisRouteImport } from './routes/para-profissionais'
 import { Route as PagamentoRouteImport } from './routes/pagamento'
@@ -26,6 +28,7 @@ import { Route as ConviteRouteImport } from './routes/convite'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CancelamentoRouteImport } from './routes/cancelamento'
 import { Route as ApoioFemininoRouteImport } from './routes/apoio-feminino'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminValidacaoRouteImport } from './routes/admin-validacao'
@@ -40,6 +43,11 @@ import { Route as BtgCallbackRouteImport } from './routes/btg.callback'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
   id: '/servicos-admin',
   path: '/servicos-admin',
@@ -68,6 +76,11 @@ const ProfissionalRoute = ProfissionalRouteImport.update({
 const ProfissionaisRoute = ProfissionaisRouteImport.update({
   id: '/profissionais',
   path: '/profissionais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PorqueRoute = PorqueRouteImport.update({
@@ -123,6 +136,11 @@ const ClienteRoute = ClienteRouteImport.update({
 const CheckoutRoute = CheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CancelamentoRoute = CancelamentoRouteImport.update({
+  id: '/cancelamento',
+  path: '/cancelamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApoioFemininoRoute = ApoioFemininoRouteImport.update({
@@ -198,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
+  '/cancelamento': typeof CancelamentoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -209,12 +228,14 @@ export interface FileRoutesByFullPath {
   '/pagamento': typeof PagamentoRoute
   '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
@@ -230,6 +251,7 @@ export interface FileRoutesByTo {
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
+  '/cancelamento': typeof CancelamentoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -241,12 +263,14 @@ export interface FileRoutesByTo {
   '/pagamento': typeof PagamentoRoute
   '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
@@ -263,6 +287,7 @@ export interface FileRoutesById {
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
+  '/cancelamento': typeof CancelamentoRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
@@ -274,12 +299,14 @@ export interface FileRoutesById {
   '/pagamento': typeof PagamentoRoute
   '/para-profissionais': typeof ParaProfissionaisRoute
   '/porque': typeof PorqueRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/profissionais': typeof ProfissionaisRouteWithChildren
   '/profissional': typeof ProfissionalRoute
   '/profissional-cadastro': typeof ProfissionalCadastroRoute
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
@@ -297,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin-validacao'
     | '/ajuda'
     | '/apoio-feminino'
+    | '/cancelamento'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -308,12 +336,14 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/para-profissionais'
     | '/porque'
+    | '/privacidade'
     | '/profissionais'
     | '/profissional'
     | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
     | '/checkout/simular'
@@ -329,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin-validacao'
     | '/ajuda'
     | '/apoio-feminino'
+    | '/cancelamento'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -340,12 +371,14 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/para-profissionais'
     | '/porque'
+    | '/privacidade'
     | '/profissionais'
     | '/profissional'
     | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
     | '/checkout/simular'
@@ -361,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin-validacao'
     | '/ajuda'
     | '/apoio-feminino'
+    | '/cancelamento'
     | '/checkout'
     | '/cliente'
     | '/contato'
@@ -372,12 +406,14 @@ export interface FileRouteTypes {
     | '/pagamento'
     | '/para-profissionais'
     | '/porque'
+    | '/privacidade'
     | '/profissionais'
     | '/profissional'
     | '/profissional-cadastro'
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
     | '/checkout/simular'
@@ -394,6 +430,7 @@ export interface RootRouteChildren {
   AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
   ApoioFemininoRoute: typeof ApoioFemininoRoute
+  CancelamentoRoute: typeof CancelamentoRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
@@ -405,12 +442,14 @@ export interface RootRouteChildren {
   PagamentoRoute: typeof PagamentoRoute
   ParaProfissionaisRoute: typeof ParaProfissionaisRoute
   PorqueRoute: typeof PorqueRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   ProfissionaisRoute: typeof ProfissionaisRouteWithChildren
   ProfissionalRoute: typeof ProfissionalRoute
   ProfissionalCadastroRoute: typeof ProfissionalCadastroRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
+  TermosRoute: typeof TermosRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
   BtgCallbackRoute: typeof BtgCallbackRoute
   LoginProfissionalRoute: typeof LoginProfissionalRoute
@@ -419,6 +458,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/servicos-admin': {
       id: '/servicos-admin'
       path: '/servicos-admin'
@@ -459,6 +505,13 @@ declare module '@tanstack/react-router' {
       path: '/profissionais'
       fullPath: '/profissionais'
       preLoaderRoute: typeof ProfissionaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/porque': {
@@ -536,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cancelamento': {
+      id: '/cancelamento'
+      path: '/cancelamento'
+      fullPath: '/cancelamento'
+      preLoaderRoute: typeof CancelamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apoio-feminino': {
@@ -675,6 +735,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,
   ApoioFemininoRoute: ApoioFemininoRoute,
+  CancelamentoRoute: CancelamentoRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
@@ -686,12 +747,14 @@ const rootRouteChildren: RootRouteChildren = {
   PagamentoRoute: PagamentoRoute,
   ParaProfissionaisRoute: ParaProfissionaisRoute,
   PorqueRoute: PorqueRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   ProfissionaisRoute: ProfissionaisRouteWithChildren,
   ProfissionalRoute: ProfissionalRoute,
   ProfissionalCadastroRoute: ProfissionalCadastroRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
+  TermosRoute: TermosRoute,
   AuthRedirectRoute: AuthRedirectRoute,
   BtgCallbackRoute: BtgCallbackRoute,
   LoginProfissionalRoute: LoginProfissionalRoute,
