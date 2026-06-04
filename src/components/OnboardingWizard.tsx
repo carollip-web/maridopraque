@@ -36,17 +36,24 @@ const STEPS = [
 ] as const;
 
 const ESPECIALIDADES_SUGERIDAS = [
-  "Elétrica",
-  "Hidráulica",
-  "Pintura",
-  "Marido de Aluguel",
-  "Montagem de Móveis",
-  "Reparos Gerais",
-  "Instalações",
-  "Pequenas Reformas",
-  "Jardinagem",
-  "Limpeza Pesada",
+  "chaveiro",
+  "elétrica",
+  "engenharia",
+  "hidráulica",
+  "instalação",
+  "montagem",
+  "reparos",
 ];
+
+const ESPECIALIDADES_LABEL: Record<string, string> = {
+  chaveiro: "Chaveiro",
+  "elétrica": "Elétrica",
+  engenharia: "Engenharia",
+  "hidráulica": "Hidráulica",
+  "instalação": "Instalação",
+  montagem: "Montagem de Móveis",
+  reparos: "Reparos Gerais",
+};
 
 export function OnboardingWizard() {
   const { user, profile, refresh } = useAuth() as any;
@@ -57,7 +64,7 @@ export function OnboardingWizard() {
 
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [cidade, setCidade] = useState("");
+  const [cidade, setCidade] = useState("Rio de Janeiro - RJ");
   const [raio, setRaio] = useState<number>(15);
   const [bio, setBio] = useState("");
   const [especialidades, setEspecialidades] = useState<string[]>([]);
@@ -209,9 +216,12 @@ export function OnboardingWizard() {
                   id="ow-cid"
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
-                  placeholder="Ex: São Paulo - SP"
+                  placeholder="Rio de Janeiro - RJ"
                 />
               </div>
+                <p className="text-xs text-muted-foreground">
+                  Atualmente atendemos na região de Copacabana e Ipanema.
+                </p>
               <div className="space-y-1.5">
                 <Label htmlFor="ow-raio">
                   Raio de atendimento: <span className="font-bold text-brand">{raio} km</span>
@@ -257,7 +267,7 @@ export function OnboardingWizard() {
                         onClick={() => toggleEspec(e)}
                         className={`text-xs px-3 py-1.5 rounded-full border transition ${on ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand"}`}
                       >
-                        {e}
+                        {ESPECIALIDADES_LABEL[e] || e}
                       </button>
                     );
                   })}
