@@ -714,7 +714,6 @@ export function ProfissionalConfiguracoes() {
                 <option value="mulher">Mulher</option>
                 <option value="homem">Homem</option>
                 <option value="outro">Outro</option>
-                <option value="apoio_feminino">Apoio Feminino</option>
               </select>
             </Field>
           </div>

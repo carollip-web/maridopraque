@@ -234,7 +234,6 @@ export function OnboardingWizard() {
                   <option value="mulher">Mulher</option>
                   <option value="homem">Homem</option>
                   <option value="outro">Outro</option>
-                  <option value="apoio_feminino">Apoio Feminino</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
                   Usado para compatibilidade com a preferência das clientes.
