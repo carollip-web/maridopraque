@@ -26,7 +26,7 @@ export function AdminKPIs({ dateRange }: AdminKPIsProps) {
       setLoading(true);
       const [orcsRes, profsRes, avsRes, pagsRes] = await Promise.all([
         supabase.from("orcamentos").select("id, status, valor, valor_servico, tipo_atendimento, is_test, created_at").or("is_test.eq.false,is_test.is.null"),
-        supabase.from("profissional_perfil").select("user_id, ativo, mp_user_id"),
+        supabase.from("profissional_perfil").select("user_id, ativo, mp_user_id, aprovacao_status, cadastro_completo"),
         supabase.from("avaliacoes").select("nota, created_at"),
         supabase.from("pagamentos").select("valor_total, status, orcamento_id, created_at"),
       ]);
@@ -71,10 +71,13 @@ export function AdminKPIs({ dateRange }: AdminKPIsProps) {
       const mediaAvaliacao = avs.length > 0
         ? (avs.reduce((s, a) => s + a.nota, 0) / avs.length).toFixed(1)
         : "—";
+      // Só conta profissionais com cadastro completo (exclui testes e pendentes)
+      const profsReais = profs.filter((p: any) => p.cadastro_completo === true);
+      const profsAprovados = profsReais.filter((p: any) => p.aprovacao_status === "aprovado");
       const profissionais = {
-        total: profs.length,
-        ativos: profs.filter(p => p.ativo).length,
-        mpConectados: profs.filter(p => p.mp_user_id).length,
+        total: profsReais.length,
+        ativos: profsAprovados.filter((p: any) => p.ativo).length,
+        mpConectados: profsAprovados.filter((p: any) => p.mp_user_id).length,
         mediaAvaliacao,
       };
 
@@ -195,7 +198,7 @@ export function AdminKPIs({ dateRange }: AdminKPIsProps) {
           <Users className="h-4 w-4" /> Profissionais
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card label="Total Cadastrados" value={String(profissionais.total)} />
+          <Card label="Cadastros Completos" value={String(profissionais.total)} />
           <Card label="Ativos" value={String(profissionais.ativos)} color="text-emerald-600" />
           <Card label="MP Conectado" value={String(profissionais.mpConectados)} color={profissionais.mpConectados > 0 ? "text-blue-600" : "text-red-500"} sub={profissionais.mpConectados === 0 ? "Nenhum! Bloqueador nº 1" : ""} />
           <Card label="Média Avaliações" value={profissionais.mediaAvaliacao} color="text-amber-600" />
