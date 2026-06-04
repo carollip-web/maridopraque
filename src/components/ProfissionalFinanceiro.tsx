@@ -50,6 +50,7 @@ type Saque = {
   id: string;
   valor: number;
   status: string;
+  solicitado_em: string;
   pago_em: string | null;
   comprovante_url: string | null;
 };

@@ -562,7 +562,7 @@ function ProfissionalArea() {
            (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
            !(o as any).apoio_profissional_id &&
            // Só aparece para a apoio feminino depois que o profissional homem já cotou
-           (o.status === "enviado" || o.status === "aprovado" || o.status === "agendado");
+           ((o.status as string) === "enviado" || (o.status as string) === "aprovado" || (o.status as string) === "agendado");
 
         if (profApoioFeminino) {
           if (!isApoioFemininoTarget) return false;
@@ -899,7 +899,7 @@ function ProfissionalArea() {
                 enviar={enviar}
                 refresh={refresh}
                 recusarOrcamento={recusarOrcamento}
-                handleGenerateTestOrder={handleGenerateTestOrder}
+                
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
                 especialidades={especialidades}
