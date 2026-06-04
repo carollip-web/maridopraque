@@ -899,7 +899,7 @@ function ProfissionalArea() {
                 enviar={enviar}
                 refresh={refresh}
                 recusarOrcamento={recusarOrcamento}
-                handleGenerateTestOrder={handleGenerateTestOrder}
+                
                 minhasPropostas={minhasPropostas}
                 propostasMateriais={propostasMateriais}
                 especialidades={especialidades}
