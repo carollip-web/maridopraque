@@ -56,6 +56,36 @@ export type Database = {
           },
         ]
       }
+      apoio_feminino_equipe: {
+        Row: {
+          ativo: boolean
+          chave_pix: string | null
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          chave_pix?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          chave_pix?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       avaliacoes: {
         Row: {
           cliente_id: string
@@ -817,6 +847,7 @@ export type Database = {
       }
       orcamentos: {
         Row: {
+          apoio_equipe_id: string | null
           apoio_profissional_id: string | null
           auto_aprovado: boolean
           checkin_em: string | null
@@ -854,6 +885,7 @@ export type Database = {
           valor_servico: number | null
         }
         Insert: {
+          apoio_equipe_id?: string | null
           apoio_profissional_id?: string | null
           auto_aprovado?: boolean
           checkin_em?: string | null
@@ -891,6 +923,7 @@ export type Database = {
           valor_servico?: number | null
         }
         Update: {
+          apoio_equipe_id?: string | null
           apoio_profissional_id?: string | null
           auto_aprovado?: boolean
           checkin_em?: string | null
@@ -947,6 +980,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_apoio_equipe_id_fkey"
+            columns: ["apoio_equipe_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_feminino_equipe"
             referencedColumns: ["id"]
           },
           {
