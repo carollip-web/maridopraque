@@ -1,9 +1,6 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useState, useMemo } from "react";
-import { AdminModoTeste } from "@/components/AdminModoTeste";
-import { AdminAuditoria } from "@/components/AdminAuditoria";
-import { AdminMetrics } from "@/components/AdminMetrics";
 import { useAuth, type AdminSection } from "@/hooks/useAuth";
 import { AdminSidebar } from "@/features/admin/AdminSidebar";
 import { AdminHeader } from "@/features/admin/AdminHeader";
@@ -144,9 +141,6 @@ function AdminArea() {
             {activeTab === "servicos" && <AdminServicos />}
             {activeTab === "financeiro" && <AdminFinanceiro />}
             {activeTab === "config" && <AdminConfig />}
-            {activeTab === "equipe" && <AdminEquipe />}
-            {activeTab === "modo_teste" && <AdminModoTeste />}
-            {activeTab === "auditoria" && <AdminAuditoria />}
             {activeTab === "notificacoes" && <AdminNotificacoes />}
             {activeTab === "leads" && <AdminLeads />}
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}

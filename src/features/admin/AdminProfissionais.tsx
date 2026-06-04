@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { AdminLeads } from "./AdminLeads";
+import { AdminApoioFeminino } from "./AdminApoioFeminino";
 
 function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servicos" | "nota" }) {
   const { data: details, isLoading } = useQuery({
@@ -178,6 +180,7 @@ export function AdminProfissionais() {
   const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
 
   const [selected, setSelected] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<"lista" | "leads" | "apoio">("lista");
   const [editingEsp, setEditingEsp] = useState(false);
   const [espSelected, setEspSelected] = useState<string[]>([]);
   const [savingEsp, setSavingEsp] = useState(false);
@@ -370,7 +373,32 @@ export function AdminProfissionais() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex border-b border-slate-200">
+        {[
+          { id: "lista", label: "Lista de Profissionais" },
+          { id: "leads", label: "Leads (Pré-Cadastro)" },
+          { id: "apoio", label: "Apoio Feminino" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === tab.id
+                ? "border-brand text-brand"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "leads" && <AdminLeads />}
+      {activeTab === "apoio" && <AdminApoioFeminino />}
+
+      {activeTab === "lista" && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
@@ -797,6 +825,9 @@ export function AdminProfissionais() {
           </div>
         )}
       </div>
+        </>
+      )}
+    </div>
 
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

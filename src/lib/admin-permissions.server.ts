@@ -16,8 +16,6 @@ export type AdminSection =
   | "financeiro"
   | "config"
   | "equipe"
-  | "modo_teste"
-  | "auditoria"
   | "apoio_feminino"
   | "kpis";
 
@@ -32,8 +30,6 @@ const PERMISSIONS: Record<AdminLevel, AdminSection[]> = {
     "financeiro",
     "config",
     "equipe",
-    "modo_teste",
-    "auditoria",
     "apoio_feminino",
     "kpis",
   ],

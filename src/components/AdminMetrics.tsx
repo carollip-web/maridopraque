@@ -13,6 +13,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { AdminKPIs } from "@/features/admin/AdminKPIs";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ResponsiveContainer,
@@ -54,6 +55,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
   const [recentes, setRecentes] = useState<any[]>([]);
   const [pendentes, setPendentes] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"geral" | "kpis">("geral");
 
   useEffect(() => {
     (async () => {
@@ -224,8 +226,8 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header with Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header with Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             Dashboard Executivo
@@ -235,7 +237,38 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("geral")}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+              activeTab === "geral"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab("kpis")}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
+              activeTab === "kpis"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            KPIs Operacionais
+          </button>
+        </div>
+      </div>
+
+      {activeTab === "kpis" ? (
+        <AdminKPIs />
+      ) : (
+        <>
+          {/* Header with Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-slate-800">Métricas Principais</h2>
+            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
           {[
             { id: "7d", label: "7 dias" },
             { id: "30d", label: "30 dias" },
@@ -480,6 +513,8 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           </table>
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

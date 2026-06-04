@@ -43,8 +43,6 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "financeiro", label: "Financeiro", icon: DollarSign },
   { id: "config", label: "Configurações", icon: Settings },
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
-  { id: "modo_teste", label: "Modo Teste", icon: TestTube },
-  { id: "auditoria", label: "Auditoria", icon: ShieldCheck },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "leads", label: "Leads (Pré-Cadastro)", icon: Users },
   { id: "apoio_feminino", label: "Apoio Feminino", icon: Users },

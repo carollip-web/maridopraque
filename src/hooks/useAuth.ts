@@ -14,8 +14,6 @@ export type AdminSection =
   | "financeiro"
   | "config"
   | "equipe"
-  | "modo_teste"
-  | "auditoria"
   | "notificacoes"
   | "leads"
   | "apoio_feminino"
@@ -33,8 +31,6 @@ const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
     "financeiro",
     "config",
     "equipe",
-    "modo_teste",
-    "auditoria",
     "notificacoes",
     "leads",
     "apoio_feminino",

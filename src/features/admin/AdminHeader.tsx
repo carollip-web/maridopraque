@@ -16,13 +16,6 @@ export function AdminHeader() {
       </div>
       <div className="flex items-center gap-4">
         <Link
-          to="/cliente"
-          search={{ tab: "inicio" } as any}
-          className="text-xs font-bold text-slate-500 hover:text-brand"
-        >
-          Ver app como cliente
-        </Link>
-        <Link
           to="/admin"
           search={{ tab: "notificacoes" } as any}
           className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors"
