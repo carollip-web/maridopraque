@@ -20,6 +20,7 @@ import {
   Scale,
   FileText,
   HardHat,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuickEstimator } from "@/components/QuickEstimator";
@@ -148,6 +149,16 @@ const paymentMethods = [
     icon: CreditCard,
     title: "Cartão de Crédito ou Débito",
     desc: "Pague com cartão em até 12x. Processado com segurança pelo Mercado Pago.",
+  },
+  {
+    icon: QrCode,
+    title: "PIX",
+    desc: "Pagamento instantâneo via PIX. Aprovação imediata, sem taxas extras.",
+  },
+  {
+    icon: FileText,
+    title: "Boleto Bancário",
+    desc: "Gere o boleto e pague em qualquer banco. Compensação em até 3 dias úteis.",
   },
   {
     icon: ShieldCheck,
