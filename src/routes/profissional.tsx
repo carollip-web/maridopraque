@@ -593,8 +593,8 @@ function ProfissionalArea() {
         if (especialidades.length > 0) {
           const serviceId = (o as any).service_id;
           if (serviceId) {
-            const cat = catalog[serviceId]?.categoria;
-            if (cat && !especialidades.includes(cat)) return false;
+            const cat = catalog[serviceId]?.categoria?.toLowerCase();
+            if (cat && !especialidades.map(e => e.toLowerCase()).includes(cat)) return false;
           }
           // Se o pedido não tem service_id (pedido customizado), mostra para todos
         }
