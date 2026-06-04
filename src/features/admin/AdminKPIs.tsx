@@ -25,7 +25,7 @@ export function AdminKPIs({ dateRange }: AdminKPIsProps) {
     (async () => {
       setLoading(true);
       const [orcsRes, profsRes, avsRes, pagsRes] = await Promise.all([
-        supabase.from("orcamentos").select("id, status, valor, valor_servico, tipo_atendimento, is_test, created_at").eq("is_test", false),
+        supabase.from("orcamentos").select("id, status, valor, valor_servico, tipo_atendimento, is_test, created_at").or("is_test.eq.false,is_test.is.null"),
         supabase.from("profissional_perfil").select("user_id, ativo, mp_user_id"),
         supabase.from("avaliacoes").select("nota, created_at"),
         supabase.from("pagamentos").select("valor_total, status, orcamento_id, created_at"),

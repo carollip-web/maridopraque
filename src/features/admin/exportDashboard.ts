@@ -60,7 +60,7 @@ export async function exportDashboardData(fmt: ExportFormat = "csv") {
     supabase
       .from("orcamentos")
       .select("id, status, valor, valor_servico, service_name, tipo_atendimento, is_test, created_at, cliente_id, descricao")
-      .eq("is_test", false)
+      .or("is_test.eq.false,is_test.is.null")
       .order("created_at", { ascending: false }),
     supabase.from("profissional_perfil").select("user_id, ativo, mp_user_id, cidade, estado, created_at"),
     supabase.from("avaliacoes").select("nota, created_at"),

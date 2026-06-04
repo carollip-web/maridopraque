@@ -108,6 +108,21 @@ function ProfissionalArea() {
   const [profGenero, setProfGenero] = useState<string | null>(null);
   const [profApoioFeminino, setProfApoioFeminino] = useState(false);
 
+  // Redirecionar profissional para o formulário completo se o cadastro não estiver completo
+  useEffect(() => {
+    if (!user || loading) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profissional_perfil")
+        .select("cadastro_completo, aprovacao_status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data && (!data.cadastro_completo || data.aprovacao_status === "pendente")) {
+        navigate({ to: "/profissional-cadastro" });
+      }
+    })();
+  }, [user, loading, navigate]);
+
   const recusarOrcamento = async (id: string) => {
     if (!user) return;
     const { error } = await supabase

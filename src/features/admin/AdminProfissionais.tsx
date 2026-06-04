@@ -242,6 +242,7 @@ export function AdminProfissionais() {
           cidade: perfil?.cidade || null,
           bio: perfil?.bio || null,
           slug: perfil?.slug || null,
+          aprovacao_status: perfil?.aprovacao_status || "pendente",
           ganhos: s.ganhos,
           servicos: s.servicos,
           rating: s.n > 0 ? s.nota / s.n : null,
@@ -254,6 +255,7 @@ export function AdminProfissionais() {
   });
 
   const filtered = pros.filter((p) => {
+    if (p.aprovacao_status !== "aprovado") return false;
     const matchSearch =
       !search ||
       p.nome?.toLowerCase().includes(search.toLowerCase()) ||
