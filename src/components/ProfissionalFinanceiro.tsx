@@ -50,10 +50,6 @@ type Saque = {
   id: string;
   valor: number;
   status: string;
-  chave_pix: string | null;
-  observacao: string | null;
-  solicitado_em: string;
-  aprovado_em: string | null;
   pago_em: string | null;
   comprovante_url: string | null;
 };
@@ -85,7 +81,6 @@ export function ProfissionalFinanceiro() {
   const [saldo, setSaldo] = useState<Saldo | null>(null);
   const [splits, setSplits] = useState<Split[]>([]);
   const [saques, setSaques] = useState<Saque[]>([]);
-  const [chavePix, setChavePix] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [valor, setValor] = useState("");
   const [obs, setObs] = useState("");
@@ -120,7 +115,7 @@ export function ProfissionalFinanceiro() {
           .limit(20),
         supabase
           .from("profissional_perfil")
-          .select("pix_key,chave_pix")
+          .select("user_id")
           .eq("user_id", user.id)
           .maybeSingle(),
       ]);
@@ -135,11 +130,6 @@ export function ProfissionalFinanceiro() {
     );
     setSplits((sp as Split[]) ?? []);
     setSaques((sq as Saque[]) ?? []);
-    setChavePix(
-      ((perfil as any)?.pix_key as string) ||
-        ((perfil as any)?.chave_pix as string) ||
-        "",
-    );
     setLoading(false);
   }, [user]);
 
@@ -148,8 +138,8 @@ export function ProfissionalFinanceiro() {
   }, [load]);
 
   const podeSacar = useMemo(
-    () => Number(saldo?.saldo_disponivel ?? 0) > 0 && !!chavePix,
-    [saldo, chavePix],
+    () => Number(saldo?.saldo_disponivel ?? 0) > 0,
+    [saldo],
   );
 
   const abrirSaque = () => {
@@ -169,15 +159,10 @@ export function ProfissionalFinanceiro() {
       toast.error("Valor maior que o saldo disponível");
       return;
     }
-    if (!chavePix) {
-      toast.error("Cadastre uma chave Pix antes de solicitar saque");
-      return;
-    }
     setSubmitting(true);
     const { error } = await supabase.from("profissional_saques").insert({
       profissional_id: user.id,
       valor: v,
-      chave_pix: chavePix,
       observacao: obs || null,
       status: "solicitado",
     });
@@ -205,7 +190,7 @@ export function ProfissionalFinanceiro() {
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Financeiro</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Acompanhe seu saldo e solicite saques via Pix.
+            Acompanhe seu saldo e histórico de pagamentos.
           </p>
         </div>
         <Button
@@ -247,16 +232,6 @@ export function ProfissionalFinanceiro() {
           accent="bg-rose-50 text-rose-700 border-rose-200"
         />
       </section>
-
-      {!chavePix && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm flex items-start gap-2">
-          <AlertCircle className="h-4 w-4 mt-0.5" />
-          <div>
-            Você ainda não cadastrou uma <b>chave Pix</b>. Adicione na aba "Conta"
-            para conseguir solicitar saques.
-          </div>
-        </div>
-      )}
 
       <section className="rounded-3xl bg-white border border-border p-4 sm:p-6 shadow-sm">
         <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
@@ -358,11 +333,6 @@ export function ProfissionalFinanceiro() {
                       Solicitado em{" "}
                       {new Date(sq.solicitado_em).toLocaleString("pt-BR")}
                     </div>
-                    {sq.chave_pix && (
-                      <div className="text-xs text-muted-foreground">
-                        Pix: {sq.chave_pix}
-                      </div>
-                    )}
                   </div>
                   <span
                     className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
@@ -379,17 +349,13 @@ export function ProfissionalFinanceiro() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Solicitar saque via Pix</DialogTitle>
+            <DialogTitle>Solicitar saque</DialogTitle>
             <DialogDescription>
-              O financeiro processa em até 1 dia útil. O valor será enviado para a
-              sua chave Pix cadastrada.
+              O financeiro processa em até 1 dia útil. O valor será transferido para a sua
+              conta Mercado Pago.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>Chave Pix</Label>
-              <Input value={chavePix} disabled />
-            </div>
             <div>
               <Label>Valor (R$)</Label>
               <Input
