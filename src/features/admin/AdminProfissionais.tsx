@@ -254,8 +254,9 @@ export function AdminProfissionais() {
     },
   });
 
-  const filtered = pros.filter((p) => {
-    if (p.aprovacao_status !== "aprovado") return false;
+  const approvedPros = pros.filter((p) => p.aprovacao_status === "aprovado");
+
+  const filtered = approvedPros.filter((p) => {
     const matchSearch =
       !search ||
       p.nome?.toLowerCase().includes(search.toLowerCase()) ||
@@ -356,7 +357,7 @@ export function AdminProfissionais() {
         <div>
           <h2 className="text-2xl font-bold">Profissionais</h2>
           <p className="text-sm text-slate-500">
-            {pros.length} cadastrados · {pros.filter((p) => p.ativo).length} ativos
+            {approvedPros.length} cadastrados · {approvedPros.filter((p) => p.ativo).length} ativos
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -412,14 +413,14 @@ export function AdminProfissionais() {
         </div>
         <div className="flex gap-2">
           {[
-            { id: "todos", label: `Todos (${pros.length})` },
+            { id: "todos", label: `Todos (${approvedPros.length})` },
             {
               id: "ativo",
-              label: `Ativos (${pros.filter((p) => p.ativo).length})`,
+              label: `Ativos (${approvedPros.filter((p) => p.ativo).length})`,
             },
             {
               id: "inativo",
-              label: `Inativos (${pros.filter((p) => !p.ativo).length})`,
+              label: `Inativos (${approvedPros.filter((p) => !p.ativo).length})`,
             },
           ].map((s) => (
             <button
