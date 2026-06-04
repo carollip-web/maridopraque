@@ -28,11 +28,12 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/para-profissionais")({
-  validateSearch: (search: Record<string, unknown>): { apoio?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): { apoio?: boolean; convite?: string } => ({
     apoio:
       search.apoio === "1" || search.apoio === "true" || search.apoio === true
         ? true
         : undefined,
+    convite: search.convite ? String(search.convite) : undefined,
   }),
   head: () => ({
     meta: [
@@ -64,8 +65,8 @@ function ParaProfissionaisPage() {
   const { isLoggedIn, isProfissional, userData } = useAuth();
   const [stats, setStats] = useState<DashStats | null>(null);
 
-  const { apoio } = Route.useSearch();
-  const [preCadastroOpen, setPreCadastroOpen] = useState(false);
+  const { apoio, convite: conviteId } = Route.useSearch();
+  const [preCadastroOpen, setPreCadastroOpen] = useState(!!conviteId);
   const [preCadLoading, setPreCadLoading] = useState(false);
   const [preCadForm, setPreCadForm] = useState({
     nome: "",
@@ -92,6 +93,7 @@ function ParaProfissionaisPage() {
             nome: preCadForm.nome,
             whatsapp: preCadForm.telefone.replace(/\D/g, ""),
             is_profissional: 'true',
+            ...(conviteId ? { convite_id: conviteId } : {}),
           },
         },
       });

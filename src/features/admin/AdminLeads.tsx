@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, RefreshCw, Plus, Link as LinkIcon, Copy } from "lucide-react";
+import { MessageSquare, RefreshCw, Plus, Link as LinkIcon, Copy, Trash2, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -79,12 +79,51 @@ export function AdminLeads() {
     }
   };
 
-  const openWhatsApp = (telefone: string) => {
-    const number = telefone.replace(/\D/g, "");
-    window.open(
-      `https://wa.me/55${number}?text=Olá! Vimos seu interesse em se tornar parceiro do Marido pra Quê.`,
-      "_blank",
+  const openWhatsApp = (lead: { id: string; telefone: string; nome: string }) => {
+    const number = lead.telefone.replace(/\D/g, "");
+    const link = `${window.location.origin}/convite?id=${lead.id}`;
+    const msg = encodeURIComponent(
+      `Olá, ${lead.nome.split(" ")[0]}! 👋\n\n` +
+      `Aqui é da equipe *Marido pra Quê?*, a plataforma de serviços domésticos de Copacabana e Ipanema.\n\n` +
+      `Vimos seu interesse em ser um parceiro nosso — e sua vaga está garantida! 🎉\n\n` +
+      `Para começar, é só clicar no link abaixo, criar sua conta e preencher seus dados:\n\n` +
+      `👉 ${link}\n\n` +
+      `Qualquer dúvida, pode responder aqui mesmo. Bem-vindo(a)!`
     );
+    window.open(`https://wa.me/55${number}?text=${msg}`, "_blank");
+    // Marca como convidado automaticamente
+    updateStatus(lead.id, "convidado");
+  };
+
+  const handleDelete = async (id: string, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o lead "${nome}"? Essa ação não pode ser desfeita.`)) return;
+    const { error } = await db.from("profissionais_pre_cadastro").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao excluir", { description: error.message });
+      return;
+    }
+    toast.success("Lead excluído.");
+    fetchLeads();
+  };
+
+  const handleExport = () => {
+    if (leads.length === 0) {
+      toast.error("Nenhum lead para exportar.");
+      return;
+    }
+    const header = "Data,Nome,Especialidade,Cidade,Status,Telefone\n";
+    const rows = leads.map((l: any) => 
+      `${new Date(l.created_at).toLocaleDateString("pt-BR")},${l.nome},${l.especialidade_principal},${l.cidade},${l.status},${l.telefone}`
+    ).join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads_marido_pra_que_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exportado!");
   };
 
   const generateInviteLink = async (id: string) => {
@@ -135,6 +174,9 @@ export function AdminLeads() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button onClick={handleExport} variant="outline" className="rounded-2xl font-bold">
+            <Download className="h-4 w-4 mr-2" /> Exportar CSV
+          </Button>
           <Button
             onClick={() => setAddModalOpen(true)}
             className="bg-brand text-brand-foreground font-bold shadow-brand"
@@ -218,10 +260,19 @@ export function AdminLeads() {
                             variant="ghost"
                             size="icon"
                             title="Chamar no WhatsApp"
-                            onClick={() => openWhatsApp(lead.telefone)}
+                            onClick={() => openWhatsApp(lead)}
                             className="text-green-600 hover:text-green-700 hover:bg-green-50"
                           >
                             <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Excluir lead"
+                            onClick={() => handleDelete(lead.id, lead.nome)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
