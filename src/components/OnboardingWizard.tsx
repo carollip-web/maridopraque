@@ -65,7 +65,7 @@ export function OnboardingWizard() {
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cidade, setCidade] = useState("Rio de Janeiro - RJ");
-  const [raio, setRaio] = useState<number>(15);
+  const [genero, setGenero] = useState("nao_informar");
   const [bio, setBio] = useState("");
   const [especialidades, setEspecialidades] = useState<string[]>([]);
   const [termoAceito, setTermoAceito] = useState(false);
@@ -78,7 +78,7 @@ export function OnboardingWizard() {
       setLoading(true);
       const { data: perfil } = await supabase
         .from("profissional_perfil")
-        .select("bio, cidade, especialidades, raio_atendimento_km, onboarding_completo")
+        .select("bio, cidade, especialidades, genero, onboarding_completo")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!alive) return;
@@ -86,7 +86,7 @@ export function OnboardingWizard() {
       setNome(profile?.nome ?? "");
       setWhatsapp(profile?.whatsapp ?? "");
       setCidade(perfil?.cidade ?? "");
-      setRaio(perfil?.raio_atendimento_km ?? 15);
+      setGenero(perfil?.genero ?? "nao_informar");
       setBio(perfil?.bio ?? "");
       setEspecialidades(perfil?.especialidades ?? []);
       if (!perfil?.onboarding_completo) setOpen(true);
@@ -100,11 +100,11 @@ export function OnboardingWizard() {
 
   const canNext = useMemo(() => {
     if (step === 0) return nome.trim().length >= 2 && whatsapp.replace(/\D/g, "").length >= 10;
-    if (step === 1) return cidade.trim().length >= 2 && raio > 0;
+    if (step === 1) return cidade.trim().length >= 2;
     if (step === 2) return bio.trim().length >= 20 && especialidades.length > 0;
     if (step === 3) return termoAceito;
     return false;
-  }, [step, nome, whatsapp, cidade, raio, bio, especialidades, termoAceito]);
+  }, [step, nome, whatsapp, cidade, bio, especialidades, termoAceito]);
 
   const toggleEspec = (e: string) => {
     setEspecialidades((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
@@ -127,7 +127,7 @@ export function OnboardingWizard() {
         {
           user_id: user.id,
           cidade: cidade.trim(),
-          raio_atendimento_km: raio,
+          genero,
           bio: bio.trim(),
           especialidades,
           oferece_apoio_feminino: false,
@@ -223,20 +223,21 @@ export function OnboardingWizard() {
                   Atualmente atendemos na região de Copacabana e Ipanema.
                 </p>
               <div className="space-y-1.5">
-                <Label htmlFor="ow-raio">
-                  Raio de atendimento: <span className="font-bold text-brand">{raio} km</span>
-                </Label>
-                <input
-                  id="ow-raio"
-                  type="range"
-                  min={1}
-                  max={50}
-                  value={raio}
-                  onChange={(e) => setRaio(Number(e.target.value))}
-                  className="w-full accent-brand"
-                />
+                <Label htmlFor="ow-genero">Gênero para atendimento</Label>
+                <select
+                  id="ow-genero"
+                  value={genero}
+                  onChange={(e) => setGenero(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="nao_informar">Prefiro não informar</option>
+                  <option value="mulher">Mulher</option>
+                  <option value="homem">Homem</option>
+                  <option value="outro">Outro</option>
+                  <option value="apoio_feminino">Apoio Feminino</option>
+                </select>
                 <p className="text-xs text-muted-foreground">
-                  Você só receberá pedidos dentro deste raio.
+                  Usado para compatibilidade com a preferência das clientes.
                 </p>
               </div>
             </>

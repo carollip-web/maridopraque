@@ -668,7 +668,7 @@ export function ProfissionalConfiguracoes() {
           <SectionTitle
             icon={MapPin}
             title="Atendimento"
-            hint="Defina sua experiência e raio de atendimento."
+            hint="Defina sua experiência e preferências de atendimento."
           />
 
           <div className="grid gap-5 sm:grid-cols-2 mt-6">
@@ -678,16 +678,6 @@ export function ProfissionalConfiguracoes() {
                 {...register("anos_experiencia")}
                 className={`${inputBase} ${inputOk}`}
                 placeholder="Ex: 5"
-                min="0"
-              />
-            </Field>
-
-            <Field label="Raio de atendimento (KM)">
-              <input
-                type="number"
-                {...register("raio_atendimento_km")}
-                className={`${inputBase} ${inputOk}`}
-                placeholder="Ex: 15"
                 min="0"
               />
             </Field>
