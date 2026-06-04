@@ -48,14 +48,7 @@ const profileSchema = z.object({
   oferece_apoio_feminino: z.boolean().optional(),
   chave_pix: z.string().optional(),
   pix_key_type: z.string().optional(),
-}).superRefine((val, ctx) => {
-  if (val.genero === "apoio_feminino" && (!val.chave_pix || val.chave_pix.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["chave_pix"],
-      message: "Chave PIX é obrigatória para profissionais de Apoio Feminino.",
-    });
-  }
+}).superRefine((_val, _ctx) => {
 });
 
 type ProfileValues = z.infer<typeof profileSchema>;
@@ -316,10 +309,6 @@ export function ProfissionalConfiguracoes() {
       cidade: "basico",
       cpf: "documentos",
       cnpj: "documentos",
-      chave_pix: "pix",
-      pix_key_type: "pix",
-      pix_holder_name: "pix",
-      pix_holder_document: "pix",
     };
     setActiveSection(map[firstKey] ?? "basico");
     toast.error("Confira os campos destacados antes de salvar.");
@@ -391,7 +380,6 @@ export function ProfissionalConfiguracoes() {
     { id: "basico", label: "Perfil básico", icon: User },
     { id: "documentos", label: "Documentos", icon: IdCard },
     { id: "mercadopago", label: "Mercado Pago", icon: Wallet },
-    { id: "pix", label: "Chave PIX", icon: Wallet },
     { id: "atendimento", label: "Atendimento", icon: MapPin },
     { id: "compatibilidade", label: "Compatibilidade", icon: Users },
   ];
@@ -669,38 +657,6 @@ export function ProfissionalConfiguracoes() {
                 </Button>
               </div>
             )}
-          </div>
-        </section>
-
-        {/* Seção: PIX */}
-        <section
-          id="sec-pix"
-          className="bg-white rounded-3xl border border-border p-6 sm:p-8 shadow-sm scroll-mt-6"
-        >
-          <SectionTitle
-            icon={Wallet}
-            title="Chave PIX (Apoio Feminino)"
-            hint="Necessário para realizar seus repasses caso você seja uma profissional de apoio feminino."
-          />
-
-          <div className="grid gap-5 sm:grid-cols-2 mt-6">
-            <Field label="Tipo de Chave PIX">
-              <select {...register("pix_key_type")} className={`${inputBase} ${inputOk}`}>
-                <option value="cpf">CPF</option>
-                <option value="cnpj">CNPJ</option>
-                <option value="email">E-mail</option>
-                <option value="telefone">Telefone</option>
-                <option value="aleatoria">Chave Aleatória</option>
-              </select>
-            </Field>
-
-            <Field label="Chave PIX" error={errors.chave_pix?.message} required={watch("genero") === "apoio_feminino"}>
-              <input
-                {...register("chave_pix")}
-                className={`${inputBase} ${errors.chave_pix ? inputErr : inputOk}`}
-                placeholder="Insira sua chave PIX"
-              />
-            </Field>
           </div>
         </section>
 
