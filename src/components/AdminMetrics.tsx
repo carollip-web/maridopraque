@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   DollarSign,
   ShoppingBag,
@@ -9,12 +9,23 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  Calendar,
   ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileJson,
+  Loader2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { AdminKPIs } from "@/features/admin/AdminKPIs";
 import { supabase } from "@/integrations/supabase/client";
+import { exportDashboardData } from "@/features/admin/exportDashboard";
+import {
+  DateRangeFilter,
+  resolveDateRange,
+  resolvePrevRange,
+  type TimePreset,
+  type DateRange,
+} from "@/features/admin/DateRangeFilter";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -29,12 +40,10 @@ import {
 } from "recharts";
 import {
   subDays,
-  startOfDay,
   format,
-  isWithinInterval,
-  startOfMonth,
-  endOfMonth,
   isSameDay,
+  differenceInDays,
+  eachDayOfInterval,
 } from "date-fns";
 
 type Metric = {
@@ -48,7 +57,8 @@ type Metric = {
 };
 
 export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void }) {
-  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "month">("30d");
+  const [preset, setPreset] = useState<TimePreset>("30d");
+  const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [pieData, setPieData] = useState<any[]>([]);
@@ -56,27 +66,32 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
   const [pendentes, setPendentes] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"geral" | "kpis">("geral");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  // Compute resolved range
+  const currentRange = resolveDateRange(preset, customRange);
+  const prevRange = resolvePrevRange(currentRange);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const now = new Date();
-      let startDate: Date;
-      let prevStartDate: Date;
-
-      if (timeRange === "7d") {
-        startDate = subDays(now, 7);
-        prevStartDate = subDays(startDate, 7);
-      } else if (timeRange === "90d") {
-        startDate = subDays(now, 90);
-        prevStartDate = subDays(startDate, 90);
-      } else if (timeRange === "month") {
-        startDate = startOfMonth(now);
-        prevStartDate = startOfMonth(subDays(startDate, 1));
-      } else {
-        startDate = subDays(now, 30);
-        prevStartDate = subDays(startDate, 30);
-      }
+      const startDate = currentRange.from;
+      const endDate = currentRange.to;
+      const prevStartDate = prevRange.from;
+      const prevEndDate = prevRange.to;
 
       const [{ data: orcs }, { data: avs }, { data: roles }, { data: repassesData }] =
         await Promise.all([
@@ -102,17 +117,23 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       const clientesCount = clientUserIds.filter((id) => !nonClientUserIds.has(id)).length;
 
       const list = orcs || [];
-      const currentPeriod = list.filter((o) => new Date(o.created_at) >= startDate);
+      const currentPeriod = list.filter((o) => {
+        const d = new Date(o.created_at);
+        return d >= startDate && d <= endDate;
+      });
       const prevPeriod = list.filter((o) => {
         const d = new Date(o.created_at);
-        return d >= prevStartDate && d < startDate;
+        return d >= prevStartDate && d < prevEndDate;
       });
 
       const repasses = repassesData || [];
-      const currentRepasses = repasses.filter((r) => new Date(r.created_at) >= startDate);
+      const currentRepasses = repasses.filter((r) => {
+        const d = new Date(r.created_at);
+        return d >= startDate && d <= endDate;
+      });
       const prevRepasses = repasses.filter((r) => {
         const d = new Date(r.created_at);
-        return d >= prevStartDate && d < startDate;
+        return d >= prevStartDate && d < prevEndDate;
       });
 
       // Calculate Revenue & Volume from repasses (lucro real)
@@ -170,18 +191,22 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         },
       ]);
 
-      // Chart Data: Group by Day
-      const days: any[] = [];
-      for (let i = 0; i < (timeRange === "7d" ? 7 : 30); i++) {
-        const d = subDays(now, i);
+      // Chart Data: Group by Day within the selected range
+      const totalDays = Math.min(differenceInDays(endDate, startDate) + 1, 90);
+      const daysList = eachDayOfInterval({
+        start: totalDays > 90 ? subDays(endDate, 89) : startDate,
+        end: endDate,
+      });
+
+      const days: any[] = daysList.map((d) => {
         const dayOrcs = currentPeriod.filter((o) => isSameDay(new Date(o.created_at), d));
         const dayRepasses = currentRepasses.filter((r) => isSameDay(new Date(r.created_at), d));
-        days.unshift({
+        return {
           name: format(d, "dd/MM"),
           receita: dayRepasses.reduce((s, r) => s + Number(r.valor_comissao_marketplace || 0), 0),
           pedidos: dayOrcs.length,
-        });
-      }
+        };
+      });
       setChartData(days);
 
       // Pie Data: Service Category
@@ -200,7 +225,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       setPendentes(list.filter((o) => o.status === "customizado_pendente").length);
       setLoading(false);
     })();
-  }, [timeRange]);
+  }, [preset, customRange]);
 
   const statusCor = (s: string) => {
     switch (s) {
@@ -237,7 +262,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <button
             onClick={() => setActiveTab("geral")}
             className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
@@ -258,37 +283,93 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           >
             KPIs Operacionais
           </button>
+
+          {/* Export Dropdown */}
+          <div className="relative ml-2" ref={exportRef}>
+            <button
+              onClick={() => setExportOpen((v) => !v)}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-brand/40 transition-all shadow-sm disabled:opacity-60"
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Exportar
+              <ChevronDown className={`h-3 w-3 transition-transform ${exportOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {exportOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-2 border-b border-slate-100">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-3 py-1">Formato de exportação</p>
+                </div>
+                <div className="p-1">
+                  <button
+                    onClick={async () => {
+                      setExporting(true);
+                      setExportOpen(false);
+                      try {
+                        await exportDashboardData("csv");
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-all group"
+                  >
+                    <div className="h-9 w-9 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                      <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold">Planilha CSV</p>
+                      <p className="text-[10px] text-slate-400">Compatível com Excel e Google Sheets</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setExporting(true);
+                      setExportOpen(false);
+                      try {
+                        await exportDashboardData("json");
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-all group"
+                  >
+                    <div className="h-9 w-9 rounded-xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                      <FileJson className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold">Dados JSON</p>
+                      <p className="text-[10px] text-slate-400">Para análise e integrações</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Shared Date Range Filter — visible on both tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h2 className="text-xl font-bold text-slate-800">
+          {activeTab === "geral" ? "Métricas Principais" : "KPIs Operacionais"}
+        </h2>
+        <DateRangeFilter
+          preset={preset}
+          customRange={customRange}
+          onPresetChange={setPreset}
+          onCustomRangeChange={setCustomRange}
+        />
+      </div>
+
       {activeTab === "kpis" ? (
-        <AdminKPIs />
+        <AdminKPIs dateRange={currentRange} />
       ) : (
         <>
-          {/* Header with Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="text-xl font-bold text-slate-800">Métricas Principais</h2>
-            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-          {[
-            { id: "7d", label: "7 dias" },
-            { id: "30d", label: "30 dias" },
-            { id: "90d", label: "90 dias" },
-            { id: "month", label: "Este Mês" },
-          ].map((r) => (
-            <button
-              key={r.id}
-              onClick={() => setTimeRange(r.id as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                timeRange === r.id
-                  ? "bg-brand text-white shadow-md shadow-brand/20"
-                  : "text-slate-500 hover:bg-slate-50"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((stat) => (

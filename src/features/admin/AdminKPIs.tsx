@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, Users, DollarSign, ArrowRight, Clock } from "lucide-react";
+import type { DateRange } from "./DateRangeFilter";
 
 type Stats = {
   pedidos: { total: number; pendente: number; enviado: number; aprovado: number; pago: number; concluido: number; cancelado: number };
@@ -12,7 +13,11 @@ type Stats = {
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const pct = (v: number) => `${v.toFixed(1)}%`;
 
-export function AdminKPIs() {
+type AdminKPIsProps = {
+  dateRange?: DateRange | null;
+};
+
+export function AdminKPIs({ dateRange }: AdminKPIsProps) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,16 +25,35 @@ export function AdminKPIs() {
     (async () => {
       setLoading(true);
       const [orcsRes, profsRes, avsRes, pagsRes] = await Promise.all([
-        supabase.from("orcamentos").select("id, status, valor, valor_servico, tipo_atendimento, is_test").eq("is_test", false),
+        supabase.from("orcamentos").select("id, status, valor, valor_servico, tipo_atendimento, is_test, created_at").eq("is_test", false),
         supabase.from("profissional_perfil").select("user_id, ativo, mp_user_id"),
-        supabase.from("avaliacoes").select("nota"),
-        supabase.from("pagamentos").select("valor_total, status, orcamento_id"),
+        supabase.from("avaliacoes").select("nota, created_at"),
+        supabase.from("pagamentos").select("valor_total, status, orcamento_id, created_at"),
       ]);
 
-      const orcs = orcsRes.data || [];
+      let orcs = orcsRes.data || [];
       const profs = profsRes.data || [];
-      const avs = avsRes.data || [];
-      const pags = pagsRes.data || [];
+      let avs = avsRes.data || [];
+      let pags = pagsRes.data || [];
+
+      // Apply date range filter if provided
+      if (dateRange) {
+        const from = dateRange.from.getTime();
+        const to = dateRange.to.getTime();
+        orcs = orcs.filter((o) => {
+          const t = new Date(o.created_at).getTime();
+          return t >= from && t <= to;
+        });
+        avs = avs.filter((a) => {
+          const t = new Date(a.created_at).getTime();
+          return t >= from && t <= to;
+        });
+        pags = pags.filter((p) => {
+          if (!p.created_at) return false;
+          const t = new Date(p.created_at).getTime();
+          return t >= from && t <= to;
+        });
+      }
 
       // === PEDIDOS ===
       const pedidos = {
@@ -43,6 +67,7 @@ export function AdminKPIs() {
       };
 
       // === PROFISSIONAIS ===
+      // Profissionais are not time-filtered (they are a current snapshot)
       const mediaAvaliacao = avs.length > 0
         ? (avs.reduce((s, a) => s + a.nota, 0) / avs.length).toFixed(1)
         : "—";
@@ -82,7 +107,7 @@ export function AdminKPIs() {
       setStats({ pedidos, profissionais, receita, conversao });
       setLoading(false);
     })();
-  }, []);
+  }, [dateRange]);
 
   if (loading) return <div className="p-8 text-slate-500">Carregando KPIs...</div>;
   if (!stats) return <div className="p-8 text-slate-500">Erro ao carregar.</div>;
@@ -116,7 +141,12 @@ export function AdminKPIs() {
     <div className="p-6 space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-slate-800 mb-1">KPIs Operacionais</h2>
-        <p className="text-slate-500 text-sm">Visão consolidada da operação (todos os dados, excluindo testes).</p>
+        <p className="text-slate-500 text-sm">
+          {dateRange
+            ? `Dados filtrados do período selecionado (excluindo testes).`
+            : `Visão consolidada da operação (todos os dados, excluindo testes).`
+          }
+        </p>
       </div>
 
       {/* PEDIDOS */}
