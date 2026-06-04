@@ -142,6 +142,7 @@ function AdminArea() {
             {activeTab === "servicos" && <AdminServicos />}
             {activeTab === "financeiro" && <AdminFinanceiro />}
             {activeTab === "config" && <AdminConfig />}
+            {activeTab === "equipe" && <AdminEquipe />}
             {activeTab === "notificacoes" && <AdminNotificacoes />}
             {activeTab === "leads" && <AdminLeads />}
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
