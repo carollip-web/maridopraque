@@ -52,7 +52,7 @@ serve(async (req) => {
 
     const MERCADO_PAGO_CLIENT_ID =
       Deno.env.get('MERCADO_PAGO_CLIENT_ID') || Deno.env.get('MERCADO_PAGO_APP_ID')
-    const MERCADO_PAGO_REDIRECT_URI = 'https://maridopraque.com/mercadopago/callback'
+    const MERCADO_PAGO_REDIRECT_URI = 'https://maridopraque.com/mp/callback'
 
     if (!MERCADO_PAGO_CLIENT_ID) {
       console.error('[mp-oauth-start] missing MERCADO_PAGO_CLIENT_ID')

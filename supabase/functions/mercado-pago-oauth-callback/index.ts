@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const REDIRECT_URI_FIXO = "https://maridopraque.com/mercadopago/callback"
+const REDIRECT_URI_FIXO = "https://maridopraque.com/mp/callback"
 
 function maskCode(code: string | undefined | null): string {
   if (!code) return '(vazio)'
