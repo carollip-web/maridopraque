@@ -221,11 +221,6 @@ serve(async (req) => {
       notification_url: `${SUPABASE_URL}/functions/v1/mercado-pago-webhook`,
       statement_descriptor: "MARIDO PRA QUE",
       payment_methods: {
-        excluded_payment_types: [
-          { id: "ticket" },
-          { id: "bank_transfer" },
-          { id: "atm" },
-        ],
         installments: 12,
       },
     };
