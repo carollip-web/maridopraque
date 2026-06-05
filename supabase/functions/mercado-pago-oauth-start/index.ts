@@ -52,14 +52,11 @@ serve(async (req) => {
 
     const MERCADO_PAGO_CLIENT_ID =
       Deno.env.get('MERCADO_PAGO_CLIENT_ID') || Deno.env.get('MERCADO_PAGO_APP_ID')
-    const MERCADO_PAGO_REDIRECT_URI = Deno.env.get('MERCADO_PAGO_REDIRECT_URI')
+    const MERCADO_PAGO_REDIRECT_URI = 'https://maridopraque.com/mercadopago/callback'
 
-    if (!MERCADO_PAGO_CLIENT_ID || !MERCADO_PAGO_REDIRECT_URI) {
-      console.error('[mp-oauth-start] missing secrets', {
-        hasClientId: !!MERCADO_PAGO_CLIENT_ID,
-        hasRedirectUri: !!MERCADO_PAGO_REDIRECT_URI,
-      })
-      return new Response(JSON.stringify({ error: 'Configuração do Mercado Pago incompleta (faltam secrets).' }), {
+    if (!MERCADO_PAGO_CLIENT_ID) {
+      console.error('[mp-oauth-start] missing MERCADO_PAGO_CLIENT_ID')
+      return new Response(JSON.stringify({ error: 'Configuração do Mercado Pago incompleta (falta MERCADO_PAGO_CLIENT_ID).' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       })
@@ -86,7 +83,7 @@ serve(async (req) => {
       )
     }
 
-    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${MERCADO_PAGO_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MERCADO_PAGO_REDIRECT_URI)}&state=${state}`
+    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${MERCADO_PAGO_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(MERCADO_PAGO_REDIRECT_URI)}&state=${state}`
 
     return new Response(JSON.stringify({ authUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

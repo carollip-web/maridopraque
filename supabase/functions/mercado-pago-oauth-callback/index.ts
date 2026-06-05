@@ -102,15 +102,9 @@ serve(async (req) => {
     const MERCADO_PAGO_CLIENT_ID =
       Deno.env.get('MERCADO_PAGO_CLIENT_ID') || Deno.env.get('MERCADO_PAGO_APP_ID')
     const MERCADO_PAGO_CLIENT_SECRET = Deno.env.get('MERCADO_PAGO_CLIENT_SECRET')
-    const MERCADO_PAGO_REDIRECT_URI =
-      Deno.env.get('MP_REDIRECT_URI') || REDIRECT_URI_FIXO
+    const MERCADO_PAGO_REDIRECT_URI = REDIRECT_URI_FIXO
 
-    if (!MERCADO_PAGO_CLIENT_ID || !MERCADO_PAGO_CLIENT_SECRET || !MERCADO_PAGO_REDIRECT_URI) {
-      console.error('[oauth-callback] configuração incompleta', {
-        hasClientId: !!MERCADO_PAGO_CLIENT_ID,
-        hasClientSecret: !!MERCADO_PAGO_CLIENT_SECRET,
-        hasRedirectUri: !!MERCADO_PAGO_REDIRECT_URI,
-      })
+    if (!MERCADO_PAGO_CLIENT_ID || !MERCADO_PAGO_CLIENT_SECRET) {
       return new Response(JSON.stringify({ error: 'Configuração do Mercado Pago incompleta (faltam secrets).' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
