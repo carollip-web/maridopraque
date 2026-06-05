@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
@@ -18,8 +18,13 @@ function MpCallbackPage() {
   const { code, state, error } = Route.useSearch();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Conectando ao Mercado Pago...");
+  const calledRef = useRef(false);
 
   useEffect(() => {
+    // Guard: authorization code is single-use, never call twice
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const processCallback = async () => {
       if (error) {
         setStatus("error");
