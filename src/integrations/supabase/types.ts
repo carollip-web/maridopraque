@@ -1269,6 +1269,7 @@ export type Database = {
           oferece_apoio_feminino: boolean
           status: string
           telefone: string
+          user_id: string | null
         }
         Insert: {
           cidade: string
@@ -1279,6 +1280,7 @@ export type Database = {
           oferece_apoio_feminino?: boolean
           status?: string
           telefone: string
+          user_id?: string | null
         }
         Update: {
           cidade?: string
@@ -1289,6 +1291,7 @@ export type Database = {
           oferece_apoio_feminino?: boolean
           status?: string
           telefone?: string
+          user_id?: string | null
         }
         Relationships: []
       }
