@@ -38,7 +38,20 @@ function MpCallbackPage() {
           body: { code, state },
         });
 
-        if (invokeError) throw invokeError;
+        if (invokeError) {
+          // Extract actual error body from FunctionsHttpError
+          let errorMsg = invokeError.message;
+          if (invokeError.context) {
+            try {
+              const parsed = await invokeError.context.json();
+              errorMsg = parsed.error || JSON.stringify(parsed);
+              console.error("[mp-callback] Edge Function error body:", parsed);
+            } catch {
+              // context might not be JSON
+            }
+          }
+          throw new Error(errorMsg);
+        }
         if (!data?.ok) throw new Error(data?.error ?? "Falha desconhecida");
 
         setStatus("success");
