@@ -83,7 +83,7 @@ serve(async (req) => {
       )
     }
 
-    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${MERCADO_PAGO_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(MERCADO_PAGO_REDIRECT_URI)}&state=${state}`
+    const authUrl = `https://auth.mercadopago.com/authorization?client_id=${MERCADO_PAGO_CLIENT_ID}&response_type=code&platform_id=mp&redirect_uri=${encodeURIComponent(MERCADO_PAGO_REDIRECT_URI)}&state=${state}`
 
     return new Response(JSON.stringify({ authUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
