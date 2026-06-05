@@ -55,7 +55,7 @@ function ClienteArea() {
         replace: true,
       });
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!payment) return;
@@ -107,7 +107,7 @@ function ClienteArea() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
     const channel = supabase
@@ -143,7 +143,7 @@ function ClienteArea() {
       console.log("[ClienteArea] Unsubscribing from realtime");
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient]);
+  }, [user?.id, queryClient]);
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
