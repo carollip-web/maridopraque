@@ -50,10 +50,15 @@ serve(async (req) => {
       })
     }
 
-    const MERCADO_PAGO_CLIENT_ID = Deno.env.get('MERCADO_PAGO_CLIENT_ID')
+    const MERCADO_PAGO_CLIENT_ID =
+      Deno.env.get('MERCADO_PAGO_CLIENT_ID') || Deno.env.get('MERCADO_PAGO_APP_ID')
     const MERCADO_PAGO_REDIRECT_URI = Deno.env.get('MERCADO_PAGO_REDIRECT_URI')
 
     if (!MERCADO_PAGO_CLIENT_ID || !MERCADO_PAGO_REDIRECT_URI) {
+      console.error('[mp-oauth-start] missing secrets', {
+        hasClientId: !!MERCADO_PAGO_CLIENT_ID,
+        hasRedirectUri: !!MERCADO_PAGO_REDIRECT_URI,
+      })
       return new Response(JSON.stringify({ error: 'Configuração do Mercado Pago incompleta (faltam secrets).' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
