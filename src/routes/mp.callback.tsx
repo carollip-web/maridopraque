@@ -18,13 +18,7 @@ function MpCallbackPage() {
   const { code, state, error } = Route.useSearch();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("Conectando ao Mercado Pago...");
-  const calledRef = useRef(false);
-
   useEffect(() => {
-    // Guard: authorization code is single-use, never call twice
-    if (calledRef.current) return;
-    calledRef.current = true;
-
     const processCallback = async () => {
       if (error) {
         setStatus("error");
@@ -37,6 +31,15 @@ function MpCallbackPage() {
         setMessage("Parâmetros de callback ausentes (code ou state)");
         return;
       }
+
+      // Guard against React Strict Mode double execution and page reloads
+      const processedCode = sessionStorage.getItem("mp_processed_code");
+      if (processedCode === code) {
+        setStatus("error");
+        setMessage("Este código de autorização já foi processado ou expirou. Por favor, tente conectar novamente a partir do painel.");
+        return;
+      }
+      sessionStorage.setItem("mp_processed_code", code);
 
       try {
         const { data, error: invokeError } = await supabase.functions.invoke("mercado-pago-oauth-callback", {
