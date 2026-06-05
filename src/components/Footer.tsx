@@ -34,6 +34,9 @@ export function Footer() {
             <Link to="/termos" className="transition hover:text-brand">
               Termos
             </Link>
+            <Link to="/termo-adesao" className="transition hover:text-brand">
+              Adesão
+            </Link>
             <Link to="/privacidade" className="transition hover:text-brand">
               Privacidade
             </Link>

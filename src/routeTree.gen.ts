@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as TermoAdesaoRouteImport } from './routes/termo-adesao'
 import { Route as ServicosAdminRouteImport } from './routes/servicos-admin'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -46,6 +47,11 @@ import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profission
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermoAdesaoRoute = TermoAdesaoRouteImport.update({
+  id: '/termo-adesao',
+  path: '/termo-adesao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicosAdminRoute = ServicosAdminRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/servicos': typeof ServicosRouteWithChildren
   '/servicos-admin': typeof ServicosAdminRoute
+  '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/btg/callback': typeof BtgCallbackRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/servicos'
     | '/servicos-admin'
+    | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
     | '/btg/callback'
@@ -449,6 +461,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ServicosRoute: typeof ServicosRouteWithChildren
   ServicosAdminRoute: typeof ServicosAdminRoute
+  TermoAdesaoRoute: typeof TermoAdesaoRoute
   TermosRoute: typeof TermosRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
   BtgCallbackRoute: typeof BtgCallbackRoute
@@ -463,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termo-adesao': {
+      id: '/termo-adesao'
+      path: '/termo-adesao'
+      fullPath: '/termo-adesao'
+      preLoaderRoute: typeof TermoAdesaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/servicos-admin': {
@@ -754,6 +774,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ServicosRoute: ServicosRouteWithChildren,
   ServicosAdminRoute: ServicosAdminRoute,
+  TermoAdesaoRoute: TermoAdesaoRoute,
   TermosRoute: TermosRoute,
   AuthRedirectRoute: AuthRedirectRoute,
   BtgCallbackRoute: BtgCallbackRoute,
@@ -763,3 +784,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
