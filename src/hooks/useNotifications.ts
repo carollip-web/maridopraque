@@ -137,7 +137,10 @@ export function useNotifications() {
   };
 
   const markAllAsRead = async () => {
-    await supabase.from("notificacoes").update({ lida: true }).eq("lida", false);
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return;
+    await supabase.from("notificacoes").update({ lida: true }).eq("user_id", uid).eq("lida", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
