@@ -134,7 +134,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data, error } = await supabase
         .from("orcamentos")
         .select(
-          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento",
+          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido",
         )
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
