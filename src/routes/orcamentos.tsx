@@ -1118,9 +1118,7 @@ function MeusOrcamentos() {
                     acceptVideo
                   />
                 ) : (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    Faça login ou crie sua conta para anexar fotos e vídeos do problema.
-                  </p>
+                  <GuestUploader files={guestFiles} setFiles={setGuestFiles} max={5} />
                 )}
               </div>
 
