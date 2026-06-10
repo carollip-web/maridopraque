@@ -77,9 +77,11 @@ export function useNotifications() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchAll = async () => {
+      if (!userId) return;
       const { data } = await supabase
         .from("notificacoes")
         .select("*")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
       const list = (data ?? []).map((n) => {
