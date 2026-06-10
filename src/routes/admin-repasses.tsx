@@ -157,21 +157,33 @@ function AdminPagamentosPage() {
     });
   }, [pagamentos, selectedStatus, searchQuery, profiles]);
 
+  // Extrai a taxa de marketplace (application_fee) do pagamento.
+  // Ordem: campo direto → fee_details do webhook → fallback 15% do valor_total.
+  const getMarketplaceFee = (r: any): number => {
+    const meta = r?.metadata as any;
+    const direct =
+      meta?.marketplace_fee_amount ??
+      meta?.application_fee ??
+      meta?.application_fee_amount;
+    if (direct != null && !isNaN(Number(direct))) return Number(direct);
+    const details = meta?.last_webhook_payload?.fee_details;
+    if (Array.isArray(details)) {
+      const app = details.find((d: any) => d?.type === "application_fee");
+      if (app?.amount != null) return Number(app.amount);
+    }
+    return Number(r?.valor_total || 0) * 0.15;
+  };
+
   // Métricas rápidas no topo
   const metrics = useMemo(() => {
     const brutoTotal = pagamentos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const comissaoTotal = pagamentos
-      .filter((r) => r.status === "paid" || r.status === "approved")
-      .reduce((acc, r) => {
-        const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
-        return acc + Number(fee);
-      }, 0);
+    const pagos = pagamentos.filter((r) => r.status === "paid" || r.status === "approved");
+    const comissaoTotal = pagos.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
     const pendenteTotal = pagamentos
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagoTotal = pagamentos
-      .filter((r) => r.status === "paid" || r.status === "approved")
-      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const pagoBruto = pagos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const pagoTotal = pagoBruto - comissaoTotal; // líquido repassado ao profissional
 
     return { brutoTotal, comissaoTotal, pendenteTotal, pagoTotal };
   }, [pagamentos]);
@@ -427,8 +439,8 @@ function AdminPagamentosPage() {
                       label: pag.status,
                     };
                     
-                    const fee = (pag.metadata as any)?.marketplace_fee_amount || 0;
-                    const liquido = pag.valor_total - fee;
+                    const fee = getMarketplaceFee(pag);
+                    const liquido = Number(pag.valor_total || 0) - fee;
 
                     return (
                       <tr key={pag.id} className="hover:bg-slate-50/40 transition group">
