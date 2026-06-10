@@ -179,6 +179,8 @@ function MeusOrcamentos() {
   const [flexibilidadeAgenda, setFlexibilidadeAgenda] = useState<string>("flexivel");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [fotos, setFotos] = useState<string[]>([]);
+  // Visitantes: guardamos os arquivos localmente (blob URLs) e fazemos upload ao enviar.
+  const [guestFiles, setGuestFiles] = useState<{ file: File; previewUrl: string }[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
