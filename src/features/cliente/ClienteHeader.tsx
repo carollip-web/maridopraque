@@ -12,10 +12,10 @@ export function ClienteHeader({ activeTab, sidebarItems, userName }: ClienteHead
   const firstName = userName?.split(" ")[0] || "Usuário";
 
   return (
-    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pt-4 pb-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-border/50">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{currentLabel}</h1>
-        <p className="text-muted-foreground mt-1">Bem-vindo(a) de volta, {firstName}!</p>
+    <header className="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pt-4 pb-4 -mx-4 px-4 md:-mx-10 md:px-10 border-b border-border/50">
+      <div className="min-w-0">
+        <h1 className="truncate text-2xl md:text-3xl font-bold tracking-tight">{currentLabel}</h1>
+        <p className="text-muted-foreground mt-1 truncate">Bem-vindo(a) de volta, {firstName}!</p>
       </div>
     </header>
   );
