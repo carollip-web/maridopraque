@@ -39,6 +39,11 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
+      {
+        httpEquiv: "Content-Security-Policy",
+        content:
+          "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' blob:; style-src * 'unsafe-inline'; img-src * data: blob:; font-src * data:; connect-src *; frame-src *; media-src *;",
+      },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Marido pra Quê? — Reparos, Montagem e Regularização" },
       {
