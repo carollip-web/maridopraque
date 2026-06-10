@@ -186,6 +186,29 @@ const testimonials = [
 ];
 
 function Index() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading || !user) return;
+    let cancelled = false;
+    (async () => {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (cancelled) return;
+      const list = (roles ?? []).map((r: any) => r.role);
+      if (list.includes("admin")) navigate({ to: "/admin", replace: true } as any);
+      else if (list.includes("profissional"))
+        navigate({ to: "/profissional", replace: true } as any);
+      // clientes ficam no home
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, navigate]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero */}
