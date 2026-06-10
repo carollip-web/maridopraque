@@ -162,6 +162,7 @@ function ClienteArea() {
           handleLogout={handleLogout}
           isProfissional={isProfissional}
           isAdmin={isAdmin}
+          inDrawer
         />
       </MobilePanelBar>
 
