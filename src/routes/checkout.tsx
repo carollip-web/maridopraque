@@ -92,6 +92,14 @@ function Checkout() {
   const [whatsapp, setWhatsapp] = useState("");
   const pollingRef = useRef<number | null>(null);
   const channelRef = useRef<any>(null);
+  const [brickConfig, setBrickConfig] = useState<{
+    publicKey: string;
+    amount: number;
+    payerEmail: string;
+  } | null>(null);
+  const [brickError, setBrickError] = useState<string | null>(null);
+  const brickControllerRef = useRef<any>(null);
+  const brickMountedRef = useRef(false);
 
   useEffect(() => {
     if (!orcamentoId) { setLoading(false); return; }
