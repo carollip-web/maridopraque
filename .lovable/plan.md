@@ -1,67 +1,49 @@
-# Melhorar visualização mobile
+# Checkout Transparente (Payment Brick) com split
 
-Você marcou todas as áreas e todos os sintomas, então vou atacar em 4 fases priorizadas pelo impacto. Cada fase é independente — você pode aprovar tudo ou só as primeiras.
+## Objetivo
+O cliente paga com cartão **sem sair do site**. O formulário é renderizado dentro do `/checkout`, o token é gerado no navegador pelo SDK do MP, e o pagamento é criado no backend com o `access_token` do profissional (split 1:1), usando `application_fee` em vez de `marketplace_fee`. Isso elimina o problema do botão cinza no Checkout Pro.
 
-## Princípios aplicados em todas as fases
+## Mudanças
 
-Seguindo o padrão de responsividade do projeto (Tailwind v4):
-- Cabeçalhos com texto + widget viram `grid grid-cols-[minmax(0,1fr)_auto]` no mobile e `sm:flex` no desktop
-- Containers de texto recebem `min-w-0` + `truncate` pra não estourar
-- Ícones/avatares recebem `shrink-0`
-- Tipografia escala (`text-xl sm:text-2xl`, etc.)
-- Padding lateral reduz no mobile (`px-4 md:px-10`)
-- Tabelas largas viram lista de cards no `<md`
+### 1. Frontend — `src/routes/checkout.tsx`
+- Carregar o SDK do MP (`https://sdk.mercadopago.com/js/v2`) sob demanda quando o método "cartão" estiver ativo.
+- Substituir o botão "Pagar com Cartão" (que faz redirect) por um container `<div id="payment-brick">` onde o Payment Brick é montado.
+- Inicializar o Brick com o **`mp_public_key` do profissional** (buscado junto com o orçamento).
+- No `onSubmit` do Brick, chamar a nova edge function `mercadopago-cartao-processar` passando `{ orcamentoId, formData }`.
+- Mostrar estado de sucesso/recusa imediatamente (o `/v1/payments` responde síncrono com `approved` / `in_process` / `rejected`).
+- Em sucesso, redirecionar para `/cliente?tab=pedidos&payment=success`.
 
-## Fase 1 — Navegação (a coisa que mais incomoda)
+### 2. Nova edge function — `supabase/functions/mercadopago-cartao-processar/index.ts`
+- Recebe `{ orcamentoId, formData }` (token, payment_method_id, installments, issuer_id, payer).
+- Reaproveita as validações da `mercadopago-cartao-criar` (posse do orçamento, status `aprovado`, valor, cálculo do `valor_apoio`, busca do `mp_access_token` do profissional, expiração).
+- Cria registro em `pagamentos` com status `pending`.
+- POST em `https://api.mercadopago.com/v1/payments` com header `X-Idempotency-Key: <pagamento_id>`, usando `Authorization: Bearer <seller_access_token>` e body:
+  - `transaction_amount`, `token`, `payment_method_id`, `installments`, `issuer_id`
+  - `payer: { email, identification }`
+  - `application_fee` = marketplace fee + valor apoio (substitui o antigo `marketplace_fee`)
+  - `external_reference: orcamento.id`
+  - `notification_url` = webhook atual `mercado-pago-webhook`
+  - `metadata: { orcamento_id, pagamento_id, cliente_id }`
+  - `statement_descriptor: "MARIDO PRA QUE"`
+- Atualiza `pagamentos` com `gateway_payment_id` e `status` (`approved` → `pago`, `in_process` → `pending`, `rejected` → `failed`).
+- Retorna `{ ok, status, status_detail, pagamentoId }`.
 
-Hoje as sidebars de Cliente, Profissional e Admin ocupam a tela inteira ou ficam mal posicionadas no celular.
+### 3. Edge function antiga
+- Manter `mercadopago-cartao-criar` por ora (não remover) — pode ser apagada depois que confirmarmos o fluxo novo.
 
-- **Cliente** (`ClienteSidebar`): virar um menu off-canvas (Sheet) acionado por um botão "menu" no `ClienteHeader`. No desktop continua a sidebar fixa.
-- **Profissional** (`ProfissionalSidebar`): mesmo padrão — Sheet no mobile, sidebar no desktop.
-- **Admin** (`AdminSidebar` + `AdminHeader`): mesmo padrão, e o header mostra o título da seção ativa no mobile.
-- **Header público** (`Header`): revisar o menu mobile, garantir que o logo + CTA cabem em telas de 360px.
-
-## Fase 2 — Textos e elementos cortados
-
-Varredura nos cards e headers de todas as áreas pra aplicar o padrão `grid + min-w-0 + truncate + shrink-0`:
-
-- Home / landing (`src/routes/index.tsx`, `Hero`, seções de serviços, footer)
-- `ClienteHeader`, cards de `PedidosTab`, `PagamentosTab`, `DadosTab`
-- `ProfissionalHeader`, `OrcamentoCard`, `ProfissionalStats`, `ProfissionalDashboard`
-- Cards de KPI/metrics do Admin (`AdminKPIs`, `AdminMetrics`)
-
-## Fase 3 — Tabelas e listas
-
-As tabelas do Admin (`AdminClientes`, `AdminProfissionais`, `AdminPedidos`, `AdminFinanceiro`, `AdminLeads`) estouram horizontal no mobile.
-
-Duas opções por tabela, escolho conforme a densidade:
-- **Tabelas leves** (até 5 colunas relevantes): scroll horizontal com `overflow-x-auto` + primeira coluna fixa
-- **Tabelas densas**: render alternativo como lista de cards no `<md`, tabela tradicional no `md+`
-
-Mesma coisa em `ProfissionalOrcamentos` e listas longas do Cliente.
-
-## Fase 4 — Polimento
-
-- Espaçamentos e tamanhos de fonte de hero/seções na home
-- Modais (`NotificationDetailModal`, `TermoAdesaoDialog`, etc.) virando bottom-sheet no mobile via `Drawer` quando fizer sentido
-- Botões e CTAs com `min-h-11` (alvo de toque)
-- Revisão final no viewport 360px e 390px
-
----
+### 4. Webhook
+- `mercado-pago-webhook` já trata `payment.updated` por `external_reference` — nenhuma mudança necessária.
 
 ## Detalhes técnicos
 
-- Não vou trocar lógica de negócio, só presentation (className, estrutura JSX, breakpoints).
-- Onde precisar de estado novo (abrir/fechar Sheet), uso `useState` local no componente.
-- O padrão exato vem de `<responsive-layout-patterns>` do projeto.
-- Vou usar `Sheet` (já instalado, `src/components/ui/sheet.tsx`) pros menus mobile — sem nova dependência.
-- Vou verificar visualmente no preview mobile (viewport 390px) ao final de cada fase.
+**Por que `application_fee` em vez de `marketplace_fee`:** no `/v1/payments` (transparente) o parâmetro chama-se `application_fee`. No `/checkout/preferences` (Pro) chama-se `marketplace_fee`. Mesmo significado, nomes diferentes por endpoint.
 
-## Como você quer prosseguir?
+**Public key do profissional:** já é salvo na coluna `profissional_perfil.mp_public_key` durante o OAuth callback. Vou buscá-lo junto com o orçamento via uma consulta extra, ou expor via uma server function `getCheckoutData(orcamentoId)` que devolva `{ orcamento, materiais, mpPublicKey }`. Vou pelo caminho da server function para não vazar a coluna em uma query client direta.
 
-Me responde com uma das opções:
-1. "Faz tudo" — executo as 4 fases em sequência
-2. "Só fase 1" (ou 1 e 2, etc.) — executo só o que você pedir
-3. "Começa pelo painel X" — priorizo Cliente, Profissional ou Admin
+**CSP:** o Brick injeta scripts inline, então a CSP atual do Lovable pode bloquear. O SDK é carregado de `https://sdk.mercadopago.com` (script externo, ok com `'strict-dynamic'`). Os iframes do Brick rodam em `*.mercadopago.com`. Se houver bloqueio, ajustamos via `frame-src` no meta — mas como o Brick não usa `<script>` inline diretamente (carrega tudo via SDK), deve passar.
 
-Recomendo começar por **Fase 1 + Fase 2 no painel do Profissional**, que é onde teus usuários passam mais tempo no celular.
+## Riscos
+- Se a CSP do Lovable bloquear algum recurso do Brick, ele não renderiza. Mitigação: testar em preview e, se necessário, adicionar exceções específicas no meta CSP (sem `strict-dynamic`).
+- Cartões salvos: a primeira versão pedirá o cartão a cada compra. Cartões salvos (Customer + Card) é uma evolução posterior.
+
+Posso seguir?
