@@ -229,18 +229,19 @@ function ProfissionalArea() {
 
     const meus = list.filter((o) => o.profissional_id === user?.id);
     const pagos = meus.filter((o) => o.status === "pago" || o.status === "concluido");
-    const pendentesPgto = meus.filter((o) => o.status === "aprovado");
+    // "A receber" = serviços pagos pelo cliente mas ainda não repassados ao profissional
+    const aReceberOrcs = meus.filter((o) => o.status === "pago");
 
     const meusApoio = list.filter((o) => (o as any).apoio_profissional_id === user?.id);
     const pagosApoio = meusApoio.filter((o) => o.status === "pago" || o.status === "concluido");
-    const pendentesPgtoApoio = meusApoio.filter((o) => o.status === "aprovado");
+    const aReceberOrcsApoio = meusApoio.filter((o) => o.status === "pago");
 
     const ganhosNormais = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
     const ganhosApoio = pagosApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
     const ganhos = ganhosNormais + ganhosApoio;
 
-    const receberNormais = pendentesPgto.reduce((acc, o) => acc + Number(o.valor || 0), 0);
-    const receberApoio = pendentesPgtoApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+    const receberNormais = aReceberOrcs.reduce((acc, o) => acc + Number(o.valor || 0), 0);
+    const receberApoio = aReceberOrcsApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
     const receber = receberNormais + receberApoio;
 
     const ticket = (pagos.length + pagosApoio.length) > 0 ? ganhos / (pagos.length + pagosApoio.length) : 0;
