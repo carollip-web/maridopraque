@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { aceitarProposta, decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { GuestUploader } from "@/components/GuestUploader";
 import {
   Loader2,
   CheckCircle2,
@@ -179,6 +180,8 @@ function MeusOrcamentos() {
   const [flexibilidadeAgenda, setFlexibilidadeAgenda] = useState<string>("flexivel");
   const [picked, setPicked] = useState<Record<string, number>>({}); // materialId -> qty
   const [fotos, setFotos] = useState<string[]>([]);
+  // Visitantes: guardamos os arquivos localmente (blob URLs) e fazemos upload ao enviar.
+  const [guestFiles, setGuestFiles] = useState<{ file: File; previewUrl: string }[]>([]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -684,6 +687,40 @@ function MeusOrcamentos() {
         toast.error("Sua conta foi criada. Recarregue a página e tente enviar o pedido novamente.");
         return;
       }
+
+      // Upload de arquivos que o visitante anexou antes do cadastro
+      if (guestFiles.length > 0 && userId) {
+        const uploadedUrls: string[] = [];
+        for (const { file } of guestFiles) {
+          const isVideo = file.type.startsWith("video/");
+          const ext = file.name.split(".").pop() || (isVideo ? "mp4" : "jpg");
+          const key = `${userId}/problema/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("orcamento-fotos")
+            .upload(key, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || undefined,
+            });
+          if (upErr) {
+            console.error("[orcamentos] upload guest falhou", upErr);
+            toast.error(`Falha ao enviar ${file.name}: ${upErr.message}`);
+            continue;
+          }
+          const { data: pub } = supabase.storage.from("orcamento-fotos").getPublicUrl(key);
+          uploadedUrls.push(pub.publicUrl);
+        }
+        if (uploadedUrls.length > 0) {
+          setFotos((prev) => [...prev, ...uploadedUrls]);
+          // usa local var também para garantir que o insert abaixo já tem as URLs
+          fotos.push(...uploadedUrls);
+        }
+        // libera blobs
+        guestFiles.forEach((g) => {
+          try { URL.revokeObjectURL(g.previewUrl); } catch {}
+        });
+        setGuestFiles([]);
+      }
     }
 
     const payload = {
@@ -1116,9 +1153,7 @@ function MeusOrcamentos() {
                     acceptVideo
                   />
                 ) : (
-                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    Faça login ou crie sua conta para anexar fotos e vídeos do problema.
-                  </p>
+                  <GuestUploader files={guestFiles} setFiles={setGuestFiles} max={5} />
                 )}
               </div>
 
