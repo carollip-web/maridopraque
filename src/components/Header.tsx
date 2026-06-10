@@ -9,7 +9,9 @@ import {
   Briefcase,
   FileText,
   Settings,
+  Menu,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
