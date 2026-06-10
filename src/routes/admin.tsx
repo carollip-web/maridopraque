@@ -173,6 +173,7 @@ function AdminArea() {
             {activeTab === "leads" && <AdminLeads />}
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
             {activeTab === "kpis" && <AdminKPIs />}
+            {activeTab === "disputas" && <AdminDisputas />}
             {activeTab === "dados" && <AdminDados />}
           </div>
         </div>
