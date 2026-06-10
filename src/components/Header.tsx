@@ -36,6 +36,7 @@ function isMessageNotification(notification: AppNotification) {
 
 export function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { notifications: allNotifications, markAsRead, markAllAsRead } = useNotifications();
   const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData } = useAuth();
