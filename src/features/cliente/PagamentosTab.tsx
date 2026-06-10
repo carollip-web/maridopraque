@@ -16,7 +16,7 @@ export function PagamentosTab() {
         .from("orcamentos")
         .select("id, service_name, valor, status, data_pagamento, created_at")
         .eq("cliente_id", user.id)
-        .eq("status", "pago")
+        .in("status", ["pago", "concluido"])
         .order("data_pagamento", { ascending: false })
         .limit(20);
       return data || [];
