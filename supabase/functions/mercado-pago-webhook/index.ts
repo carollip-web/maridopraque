@@ -141,39 +141,66 @@ serve(async (req) => {
     else if (mpStatus === "rejected") finalStatus = "failed";
     else if (mpStatus === "in_mediation") finalStatus = "pending";
 
-    // Buscar metadata existente. Retenta uma vez se não encontrar (webhook pode chegar antes do insert).
-    let existingPagamento: { metadata: unknown } | null = null;
+    // Buscar o registro de pagamento alvo. Prioriza o que já tem este gateway_payment_id,
+    // senão o mais recente do orçamento. Retenta uma vez (webhook pode chegar antes do insert).
+    let targetPagamento: { id: string; metadata: unknown } | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
-      const { data } = await supabase
+      const { data: byGatewayId } = await supabase
         .from("pagamentos")
-        .select("metadata")
+        .select("id, metadata")
         .eq("orcamento_id", orcamentoId)
+        .eq("gateway_payment_id", String(resourceId))
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
-      if (data) { existingPagamento = data; break; }
+      if (byGatewayId) { targetPagamento = byGatewayId; break; }
+
+      const { data: latest } = await supabase
+        .from("pagamentos")
+        .select("id, metadata")
+        .eq("orcamento_id", orcamentoId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latest) { targetPagamento = latest; break; }
       if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
     }
-    const currentMetadata = (existingPagamento?.metadata as Record<string, unknown>) || {};
+    const currentMetadata = (targetPagamento?.metadata as Record<string, unknown>) || {};
 
-    // 4. Atualizar registro de pagamento
-    const { data: pagamento, error: payError } = await supabase
-      .from("pagamentos")
-      .update({
-        gateway_payment_id: String(resourceId),
-        gateway_status: mpStatus,
-        status: finalStatus,
-        paid_at: mpStatus === "approved" ? new Date().toISOString() : null,
-        webhook_last_received_at: new Date().toISOString(),
-        metadata: {
-          ...currentMetadata,
-          last_webhook_payload: mpPayment,
-          updated_at: new Date().toISOString(),
-        },
-      })
-      .eq("orcamento_id", orcamentoId)
-      .select()
-      .maybeSingle();
+    // 4. Atualizar SOMENTE o registro de pagamento alvo (nunca todos do orçamento)
+    let pagamento: Record<string, unknown> | null = null;
+    if (targetPagamento) {
+      const { data: updated, error: payError } = await supabase
+        .from("pagamentos")
+        .update({
+          gateway_payment_id: String(resourceId),
+          gateway_status: mpStatus,
+          status: finalStatus,
+          paid_at: mpStatus === "approved" ? new Date().toISOString() : null,
+          webhook_last_received_at: new Date().toISOString(),
+          metadata: {
+            ...currentMetadata,
+            last_webhook_payload: mpPayment,
+            updated_at: new Date().toISOString(),
+          },
+        })
+        .eq("id", targetPagamento.id)
+        .select()
+        .maybeSingle();
 
-    if (payError) throw payError;
+      if (payError) throw payError;
+      pagamento = updated as Record<string, unknown> | null;
+
+      // Cancelar tentativas antigas pendentes do mesmo orçamento (duplicadas de checkout)
+      if (mpStatus === "approved") {
+        await supabase
+          .from("pagamentos")
+          .update({ status: "canceled" })
+          .eq("orcamento_id", orcamentoId)
+          .neq("id", targetPagamento.id)
+          .in("status", ["pending", "paid"]);
+      }
+    }
 
     if (!pagamento) {
       console.warn(
