@@ -22,7 +22,7 @@ export function ServicosTab() {
         .from("orcamentos")
         .select("id, service_name, service_id, valor, profissional_id, data_pagamento, created_at")
         .eq("cliente_id", user.id)
-        .eq("status", "pago")
+        .eq("status", "concluido")
         .order("data_pagamento", { ascending: false });
       return data || [];
     },
