@@ -14,7 +14,25 @@ const json = (b: unknown, s = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-serve(async (req) => {
+function calcularIntervaloReserva(
+  dataPreferida: string | Date,
+  periodo?: string | null,
+  horario?: string | null,
+) {
+  const data = String(dataPreferida).slice(0, 10);
+  if (periodo === "manha") return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+  if (periodo === "tarde") return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
+  if (periodo === "noite") return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
+  if (periodo === "horario_especifico" && horario) {
+    const hora = String(horario).slice(0, 5);
+    const inicioDate = new Date(`${data}T${hora}:00-03:00`);
+    const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
+    return { inicio: inicioDate.toISOString(), fim: fimDate.toISOString() };
+  }
+  return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+}
+
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
