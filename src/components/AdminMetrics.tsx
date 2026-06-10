@@ -550,7 +550,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[640px]">
             <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
               <tr>
                 <th className="px-6 py-3">ID</th>

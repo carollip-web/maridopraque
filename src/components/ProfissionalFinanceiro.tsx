@@ -244,7 +244,7 @@ export function ProfissionalFinanceiro() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[680px]">
               <thead>
                 <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
                   <th className="px-3 py-2 font-bold">Data</th>
