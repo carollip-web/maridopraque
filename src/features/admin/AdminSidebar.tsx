@@ -38,7 +38,7 @@ export function AdminSidebar({
   const adminEmail = profile?.email ?? user?.email ?? "";
 
   return (
-    <aside className="w-full md:w-64 bg-[#0F172A] text-white shrink-0 z-30 flex flex-col">
+    <aside className="hidden md:flex w-full md:w-64 bg-[#0F172A] text-white shrink-0 z-30 flex-col">
       <div className="p-6 flex items-center gap-3">
         <div className="h-8 w-8 bg-brand rounded-lg flex items-center justify-center">
           <Wrench className="h-4 w-4 text-white" />

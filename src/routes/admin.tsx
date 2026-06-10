@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth, type AdminSection } from "@/hooks/useAuth";
 import { AdminSidebar } from "@/features/admin/AdminSidebar";
 import { AdminHeader } from "@/features/admin/AdminHeader";
+import { MobilePanelBar } from "@/components/MobilePanelBar";
 import { ALL_SIDEBAR_ITEMS, ADMIN_LEVEL_LABELS } from "@/features/admin/constants";
 
 // New feature components
@@ -116,8 +117,29 @@ function AdminArea() {
 
   if (!isLoggedIn || !isAdmin) return null;
 
+  const currentLabel =
+    sidebarItems.find((i) => i.id === activeTab)?.label || "Painel";
+
   return (
-    <div className="min-h-screen bg-slate-50 flex text-slate-900 font-sans selection:bg-brand/10 selection:text-brand">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-900 font-sans selection:bg-brand/10 selection:text-brand">
+      <MobilePanelBar
+        title={currentLabel}
+        subtitle="Painel administrativo"
+        variant="dark"
+      >
+        <AdminSidebar
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          sidebarItems={sidebarItems}
+          profile={profile}
+          user={user}
+          initials={initials}
+          levelMeta={levelMeta as any}
+          logout={logout}
+          navigate={navigate as any}
+        />
+      </MobilePanelBar>
+
       <AdminSidebar
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -130,10 +152,12 @@ function AdminArea() {
         navigate={navigate as any}
       />
 
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <AdminHeader />
+      <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">
+        <div className="hidden md:block">
+          <AdminHeader />
+        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        <div className="flex-1 md:overflow-y-auto p-4 md:p-8 custom-scrollbar">
           <div className="max-w-7xl mx-auto pb-20">
             {activeTab === "dashboard" && <AdminMetrics onTabChange={handleTabChange} />}
             {activeTab === "pedidos" && <AdminPedidos />}
