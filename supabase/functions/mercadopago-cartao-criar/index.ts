@@ -225,14 +225,20 @@ serve(async (req) => {
       },
     };
 
-    // SPLIT 1:1: usar access_token do profissional (seller), não do marketplace
+    // SPLIT 1:1: criar preferência com token do MARKETPLACE, não do seller
+    // O marketplace_fee é descontado automaticamente do valor do vendedor
+    const MP_MARKETPLACE_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ?? "";
     const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${sellerAccessToken}`,
+        Authorization: `Bearer ${MP_MARKETPLACE_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(preferencePayload),
+      body: JSON.stringify({
+        ...preferencePayload,
+        // Passa o collector_id do vendedor para o split funcionar
+        collector_id: Number(profPerfil.mp_user_id),
+      }),
     });
 
     const mpBody = await mpRes.json().catch(() => ({}));
