@@ -271,6 +271,7 @@ export function AdminServicos() {
               ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
