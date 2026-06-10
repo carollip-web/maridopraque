@@ -59,7 +59,7 @@ function LoginPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/cliente`,
+            emailRedirectTo: `${window.location.origin}/auth/redirect`,
             data: { nome },
           },
         });
