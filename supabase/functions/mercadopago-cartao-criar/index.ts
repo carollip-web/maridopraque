@@ -162,6 +162,13 @@ serve(async (req) => {
       valorApoio,
     });
 
+    // Cancela tentativas anteriores pendentes deste orçamento (evita duplicatas)
+    await admin
+      .from("pagamentos")
+      .update({ status: "canceled" } as any)
+      .eq("orcamento_id", orcamento.id)
+      .eq("status", "pending");
+
     // Cria registro de pagamento com informações do split
     const { data: pagamento, error: pagErr } = await admin
       .from("pagamentos")

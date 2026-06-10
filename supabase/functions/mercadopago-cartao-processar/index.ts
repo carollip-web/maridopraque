@@ -96,6 +96,13 @@ serve(async (req) => {
     if (perfil.mp_expires_at && new Date(perfil.mp_expires_at) < new Date())
       return json({ error: "MP_TOKEN_EXPIRED", message: "Token do profissional expirou." }, 400);
 
+    // Cancela tentativas anteriores pendentes deste orçamento (evita duplicatas)
+    await admin
+      .from("pagamentos")
+      .update({ status: "canceled" } as any)
+      .eq("orcamento_id", orcamento.id)
+      .eq("status", "pending");
+
     // Cria registro de pagamento
     const { data: pagamento, error: pagErr } = await admin
       .from("pagamentos")
