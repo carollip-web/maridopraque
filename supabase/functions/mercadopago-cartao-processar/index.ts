@@ -167,6 +167,15 @@ serve(async (req) => {
 
     await admin.from("pagamentos").update(updatePayload as any).eq("id", pagamento.id);
 
+    // Atualiza o orçamento quando aprovado (a Checkout Pro fazia isso via webhook)
+    if (localStatus === "paid") {
+      const { error: orcErr } = await admin
+        .from("orcamentos")
+        .update({ status: "pago", updated_at: new Date().toISOString() } as any)
+        .eq("id", orcamento.id);
+      if (orcErr) console.error("[mercadopago-cartao-processar] erro update orcamento", orcErr);
+    }
+
     return json({
       ok: true,
       pagamentoId: pagamento.id,
