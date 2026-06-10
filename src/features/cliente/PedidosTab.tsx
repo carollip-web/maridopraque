@@ -24,6 +24,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
+import { cancelarPedidoComSplit } from "@/lib/disputas.functions";
+import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +56,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const queryClient = useQueryClient();
   const aceitarPropostaFn = useServerFn(aceitarProposta);
   const cancelarPedidoFn = useServerFn(cancelarPedido);
+  const cancelarComSplitFn = useServerFn(cancelarPedidoComSplit);
   const concluirPedidoFn = useServerFn(concluirPedido);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -80,7 +83,15 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   };
 
   const handleDeleteOrder = async (orderId: string, title: string) => {
-    if (!confirm(`Tem certeza que deseja cancelar o pedido "${title}"?`)) return;
+    // Detecta se o pedido já foi pago — nesse caso usa fluxo com split/reembolso.
+    const pedido = (pedidos as any[]).find((p) => p.id === orderId);
+    const status = String(pedido?.status || "").toLowerCase();
+    const ehPago = ["pago", "aprovado"].includes(status);
+
+    const confirmMsg = ehPago
+      ? `Cancelar o pedido "${title}"?\n\nAs regras de reembolso serão aplicadas automaticamente conforme a fase do serviço (sem multa, multa de 20% se < 2h do horário, ou retenção se o profissional já fez check-in).`
+      : `Tem certeza que deseja cancelar o pedido "${title}"?`;
+    if (!confirm(confirmMsg)) return;
 
     setIsDeleting(orderId);
     try {
@@ -91,15 +102,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         });
       }
 
-      const { ok, error: serverError } = await cancelarPedidoFn({
-        data: { orcamentoId: orderId },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      });
-      if (!ok) throw new Error(serverError || "Erro ao cancelar");
-
-      toast.success("Pedido cancelado com sucesso.");
+      if (ehPago) {
+        const res = await cancelarComSplitFn({
+          data: { orcamentoId: orderId },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        if (!res.ok) throw new Error((res as any).error || "Erro ao cancelar");
+        toast.success("Cancelamento processado. Confira o resumo financeiro nos detalhes do pedido.");
+      } else {
+        const { ok, error: serverError } = await cancelarPedidoFn({
+          data: { orcamentoId: orderId },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+        if (!ok) throw new Error(serverError || "Erro ao cancelar");
+        toast.success("Pedido cancelado com sucesso.");
+      }
 
       await queryClient.invalidateQueries({ queryKey: ["cliente"] });
       await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos"] });
@@ -797,7 +814,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
                   disabled={
                     isDeleting === sp.id ||
-                    ["pago", "concluido"].includes(sp.rawStatus?.toLowerCase?.() || "")
+                    ["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "")
                   }
                   onClick={() => handleDeleteOrder(sp.id, sp.title)}
                 >
@@ -809,6 +826,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   Cancelar pedido
                 </Button>
               </div>
+
+              {["pago", "concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
+                <div className="mt-6">
+                  <PagamentoSplitResumo orcamentoId={sp.id} />
+                </div>
+              )}
             </section>
           </aside>
         </div>

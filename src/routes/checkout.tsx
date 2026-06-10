@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
@@ -574,6 +575,9 @@ function Checkout() {
         </div>
 
         <div className="space-y-6">
+          {orcamento?.id && (
+            <PagamentoSplitResumo orcamentoId={orcamento.id} />
+          )}
           <div className="rounded-3xl border border-border bg-white p-8 shadow-soft space-y-6">
             <h3 className="font-bold flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-brand" /> Garantias Marido Pra Quê
@@ -589,7 +593,7 @@ function Checkout() {
               </li>
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Suporte dedicado durante todo o serviço.
+                Valor fica retido na plataforma até a conclusão do serviço.
               </li>
             </ul>
           </div>
