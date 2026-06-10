@@ -1098,14 +1098,14 @@ function MeusOrcamentos() {
                 </p>
               </div>
 
-              {user && (
-                <div className="rounded-2xl bg-slate-50 border border-border p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-sm">Fotos e vídeos do problema</h4>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Opcional, mas ajuda muito o profissional a entender o que precisa ser feito.
-                  </p>
+              <div className="rounded-2xl bg-slate-50 border border-border p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-sm">Fotos e vídeos do problema</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Opcional, mas ajuda muito o profissional a entender o que precisa ser feito.
+                </p>
+                {user ? (
                   <PhotoUploader
                     userId={user.id}
                     pathPrefix="problema"
@@ -1115,8 +1115,12 @@ function MeusOrcamentos() {
                     label="adicionar imagem ou vídeo"
                     acceptVideo
                   />
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    Faça login ou crie sua conta para anexar fotos e vídeos do problema.
+                  </p>
+                )}
+              </div>
 
               <div className="flex justify-end">
                 <Button
