@@ -149,7 +149,8 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
               <p className="text-sm text-muted-foreground py-4">Nenhuma atividade recente.</p>
             ) : (
               stats?.recentes.map((item: any, i: number) => {
-                const isConcluido = item.status === "pago";
+                const isConcluido = item.status === "concluido";
+                const isAgendado = item.status === "pago";
                 const isOrcamento = item.status === "customizado_pendente";
                 const isFixo = item.status === "fixo_auto";
                 return (
@@ -182,9 +183,11 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
                       <p className="text-sm text-muted-foreground">
                         {isConcluido
                           ? "Concluído"
-                          : isOrcamento || isFixo
-                            ? "Aguardando orçamento"
-                            : "Em andamento"}{" "}
+                          : isAgendado
+                            ? "Agendado"
+                            : isOrcamento || isFixo
+                              ? "Aguardando orçamento"
+                              : "Em andamento"}{" "}
                         • {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </div>
