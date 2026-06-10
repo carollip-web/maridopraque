@@ -35,6 +35,7 @@ import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
 import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { MobilePanelBar } from "@/components/MobilePanelBar";
 import { distanceKm } from "@/lib/geo";
 import { carregarAgendaProfissional } from "@/lib/agenda";
 import { isProfissionalCompativelComTipoAtendimento } from "@/lib/atendimento.compat";
@@ -834,9 +835,51 @@ function ProfissionalArea() {
         </SheetContent>
       </Sheet>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <MobilePanelBar
+        title={
+          {
+            pedidos: "Visão Geral",
+            orcamentos: "Pedidos e Orçamentos",
+            servicos: "Meus Serviços",
+            agenda: "Agenda",
+            financeiro: "Financeiro",
+            avaliacoes: "Avaliações",
+            configuracoes: "Configurações",
+            notificacoes: "Notificações",
+          }[tab as ProfissionalTab] || "Painel"
+        }
+        subtitle="Painel profissional"
+        hideFrom="lg"
+      >
+        <div className="p-4 space-y-4">
+          <ProfissionalStatusCard
+            userName={user?.user_metadata?.nome || "Profissional"}
+            mediaAvaliacoes={mediaAvaliacoes}
+            ativo={ativo}
+            handleToggleAtivo={handleToggleAtivo}
+          />
+          <ProfissionalSidebar
+            activeTab={tab as ProfissionalTab}
+            setActiveTab={(newTab) =>
+              navigate({
+                to: "/profissional",
+                search: (prev: any) => ({
+                  ...prev,
+                  tab: newTab,
+                  orcamentoId: undefined,
+                  chat: undefined,
+                }),
+              })
+            }
+            counts={counts}
+            unreadNotifications={unreadNotifications}
+          />
+        </div>
+      </MobilePanelBar>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="lg:w-64 shrink-0 space-y-6">
+          <aside className="hidden lg:block lg:w-64 shrink-0 space-y-6">
             <ProfissionalStatusCard
               userName={user?.user_metadata?.nome || "Profissional"}
               mediaAvaliacoes={mediaAvaliacoes}
