@@ -196,8 +196,7 @@ function estimarTempo(min: number | null, max: number | null) {
   return `≈ ${Math.round(horas)} h`;
 }
 
-const WHATSAPP =
-  "https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20os%20serviços.";
+const CONTATO_EMAIL = "mailto:contato@maridopraque.com?subject=Dúvida%20sobre%20serviços";
 
 function Servicos() {
   const [servicos, setServicos] = useState<Servico[] | null>(null);
@@ -248,7 +247,7 @@ function Servicos() {
         </p>
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a
-            href={WHATSAPP}
+            href={CONTATO_EMAIL}
             target="_blank"
             rel="noreferrer"
             className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"

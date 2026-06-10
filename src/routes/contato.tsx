@@ -21,7 +21,7 @@ export const Route = createFileRoute("/contato")({
   component: Contato,
 });
 
-const WHATSAPP = "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20com%20a%20equipe.";
+const CONTATO_EMAIL = "mailto:contato@maridopraque.com?subject=Contato%20via%20site";
 
 function Contato() {
   return (
@@ -50,7 +50,7 @@ function Contato() {
               size="lg"
               className="mt-8 w-full rounded-full bg-background text-foreground hover:bg-background/90"
             >
-              <a href={WHATSAPP} target="_blank" rel="noreferrer">
+              <a href={CONTATO_EMAIL}>
                 Mandar mensagem agora
               </a>
             </Button>

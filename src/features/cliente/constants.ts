@@ -41,4 +41,4 @@ export const ALL_SIDEBAR_ITEMS: SidebarItem[] = [
 ];
 
 export const WHATSAPP_LINK =
-  "https://wa.me/5521999999999?text=Olá!%20Quero%20falar%20sobre%20meu%20pedido.";
+  "mailto:contato@maridopraque.com?subject=Dúvida%20sobre%20meu%20pedido";

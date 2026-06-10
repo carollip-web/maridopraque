@@ -68,7 +68,7 @@ function Pagamento() {
         </p>
         <div className="mt-10 flex justify-center">
           <a
-            href="https://wa.me/5521999999999?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20pagamentos."
+            href="mailto:contato@maridopraque.com?subject=Dúvida%20sobre%20pagamentos"
             target="_blank"
             rel="noreferrer"
             className="rounded-full bg-background px-10 py-4 font-bold text-foreground transition hover:scale-105 shadow-xl"

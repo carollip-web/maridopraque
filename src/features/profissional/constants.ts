@@ -15,4 +15,4 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
 };
 
 export const WHATSAPP_LINK =
-  "https://wa.me/5521999999999?text=Olá!%20Sou%20profissional%20do%20Marido%20Pra%20Quê.";
+  "mailto:contato@maridopraque.com?subject=Suporte%20para%20profissional";

@@ -161,7 +161,7 @@ function Ajuda() {
           Fale diretamente com um consultor humano no WhatsApp. Estamos online agora.
         </p>
         <a
-          href="https://wa.me/5521999999999?text=Olá!%20Não%20encontrei%20minha%20dúvida%20na%20central%20de%20ajuda."
+          href="mailto:contato@maridopraque.com?subject=Dúvida%20não%20encontrada%20na%20central%20de%20ajuda"
           target="_blank"
           rel="noreferrer"
           className="mt-8 inline-block rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
