@@ -45,6 +45,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "config", label: "Configurações", icon: Settings },
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "notificacoes", label: "Notificações", icon: Bell },
+  { id: "disputas", label: "Disputas", icon: AlertTriangle },
   { id: "dados", label: "Meus Dados", icon: UserCog },
 ];
 
