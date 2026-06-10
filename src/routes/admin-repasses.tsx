@@ -439,8 +439,8 @@ function AdminPagamentosPage() {
                       label: pag.status,
                     };
                     
-                    const fee = (pag.metadata as any)?.marketplace_fee_amount || 0;
-                    const liquido = pag.valor_total - fee;
+                    const fee = getMarketplaceFee(pag);
+                    const liquido = Number(pag.valor_total || 0) - fee;
 
                     return (
                       <tr key={pag.id} className="hover:bg-slate-50/40 transition group">
