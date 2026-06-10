@@ -36,6 +36,7 @@ const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
     "leads",
     "apoio_feminino",
     "kpis",
+    "disputas",
     "dados",
   ],
   admin: [
@@ -50,9 +51,10 @@ const PERMISSIONS: Record<NonNullable<AdminLevel>, AdminSection[]> = {
     "leads",
     "apoio_feminino",
     "kpis",
+    "disputas",
     "dados",
   ],
-  financeiro: ["dashboard", "financeiro", "pedidos", "notificacoes", "dados"],
+  financeiro: ["dashboard", "financeiro", "pedidos", "notificacoes", "disputas", "dados"],
   suporte: ["dashboard", "pedidos", "clientes", "profissionais", "notificacoes", "leads", "dados"],
 };
 
