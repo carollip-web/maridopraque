@@ -514,7 +514,7 @@ export function AdminPedidos() {
           ))}
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[900px]">
             <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
               <tr>
                 <th className="px-6 py-4 w-10">

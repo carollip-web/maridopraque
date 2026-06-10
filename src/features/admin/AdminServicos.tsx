@@ -213,7 +213,8 @@ export function AdminServicos() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[640px]">
           <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
             <tr>
               <th className="px-6 py-4">Serviço</th>
@@ -270,6 +271,7 @@ export function AdminServicos() {
               ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
