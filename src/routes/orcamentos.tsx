@@ -1098,6 +1098,26 @@ function MeusOrcamentos() {
                 </p>
               </div>
 
+              {user && (
+                <div className="rounded-2xl bg-slate-50 border border-border p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-sm">Fotos e vídeos do problema</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Opcional, mas ajuda muito o profissional a entender o que precisa ser feito.
+                  </p>
+                  <PhotoUploader
+                    userId={user.id}
+                    pathPrefix="problema"
+                    value={fotos}
+                    onChange={setFotos}
+                    max={5}
+                    label="adicionar imagem ou vídeo"
+                    acceptVideo
+                  />
+                </div>
+              )}
+
               <div className="flex justify-end">
                 <Button
                   onClick={() => setStep(2)}
@@ -1397,25 +1417,6 @@ function MeusOrcamentos() {
                 </div>
               )}
 
-              {user && (
-                <div className="rounded-2xl bg-slate-50 border border-border p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package className="h-4 w-4 text-brand" />
-                    <h4 className="font-bold text-sm">Fotos do problema</h4>
-                    <span className="text-xs text-muted-foreground">
-                      (opcional, ajuda o profissional)
-                    </span>
-                  </div>
-                  <PhotoUploader
-                    userId={user.id}
-                    pathPrefix="problema"
-                    value={fotos}
-                    onChange={setFotos}
-                    max={5}
-                    label="tirar ou anexar"
-                  />
-                </div>
-              )}
 
               <div className="flex justify-between gap-2">
                 <Button variant="outline" onClick={() => setStep(3)} className="rounded-full gap-2">
