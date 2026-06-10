@@ -687,6 +687,40 @@ function MeusOrcamentos() {
         toast.error("Sua conta foi criada. Recarregue a página e tente enviar o pedido novamente.");
         return;
       }
+
+      // Upload de arquivos que o visitante anexou antes do cadastro
+      if (guestFiles.length > 0 && userId) {
+        const uploadedUrls: string[] = [];
+        for (const { file } of guestFiles) {
+          const isVideo = file.type.startsWith("video/");
+          const ext = file.name.split(".").pop() || (isVideo ? "mp4" : "jpg");
+          const key = `${userId}/problema/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("orcamento-fotos")
+            .upload(key, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || undefined,
+            });
+          if (upErr) {
+            console.error("[orcamentos] upload guest falhou", upErr);
+            toast.error(`Falha ao enviar ${file.name}: ${upErr.message}`);
+            continue;
+          }
+          const { data: pub } = supabase.storage.from("orcamento-fotos").getPublicUrl(key);
+          uploadedUrls.push(pub.publicUrl);
+        }
+        if (uploadedUrls.length > 0) {
+          setFotos((prev) => [...prev, ...uploadedUrls]);
+          // usa local var também para garantir que o insert abaixo já tem as URLs
+          fotos.push(...uploadedUrls);
+        }
+        // libera blobs
+        guestFiles.forEach((g) => {
+          try { URL.revokeObjectURL(g.previewUrl); } catch {}
+        });
+        setGuestFiles([]);
+      }
     }
 
     const payload = {
