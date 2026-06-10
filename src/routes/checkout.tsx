@@ -92,6 +92,14 @@ function Checkout() {
   const [whatsapp, setWhatsapp] = useState("");
   const pollingRef = useRef<number | null>(null);
   const channelRef = useRef<any>(null);
+  const [brickConfig, setBrickConfig] = useState<{
+    publicKey: string;
+    amount: number;
+    payerEmail: string;
+  } | null>(null);
+  const [brickError, setBrickError] = useState<string | null>(null);
+  const brickControllerRef = useRef<any>(null);
+  const brickMountedRef = useRef(false);
 
   useEffect(() => {
     if (!orcamentoId) { setLoading(false); return; }
@@ -308,79 +316,165 @@ function Checkout() {
     }
   };
 
-  const handlePagarCartao = async () => {
-    if (isProcessing) return;
-    if (!orcamentoId) {
-      toast.error("Pedido inválido.");
-      return;
-    }
-    if (!orcamento) {
-      toast.error("Pedido ainda não carregado.");
-      return;
-    }
-    if (orcamento.status !== "aprovado") {
-      toast.error("Este pedido ainda não está liberado para pagamento.");
-      return;
-    }
+  // ===== Checkout Transparente (Payment Brick) =====
+  // 1) Carrega config (publicKey, valor) via edge function
+  useEffect(() => {
+    if (!orcamento || !orcamentoId || method !== "cartao" || paid || cobranca || boleto) return;
+    if (orcamento.status !== "aprovado") return;
+    if (brickConfig) return;
 
-    setIsProcessing(true);
-
-    try {
-      if (!user?.id) {
-        toast.error("Faça login novamente para continuar.");
-        return;
-      }
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        toast.error("Sua sessão expirou. Faça login novamente.");
-        return;
-      }
-
-      console.info("[checkout] chamando mercadopago-cartao-criar", {
-        orcamentoId,
-        status: orcamento.status,
-        valor_servico: orcamento.valor_servico,
-        userId: user.id,
-      });
-
-      const { data, error } = await supabase.functions.invoke("mercadopago-cartao-criar", {
-        body: { orcamentoId },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.info("[checkout] mercadopago-cartao-criar result", { data, error });
-
-      if (error || !data?.checkoutUrl) {
-        if (error) {
-          console.error("[checkout] erro mercadopago-cartao-criar", {
-            message: error.message,
-            name: error.name,
-            context: error.context,
-          });
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) return;
+        const { data, error } = await supabase.functions.invoke("mercadopago-cartao-init", {
+          body: { orcamentoId },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (cancelled) return;
+        if (error || !data?.publicKey) {
+          const msg = error
+            ? await getFunctionErrorMessage(error, "Não foi possível iniciar o checkout.")
+            : data?.message || "Não foi possível iniciar o checkout.";
+          setBrickError(msg);
+          return;
         }
-
-        const message = error
-          ? await getFunctionErrorMessage(error, "Não foi possível iniciar o pagamento com cartão.")
-          : data?.message || data?.error || "Mercado Pago não retornou link de checkout.";
-
-        toast.error(message);
-        return;
+        setBrickConfig({
+          publicKey: data.publicKey,
+          amount: Number(data.amount),
+          payerEmail: data.payerEmail || user?.email || "",
+        });
+      } catch (e: any) {
+        if (!cancelled) setBrickError(e?.message || "Falha ao iniciar checkout.");
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orcamento, orcamentoId, method, paid, cobranca, boleto, brickConfig, user?.email]);
 
-      toast.success("Redirecionando para o Mercado Pago...");
-      window.location.href = data.checkoutUrl;
-    } catch (err: any) {
-      console.error("[checkout] erro cartão Mercado Pago", err);
-      toast.error(err?.message || "Falha ao iniciar pagamento com cartão.");
-    } finally {
-      setIsProcessing(false);
+  // 2) Carrega o SDK e monta o Brick
+  useEffect(() => {
+    if (!brickConfig || brickMountedRef.current) return;
+
+    let cancelled = false;
+
+    async function ensureSdk(): Promise<any> {
+      if ((window as any).MercadoPago) return (window as any).MercadoPago;
+      await new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector('script[data-mp-sdk="v2"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve());
+          existing.addEventListener("error", () => reject(new Error("Falha ao carregar SDK MP")));
+          return;
+        }
+        const s = document.createElement("script");
+        s.src = "https://sdk.mercadopago.com/js/v2";
+        s.async = true;
+        s.dataset.mpSdk = "v2";
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Falha ao carregar SDK MP"));
+        document.head.appendChild(s);
+      });
+      return (window as any).MercadoPago;
     }
-  };
+
+    (async () => {
+      try {
+        const MP = await ensureSdk();
+        if (cancelled) return;
+        const mp = new MP(brickConfig.publicKey, { locale: "pt-BR" });
+        const bricksBuilder = mp.bricks();
+        brickMountedRef.current = true;
+        brickControllerRef.current = await bricksBuilder.create(
+          "payment",
+          "payment-brick-container",
+          {
+            initialization: {
+              amount: brickConfig.amount,
+              payer: { email: brickConfig.payerEmail },
+            },
+            customization: {
+              paymentMethods: {
+                creditCard: "all",
+                debitCard: "all",
+                maxInstallments: 12,
+              },
+              visual: { style: { theme: "default" } },
+            },
+            callbacks: {
+              onReady: () => console.info("[brick] ready"),
+              onError: (err: any) => {
+                console.error("[brick] error", err);
+                toast.error(err?.message || "Erro no formulário de pagamento.");
+              },
+              onSubmit: async ({ formData }: any) => {
+                try {
+                  setIsProcessing(true);
+                  const { data: sessionData } = await supabase.auth.getSession();
+                  const token = sessionData.session?.access_token;
+                  if (!token) {
+                    toast.error("Sua sessão expirou. Faça login novamente.");
+                    return;
+                  }
+                  const { data, error } = await supabase.functions.invoke(
+                    "mercadopago-cartao-processar",
+                    {
+                      body: { orcamentoId, formData },
+                      headers: { Authorization: `Bearer ${token}` },
+                    },
+                  );
+                  if (error || !data?.ok) {
+                    const msg = error
+                      ? await getFunctionErrorMessage(error, "Pagamento recusado.")
+                      : data?.message || "Pagamento recusado.";
+                    toast.error(msg);
+                    return;
+                  }
+                  if (data.status === "approved") {
+                    onPaidConfirmed();
+                  } else if (data.status === "in_process" || data.status === "pending") {
+                    toast.message("Pagamento em análise. Você será notificado em instantes.");
+                    setTimeout(() => {
+                      window.location.href = "/cliente?tab=pedidos&payment=pending";
+                    }, 2000);
+                  } else {
+                    toast.error(`Pagamento ${data.status}: ${data.statusDetail || ""}`);
+                  }
+                } catch (e: any) {
+                  console.error("[brick] submit error", e);
+                  toast.error(e?.message || "Falha ao processar pagamento.");
+                } finally {
+                  setIsProcessing(false);
+                }
+              },
+            },
+          },
+        );
+      } catch (e: any) {
+        if (!cancelled) {
+          console.error("[brick] init error", e);
+          setBrickError(e?.message || "Falha ao iniciar o formulário.");
+          brickMountedRef.current = false;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        brickControllerRef.current?.unmount?.();
+      } catch {
+        // noop
+      }
+      brickControllerRef.current = null;
+      brickMountedRef.current = false;
+    };
+  }, [brickConfig, orcamentoId]);
+
+
 
   const handleCopy = async () => {
     if (!cobranca?.emv) return;
@@ -512,22 +606,29 @@ function Checkout() {
 
             {!cobranca && !boleto && !paid && method === "cartao" && (
               <div className="space-y-3">
-                <Button
-                  onClick={handlePagarCartao}
-                  disabled={isProcessing}
-                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-                >
-                  {isProcessing ? (
-                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Redirecionando...</>
-                  ) : (
-                    <><CreditCard className="mr-2 h-5 w-5" /> Pagar com Cartão</>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Você será redirecionado para o ambiente seguro do Mercado Pago para concluir o pagamento.
+                {brickError && (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{brickError}</span>
+                  </div>
+                )}
+                {!brickConfig && !brickError && (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Preparando formulário seguro...
+                  </div>
+                )}
+                <div id="payment-brick-container" />
+                {isProcessing && (
+                  <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Processando pagamento...
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <Lock className="h-3 w-3" /> Pagamento processado de forma segura pelo Mercado Pago. Seus dados não são armazenados em nosso servidor.
                 </p>
               </div>
             )}
+
 
             {boleto && !paid && (
               <div className="space-y-6 animate-in fade-in duration-300">
