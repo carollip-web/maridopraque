@@ -14,6 +14,24 @@ const json = (b: unknown, s = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+function calcularIntervaloReserva(
+  dataPreferida: string | Date,
+  periodo?: string | null,
+  horario?: string | null,
+) {
+  const data = String(dataPreferida).slice(0, 10);
+  if (periodo === "manha") return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+  if (periodo === "tarde") return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
+  if (periodo === "noite") return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
+  if (periodo === "horario_especifico" && horario) {
+    const hora = String(horario).slice(0, 5);
+    const inicioDate = new Date(`${data}T${hora}:00-03:00`);
+    const fimDate = new Date(inicioDate.getTime() + 2 * 60 * 60 * 1000);
+    return { inicio: inicioDate.toISOString(), fim: fimDate.toISOString() };
+  }
+  return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -171,10 +189,49 @@ serve(async (req) => {
     if (localStatus === "paid") {
       const { error: orcErr } = await admin
         .from("orcamentos")
-        .update({ status: "pago", updated_at: new Date().toISOString() } as any)
+        .update({ status: "pago", data_pagamento: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
         .eq("id", orcamento.id);
       if (orcErr) console.error("[mercadopago-cartao-processar] erro update orcamento", orcErr);
+
+      // Confirma reserva temporária (ou cria bloqueio confirmado se não existir)
+      try {
+        const { data: confirmados } = await admin
+          .from("profissional_bloqueios_agenda")
+          .update({ status: "confirmado", expires_at: null, motivo: "Pagamento confirmado" })
+          .eq("orcamento_id", orcamento.id)
+          .eq("status", "temporario")
+          .select("id");
+
+        if (!confirmados || confirmados.length === 0) {
+          const { data: orcCompleto } = await admin
+            .from("orcamentos")
+            .select("data_preferida, periodo_preferido, horario_preferido")
+            .eq("id", orcamento.id)
+            .maybeSingle();
+
+          if (orcCompleto?.data_preferida) {
+            const { inicio, fim } = calcularIntervaloReserva(
+              orcCompleto.data_preferida as string,
+              orcCompleto.periodo_preferido as string | null,
+              orcCompleto.horario_preferido as string | null,
+            );
+            if (inicio && fim) {
+              await admin.from("profissional_bloqueios_agenda").insert({
+                profissional_id: orcamento.profissional_id,
+                orcamento_id: orcamento.id,
+                inicio,
+                fim,
+                status: "confirmado",
+                motivo: "Pagamento confirmado (reserva direta)",
+              } as any);
+            }
+          }
+        }
+      } catch (eAgenda) {
+        console.error("[mercadopago-cartao-processar] erro ao reservar agenda", eAgenda);
+      }
     }
+
 
     return json({
       ok: true,
