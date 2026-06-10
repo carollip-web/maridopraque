@@ -41,10 +41,13 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
 
       const list = data || [];
       return {
-        concluidos: list.filter((o) => o.status === "pago").length,
-        ativos: list.filter((o) => ["aprovado", "enviado", "fixo_auto"].includes(o.status)).length,
+        // "Serviços Realizados" = realmente concluídos pelo cliente
+        concluidos: list.filter((o) => o.status === "concluido").length,
+        // "Pedidos Ativos" = pagos/agendados + em andamento
+        ativos: list.filter((o) => ["pago", "aprovado", "enviado", "fixo_auto"].includes(o.status)).length,
         pendentes: list.filter((o) => o.status === "customizado_pendente").length,
-        total: list.filter((o) => o.status === "pago").reduce((acc, o) => acc + (o.valor || 0), 0),
+        // Total investido = soma de tudo que o cliente já pagou (pago + concluído)
+        total: list.filter((o) => ["pago", "concluido"].includes(o.status)).reduce((acc, o) => acc + (o.valor || 0), 0),
         recentes: list.slice(0, 3),
       };
     },
