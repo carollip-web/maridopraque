@@ -138,6 +138,40 @@ function ClienteArea() {
           queryClient.invalidateQueries({ queryKey: ["cliente"] });
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notificacoes",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const n: any = payload.new;
+          const titulo = String(n?.titulo || "Notificação");
+          const mensagem = String(n?.mensagem || "");
+          // Destaca cancelamento/multa/reembolso/disputa
+          const lower = (titulo + " " + mensagem).toLowerCase();
+          if (lower.includes("reembolso") || lower.includes("cancel") || lower.includes("multa") || lower.includes("disputa")) {
+            toast.warning(titulo, { description: mensagem, duration: 8000 });
+          } else {
+            toast(titulo, { description: mensagem });
+          }
+          queryClient.invalidateQueries({ queryKey: ["cliente", "notificacoes"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "pagamento_splits",
+          filter: `cliente_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["cliente"] });
+        },
+      )
       .subscribe();
 
     return () => {
