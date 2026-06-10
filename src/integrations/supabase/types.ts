@@ -2309,6 +2309,15 @@ export type Database = {
         Args: { _profissional_id: string }
         Returns: undefined
       }
+      resolver_disputa_orcamento: {
+        Args: {
+          _motivo?: string
+          _orcamento_id: string
+          _pct_plataforma: number
+          _pct_prestador: number
+        }
+        Returns: Json
+      }
       validar_codigo_indicacao: {
         Args: { _codigo: string }
         Returns: {
