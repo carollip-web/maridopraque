@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Crown,
   Bell,
+  AlertTriangle,
 } from "lucide-react";
 import type { AdminSection, AdminLevel } from "@/hooks/useAuth";
 export type { AdminSection, AdminLevel };
