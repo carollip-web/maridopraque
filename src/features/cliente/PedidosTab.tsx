@@ -24,6 +24,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
+import { cancelarPedidoComSplit } from "@/lib/disputas.functions";
+import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
