@@ -133,14 +133,61 @@ export function Header() {
         </div>
       )}
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
-            <Wrench className="h-4 w-4" />
-          </span>
-          <span className="text-base font-semibold tracking-tight">
-            Marido pra Quê<span className="text-brand">?</span>
-          </span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                aria-label="Abrir menu"
+                className="md:hidden grid h-10 w-10 place-items-center rounded-xl hover:bg-muted transition"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[85%] max-w-sm p-0">
+              <SheetHeader className="px-5 pt-5 pb-2 text-left">
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col px-2 py-2 text-sm">
+                {[
+                  { to: "/servicos", label: "Serviços" },
+                  { to: "/profissionais", label: "Profissionais" },
+                  { to: "/porque", label: "Por que nós" },
+                  { to: "/contato", label: "Contato" },
+                  { to: "/para-profissionais", label: "Para profissionais" },
+                ].map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 rounded-xl font-medium text-foreground hover:bg-muted [&.active]:bg-muted [&.active]:font-bold"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                {!isProfissional && !isAdmin && (
+                  <Button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate({ to: "/servicos" });
+                    }}
+                    className="mt-4 mx-4 rounded-full bg-brand text-white hover:bg-brand/90 font-bold h-11"
+                  >
+                    Pedir orçamento
+                  </Button>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
+              <Wrench className="h-4 w-4" />
+            </span>
+            <span className="text-base font-semibold tracking-tight">
+              Marido pra Quê<span className="text-brand">?</span>
+            </span>
+          </Link>
+        </div>
         <nav className="hidden items-center gap-8 text-sm md:flex">
           <Link
             to="/servicos"
