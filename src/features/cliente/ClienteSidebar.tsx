@@ -20,7 +20,7 @@ export function ClienteSidebar({
   isAdmin,
 }: ClienteSidebarProps) {
   return (
-    <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-border shrink-0 z-20">
+    <aside className="hidden md:flex md:flex-col w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-border shrink-0 z-20">
       <div className="p-8 hidden md:block">
         <span className="text-xs font-bold uppercase tracking-widest text-brand">
           {isProfissional || isAdmin ? "Sua Conta" : "Área do Cliente"}

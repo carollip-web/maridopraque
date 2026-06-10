@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Tab, ALL_SIDEBAR_ITEMS } from "@/features/cliente/constants";
 import { ClienteSidebar } from "@/features/cliente/ClienteSidebar";
 import { ClienteHeader } from "@/features/cliente/ClienteHeader";
+import { MobilePanelBar } from "@/components/MobilePanelBar";
 import { DashboardTab } from "@/features/cliente/DashboardTab";
 import { PedidosTab } from "@/features/cliente/PedidosTab";
 import { ServicosTab } from "@/features/cliente/ServicosTab";
@@ -145,8 +146,25 @@ function ClienteArea() {
     };
   }, [user?.id, queryClient]);
 
+  const currentLabel =
+    sidebarItems.find((i) => i.id === activeTab)?.label || "Minha Conta";
+
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
+      <MobilePanelBar
+        title={currentLabel}
+        subtitle={isProfissional || isAdmin ? "Sua conta" : "Área do cliente"}
+      >
+        <ClienteSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          sidebarItems={sidebarItems}
+          handleLogout={handleLogout}
+          isProfissional={isProfissional}
+          isAdmin={isAdmin}
+        />
+      </MobilePanelBar>
+
       <ClienteSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
