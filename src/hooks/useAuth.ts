@@ -18,6 +18,7 @@ export type AdminSection =
   | "leads"
   | "apoio_feminino"
   | "kpis"
+  | "disputas"
   | "dados";
 
 // Permission matrix per admin level
