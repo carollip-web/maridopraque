@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
+import { PagamentoSplitDetalhado } from "@/components/PagamentoSplitDetalhado";
 import { AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -113,7 +114,8 @@ export function AdminDisputas() {
                   <p className="text-xs text-muted-foreground mt-1">ID: {selected.id}</p>
                 </div>
 
-                <PagamentoSplitResumo orcamentoId={selected.id} />
+                <PagamentoSplitResumo orcamentoId={selected.id} compact />
+                <PagamentoSplitDetalhado orcamentoId={selected.id} />
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
