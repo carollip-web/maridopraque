@@ -137,6 +137,7 @@ function AdminArea() {
           levelMeta={levelMeta as any}
           logout={logout}
           navigate={navigate as any}
+          inDrawer
         />
       </MobilePanelBar>
 
