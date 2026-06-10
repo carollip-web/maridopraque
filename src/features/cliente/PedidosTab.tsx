@@ -56,6 +56,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const queryClient = useQueryClient();
   const aceitarPropostaFn = useServerFn(aceitarProposta);
   const cancelarPedidoFn = useServerFn(cancelarPedido);
+  const cancelarComSplitFn = useServerFn(cancelarPedidoComSplit);
   const concluirPedidoFn = useServerFn(concluirPedido);
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
