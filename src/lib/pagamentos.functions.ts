@@ -47,14 +47,15 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     }
 
     // 2. Calcular valores no servidor (Fonte de verdade)
+    // Modelo: cobrança integral antecipada. Valor fica retido até conclusão.
     const valorServico = Number(orc.valor_servico || 0);
     const valorMateriais = (materiais || []).reduce(
       (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
       0,
     );
     const valorTotal = valorServico + valorMateriais;
-    const valorSinal = valorTotal * 0.5;
-    const valorRestante = valorTotal - valorSinal;
+    const valorSinal = valorTotal; // 100% upfront
+    const valorRestante = 0;
 
     if (valorTotal <= 0) {
       throw new Error("O valor total do orçamento deve ser maior que zero.");
@@ -86,11 +87,11 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           items: [
             {
               id: orc.id,
-              title: `Sinal: ${orc.service_name}`,
-              description: "Reserva de serviço via Marido Pra Quê",
+              title: orc.service_name,
+              description: "Serviço via Marido Pra Quê (pagamento integral, retido até conclusão)",
               quantity: 1,
               currency_id: "BRL",
-              unit_price: valorSinal,
+              unit_price: valorTotal,
             },
           ],
           external_reference: orc.id,

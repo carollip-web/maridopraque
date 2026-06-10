@@ -1014,6 +1014,7 @@ export type Database = {
           gateway_payment_id: string | null
           id: string
           metadata: Json
+          motivo_cancelamento: string | null
           orcamento_id: string
           pagamento_id: string
           pago_em: string | null
@@ -1023,6 +1024,7 @@ export type Database = {
           taxa_plataforma: number
           updated_at: string
           valor_profissional: number
+          valor_reembolso: number
           valor_total: number
         }
         Insert: {
@@ -1033,6 +1035,7 @@ export type Database = {
           gateway_payment_id?: string | null
           id?: string
           metadata?: Json
+          motivo_cancelamento?: string | null
           orcamento_id: string
           pagamento_id: string
           pago_em?: string | null
@@ -1042,6 +1045,7 @@ export type Database = {
           taxa_plataforma?: number
           updated_at?: string
           valor_profissional: number
+          valor_reembolso?: number
           valor_total: number
         }
         Update: {
@@ -1052,6 +1056,7 @@ export type Database = {
           gateway_payment_id?: string | null
           id?: string
           metadata?: Json
+          motivo_cancelamento?: string | null
           orcamento_id?: string
           pagamento_id?: string
           pago_em?: string | null
@@ -1061,6 +1066,7 @@ export type Database = {
           taxa_plataforma?: number
           updated_at?: string
           valor_profissional?: number
+          valor_reembolso?: number
           valor_total?: number
         }
         Relationships: [
@@ -2210,6 +2216,10 @@ export type Database = {
       }
     }
     Functions: {
+      abrir_disputa_orcamento: {
+        Args: { _motivo: string; _orcamento_id: string }
+        Returns: undefined
+      }
       aceitar_proposta_cliente: {
         Args: { _proposta_id: string }
         Returns: {
@@ -2218,6 +2228,11 @@ export type Database = {
           orcamento_id: string
           proposta_id: string
         }[]
+      }
+      auto_concluir_orcamentos_vencidos: { Args: never; Returns: number }
+      cancelar_orcamento_com_split: {
+        Args: { _motivo?: string; _orcamento_id: string; _origem?: string }
+        Returns: Json
       }
       confirmar_convite: { Args: { p_convite_id: string }; Returns: undefined }
       criar_repasse_profissional_pendente: {
@@ -2234,6 +2249,7 @@ export type Database = {
           gateway_payment_id: string | null
           id: string
           metadata: Json
+          motivo_cancelamento: string | null
           orcamento_id: string
           pagamento_id: string
           pago_em: string | null
@@ -2243,6 +2259,7 @@ export type Database = {
           taxa_plataforma: number
           updated_at: string
           valor_profissional: number
+          valor_reembolso: number
           valor_total: number
         }
         SetofOptions: {
