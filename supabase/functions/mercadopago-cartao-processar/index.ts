@@ -32,7 +32,7 @@ function calcularIntervaloReserva(
   return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
 }
 
-
+serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
