@@ -814,7 +814,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
                   disabled={
                     isDeleting === sp.id ||
-                    ["pago", "concluido"].includes(sp.rawStatus?.toLowerCase?.() || "")
+                    ["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "")
                   }
                   onClick={() => handleDeleteOrder(sp.id, sp.title)}
                 >
@@ -826,6 +826,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   Cancelar pedido
                 </Button>
               </div>
+
+              {["pago", "concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
+                <div className="mt-6">
+                  <PagamentoSplitResumo orcamentoId={sp.id} />
+                </div>
+              )}
             </section>
           </aside>
         </div>
