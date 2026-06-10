@@ -606,22 +606,29 @@ function Checkout() {
 
             {!cobranca && !boleto && !paid && method === "cartao" && (
               <div className="space-y-3">
-                <Button
-                  onClick={handlePagarCartao}
-                  disabled={isProcessing}
-                  className="w-full h-16 rounded-full text-lg font-bold shadow-lg shadow-brand/20"
-                >
-                  {isProcessing ? (
-                    <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Redirecionando...</>
-                  ) : (
-                    <><CreditCard className="mr-2 h-5 w-5" /> Pagar com Cartão</>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Você será redirecionado para o ambiente seguro do Mercado Pago para concluir o pagamento.
+                {brickError && (
+                  <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{brickError}</span>
+                  </div>
+                )}
+                {!brickConfig && !brickError && (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Preparando formulário seguro...
+                  </div>
+                )}
+                <div id="payment-brick-container" />
+                {isProcessing && (
+                  <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Processando pagamento...
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <Lock className="h-3 w-3" /> Pagamento processado de forma segura pelo Mercado Pago. Seus dados não são armazenados em nosso servidor.
                 </p>
               </div>
             )}
+
 
             {boleto && !paid && (
               <div className="space-y-6 animate-in fade-in duration-300">
