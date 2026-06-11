@@ -44,6 +44,7 @@ type Split = {
     installments: number | null;
     metodo: string | null;
     paid_at: string | null;
+    status: string | null;
   } | null;
 };
 
