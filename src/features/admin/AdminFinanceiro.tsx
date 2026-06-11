@@ -3,8 +3,8 @@ import {
   ArrowUpRight,
   Calendar,
   Clock,
-  Landmark,
-  Wallet,
+  Clock,
+
   CheckCircle2,
   Loader2,
   CreditCard,
