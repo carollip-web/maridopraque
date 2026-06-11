@@ -203,13 +203,8 @@ export function AdminFinanceiro() {
     };
   }, [pagamentosPeriodo]);
 
-  const saquesPendentes = useMemo(
-    () =>
-      saques
-        .filter((s) => s.status === "solicitado" || s.status === "aprovado")
-        .reduce((acc, s) => acc + Number(s.valor || 0), 0),
-    [saques],
-  );
+
+
 
   // Tabela filtrada
   const pagamentosFiltrados = useMemo(() => {
