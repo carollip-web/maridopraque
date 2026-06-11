@@ -13,7 +13,7 @@ import {
   ClienteGeo,
 } from "./types";
 
-type SheetMode = "pegar" | "enviar" | "revisar" | "info";
+export type SheetMode = "pegar" | "enviar" | "revisar" | "info";
 
 interface OrcamentoDetailsSheetProps {
   orcamento: Orcamento | null;
