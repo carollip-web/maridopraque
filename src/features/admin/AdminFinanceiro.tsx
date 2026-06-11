@@ -42,43 +42,49 @@ export function AdminFinanceiro() {
   const [processandoId, setProcessandoId] = useState<string | null>(null);
 
   const loadAll = useCallback(async () => {
-    // Nova consulta para pagamentos do Mercado Pago (Split 1:1)
+    // Há duas FKs de pagamentos.orcamento_id → orcamentos.id, então é preciso
+    // desambiguar a relação no embed do PostgREST para não retornar erro/vazio.
     const { data: pgs } = await supabase
       .from("pagamentos")
       .select(`
         id, status, valor_total, created_at, gateway, metadata,
-        orcamentos ( service_name, data_pagamento )
+        orcamentos!fk_pag_orcamento ( service_name, data_pagamento )
       `)
       .eq("gateway", "mercado_pago")
       .order("created_at", { ascending: false })
       .limit(200);
 
     const list = pgs || [];
-    const totalFaturado = list.reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
-    
+
+    // "Total Faturado" considera apenas pagamentos que realmente entraram (pago/aprovado).
+    // Pagamentos cancelados/falhos não geram receita.
+    const efetivados = list.filter((r: any) => r.status === "paid" || r.status === "approved");
+    const totalFaturado = efetivados.reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+
     let totalApoioFeminino = 0;
-    
-    const lucroPlataforma = list
-      .filter((r: any) => r.status === "paid" || r.status === "approved")
-      .reduce((s: number, r: any) => {
-        const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
-        const apoioFemininoCut = (r.metadata as any)?.valor_apoio_feminino || 0;
-        totalApoioFeminino += Number(apoioFemininoCut);
-        return s + Number(fee) - Number(apoioFemininoCut);
-      }, 0);
+
+    const lucroPlataforma = efetivados.reduce((s: number, r: any) => {
+      const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
+      const apoioFemininoCut = (r.metadata as any)?.valor_apoio_feminino || 0;
+      totalApoioFeminino += Number(apoioFemininoCut);
+      return s + Number(fee) - Number(apoioFemininoCut);
+    }, 0);
     const saldoPendenteBtg = list
       .filter((r: any) => r.status === "pending")
       .reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
 
-    const pagos = list.map((r: any) => ({
-      id: r.id,
-      service_name: r.orcamentos?.service_name || "Serviço",
-      data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
-      valor: r.valor_total,
-      fee: (r.metadata as any)?.marketplace_fee_amount || 0,
-      status: r.status,
-    }));
-    
+    // Histórico esconde os cancelados — admin não precisa de ruído de tentativas falhas
+    const pagos = list
+      .filter((r: any) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "failed" && r.status !== "rejected")
+      .map((r: any) => ({
+        id: r.id,
+        service_name: r.orcamentos?.service_name || "Serviço",
+        data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
+        valor: r.valor_total,
+        fee: (r.metadata as any)?.marketplace_fee_amount || 0,
+        status: r.status,
+      }));
+
     setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, totalApoioFeminino, pagos });
 
     // novo ledger (pagamento_splits)
