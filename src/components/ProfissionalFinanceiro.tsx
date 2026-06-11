@@ -48,14 +48,30 @@ type Split = {
   } | null;
 };
 
-const SPLIT_STATUS: Record<string, { label: string; color: string }> = {
-  aguardando_conclusao: { label: "A liberar", color: "bg-amber-100 text-amber-700" },
-  disponivel: { label: "Disponível", color: "bg-emerald-100 text-emerald-700" },
-  pago: { label: "Recebido", color: "bg-emerald-100 text-emerald-700" },
-  retido: { label: "Retido", color: "bg-rose-100 text-rose-700" },
-  estornado: { label: "Estornado", color: "bg-slate-100 text-slate-600" },
+// Status "lógico" exibido ao prestador (derivado do status do PAGAMENTO no MP).
+type DerivedStatus = "recebido" | "pendente" | "estornado" | "cancelado";
+
+const DERIVED_LABEL: Record<DerivedStatus, { label: string; color: string }> = {
+  recebido: { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" },
+  pendente: { label: "Aguardando pagamento", color: "bg-amber-100 text-amber-700" },
+  estornado: { label: "Estornado", color: "bg-rose-100 text-rose-700" },
   cancelado: { label: "Cancelado", color: "bg-slate-100 text-slate-600" },
 };
+
+const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null; status: string | null } | null }): DerivedStatus => {
+  const splitStatus = (s.status || "").toLowerCase();
+  const pagStatus = (s.pagamentos?.status || "").toLowerCase();
+  const pagPaid = !!s.pagamentos?.paid_at;
+  if (splitStatus === "estornado") return "estornado";
+  if (
+    splitStatus === "cancelado" ||
+    ["cancelled", "canceled", "rejected", "failed", "refunded"].includes(pagStatus)
+  )
+    return "cancelado";
+  if (pagPaid || ["paid", "pago", "approved"].includes(pagStatus)) return "recebido";
+  return "pendente";
+};
+
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
