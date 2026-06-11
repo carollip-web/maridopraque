@@ -131,8 +131,8 @@ const labelCls =
 
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("basico");
 
