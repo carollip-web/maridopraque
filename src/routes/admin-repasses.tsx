@@ -176,7 +176,11 @@ function AdminPagamentosPage() {
 
   // Métricas rápidas no topo
   const metrics = useMemo(() => {
-    const brutoTotal = pagamentos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    // Exclui pagamentos cancelados/falhos do volume bruto — só consideram-se transações reais
+    const ativos = pagamentos.filter(
+      (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "failed" && r.status !== "rejected",
+    );
+    const brutoTotal = ativos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
     const pagos = pagamentos.filter((r) => r.status === "paid" || r.status === "approved");
     const comissaoTotal = pagos.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
     const pendenteTotal = pagamentos
