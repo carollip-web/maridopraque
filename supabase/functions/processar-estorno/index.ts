@@ -197,7 +197,7 @@ serve(async (req) => {
             titulo: "Estorno pendente — saldo insuficiente",
             mensagem: `Pedido ${orcamentoId}: saldo insuficiente na conta do profissional para reembolso de R$ ${valorReembolso.toFixed(2)}.`,
             orcamento_id: orcamentoId,
-            link: "/admin?tab=disputas",
+            link: "/admin?tab=financeiro",
           }));
           if (rows.length > 0) {
             await admin.from("notificacoes").insert(rows);
