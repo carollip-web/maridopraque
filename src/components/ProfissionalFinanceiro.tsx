@@ -132,24 +132,8 @@ export function ProfissionalFinanceiro() {
   }, [splits, periodo]);
 
   const metricas = useMemo(() => {
-    // Com split automático do MP, o dinheiro cai na conta MP do profissional
-    // assim que o pagamento é aprovado — independente do status do escrow interno.
-    const isPagoMP = (s: Split) => {
-      const ps = (s.pagamentos?.paid_at ?? null) !== null;
-      const status = (s as any).pagamentos?.status as string | undefined;
-      return (
-        ps ||
-        status === "paid" ||
-        status === "pago" ||
-        status === "approved" ||
-        s.status === "pago" ||
-        s.status === "disponivel"
-      );
-    };
-
-    const recebidos = splitsPeriodo.filter(
-      (s) => s.status !== "estornado" && s.status !== "cancelado",
-    );
+    const recebidos = splitsPeriodo.filter((s) => deriveStatus(s) === "recebido");
+    const pendentes = splitsPeriodo.filter((s) => deriveStatus(s) === "pendente");
 
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_profissional || 0),
@@ -164,35 +148,36 @@ export function ProfissionalFinanceiro() {
         acc + Number(s.taxa_plataforma || 0) + Number(s.taxa_gateway || 0),
       0,
     );
+    const totalPendente = pendentes.reduce(
+      (acc, s) => acc + Number(s.valor_profissional || 0),
+      0,
+    );
     const ticket = recebidos.length ? liquidoRecebido / recebidos.length : 0;
 
-    // Mês atual
+    // Mês atual (apenas recebidos)
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter(
-        (s) =>
-          s.status !== "estornado" &&
-          s.status !== "cancelado" &&
-          new Date(s.created_at) >= inicioMes,
-      )
+      .filter((s) => deriveStatus(s) === "recebido" && new Date(s.created_at) >= inicioMes)
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
       liquidoRecebido,
       brutoRecebido,
       taxasTotal,
+      totalPendente,
       ticket,
       noMes,
       qtdRecebidos: recebidos.length,
+      qtdPendentes: pendentes.length,
     };
   }, [splitsPeriodo, splits]);
 
 
   const listaFiltrada = useMemo(() => {
     let l = splitsPeriodo;
-    if (statusFiltro !== "all") l = l.filter((s) => s.status === statusFiltro);
+    if (statusFiltro !== "all") l = l.filter((s) => deriveStatus(s) === statusFiltro);
     if (busca.trim()) {
       const q = busca.toLowerCase();
       l = l.filter(
@@ -203,6 +188,7 @@ export function ProfissionalFinanceiro() {
     }
     return l;
   }, [splitsPeriodo, statusFiltro, busca]);
+
 
   if (loading) {
     return (
