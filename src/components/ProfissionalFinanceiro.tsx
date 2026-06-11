@@ -48,14 +48,30 @@ type Split = {
   } | null;
 };
 
-const SPLIT_STATUS: Record<string, { label: string; color: string }> = {
-  aguardando_conclusao: { label: "A liberar", color: "bg-amber-100 text-amber-700" },
-  disponivel: { label: "Disponível", color: "bg-emerald-100 text-emerald-700" },
-  pago: { label: "Recebido", color: "bg-emerald-100 text-emerald-700" },
-  retido: { label: "Retido", color: "bg-rose-100 text-rose-700" },
-  estornado: { label: "Estornado", color: "bg-slate-100 text-slate-600" },
+// Status "lógico" exibido ao prestador (derivado do status do PAGAMENTO no MP).
+type DerivedStatus = "recebido" | "pendente" | "estornado" | "cancelado";
+
+const DERIVED_LABEL: Record<DerivedStatus, { label: string; color: string }> = {
+  recebido: { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" },
+  pendente: { label: "Aguardando pagamento", color: "bg-amber-100 text-amber-700" },
+  estornado: { label: "Estornado", color: "bg-rose-100 text-rose-700" },
   cancelado: { label: "Cancelado", color: "bg-slate-100 text-slate-600" },
 };
+
+const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null; status: string | null } | null }): DerivedStatus => {
+  const splitStatus = (s.status || "").toLowerCase();
+  const pagStatus = (s.pagamentos?.status || "").toLowerCase();
+  const pagPaid = !!s.pagamentos?.paid_at;
+  if (splitStatus === "estornado") return "estornado";
+  if (
+    splitStatus === "cancelado" ||
+    ["cancelled", "canceled", "rejected", "failed", "refunded"].includes(pagStatus)
+  )
+    return "cancelado";
+  if (pagPaid || ["paid", "pago", "approved"].includes(pagStatus)) return "recebido";
+  return "pendente";
+};
+
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -116,24 +132,8 @@ export function ProfissionalFinanceiro() {
   }, [splits, periodo]);
 
   const metricas = useMemo(() => {
-    // Com split automático do MP, o dinheiro cai na conta MP do profissional
-    // assim que o pagamento é aprovado — independente do status do escrow interno.
-    const isPagoMP = (s: Split) => {
-      const ps = (s.pagamentos?.paid_at ?? null) !== null;
-      const status = (s as any).pagamentos?.status as string | undefined;
-      return (
-        ps ||
-        status === "paid" ||
-        status === "pago" ||
-        status === "approved" ||
-        s.status === "pago" ||
-        s.status === "disponivel"
-      );
-    };
-
-    const recebidos = splitsPeriodo.filter(
-      (s) => s.status !== "estornado" && s.status !== "cancelado",
-    );
+    const recebidos = splitsPeriodo.filter((s) => deriveStatus(s) === "recebido");
+    const pendentes = splitsPeriodo.filter((s) => deriveStatus(s) === "pendente");
 
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_profissional || 0),
@@ -148,35 +148,36 @@ export function ProfissionalFinanceiro() {
         acc + Number(s.taxa_plataforma || 0) + Number(s.taxa_gateway || 0),
       0,
     );
+    const totalPendente = pendentes.reduce(
+      (acc, s) => acc + Number(s.valor_profissional || 0),
+      0,
+    );
     const ticket = recebidos.length ? liquidoRecebido / recebidos.length : 0;
 
-    // Mês atual
+    // Mês atual (apenas recebidos)
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter(
-        (s) =>
-          s.status !== "estornado" &&
-          s.status !== "cancelado" &&
-          new Date(s.created_at) >= inicioMes,
-      )
+      .filter((s) => deriveStatus(s) === "recebido" && new Date(s.created_at) >= inicioMes)
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
       liquidoRecebido,
       brutoRecebido,
       taxasTotal,
+      totalPendente,
       ticket,
       noMes,
       qtdRecebidos: recebidos.length,
+      qtdPendentes: pendentes.length,
     };
   }, [splitsPeriodo, splits]);
 
 
   const listaFiltrada = useMemo(() => {
     let l = splitsPeriodo;
-    if (statusFiltro !== "all") l = l.filter((s) => s.status === statusFiltro);
+    if (statusFiltro !== "all") l = l.filter((s) => deriveStatus(s) === statusFiltro);
     if (busca.trim()) {
       const q = busca.toLowerCase();
       l = l.filter(
@@ -187,6 +188,7 @@ export function ProfissionalFinanceiro() {
     }
     return l;
   }, [splitsPeriodo, statusFiltro, busca]);
+
 
   if (loading) {
     return (
@@ -256,11 +258,12 @@ export function ProfissionalFinanceiro() {
         />
         <StatBox
           icon={Clock}
-          label="Taxas no período"
-          value={brl(metricas.taxasTotal)}
-          sub="comissão + taxa Mercado Pago"
+          label="Aguardando pagamento"
+          value={brl(metricas.totalPendente)}
+          sub={`${metricas.qtdPendentes} pendente(s)`}
           accent="bg-amber-50 text-amber-700 border-amber-200"
         />
+
 
         <StatBox
           icon={CheckCircle2}
@@ -285,10 +288,13 @@ export function ProfissionalFinanceiro() {
         <Tabs value={statusFiltro} onValueChange={setStatusFiltro} className="mb-3">
           <TabsList className="bg-slate-100">
             <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pago">Recebidos</TabsTrigger>
+            <TabsTrigger value="recebido">Recebidos</TabsTrigger>
+            <TabsTrigger value="pendente">Pendentes</TabsTrigger>
+            <TabsTrigger value="cancelado">Cancelados</TabsTrigger>
             <TabsTrigger value="estornado">Estornados</TabsTrigger>
           </TabsList>
         </Tabs>
+
 
 
         <div className="relative mb-3">
@@ -322,13 +328,10 @@ export function ProfissionalFinanceiro() {
               </thead>
               <tbody>
                 {listaFiltrada.map((sp) => {
-                  const isEstornado = sp.status === "estornado" || sp.status === "cancelado";
-                  const meta = isEstornado
-                    ? SPLIT_STATUS[sp.status] ?? {
-                        label: sp.status,
-                        color: "bg-slate-100 text-slate-700",
-                      }
-                    : { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" };
+                  const ds = deriveStatus(sp);
+                  const meta = DERIVED_LABEL[ds];
+                  const isCancelled = ds === "cancelado" || ds === "estornado";
+
                   const mm = methodMeta(
                     sp.pagamentos?.payment_method_id ?? null,
                     sp.pagamentos?.metodo ?? null,
@@ -337,12 +340,12 @@ export function ProfissionalFinanceiro() {
                   return (
                     <tr
                       key={sp.id}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className={`border-b border-slate-100 hover:bg-slate-50 ${isCancelled ? "opacity-60" : ""}`}
                     >
                       <td className="px-3 py-2.5 text-xs text-slate-600 tabular-nums whitespace-nowrap">
                         {new Date(sp.created_at).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-slate-900">
+                      <td className={`px-3 py-2.5 font-medium text-slate-900 ${isCancelled ? "line-through" : ""}`}>
                         {sp.orcamentos?.service_name ?? "Serviço"}
                       </td>
                       <td className="px-3 py-2.5">
@@ -373,10 +376,11 @@ export function ProfissionalFinanceiro() {
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
                         − {brl(Number(sp.taxa_gateway))}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums font-bold text-emerald-700">
+                      <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
                         {brl(Number(sp.valor_profissional))}
                       </td>
                     </tr>
+
                   );
                 })}
               </tbody>
