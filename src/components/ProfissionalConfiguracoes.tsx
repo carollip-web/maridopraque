@@ -21,7 +21,7 @@ import {
   Save,
   Wallet,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const ESPECIALIDADES_LABEL: Record<string, string> = {
   chaveiro: "Chaveiro",
@@ -131,8 +131,8 @@ const labelCls =
 
 export function ProfissionalConfiguracoes() {
   const { user, profile, profilePhoto, updatePhoto } = useAuth();
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("basico");
 
@@ -215,22 +215,17 @@ export function ProfissionalConfiguracoes() {
     return Math.round((done / checks.length) * 100);
   }, [watched, profilePhoto, profissionalPerfil]);
 
-  const handleSaveProfile = async (values: ProfileValues) => {
-    if (!user) return;
-    setSaving(true);
-
-    try {
+  const saveProfileMutation = useMutation({
+    mutationFn: async (values: ProfileValues) => {
+      if (!user) throw new Error("Sem usuário");
       if (values.cnpj && !isValidCnpj(values.cnpj)) {
-        toast.error("CNPJ inválido — confira os dígitos");
-        setSaving(false);
-        return;
+        throw new Error("CNPJ inválido — confira os dígitos");
       }
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ nome: values.nome, whatsapp: values.whatsapp })
         .eq("id", user.id);
-
       if (profileError) throw profileError;
 
       let geo: { lat: number; lng: number } | null = null;
@@ -265,40 +260,59 @@ export function ProfissionalConfiguracoes() {
       const { error: perfilError } = await supabase
         .from("profissional_perfil")
         .upsert(profissionalPayload as any, { onConflict: "user_id" });
-
       if (perfilError) {
-        console.error("[ProfissionalConfiguracoes] erro ao salvar profissional_perfil", {
-          code: perfilError.code,
-          message: perfilError.message,
-          details: perfilError.details,
-          hint: perfilError.hint,
-          payload: profissionalPayload,
-        });
+        console.error(
+          "[ProfissionalConfiguracoes] erro ao salvar profissional_perfil",
+          {
+            code: perfilError.code,
+            message: perfilError.message,
+            details: perfilError.details,
+            hint: perfilError.hint,
+            payload: profissionalPayload,
+          },
+        );
         throw perfilError;
       }
 
       const { data: savedPerfil } = await supabase
         .from("profissional_perfil")
-        .select("genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix")
+        .select(
+          "genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (savedPerfil && (savedPerfil as any).genero !== profissionalPayload.genero) {
-        toast.error("Perfil enviado, mas os dados não foram confirmados no banco.");
-      } else {
+      return {
+        confirmed:
+          !savedPerfil ||
+          (savedPerfil as any).genero === profissionalPayload.genero,
+      };
+    },
+    onSuccess: ({ confirmed }) => {
+      if (confirmed) {
         toast.success("Perfil salvo com sucesso!");
+      } else {
+        toast.error("Perfil enviado, mas os dados não foram confirmados no banco.");
       }
-
-      await refetchPerfil();
+      // Invalida tanto o cache local quanto o do painel profissional
+      queryClient.invalidateQueries({
+        queryKey: ["profissional_perfil", user?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profissional", "perfil", user?.id],
+      });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2500);
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error("[ProfissionalConfiguracoes] erro ao salvar perfil", error);
       toast.error("Erro ao salvar perfil", { description: error.message });
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
+
+  const saving = saveProfileMutation.isPending;
+  const handleSaveProfile = (values: ProfileValues) =>
+    saveProfileMutation.mutate(values);
 
   const onInvalid = (errs: typeof errors) => {
     const firstKey = Object.keys(errs)[0];
