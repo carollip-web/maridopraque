@@ -239,11 +239,23 @@ serve(async (req) => {
       console.log(`[Webhook ${requestId}] Orçamento ${orcamentoId} atualizado com sucesso.`);
 
       // Criar/atualizar registro de split com valores reais
-      const TAXA_MP_PERCENT = 0.0549; // 5,49% crédito à vista estimado
+      // Taxa real do MP por método de pagamento
+      const calcularTaxaMP = (mpData: any): number => {
+        const method = mpData.payment_method_id || "";
+        const installments = mpData.installments || 1;
+        const amount = Number(mpData.transaction_amount || 0);
+
+        if (method === "pix") return Math.round(amount * 0.0099 * 100) / 100;
+        if (method === "boleto" || method === "ticket") return 3.49;
+        if (installments >= 7) return Math.round(amount * 0.0309 * 100) / 100;
+        if (installments >= 2) return Math.round(amount * 0.0299 * 100) / 100;
+        return Math.round(amount * 0.0498 * 100) / 100; // à vista padrão
+      };
+
       const MARKETPLACE_FEE_PERCENT = 0.15; // 15% comissão plataforma
 
       const valorTotal = Number((pagamento as any)?.valor_total || 0);
-      const taxaGateway = Math.round(valorTotal * TAXA_MP_PERCENT * 100) / 100;
+      const taxaGateway = calcularTaxaMP(mpPayment);
       const taxaPlataforma = Math.round(valorTotal * MARKETPLACE_FEE_PERCENT * 100) / 100;
       const valorProfissional = Math.round((valorTotal - taxaGateway - taxaPlataforma) * 100) / 100;
 
