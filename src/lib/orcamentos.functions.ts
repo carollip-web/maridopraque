@@ -1,10 +1,41 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { requireAdminLevel } from "./admin-permissions.server";
-import { isProfissionalCompativelComTipoAtendimento } from "./atendimento.compat";
+import {
+  isProfissionalCompativelComTipoAtendimento,
+  type GeneroProfissional,
+  type TipoAtendimento,
+} from "./atendimento.compat";
+
+type OrcamentoStatus = Database["public"]["Enums"]["orcamento_status"];
+type PropostaRow = Database["public"]["Tables"]["propostas"]["Row"];
+
+/** Forma usada para validar status/posse e compatibilidade ao enviar uma proposta. */
+interface OrcamentoParaEnvio {
+  id: string;
+  status: OrcamentoStatus;
+  cliente_id: string | null;
+  service_id: string | null;
+  service_name: string | null;
+  tipo_atendimento: string | null;
+}
+
+/** Perfil do profissional usado na validação de envio de proposta. */
+interface PerfilProfissionalParaEnvio {
+  genero: string | null;
+  oferece_apoio_feminino: boolean | null;
+  mp_user_id: string | null;
+}
+
+/** Resultado mínimo lido da RPC `marcar_orcamento_enviado` (Returns Json no DB). */
+interface MarcarOrcamentoEnviadoRow {
+  id?: string;
+  status: OrcamentoStatus;
+}
 
 const materialItemSchema = z.object({
   materialId: z.string().uuid(),
@@ -98,8 +129,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
     // 0. Buscar orçamento com fallback para schema cache
-    let orc: any = null;
-    const { data: orcCompleto, error: orcError } = await (supabase as any)
+    let orc: OrcamentoParaEnvio | null = null;
+    const { data: orcCompleto, error: orcError } = await supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_id, service_name, tipo_atendimento")
       .eq("id", data.orcamentoId)
@@ -112,21 +143,20 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
 
       // Fallback sem campos novos
-      const { data: orcBasico, error: orcBasicoError } = await supabase
+      const { data: orcBasico } = await supabase
         .from("orcamentos")
         .select("id, status, cliente_id, service_id, service_name")
         .eq("id", data.orcamentoId)
         .maybeSingle();
 
-      if (orcBasico && typeof orcBasico === "object" && !Array.isArray(orcBasico)) {
-        const ob = orcBasico as any;
-        const tipoFallback = (orcCompleto as any)?.tipo_atendimento ?? null;
+      if (orcBasico) {
+        const tipoFallback = orcCompleto?.tipo_atendimento ?? null;
         orc = {
-          id: ob.id,
-          status: ob.status,
-          cliente_id: ob.cliente_id,
-          service_id: ob.service_id ?? null,
-          service_name: ob.service_name ?? null,
+          id: orcBasico.id,
+          status: orcBasico.status,
+          cliente_id: orcBasico.cliente_id,
+          service_id: orcBasico.service_id ?? null,
+          service_name: orcBasico.service_name ?? null,
           tipo_atendimento: tipoFallback,
         };
       } else {
@@ -200,8 +230,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio) com fallback
-    let perfilProfissional: any = null;
-    const { data: perfCompleto, error: perfilError } = await (supabase as any)
+    let perfilProfissional: PerfilProfissionalParaEnvio | null = null;
+    const { data: perfCompleto, error: perfilError } = await supabase
       .from("profissional_perfil")
       .select("genero, oferece_apoio_feminino, mp_user_id")
       .eq("user_id", userId)
@@ -215,17 +245,15 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
       const { data: perfBasico } = await supabase
         .from("profissional_perfil")
-        .select("id, mp_user_id")
+        .select("mp_user_id")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (perfBasico && typeof perfBasico === "object" && !Array.isArray(perfBasico)) {
-        const pb = perfBasico as any;
+      if (perfBasico) {
         perfilProfissional = {
-          id: pb.id,
           genero: null,
           oferece_apoio_feminino: false,
-          mp_user_id: pb.mp_user_id ?? null,
+          mp_user_id: perfBasico.mp_user_id ?? null,
         };
       } else {
         perfilProfissional = null;
@@ -235,8 +263,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     const compat = isProfissionalCompativelComTipoAtendimento({
-      tipoAtendimento: orc.tipo_atendimento ?? null,
-      genero: perfilProfissional?.genero as any,
+      tipoAtendimento: (orc.tipo_atendimento ?? null) as TipoAtendimento,
+      genero: (perfilProfissional?.genero ?? null) as GeneroProfissional,
       ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino ?? false,
     });
 
@@ -271,10 +299,13 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       statusAtual: orc.status,
     });
 
-    const { data: updatedRows, error: updateError } = await (supabase as any)
-      .rpc("marcar_orcamento_enviado", {
-        _orcamento_id: data.orcamentoId,
-      });
+    const rpcMarcarRes = (await supabase.rpc("marcar_orcamento_enviado", {
+      _orcamento_id: data.orcamentoId,
+    })) as unknown as {
+      data: MarcarOrcamentoEnviadoRow[] | MarcarOrcamentoEnviadoRow | null;
+      error: PostgrestError | null;
+    };
+    const { data: updatedRows, error: updateError } = rpcMarcarRes;
 
     if (updateError) {
       console.error("[enviarOrcamento] erro na RPC marcar_orcamento_enviado", {
@@ -307,7 +338,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .maybeSingle();
 
     let proposalId: string;
-    let propRow: any;
+    let propRow: PropostaRow;
 
     if (existingProp) {
       // Update existing proposal
@@ -469,10 +500,9 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       userId,
     });
 
-    const { data: resultRows, error } = await (supabase as any)
-      .rpc("aceitar_proposta_cliente", {
-        _proposta_id: data.propostaId,
-      });
+    const { data: resultRows, error } = await supabase.rpc("aceitar_proposta_cliente", {
+      _proposta_id: data.propostaId,
+    });
 
     if (error) {
       console.error("[aceitarProposta] erro na RPC aceitar_proposta_cliente", {
