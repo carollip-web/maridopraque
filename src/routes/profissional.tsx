@@ -976,6 +976,7 @@ function ProfissionalArea() {
               />
             )}
             {tab === "pedidos" && (
+              <>
               {!mpConectado && (
                 <div className="mx-4 mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
@@ -1010,6 +1011,7 @@ function ProfissionalArea() {
                 setPedidosSubTab={setPedidosSubTab}
                 setServicosSubTab={setServicosSubTab}
               />
+              </>
             )}
           </main>
         </div>
