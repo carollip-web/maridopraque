@@ -359,7 +359,7 @@ function Checkout() {
   const valorServico = Number(orcamento?.valor_servico || 0);
   const materiais = orcamento?.orcamento_materiais || [];
   const valorMateriaisCalculado = materiais.reduce(
-    (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
+    (acc, m) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
     0,
   );
   const valorMateriais =
