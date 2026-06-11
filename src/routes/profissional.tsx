@@ -20,7 +20,7 @@ import { ProfissionalOrcamentos } from "@/features/profissional/ProfissionalOrca
 import { ProfissionalServicos } from "@/features/profissional/ProfissionalServicos";
 import { ProfissionalNotificacoes } from "@/features/profissional/ProfissionalNotificacoes";
 import { ProfissionalStatusCard } from "@/features/profissional/ProfissionalStatusCard";
-import { OrcamentoDetailsSheet } from "@/features/profissional/OrcamentoDetailsSheet";
+import { OrcamentoDetailsSheet, type SheetMode } from "@/features/profissional/OrcamentoDetailsSheet";
 
 // UI Components
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
