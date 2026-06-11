@@ -14,10 +14,10 @@ function Pagina() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Termos de Uso</h1>
-      <p className="text-sm text-slate-400 mb-8">Última atualização: [PREENCHER: data]</p>
+      <p className="text-sm text-slate-400 mb-8">Última atualização: 10 de junho de 2026</p>
       <div className="max-w-none space-y-4 text-slate-600 leading-relaxed">
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">1. Quem Somos</h2>
-        <p>A plataforma Marido pra Quê? é operada por MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, inscrita no CNPJ sob nº 66.782.882/0001-00, com sede em [PREENCHER: endereço]. Ao longo deste documento, referida como "plataforma", "nós" ou "Marido pra Quê?".</p>
+        <p>A plataforma Marido pra Quê? é operada por MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, inscrita no CNPJ sob nº 66.782.882/0001-00, com sede em Avenida Adilson Seroa da Motta, número 65. Ao longo deste documento, referida como "plataforma", "nós" ou "Marido pra Quê?".</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">2. O Que Fazemos</h2>
         <p>A Marido pra Quê? é uma plataforma digital que conecta clientes a profissionais qualificados para a prestação de serviços domésticos de pequenos reparos, montagens, instalações e serviços relacionados, na região de Copacabana e Ipanema, no Rio de Janeiro. A plataforma atua como intermediadora, facilitando o contato, o orçamento, o agendamento e o pagamento entre cliente e profissional. A execução do serviço é de responsabilidade do profissional contratado.</p>

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Mail, MapPin, Clock, Instagram, Facebook } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/contato")({
@@ -40,10 +40,10 @@ function Contato() {
       <div className="grid gap-12 md:grid-cols-2">
         <div className="space-y-8">
           <div className="rounded-3xl bg-brand p-10 text-brand-foreground shadow-brand transition hover:scale-[1.01]">
-            <MessageCircle className="h-10 w-10 mb-6" />
-            <h2 className="text-3xl font-bold">WhatsApp</h2>
+            <Mail className="h-10 w-10 mb-6" />
+            <h2 className="text-3xl font-bold">E-mail</h2>
             <p className="mt-2 text-brand-foreground/80">
-              O jeito mais rápido de conseguir seu orçamento gratuito.
+              Envie sua solicitação e receba seu orçamento gratuito por e-mail.
             </p>
             <Button
               asChild
@@ -61,10 +61,12 @@ function Contato() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-border p-8">
-            <Mail className="h-6 w-6 text-brand mb-4" />
-            <h3 className="font-bold">E-mail</h3>
-            <p className="mt-1 text-sm text-muted-foreground">contato@maridopraque.com</p>
+          <div className="grid gap-4">
+            <div className="rounded-3xl border border-border p-8">
+              <Phone className="h-6 w-6 text-brand mb-4" />
+              <h3 className="font-bold">Telefone</h3>
+              <p className="mt-1 text-sm text-muted-foreground">(21) 99999-9999</p>
+            </div>
           </div>
         </div>
 

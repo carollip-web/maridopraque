@@ -14,12 +14,12 @@ function Pagina() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Política de Privacidade</h1>
-      <p className="text-sm text-slate-400 mb-8">Última atualização: [PREENCHER: data]</p>
+      <p className="text-sm text-slate-400 mb-8">Última atualização: 10 de junho de 2026</p>
       <div className="max-w-none space-y-4 text-slate-600 leading-relaxed">
         <p>Esta Política de Privacidade descreve como a Marido pra Quê? coleta, usa, armazena e protege os dados pessoais dos usuários, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">1. Controladora dos Dados</h2>
-        <p>A controladora dos dados é MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, CNPJ 66.782.882/0001-00, com sede em [PREENCHER: endereço].</p>
+        <p>A controladora dos dados é MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, CNPJ 66.782.882/0001-00, com sede em Avenida Adilson Seroa da Motta, número 65.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">2. Quais Dados Coletamos</h2>
         <p><strong>De clientes:</strong> nome, e-mail, telefone/WhatsApp, endereço para realização do serviço, dados de pagamento (processados pelo Mercado Pago — não armazenamos o número completo do cartão), histórico de pedidos e avaliações.</p>
@@ -50,7 +50,7 @@ function Pagina() {
         <p>Esta Política pode ser atualizada periodicamente. Alterações relevantes serão comunicadas aos usuários.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">11. Encarregado de Dados (DPO)</h2>
-        <p>Encarregado pelo tratamento de dados: [PREENCHER: nome do responsável, se houver]. Contato: contato@maridopraque.com.</p>
+        <p>Encarregado pelo tratamento de dados: Carolina Pinheiro e Diego Donald. Contato: contato@maridopraque.com.</p>
       </div>
     </div>
   );

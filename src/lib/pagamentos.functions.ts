@@ -12,12 +12,6 @@ interface CriarCheckoutPagamentoRow {
   id: string;
 }
 
-/** Linha retornada pela RPC `simular_pagamento_aprovado_cliente`. */
-interface SimularPagamentoAprovadoRow {
-  ok: boolean;
-  orcamento_id: string;
-}
-
 /** Item de material lido para o cálculo do total. */
 interface OrcamentoMaterialPreco {
   id: string;
@@ -97,62 +91,58 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       throw new Error("O valor total do orçamento deve ser maior que zero.");
     }
 
-    // 3. Integração com Mercado Pago (ou Mock fallback)
+    // 3. Integração com Mercado Pago
     const ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
     const APP_URL = process.env.APP_URL || "https://maridopraque.lovable.app";
 
-    let checkoutUrl = "";
-    let preferenceId = `mock-${Date.now()}`;
-    let gateway = "mercado_pago";
-
     if (!ACCESS_TOKEN) {
-      console.warn(
-        "[iniciarPagamentoOrcamento] MERCADO_PAGO_ACCESS_TOKEN não configurado. Usando modo Simulação.",
-      );
-      gateway = "mock";
-      // We will set the checkoutUrl after we create the payment record so we can include its ID.
-    } else {
-      console.info(`[Mercado Pago] Gerando preferência para Orçamento ${orc.id}...`);
-      const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              id: orc.id,
-              title: orc.service_name,
-              description: "Serviço via Marido Pra Quê (pagamento integral, retido até conclusão)",
-              quantity: 1,
-              currency_id: "BRL",
-              unit_price: valorTotal,
-            },
-          ],
-          external_reference: orc.id,
-          notification_url: `${process.env.SUPABASE_URL}/functions/v1/mercado-pago-webhook`, // Supabase Edge Function
-          back_urls: {
-            success: `${APP_URL}/cliente?tab=pedidos&payment=success`,
-            failure: `${APP_URL}/cliente?tab=pedidos&payment=failure`,
-            pending: `${APP_URL}/cliente?tab=pedidos&payment=pending`,
-          },
-          auto_return: "approved",
-          statement_descriptor: "MARIDO PRA QUE",
-          expires: true,
-          expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
-        }),
-      });
-
-      const mpData = (await mpResponse.json()) as MercadoPagoPreferenceResponse;
-      if (!mpResponse.ok) {
-        console.error("[Mercado Pago] Erro API:", mpData);
-        throw new Error(mpData.message || "Erro na comunicação com Mercado Pago.");
-      }
-
-      checkoutUrl = mpData.init_point ?? "";
-      preferenceId = mpData.id ?? preferenceId;
+      throw new Error("Gateway de pagamento não configurado. Contate o suporte.");
     }
+
+    let checkoutUrl = "";
+    let preferenceId = "";
+    const gateway = "mercado_pago";
+
+    console.info(`[Mercado Pago] Gerando preferência para Orçamento ${orc.id}...`);
+    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        items: [
+          {
+            id: orc.id,
+            title: orc.service_name,
+            description: "Serviço via Marido Pra Quê (pagamento integral, retido até conclusão)",
+            quantity: 1,
+            currency_id: "BRL",
+            unit_price: valorTotal,
+          },
+        ],
+        external_reference: orc.id,
+        notification_url: `${process.env.SUPABASE_URL}/functions/v1/mercado-pago-webhook`, // Supabase Edge Function
+        back_urls: {
+          success: `${APP_URL}/cliente?tab=pedidos&payment=success`,
+          failure: `${APP_URL}/cliente?tab=pedidos&payment=failure`,
+          pending: `${APP_URL}/cliente?tab=pedidos&payment=pending`,
+        },
+        auto_return: "approved",
+        statement_descriptor: "MARIDO PRA QUE",
+        expires: true,
+        expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
+      }),
+    });
+
+    const mpData = (await mpResponse.json()) as MercadoPagoPreferenceResponse;
+    if (!mpResponse.ok) {
+      console.error("[Mercado Pago] Erro API:", mpData);
+      throw new Error(mpData.message || "Erro na comunicação com Mercado Pago.");
+    }
+
+    checkoutUrl = mpData.init_point ?? "";
+    preferenceId = mpData.id ?? preferenceId;
 
     try {
       // 4. Criar registro de pagamento no servidor usando RPC.
@@ -193,11 +183,6 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
         throw new Error("Pagamento não foi criado.");
       }
 
-      // If it's mock, we set the checkoutUrl to our internal simulator now that we have the payment ID
-      if (gateway === "mock") {
-        checkoutUrl = `/checkout/simular?pagamentoId=${pag.id}`;
-      }
-
       return {
         ok: true,
         checkoutUrl,
@@ -207,42 +192,4 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       console.error("[iniciarPagamentoOrcamento] Falha crítica:", err);
       throw new Error(errorMessage(err, "Falha ao processar pagamento."));
     }
-  });
-
-const simularSchema = z.object({
-  pagamentoId: z.string().uuid(),
-});
-
-export const simularPagamentoAprovado = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => simularSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-
-    const rpcRes = (await supabase.rpc("simular_pagamento_aprovado_cliente" as never, {
-      _pagamento_id: data.pagamentoId,
-    } as never)) as unknown as {
-      data: SimularPagamentoAprovadoRow[] | SimularPagamentoAprovadoRow | null;
-      error: PostgrestError | null;
-    };
-    const { data: resultRows, error } = rpcRes;
-
-    if (error) {
-      console.error("[simularPagamentoAprovado] erro na RPC", {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        pagamentoId: data.pagamentoId,
-      });
-
-      throw new Error(error.message || "Erro ao simular pagamento.");
-    }
-
-    const result = Array.isArray(resultRows) ? resultRows[0] : resultRows;
-
-    return {
-      ok: !!result?.ok,
-      orcamentoId: result?.orcamento_id,
-    };
   });

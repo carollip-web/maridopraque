@@ -14,7 +14,7 @@ function Pagina() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Política de Cancelamento e Reembolso</h1>
-      <p className="text-sm text-slate-400 mb-8">Última atualização: [PREENCHER: data]</p>
+      <p className="text-sm text-slate-400 mb-8">Última atualização: 10 de junho de 2026</p>
       <div className="max-w-none space-y-4 text-slate-600 leading-relaxed">
         <p>Esta Política de Cancelamento faz parte dos Termos de Uso da plataforma Marido pra Quê? e estabelece as regras para cancelamento de serviços e reembolsos.</p>
 
