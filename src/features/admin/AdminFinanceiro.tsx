@@ -88,6 +88,7 @@ export function AdminFinanceiro() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
+  const [estornosPendentes, setEstornosPendentes] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<ProfMap>({});
   const [ledger, setLedger] = useState<{
     totalRecebido: number;
@@ -108,7 +109,7 @@ export function AdminFinanceiro() {
     if (showSpinner) setLoading(true);
     else setRefreshing(true);
 
-    const [{ data: pgs }, { data: splits }] = await Promise.all([
+    const [{ data: pgs }, { data: splits, error: splitsError }] = await Promise.all([
       supabase
         .from("pagamentos")
         .select(
@@ -120,8 +121,13 @@ export function AdminFinanceiro() {
         .limit(500),
       supabase
         .from("pagamento_splits")
-        .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status"),
+        .select("id, orcamento_id, valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status, metadata, orcamentos(service_name)"),
     ]);
+
+    if (splitsError) {
+      console.error("Erro ao ler pagamento_splits (possível bloqueio de RLS):", splitsError);
+      toast.error("Aviso: RLS impediu a leitura de pagamento_splits.");
+    }
 
     const list = (pgs || []) as PagamentoRow[];
     setPagamentos(list);
@@ -155,6 +161,12 @@ export function AdminFinanceiro() {
       0,
     );
     setLedger({ totalRecebido, totalTaxaPlat });
+
+    const pendingRefunds = sp.filter((s: any) => 
+      String(s.metadata?.estorno_pendente_saldo) === "true" && 
+      !s.metadata?.refund_id
+    );
+    setEstornosPendentes(pendingRefunds);
 
     setLoading(false);
     setRefreshing(false);
@@ -351,6 +363,61 @@ export function AdminFinanceiro() {
           />
         )}
       </div>
+
+      {/* Estornos Pendentes */}
+      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <h3 className="text-lg font-bold text-slate-900">Estornos pendentes</h3>
+        </div>
+        {estornosPendentes.length === 0 ? (
+          <p className="text-sm text-slate-500">Nenhum estorno pendente.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[700px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold border-b border-slate-100 bg-slate-50/50">
+                  <th className="px-5 py-3">ID Pedido</th>
+                  <th className="px-5 py-3">Serviço</th>
+                  <th className="px-5 py-3 text-right">Valor do Estorno</th>
+                  <th className="px-5 py-3 text-center">Pendente Desde</th>
+                  <th className="px-5 py-3 text-center">Última Tentativa</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {estornosPendentes.map((est) => {
+                  const srvName = Array.isArray(est.orcamentos) 
+                    ? est.orcamentos[0]?.service_name 
+                    : est.orcamentos?.service_name;
+                  return (
+                    <tr key={est.id} className="hover:bg-slate-50/60 transition">
+                      <td className="px-5 py-3 font-mono text-xs font-semibold text-slate-600">
+                        #{String(est.orcamento_id).slice(0, 8)}
+                      </td>
+                      <td className="px-5 py-3 font-bold text-sm text-slate-900">
+                        {srvName || "Serviço"}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold text-sm text-amber-600 tabular-nums">
+                        {brl(Number(est.metadata?.valor_reembolso || 0))}
+                      </td>
+                      <td className="px-5 py-3 text-center text-xs text-slate-500">
+                        {est.metadata?.estorno_pendente_desde
+                          ? new Date(est.metadata.estorno_pendente_desde).toLocaleString("pt-BR")
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-3 text-center text-xs text-slate-500">
+                        {est.metadata?.ultima_tentativa_estorno
+                          ? new Date(est.metadata.ultima_tentativa_estorno).toLocaleString("pt-BR")
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* TABS */}
       <div className="border-b border-slate-200">
