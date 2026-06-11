@@ -188,8 +188,8 @@ function Checkout() {
           amount: Number(data.amount),
           payerEmail: data.payerEmail || user?.email || "",
         });
-      } catch (e: any) {
-        if (!cancelled) setBrickError(e?.message || "Falha ao iniciar checkout.");
+      } catch (e) {
+        if (!cancelled) setBrickError((e as Error)?.message || "Falha ao iniciar checkout.");
       }
     })();
     return () => {
