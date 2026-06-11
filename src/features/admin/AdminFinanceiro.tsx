@@ -107,7 +107,7 @@ export function AdminFinanceiro() {
     if (showSpinner) setLoading(true);
     else setRefreshing(true);
 
-    const [{ data: pgs }, { data: splits }, { data: sqRows }] = await Promise.all([
+    const [{ data: pgs }, { data: splits }] = await Promise.all([
       supabase
         .from("pagamentos")
         .select(
@@ -120,13 +120,6 @@ export function AdminFinanceiro() {
       supabase
         .from("pagamento_splits")
         .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status"),
-      supabase
-        .from("profissional_saques")
-        .select(
-          "id, profissional_id, valor, status, chave_pix, observacao, solicitado_em, comprovante_url",
-        )
-        .order("solicitado_em", { ascending: false })
-        .limit(100),
     ]);
 
     const list = (pgs || []) as PagamentoRow[];
@@ -138,7 +131,6 @@ export function AdminFinanceiro() {
         [
           ...list.map((r) => r.profissional_id).filter(Boolean) as string[],
           ...list.map((r) => r.cliente_id).filter(Boolean) as string[],
-          ...(sqRows || []).map((s: any) => s.profissional_id).filter(Boolean),
         ],
       ),
     );
@@ -154,27 +146,19 @@ export function AdminFinanceiro() {
       setProfiles(map);
     }
 
-    // Saques
-    const sList = (sqRows || []) as SaqueRow[];
-    setSaques(sList);
-
-    // Ledger (pagamento_splits)
+    // Ledger (pagamento_splits) — splits MP são liquidados automaticamente
     const sp = splits || [];
     const totalRecebido = sp.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
     const totalTaxaPlat = sp.reduce(
       (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
       0,
     );
-    const totalAPagar = sp
-      .filter((x: any) =>
-        ["aguardando_conclusao", "disponivel", "solicitado"].includes(x.status),
-      )
-      .reduce((s, x: any) => s + Number(x.valor_profissional || 0), 0);
-    setLedger({ totalRecebido, totalTaxaPlat, totalAPagar });
+    setLedger({ totalRecebido, totalTaxaPlat });
 
     setLoading(false);
     setRefreshing(false);
   }, []);
+
 
   useEffect(() => {
     loadAll();
