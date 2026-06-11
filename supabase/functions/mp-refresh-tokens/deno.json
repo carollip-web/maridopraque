@@ -1,0 +1,2 @@
+[functions.mp-refresh-tokens]
+verify_jwt = false
