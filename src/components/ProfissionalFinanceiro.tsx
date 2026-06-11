@@ -340,12 +340,12 @@ export function ProfissionalFinanceiro() {
                   return (
                     <tr
                       key={sp.id}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      className={`border-b border-slate-100 hover:bg-slate-50 ${isCancelled ? "opacity-60" : ""}`}
                     >
                       <td className="px-3 py-2.5 text-xs text-slate-600 tabular-nums whitespace-nowrap">
                         {new Date(sp.created_at).toLocaleDateString("pt-BR")}
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-slate-900">
+                      <td className={`px-3 py-2.5 font-medium text-slate-900 ${isCancelled ? "line-through" : ""}`}>
                         {sp.orcamentos?.service_name ?? "Serviço"}
                       </td>
                       <td className="px-3 py-2.5">
@@ -376,10 +376,11 @@ export function ProfissionalFinanceiro() {
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
                         − {brl(Number(sp.taxa_gateway))}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums font-bold text-emerald-700">
+                      <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
                         {brl(Number(sp.valor_profissional))}
                       </td>
                     </tr>
+
                   );
                 })}
               </tbody>
