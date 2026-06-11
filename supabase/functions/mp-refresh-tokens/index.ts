@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const MP_CLIENT_ID = Deno.env.get("MERCADO_PAGO_CLIENT_ID");
+  const MP_CLIENT_ID = Deno.env.get("MERCADO_PAGO_CLIENT_ID") || Deno.env.get("MERCADO_PAGO_APP_ID");
   const MP_CLIENT_SECRET = Deno.env.get("MERCADO_PAGO_CLIENT_SECRET");
 
   if (!MP_CLIENT_ID || !MP_CLIENT_SECRET) {
