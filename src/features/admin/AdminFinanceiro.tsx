@@ -230,58 +230,8 @@ export function AdminFinanceiro() {
     });
   }, [pagamentosPeriodo, statusFilter, search, profiles]);
 
-  // Saques actions
-  const atualizarSaque = async (
-    id: string,
-    patch: { status: string; comprovante_url?: string | null; aprovado_em?: string },
-  ) => {
-    const { error } = await supabase.from("profissional_saques").update(patch).eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return false;
-    }
-    return true;
-  };
 
-  const aprovar = async (id: string) => {
-    setProcessandoId(id);
-    const ok = await atualizarSaque(id, {
-      status: "aprovado",
-      aprovado_em: new Date().toISOString(),
-    });
-    setProcessandoId(null);
-    if (ok) {
-      toast.success("Saque aprovado");
-      loadAll(false);
-    }
-  };
 
-  const recusar = async (id: string) => {
-    if (!confirm("Recusar este saque?")) return;
-    setProcessandoId(id);
-    const ok = await atualizarSaque(id, { status: "recusado" });
-    setProcessandoId(null);
-    if (ok) {
-      toast.success("Saque recusado");
-      loadAll(false);
-    }
-  };
-
-  const marcarPago = async (id: string) => {
-    setProcessandoId(id);
-    const comp = comprovantes[id];
-    if (comp) {
-      await atualizarSaque(id, { status: "aprovado", comprovante_url: comp });
-    }
-    const { error } = await supabase.rpc("processar_saque_pago", { _saque_id: id });
-    setProcessandoId(null);
-    if (error) {
-      toast.error("Erro ao marcar pago: " + error.message);
-      return;
-    }
-    toast.success("Saque pago e splits liquidados");
-    loadAll(false);
-  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
