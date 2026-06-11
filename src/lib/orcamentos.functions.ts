@@ -500,10 +500,9 @@ export const aceitarProposta = createServerFn({ method: "POST" })
       userId,
     });
 
-    const { data: resultRows, error } = await (supabase as any)
-      .rpc("aceitar_proposta_cliente", {
-        _proposta_id: data.propostaId,
-      });
+    const { data: resultRows, error } = await supabase.rpc("aceitar_proposta_cliente", {
+      _proposta_id: data.propostaId,
+    });
 
     if (error) {
       console.error("[aceitarProposta] erro na RPC aceitar_proposta_cliente", {
