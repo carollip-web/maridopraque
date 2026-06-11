@@ -132,10 +132,7 @@ export function ProfissionalFinanceiro() {
     };
 
     const recebidos = splitsPeriodo.filter(
-      (s) => isPagoMP(s) && s.status !== "estornado" && s.status !== "cancelado",
-    );
-    const aLiberar = splitsPeriodo.filter(
-      (s) => !isPagoMP(s) && s.status === "aguardando_conclusao",
+      (s) => s.status !== "estornado" && s.status !== "cancelado",
     );
 
     const liquidoRecebido = recebidos.reduce(
@@ -144,10 +141,6 @@ export function ProfissionalFinanceiro() {
     );
     const brutoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_total || 0),
-      0,
-    );
-    const totalALiberar = aLiberar.reduce(
-      (acc, s) => acc + Number(s.valor_profissional || 0),
       0,
     );
     const taxasTotal = recebidos.reduce(
@@ -162,20 +155,24 @@ export function ProfissionalFinanceiro() {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter((s) => isPagoMP(s) && new Date(s.created_at) >= inicioMes)
+      .filter(
+        (s) =>
+          s.status !== "estornado" &&
+          s.status !== "cancelado" &&
+          new Date(s.created_at) >= inicioMes,
+      )
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
       liquidoRecebido,
       brutoRecebido,
-      totalALiberar,
       taxasTotal,
       ticket,
       noMes,
       qtdRecebidos: recebidos.length,
-      qtdALiberar: aLiberar.length,
     };
   }, [splitsPeriodo, splits]);
+
 
   const listaFiltrada = useMemo(() => {
     let l = splitsPeriodo;
