@@ -115,10 +115,27 @@ export function ProfissionalFinanceiro() {
   }, [splits, periodo]);
 
   const metricas = useMemo(() => {
+    // Com split automático do MP, o dinheiro cai na conta MP do profissional
+    // assim que o pagamento é aprovado — independente do status do escrow interno.
+    const isPagoMP = (s: Split) => {
+      const ps = (s.pagamentos?.paid_at ?? null) !== null;
+      const status = (s as any).pagamentos?.status as string | undefined;
+      return (
+        ps ||
+        status === "paid" ||
+        status === "pago" ||
+        status === "approved" ||
+        s.status === "pago" ||
+        s.status === "disponivel"
+      );
+    };
+
     const recebidos = splitsPeriodo.filter(
-      (s) => s.status === "pago" || s.status === "disponivel",
+      (s) => isPagoMP(s) && s.status !== "estornado" && s.status !== "cancelado",
     );
-    const aLiberar = splitsPeriodo.filter((s) => s.status === "aguardando_conclusao");
+    const aLiberar = splitsPeriodo.filter(
+      (s) => !isPagoMP(s) && s.status === "aguardando_conclusao",
+    );
 
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_profissional || 0),
@@ -144,11 +161,7 @@ export function ProfissionalFinanceiro() {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter(
-        (s) =>
-          (s.status === "pago" || s.status === "disponivel") &&
-          new Date(s.created_at) >= inicioMes,
-      )
+      .filter((s) => isPagoMP(s) && new Date(s.created_at) >= inicioMes)
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
