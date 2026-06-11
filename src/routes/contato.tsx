@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/contato")({
   head: () => ({
     meta: [
-      { title: "Contato — WhatsApp, telefone e e-mail | Marido pra Quê?" },
+      { title: "Contato — E-mail | Marido pra Quê?" },
       {
         name: "description",
         content:
-          "Fale com a gente pelo WhatsApp, telefone ou e-mail. Atendimento ágil de segunda a sábado, com plantão 24h para emergências.",
+          "Fale com a gente por e-mail. Atendimento de segunda a sábado.",
       },
       { property: "og:title", content: "Fale com a Marido pra Quê?" },
       {
         property: "og:description",
-        content: "WhatsApp, telefone e e-mail — escolha o canal que prefere.",
+        content: "Envie um e-mail para contato@maridopraque.com.",
       },
     ],
   }),
