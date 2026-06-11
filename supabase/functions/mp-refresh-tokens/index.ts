@@ -19,12 +19,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  console.log("[diag]", JSON.stringify({
-    temEnvSecret: !!Deno.env.get("CRON_SECRET"),
-    envSecretLen: (Deno.env.get("CRON_SECRET") || "").length,
-    temHeader: !!req.headers.get("x-cron-secret"),
-    headerLen: (req.headers.get("x-cron-secret") || "").length,
-  }));
 
   const cronSecret = Deno.env.get("CRON_SECRET");
   const provided = req.headers.get("x-cron-secret");
