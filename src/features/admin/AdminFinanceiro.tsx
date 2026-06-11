@@ -30,17 +30,8 @@ import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoR
 // Taxa estimada do Mercado Pago para crédito à vista
 const TAXA_MP_CREDITO = 0.0549;
 
-type SaqueRow = {
-  id: string;
-  profissional_id: string;
-  valor: number;
-  status: string;
-  chave_pix: string | null;
-  observacao: string | null;
-  solicitado_em: string;
-  comprovante_url: string | null;
-  profissional_nome?: string | null;
-};
+
+
 
 type PagamentoRow = {
   id: string;
