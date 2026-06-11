@@ -44,6 +44,7 @@ type Split = {
     installments: number | null;
     metodo: string | null;
     paid_at: string | null;
+    status: string | null;
   } | null;
 };
 
@@ -94,7 +95,7 @@ export function ProfissionalFinanceiro() {
     const { data: sp } = await supabase
       .from("pagamento_splits")
       .select(
-        "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at)",
+        "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at,status)",
       )
       .eq("profissional_id", user.id)
       .order("created_at", { ascending: false })
@@ -115,10 +116,27 @@ export function ProfissionalFinanceiro() {
   }, [splits, periodo]);
 
   const metricas = useMemo(() => {
+    // Com split automático do MP, o dinheiro cai na conta MP do profissional
+    // assim que o pagamento é aprovado — independente do status do escrow interno.
+    const isPagoMP = (s: Split) => {
+      const ps = (s.pagamentos?.paid_at ?? null) !== null;
+      const status = (s as any).pagamentos?.status as string | undefined;
+      return (
+        ps ||
+        status === "paid" ||
+        status === "pago" ||
+        status === "approved" ||
+        s.status === "pago" ||
+        s.status === "disponivel"
+      );
+    };
+
     const recebidos = splitsPeriodo.filter(
-      (s) => s.status === "pago" || s.status === "disponivel",
+      (s) => isPagoMP(s) && s.status !== "estornado" && s.status !== "cancelado",
     );
-    const aLiberar = splitsPeriodo.filter((s) => s.status === "aguardando_conclusao");
+    const aLiberar = splitsPeriodo.filter(
+      (s) => !isPagoMP(s) && s.status === "aguardando_conclusao",
+    );
 
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_profissional || 0),
@@ -144,11 +162,7 @@ export function ProfissionalFinanceiro() {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter(
-        (s) =>
-          (s.status === "pago" || s.status === "disponivel") &&
-          new Date(s.created_at) >= inicioMes,
-      )
+      .filter((s) => isPagoMP(s) && new Date(s.created_at) >= inicioMes)
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
@@ -310,11 +324,18 @@ export function ProfissionalFinanceiro() {
               </thead>
               <tbody>
                 {listaFiltrada.map((sp) => {
+                  const pagPaid =
+                    !!sp.pagamentos?.paid_at ||
+                    sp.pagamentos?.status === "paid" ||
+                    sp.pagamentos?.status === "pago" ||
+                    sp.pagamentos?.status === "approved";
                   const meta =
-                    SPLIT_STATUS[sp.status] ?? {
-                      label: sp.status,
-                      color: "bg-slate-100 text-slate-700",
-                    };
+                    pagPaid && sp.status === "aguardando_conclusao"
+                      ? { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" }
+                      : SPLIT_STATUS[sp.status] ?? {
+                          label: sp.status,
+                          color: "bg-slate-100 text-slate-700",
+                        };
                   const mm = methodMeta(
                     sp.pagamentos?.payment_method_id ?? null,
                     sp.pagamentos?.metodo ?? null,
@@ -348,7 +369,7 @@ export function ProfissionalFinanceiro() {
                         >
                           {meta.label}
                         </span>
-                        {sp.status === "aguardando_conclusao" && sp.disponivel_em && (
+                        {!pagPaid && sp.status === "aguardando_conclusao" && sp.disponivel_em && (
                           <div className="text-[10px] text-slate-500 mt-0.5">
                             libera {new Date(sp.disponivel_em).toLocaleDateString("pt-BR")}
                           </div>
