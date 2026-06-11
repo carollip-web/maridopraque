@@ -509,6 +509,14 @@ function AdminPagamentosPage() {
                           </div>
                         </td>
 
+                        {/* Taxa MP estimada */}
+                        <td className="px-6 py-4 text-right">
+                          <div className="font-bold text-sm text-slate-400">
+                            − R$ {taxaMP.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[10px] text-slate-300 mt-0.5">estimado</div>
+                        </td>
+
                         {/* Líquido Pro */}
                         <td className="px-6 py-4 text-right">
                           <div className="font-bold text-sm text-emerald-600">
