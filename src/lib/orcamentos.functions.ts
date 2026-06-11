@@ -129,8 +129,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
     // 0. Buscar orçamento com fallback para schema cache
-    let orc: any = null;
-    const { data: orcCompleto, error: orcError } = await (supabase as any)
+    let orc: OrcamentoParaEnvio | null = null;
+    const { data: orcCompleto, error: orcError } = await supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_id, service_name, tipo_atendimento")
       .eq("id", data.orcamentoId)
@@ -143,21 +143,20 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
 
       // Fallback sem campos novos
-      const { data: orcBasico, error: orcBasicoError } = await supabase
+      const { data: orcBasico } = await supabase
         .from("orcamentos")
         .select("id, status, cliente_id, service_id, service_name")
         .eq("id", data.orcamentoId)
         .maybeSingle();
 
-      if (orcBasico && typeof orcBasico === "object" && !Array.isArray(orcBasico)) {
-        const ob = orcBasico as any;
-        const tipoFallback = (orcCompleto as any)?.tipo_atendimento ?? null;
+      if (orcBasico) {
+        const tipoFallback = orcCompleto?.tipo_atendimento ?? null;
         orc = {
-          id: ob.id,
-          status: ob.status,
-          cliente_id: ob.cliente_id,
-          service_id: ob.service_id ?? null,
-          service_name: ob.service_name ?? null,
+          id: orcBasico.id,
+          status: orcBasico.status,
+          cliente_id: orcBasico.cliente_id,
+          service_id: orcBasico.service_id ?? null,
+          service_name: orcBasico.service_name ?? null,
           tipo_atendimento: tipoFallback,
         };
       } else {
