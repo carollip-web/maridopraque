@@ -178,18 +178,16 @@ function AdminPagamentosPage() {
 
   // Métricas rápidas no topo
   const metrics = useMemo(() => {
-    // Exclui pagamentos cancelados/falhos do volume bruto — só consideram-se transações reais
-    const ativos = pagamentos.filter(
-      (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "failed" && r.status !== "rejected",
+    // Apenas pagamentos efetivamente aprovados entram no volume bruto
+    const pagamentosAprovados = pagamentos.filter(
+      (r) => r.status === "approved" || r.status === "paid" || r.status === "pago",
     );
-    const brutoTotal = ativos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagos = pagamentos.filter((r) => r.status === "paid" || r.status === "approved");
-    const comissaoTotal = pagos.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
+    const brutoTotal = pagamentosAprovados.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const comissaoTotal = pagamentosAprovados.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
     const pendenteTotal = pagamentos
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagoBruto = pagos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagoTotal = pagoBruto - comissaoTotal; // líquido repassado ao profissional
+    const pagoTotal = brutoTotal - comissaoTotal; // líquido repassado ao profissional
 
     return { brutoTotal, comissaoTotal, pendenteTotal, pagoTotal };
   }, [pagamentos]);
