@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_admin_permissions(uuid) FROM anon;
