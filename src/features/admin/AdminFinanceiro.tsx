@@ -99,8 +99,8 @@ export function AdminFinanceiro() {
   const [periodo, setPeriodo] = useState<string>("30");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [search, setSearch] = useState("");
-  const [comprovantes, setComprovantes] = useState<Record<string, string>>({});
-  const [processandoId, setProcessandoId] = useState<string | null>(null);
+
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadAll = useCallback(async (showSpinner = true) => {
