@@ -2,29 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 
 const cancelarComSplitSchema = z.object({
   orcamentoId: z.string().uuid(),
   motivo: z.string().trim().max(500).optional(),
 });
-
-/** Resultado retornado pela RPC `cancelar_orcamento_com_split` (DB devolve Json). */
-interface CancelarOrcamentoComSplitResult {
-  ok?: boolean;
-  valor_reembolso?: number;
-  valor_multa?: number;
-  status?: string;
-  [key: string]: unknown;
-}
-
-/** Resultado retornado pela RPC `resolver_disputa_orcamento` (DB devolve Json). */
-interface ResolverDisputaOrcamentoResult {
-  ok?: boolean;
-  valor_reembolso?: number;
-  valor_prestador?: number;
-  valor_plataforma?: number;
-  [key: string]: unknown;
-}
 
 function errorMessage(e: unknown): string | undefined {
   if (e instanceof Error) return e.message;
@@ -33,6 +16,19 @@ function errorMessage(e: unknown): string | undefined {
     if (typeof m === "string") return m;
   }
   return undefined;
+}
+
+/** Lê um número opcional de um payload Json sem usar `any`. */
+function readNumber(payload: Json | null | undefined, key: string): number {
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const v = (payload as { [k: string]: Json | undefined })[key];
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const n = Number(v);
+      if (!Number.isNaN(n)) return n;
+    }
+  }
+  return 0;
 }
 
 /**
@@ -50,20 +46,17 @@ export const cancelarPedidoComSplit = createServerFn({ method: "POST" })
       .select("id, cliente_id, status")
       .eq("id", data.orcamentoId)
       .single();
-    if (orcErr || !orc) return { ok: false, error: "Pedido não encontrado" };
-    if (orc.cliente_id !== userId) return { ok: false, error: "Sem permissão" };
+    if (orcErr || !orc) return { ok: false as const, error: "Pedido não encontrado" };
+    if (orc.cliente_id !== userId) return { ok: false as const, error: "Sem permissão" };
 
     const rpcRes = (await supabase.rpc(
       "cancelar_orcamento_com_split" as never,
       { _orcamento_id: data.orcamentoId, _motivo: data.motivo || null, _origem: "cliente" } as never,
-    )) as unknown as {
-      data: CancelarOrcamentoComSplitResult | null;
-      error: PostgrestError | null;
-    };
+    )) as unknown as { data: Json | null; error: PostgrestError | null };
     const { data: rpcData, error: rpcErr } = rpcRes;
     if (rpcErr) {
       console.error("[cancelarPedidoComSplit] RPC fail", rpcErr);
-      return { ok: false, error: rpcErr.message };
+      return { ok: false as const, error: rpcErr.message };
     }
 
     // Dispara estorno no gateway (best-effort)
@@ -79,13 +72,13 @@ export const cancelarPedidoComSplit = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({ orcamentoId: data.orcamentoId }),
       });
-      const refundJson = (await res.json().catch(() => ({}))) as unknown;
+      const refundJson = (await res.json().catch(() => ({}))) as Json;
       console.info("[cancelarPedidoComSplit] estorno result", res.status, refundJson);
-      return { ok: true, regra: rpcData, estorno: refundJson };
+      return { ok: true as const, regra: rpcData, estorno: refundJson };
     } catch (e: unknown) {
       const msg = errorMessage(e);
       console.warn("[cancelarPedidoComSplit] estorno falhou:", msg);
-      return { ok: true, regra: rpcData, estornoErro: msg };
+      return { ok: true as const, regra: rpcData, estornoErro: msg };
     }
   });
 
@@ -108,16 +101,13 @@ export const resolverDisputaOrcamento = createServerFn({ method: "POST" })
       _pct_prestador: data.pctPrestador,
       _pct_plataforma: data.pctPlataforma,
       _motivo: data.motivo || null,
-    } as never)) as unknown as {
-      data: ResolverDisputaOrcamentoResult | null;
-      error: PostgrestError | null;
-    };
+    } as never)) as unknown as { data: Json | null; error: PostgrestError | null };
     const { data: rpcData, error } = rpcRes;
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false as const, error: error.message };
 
     // Estorno se houve reembolso
     try {
-      const reemb = Number(rpcData?.valor_reembolso ?? 0);
+      const reemb = readNumber(rpcData, "valor_reembolso");
       if (reemb > 0) {
         const url = `${process.env.SUPABASE_URL}/functions/v1/processar-estorno`;
         const session = (await supabase.auth.getSession()).data.session;
@@ -134,5 +124,5 @@ export const resolverDisputaOrcamento = createServerFn({ method: "POST" })
       console.warn("[resolverDisputaOrcamento] estorno falhou:", errorMessage(e));
     }
 
-    return { ok: true, resultado: rpcData };
+    return { ok: true as const, resultado: rpcData };
   });
