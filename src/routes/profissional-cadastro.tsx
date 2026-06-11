@@ -506,7 +506,7 @@ function ProfissionalCadastro() {
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-muted-foreground">
-                    CNPJ (MEI) *
+                    CNPJ (opcional)
                   </label>
                   <input
                     value={form.cnpj}
