@@ -56,8 +56,27 @@ const ESPECIALIDADES_LABEL: Record<string, string> = {
 };
 
 export function OnboardingWizard() {
-  const { user, profile, refresh } = useAuth() as any;
+  const { user, profile, refresh, updatePhoto } = useAuth() as any;
   const [open, setOpen] = useState(false);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+
+  const handleFotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFoto(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await updatePhoto(reader.result as string);
+        toast.success("Foto adicionada!");
+      } catch {
+        toast.error("Erro ao enviar a foto. Tente novamente.");
+      } finally {
+        setUploadingFoto(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -245,6 +264,35 @@ export function OnboardingWizard() {
           {step === 2 && (
             <>
               <div className="space-y-1.5">
+                {/* Upload de foto */}
+                <div className="flex flex-col items-center gap-3 mb-4">
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Foto" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-3xl">📷</span>
+                      )}
+                    </div>
+                    {uploadingFoto && (
+                      <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <label className="cursor-pointer text-sm font-medium text-brand underline underline-offset-2">
+                    {profile?.avatar_url ? "Trocar foto" : "Adicionar foto de perfil"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFotoUpload}
+                      disabled={uploadingFoto}
+                    />
+                  </label>
+                  <p className="text-xs text-slate-500 -mt-1">Opcional — perfis com foto recebem mais pedidos.</p>
+                </div>
+
                 <Label htmlFor="ow-bio">Bio (mínimo 20 caracteres)</Label>
                 <Textarea
                   id="ow-bio"
@@ -273,7 +321,7 @@ export function OnboardingWizard() {
                   })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Você pode adicionar a foto de perfil depois em Configurações.
+
                 </p>
               </div>
             </>

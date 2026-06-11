@@ -377,7 +377,7 @@ function ProfissionalCadastro() {
       em_analise: {
         label: "Em análise",
         color: "text-amber-600 bg-amber-50",
-        desc: "Estamos revisando seus documentos. Você receberá uma notificação em breve.",
+        desc: "Estamos revisando seus documentos e foto. O prazo é de até 2 dias úteis. Você receberá uma notificação no painel quando for aprovado.",
       },
       aprovado: {
         label: "Aprovado ✓",
@@ -390,9 +390,9 @@ function ProfissionalCadastro() {
         desc: "Seu cadastro precisa de ajustes. Verifique os documentos e reenvie.",
       },
       pendente: {
-        label: "Pendente",
+        label: "Cadastro recebido",
         color: "text-slate-600 bg-slate-100",
-        desc: "Seu cadastro está na fila de análise.",
+        desc: "Seu cadastro foi recebido e está na fila de análise. O prazo é de até 2 dias úteis.",
       },
     };
     const st = statusLabel[existingStatus ?? "em_analise"];
