@@ -21,8 +21,6 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 }
 
-
-
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
   validateSearch: (search: Record<string, unknown>) => ({
@@ -35,7 +33,6 @@ export const Route = createFileRoute("/checkout")({
 function CheckoutGuard() {
   return <Checkout />;
 }
-
 
 async function getFunctionErrorMessage(error: any, fallback: string) {
   const context = error?.context;
@@ -58,14 +55,7 @@ function Checkout() {
   const [orcamento, setOrcamento] = useState<any>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [method, setMethod] = useState<PaymentMethod>("cartao");
-  const [cobranca, setCobranca] = useState<Cobranca | null>(null);
-  const [boleto, setBoleto] = useState<Boleto | null>(null);
   const [paid, setPaid] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [whatsapp, setWhatsapp] = useState("");
-  const pollingRef = useRef<number | null>(null);
-  const channelRef = useRef<any>(null);
   const [brickConfig, setBrickConfig] = useState<{
     publicKey: string;
     amount: number;
@@ -85,14 +75,11 @@ function Checkout() {
   async function loadOrcamento(id: string) {
     setLoading(true);
     if (!user?.id) { setLoading(false); return; }
-    const [{ data, error }, { data: profile }] = await Promise.all([
-      supabase
+    const { data, error } = await supabase
       .from("orcamentos")
       .select("id, status, cliente_id, service_name, valor, valor_servico, taxa_material, tipo_atendimento")
       .eq("id", id)
-        .maybeSingle(),
-      supabase.from("profiles").select("whatsapp").eq("id", user.id).maybeSingle(),
-    ]);
+      .maybeSingle();
 
     if (error || !data) {
       toast.error("Pedido não encontrado.");
@@ -113,187 +100,22 @@ function Checkout() {
       .eq("orcamento_id", id);
 
     setOrcamento({ ...data, orcamento_materiais: materiais || [] });
-    if (profile?.whatsapp) setWhatsapp(profile.whatsapp);
     setLoading(false);
   }
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) window.clearInterval(pollingRef.current);
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
-    };
-  }, []);
 
   function onPaidConfirmed() {
     if (paid) return;
     setPaid(true);
-    if (pollingRef.current) window.clearInterval(pollingRef.current);
-    if (channelRef.current) supabase.removeChannel(channelRef.current);
     toast.success("Pagamento confirmado!");
     setTimeout(() => {
       window.location.href = "/cliente?tab=pedidos&payment=success";
     }, 1500);
   }
 
-  function startWatchers(cob: Cobranca) {
-    // Realtime
-    const channel = supabase
-      .channel(`btg-cobranca-${cob.cobrancaId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "btg_cobrancas", filter: `id=eq.${cob.cobrancaId}` },
-        (payload) => {
-          const newStatus = (payload.new as any)?.status;
-          if (newStatus === "paga") onPaidConfirmed();
-        },
-      )
-      .subscribe();
-    channelRef.current = channel;
-
-    // Polling fallback (a cada 8s)
-    pollingRef.current = window.setInterval(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("btg-cobranca-status", {
-          body: { txId: cob.txId },
-        });
-        if (!error && data?.status === "paga") onPaidConfirmed();
-      } catch (e) {
-        console.warn("[checkout] polling error", e);
-      }
-    }, 8000);
-  }
-
-  const handlePreparePayment = async () => {
-    if (!orcamentoId) { toast.error("Pedido ausente."); return; }
-    setIsProcessing(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      await supabase.auth.refreshSession();
-      const { data: { session: freshSession } } = await supabase.auth.getSession();
-      const token = freshSession?.access_token;
-      if (!token) {
-        toast.error("Sua sessão expirou. Faça login novamente.");
-        return;
-      }
-
-      console.info("[checkout] chamando btg-cobranca-criar", {
-        orcamentoId,
-        status: orcamento?.status,
-        valor_servico: orcamento?.valor_servico,
-        userId: user?.id,
-      });
-
-      const { data, error } = await supabase.functions.invoke("btg-cobranca-criar", {
-        body: { orcamentoId },
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.info("[checkout] btg-cobranca-criar result", { data, error });
-
-      if (error || !data?.txId) {
-        const message = error
-          ? await getFunctionErrorMessage(error, "Erro ao gerar cobrança Pix.")
-          : data?.message || data?.error || "Erro ao gerar cobrança Pix.";
-        toast.error(message);
-        return;
-      }
-      const cob = data as Cobranca;
-      setCobranca(cob);
-      startWatchers(cob);
-      toast.success("Pix gerado! Escaneie ou copie o código.");
-    } catch (err: any) {
-      console.error("[checkout] erro Pix BTG", err);
-      toast.error(err.message || "Falha na comunicação.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  function startBoletoPolling(bol: Boleto) {
-    pollingRef.current = window.setInterval(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("btg-boleto-status", {
-          body: { boletoId: bol.id },
-        });
-        if (!error && data?.status === "pago") onPaidConfirmed();
-      } catch (e) {
-        console.warn("[checkout] boleto polling error", e);
-      }
-    }, 15000);
-  }
-
-  const handleGerarBoleto = async () => {
-    if (isProcessing) return;
-    if (!orcamentoId) { toast.error("Pedido inválido para pagamento."); return; }
-    if (!orcamento) { toast.error("Pedido ainda não carregado."); return; }
-    if (orcamento.status !== "aprovado") {
-      toast.error("Este pedido ainda não está liberado para pagamento.");
-      return;
-    }
-    const whatsappDigits = whatsapp.replace(/\D/g, "");
-    if (![10, 11, 12, 13].includes(whatsappDigits.length)) {
-      toast.error("Informe um WhatsApp válido para receber o boleto.");
-      return;
-    }
-    setIsProcessing(true);
-    try {
-      if (!user?.id) { toast.error("Faça login novamente para continuar."); return; }
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        toast.error("Sua sessão expirou. Faça login novamente.");
-        return;
-      }
-      await supabase.from("profiles").update({ whatsapp }).eq("id", user.id);
-      console.info("[checkout] chamando btg-boleto-criar", {
-        orcamentoId,
-        status: orcamento?.status,
-        valor_servico: orcamento?.valor_servico,
-        userId: user.id,
-      });
-      const { data, error } = await supabase.functions.invoke("btg-boleto-criar", {
-        body: { orcamentoId, whatsapp },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.info("[checkout] btg-boleto-criar result", { data, error });
-      if (error || !data?.paymentUrl) {
-        if (error) {
-          console.error("[checkout] erro btg-boleto-criar", {
-            message: error.message,
-            name: error.name,
-            context: error.context,
-          });
-        }
-        toast.error(data?.message || data?.error || await getFunctionErrorMessage(error, "Não foi possível iniciar o pagamento."));
-        return;
-      }
-      const bol = data as Boleto;
-      const url = bol.paymentUrl || "";
-      const isInvalidUrl =
-        !url.startsWith("http") || url.includes("link-exemplo") || url.includes("example");
-      if (isInvalidUrl) {
-        console.warn("[checkout] BTG retornou link inválido/placeholder", data);
-        toast.error("Boleto criado, mas o BTG retornou um link inválido (ambiente sandbox). Verifique a configuração BTG.");
-        return;
-      }
-      setBoleto(bol);
-      startBoletoPolling(bol);
-      window.open(bol.paymentUrl, "_blank", "noopener,noreferrer");
-      toast.success("Boleto gerado! Abrimos em uma nova aba.");
-    } catch (err: any) {
-      toast.error(err.message || "Falha na comunicação.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   // ===== Checkout Transparente (Payment Brick) =====
   // 1) Carrega config (publicKey, valor) via edge function
   useEffect(() => {
-    if (!orcamento || !orcamentoId || method !== "cartao" || paid || cobranca || boleto) return;
+    if (!orcamento || !orcamentoId || paid) return;
     if (orcamento.status !== "aprovado") return;
     if (brickConfig) return;
 
@@ -327,7 +149,7 @@ function Checkout() {
     return () => {
       cancelled = true;
     };
-  }, [orcamento, orcamentoId, method, paid, cobranca, boleto, brickConfig, user?.email]);
+  }, [orcamento, orcamentoId, paid, brickConfig, user?.email]);
 
   // 2) Carrega o SDK e monta o Brick
   useEffect(() => {
@@ -448,16 +270,6 @@ function Checkout() {
     };
   }, [brickConfig, orcamentoId]);
 
-
-
-  const handleCopy = async () => {
-    if (!cobranca?.emv) return;
-    await navigator.clipboard.writeText(cobranca.emv);
-    setCopied(true);
-    toast.success("Código Pix copiado!");
-    setTimeout(() => setCopied(false), 2500);
-  };
-
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
@@ -505,10 +317,10 @@ function Checkout() {
   );
   const valorMateriais =
     materiais.length > 0 ? valorMateriaisCalculado : Number(orcamento?.taxa_material || 0);
-    
+
   const requiresApoioFeminino = orcamento?.tipo_atendimento === "homem_com_apoio_feminino";
   const taxaApoioFeminino = requiresApoioFeminino ? valorServico * 0.3 : 0;
-  
+
   const valorTotal = valorServico + valorMateriais + taxaApoioFeminino;
 
   return (
@@ -532,7 +344,7 @@ function Checkout() {
           </div>
 
           <div className="rounded-[2.5rem] border border-border bg-card p-8 md:p-10 shadow-sm space-y-8">
-            {!cobranca && !boleto && !paid && (
+            {!paid && (
               <div className="flex gap-3">
                 <div className="rounded-2xl border border-brand bg-brand-soft/40 p-4 text-left flex-1">
                   <CreditCard className="h-5 w-5 text-brand mb-2" />
@@ -578,7 +390,7 @@ function Checkout() {
               <span className="text-brand font-black text-2xl">{formatCurrency(valorTotal)}</span>
             </div>
 
-            {!cobranca && !boleto && !paid && method === "cartao" && (
+            {!paid && (
               <div className="space-y-3">
                 {brickError && (
                   <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive flex items-start gap-2">
@@ -602,42 +414,6 @@ function Checkout() {
                 </p>
               </div>
             )}
-
-
-            {boleto && !paid && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="rounded-2xl border border-border bg-muted/30 p-6 space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Valor</span>
-                    <span className="font-bold">R$ {boleto.amount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Vencimento</span>
-                    <span className="font-bold">
-                      {new Date(boleto.dueDate + "T00:00:00").toLocaleDateString("pt-BR")}
-                    </span>
-                  </div>
-                </div>
-
-                <Button asChild className="w-full h-14 rounded-full text-base font-bold">
-                  <a href={boleto.paymentUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="mr-2 h-4 w-4" /> Abrir boleto BTG
-                  </a>
-                </Button>
-
-                <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                  O boleto bancário leva até 2 dias úteis para compensar após o pagamento.
-                  O profissional só será notificado da confirmação após a compensação.
-                </p>
-
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Aguardando compensação do boleto...
-                </div>
-              </div>
-            )}
-
-
 
             {paid && (
               <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-300">
