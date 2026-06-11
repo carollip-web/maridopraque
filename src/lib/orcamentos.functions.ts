@@ -245,7 +245,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
 
       const { data: perfBasico } = await supabase
         .from("profissional_perfil")
-        .select("id, mp_user_id")
+        .select("mp_user_id")
         .eq("user_id", userId)
         .maybeSingle();
 
