@@ -1011,6 +1011,7 @@ function ProfissionalArea() {
                 setPedidosSubTab={setPedidosSubTab}
                 setServicosSubTab={setServicosSubTab}
               />
+              </>
             )}
           </main>
         </div>
