@@ -17,7 +17,7 @@ export function ProfileCompletenessCard() {
       if (!user) return;
       const { data: perfil } = await supabase
         .from("profissional_perfil")
-        .select("bio, foto_url, especialidades, mp_user_id, cpf, cnpj")
+        .select("bio, foto_url, especialidades, mp_user_id, cpf")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!alive) return;
@@ -27,7 +27,6 @@ export function ProfileCompletenessCard() {
         { key: "foto", label: "Foto de perfil", done: !!perfil?.foto_url },
         { key: "bio", label: "Bio / sobre você", done: !!perfil?.bio?.trim() },
         { key: "cpf", label: "CPF", done: !!perfil?.cpf },
-        { key: "cnpj", label: "CNPJ", done: !!perfil?.cnpj },
         { key: "esp", label: "Especialidades", done: (perfil?.especialidades?.length ?? 0) > 0 },
         {
           key: "mp",
