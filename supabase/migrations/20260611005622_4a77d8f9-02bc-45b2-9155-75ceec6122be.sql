@@ -1,0 +1,1 @@
+ALTER TABLE public.pagamentos ADD COLUMN IF NOT EXISTS payment_method_id TEXT, ADD COLUMN IF NOT EXISTS installments INTEGER;

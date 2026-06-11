@@ -1096,10 +1096,12 @@ export type Database = {
           gateway_preference_id: string | null
           gateway_status: string | null
           id: string
+          installments: number | null
           metadata: Json | null
           metodo: string | null
           orcamento_id: string
           paid_at: string | null
+          payment_method_id: string | null
           profissional_id: string | null
           status: string
           updated_at: string | null
@@ -1117,10 +1119,12 @@ export type Database = {
           gateway_preference_id?: string | null
           gateway_status?: string | null
           id?: string
+          installments?: number | null
           metadata?: Json | null
           metodo?: string | null
           orcamento_id: string
           paid_at?: string | null
+          payment_method_id?: string | null
           profissional_id?: string | null
           status?: string
           updated_at?: string | null
@@ -1138,10 +1142,12 @@ export type Database = {
           gateway_preference_id?: string | null
           gateway_status?: string | null
           id?: string
+          installments?: number | null
           metadata?: Json | null
           metodo?: string | null
           orcamento_id?: string
           paid_at?: string | null
+          payment_method_id?: string | null
           profissional_id?: string | null
           status?: string
           updated_at?: string | null
