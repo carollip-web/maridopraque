@@ -1,5 +1,5 @@
 // Edge function: processar-estorno
-// Dispara o estorno no gateway (Mercado Pago ou BTG) quando admin/cliente
+// Dispara o estorno no gateway (Mercado Pago) quando admin/cliente
 // cancela um pedido já pago. Lê o valor de reembolso de pagamento_splits.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
