@@ -290,7 +290,7 @@ function ProfissionalArea() {
           sheetOrc?.service_id ? data.catalog[sheetOrc.service_id] : undefined
         }
         materiais={sheetOrc ? (data.orcMats[sheetOrc.id] ?? []) : []}
-        mode={sheetMode as any}
+        mode={sheetMode}
         enviar={enviar}
         onProposalSent={handleProposalSent}
         refresh={data.refresh}
