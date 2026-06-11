@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Save, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,78 +59,24 @@ function MeusOrcamentos() {
   // Lista + materiais + propostas (com realtime)
   const { list, orcMats, propostas, refresh } = useOrcamentosData(user);
 
-  // Form & wizard (precisa de `servicos` para auto-match; instanciamos catálogo primeiro)
-  // O catálogo depende do `selServiceId` que vive no form — usamos pattern de
-  // duas chamadas: o form não depende do catálogo (só usa `servicos` para auto-match).
-  // Para evitar dependência circular, instanciamos o form com `servicos=[]` inicial
-  // e re-renderizamos quando o catálogo carregar.
-  const [pickedKey, setPickedKey] = useState(0); // força re-instance? não — vamos fazer o jeito correto:
+  // Callback do draft é resolvido depois — usamos ref para quebrar a dependência circular
+  // entre form (que precisa limpar o rascunho ao submeter) e draft (que depende do form state).
+  const clearStoredRef = useRef<() => void>(() => {});
 
-  // Como hooks não podem ser condicionais, vamos chamar primeiro um catálogo com
-  // selServiceId vazio para obter `servicos`, depois o form com esses servicos.
-  // Mas precisamos do form.selServiceId para o catálogo... Resolução:
-  // 1) chamamos useOrcamentoForm com `servicos` que virá do segundo useOrcamentoCatalog.
-  //    Para isso, primeiro instanciamos o catálogo SEM precisar de selServiceId atual,
-  //    usando um state local separado.
-  // Em vez disso: o catálogo usa `selServiceId` só para `selServico`/`sugeridos`/`subtotalMat`.
-  // Movemos essa derivação para fora do hook se for circular. Mais simples:
-  // pegamos `servicos`/`materiais`/`serviceMats` num hook separado de derivações.
+  // Catálogo de serviços/materiais (sem dependência do form ainda)
+  const catalog = useOrcamentoCatalog("", {});
 
-  // Para manter API limpa, fazemos: catálogo recebe `() => selServiceId` mas precisamos
-  // mesmo de re-render. Solução simples: o form não usa o catálogo, e o catálogo é
-  // instanciado depois do form, recebendo form.selServiceId e form.picked.
-  // form.handleNew não depende do catálogo (resolve serviceName via selServico recebido
-  // como argumento? não — o form precisa de selServico para `handleNew`).
-  // → Passamos `servicos` para o form via uma segunda renderização: instanciamos um
-  //   "catálogo raw" sem dependências dinâmicas e o form usa só `servicos`. O catálogo
-  //   completo (com selServico/sugeridos/subtotalMat) é instanciado depois com base no
-  //   form. Mas isso duplicaria o fetch.
-
-  // Solução pragmática: usamos o catálogo com selServiceId="" inicialmente e expomos
-  // `servicos` para o form (auto-match), depois derivamos selServico/sugeridos/subtotalMat
-  // localmente aqui no route a partir de `form.selServiceId` e dos arrays já carregados.
-
-  void pickedKey;
-  return <MeusOrcamentosInner user={user} loading={loading} search={search} list={list} orcMats={orcMats} propostas={propostas} refresh={refresh} />;
-}
-
-function MeusOrcamentosInner({
-  user,
-  loading,
-  search,
-  list,
-  orcMats,
-  propostas,
-  refresh,
-}: {
-  user: ReturnType<typeof useAuth>["user"];
-  loading: boolean;
-  search: ReturnType<typeof Route.useSearch>;
-  list: ReturnType<typeof useOrcamentosData>["list"];
-  orcMats: ReturnType<typeof useOrcamentosData>["orcMats"];
-  propostas: ReturnType<typeof useOrcamentosData>["propostas"];
-  refresh: ReturnType<typeof useOrcamentosData>["refresh"];
-}) {
-  // Catálogo (servicos/materiais) — precisa estar disponível antes do form para auto-match
-  const [tmpServiceId, setTmpServiceId] = useState(""); // não usado, apenas para o hook
-  void setTmpServiceId;
-  const catalog = useOrcamentoCatalog(tmpServiceId, {});
-
-  const draftKey = user ? `orc-draft-${user.id}` : null;
-
-  // Form precisa de `onClearStoredDraft` do draft hook → criamos um ref-like callback
-  const [clearFn, setClearFn] = useState<() => void>(() => () => {});
-
+  // Form do wizard
   const form = useOrcamentoForm({
     user,
     servicos: catalog.servicos,
     orcMats,
     search,
     refresh,
-    onClearStoredDraft: () => clearFn(),
+    onClearStoredDraft: () => clearStoredRef.current(),
   });
 
-  // Derivações que dependem de `form.selServiceId` e `form.picked`
+  // Derivações dependentes do form (servico selecionado, materiais sugeridos, subtotal)
   const selServico = useMemo(
     () => catalog.servicos.find((s) => s.id === form.selServiceId),
     [catalog.servicos, form.selServiceId],
@@ -151,6 +97,8 @@ function MeusOrcamentosInner({
     [form.picked, catalog.materiais],
   );
 
+  // Snapshot enviado ao hook de rascunho
+  const draftKey = user ? `orc-draft-${user.id}` : null;
   const draftSnapshot = useMemo(
     () => ({
       selServiceId: form.selServiceId,
@@ -184,10 +132,8 @@ function MeusOrcamentosInner({
     apply: form.applyDraft,
   });
 
-  // Conecta clearStored do draft hook com o form (após submit)
-  if (clearFn !== draft.clearStored) {
-    setClearFn(() => draft.clearStored);
-  }
+  // Fecha o ciclo: o form chama clearStored ao submeter com sucesso
+  clearStoredRef.current = draft.clearStored;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
