@@ -84,52 +84,67 @@ export function ProfissionalDashboard({
 
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ActionStat
-          icon={Clock}
-          label="Oportunidades no radar"
-          value={counts.oportunidades}
-          accent="from-amber-50 to-amber-100 text-amber-700 ring-amber-200"
-          cta="Ver radar"
-          onClick={() => {
-            setPedidosSubTab("oportunidades");
-            setTab("orcamentos");
-          }}
-        />
-        <ActionStat
-          icon={Pencil}
-          label="Para elaborar"
-          value={counts.elaboracao}
-          accent="from-sky-50 to-sky-100 text-sky-700 ring-sky-200"
-          cta="Elaborar agora"
-          onClick={() => {
-            setPedidosSubTab("elaboracao");
-            setTab("orcamentos");
-          }}
-        />
-        <ActionStat
-          icon={TrendingUp}
-          label="Em andamento"
-          value={counts.ativos}
-          accent="from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-200"
-          cta="Ver serviços"
-          onClick={() => {
-            setServicosSubTab("ativos");
-            setTab("servicos");
-          }}
-        />
-        <ActionStat
-          icon={DollarSign}
-          label="A receber"
-          value={`R$ ${metrics.aReceber.toFixed(2)}`}
-          accent="from-orange-50 to-orange-100 text-brand ring-orange-200"
-          cta="Financeiro"
-          onClick={() => setTab("financeiro")}
-        />
+        {loading ? (
+          <>
+            <StatSkeleton />
+            <StatSkeleton />
+            <StatSkeleton />
+            <StatSkeleton />
+          </>
+        ) : (
+          <>
+            <ActionStat
+              icon={Clock}
+              label="Oportunidades no radar"
+              value={counts.oportunidades}
+              accent="from-amber-50 to-amber-100 text-amber-700 ring-amber-200"
+              cta="Ver radar"
+              onClick={() => {
+                setPedidosSubTab("oportunidades");
+                setTab("orcamentos");
+              }}
+            />
+            <ActionStat
+              icon={Pencil}
+              label="Para elaborar"
+              value={counts.elaboracao}
+              accent="from-sky-50 to-sky-100 text-sky-700 ring-sky-200"
+              cta="Elaborar agora"
+              onClick={() => {
+                setPedidosSubTab("elaboracao");
+                setTab("orcamentos");
+              }}
+            />
+            <ActionStat
+              icon={TrendingUp}
+              label="Em andamento"
+              value={counts.ativos}
+              accent="from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-200"
+              cta="Ver serviços"
+              onClick={() => {
+                setServicosSubTab("ativos");
+                setTab("servicos");
+              }}
+            />
+            <ActionStat
+              icon={DollarSign}
+              label="A receber"
+              value={`R$ ${metrics.aReceber.toFixed(2)}`}
+              accent="from-orange-50 to-orange-100 text-brand ring-orange-200"
+              cta="Financeiro"
+              onClick={() => setTab("financeiro")}
+            />
+          </>
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+          {loading ? (
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          ) : (
+            <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+          )}
         </div>
         <div className="space-y-4">
           <NivelBadge
