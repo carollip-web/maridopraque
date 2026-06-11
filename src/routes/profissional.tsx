@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { Loader2 } from "lucide-react";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 
@@ -19,7 +20,7 @@ import { ProfissionalOrcamentos } from "@/features/profissional/ProfissionalOrca
 import { ProfissionalServicos } from "@/features/profissional/ProfissionalServicos";
 import { ProfissionalNotificacoes } from "@/features/profissional/ProfissionalNotificacoes";
 import { ProfissionalStatusCard } from "@/features/profissional/ProfissionalStatusCard";
-import { OrcamentoDetailsSheet } from "@/features/profissional/OrcamentoDetailsSheet";
+import { OrcamentoDetailsSheet, type SheetMode } from "@/features/profissional/OrcamentoDetailsSheet";
 
 // UI Components
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
@@ -30,24 +31,28 @@ import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 import { MobilePanelBar } from "@/components/MobilePanelBar";
 
+const profissionalSearchSchema = z.object({
+  tab: z
+    .enum([
+      "pedidos",
+      "orcamentos",
+      "servicos",
+      "agenda",
+      "financeiro",
+      "avaliacoes",
+      "configuracoes",
+      "notificacoes",
+    ])
+    .optional()
+    .catch("pedidos"),
+  orcamentoId: z.string().optional(),
+  chat: z.string().optional(),
+});
+
+type ProfissionalSearch = z.infer<typeof profissionalSearchSchema>;
+
 export const Route = createFileRoute("/profissional")({
-  validateSearch: z.object({
-    tab: z
-      .enum([
-        "pedidos",
-        "orcamentos",
-        "servicos",
-        "agenda",
-        "financeiro",
-        "avaliacoes",
-        "configuracoes",
-        "notificacoes",
-      ])
-      .optional()
-      .catch("pedidos"),
-    orcamentoId: z.string().optional(),
-    chat: z.string().optional(),
-  }),
+  validateSearch: profissionalSearchSchema,
   component: ProfissionalArea,
 });
 
@@ -127,7 +132,7 @@ function ProfissionalArea() {
     if (tab !== targetTab) {
       navigate({
         to: "/profissional",
-        search: (prev: any) => ({ ...prev, tab: targetTab, orcamentoId, chat }),
+        search: (prev: ProfissionalSearch) => ({ ...prev, tab: targetTab, orcamentoId, chat }),
       });
       return;
     }
@@ -188,13 +193,13 @@ function ProfissionalArea() {
 
   const handleProposalSent = (args: {
     orcamentoId: string;
-    proposta: any;
-    orcamento: any;
+    proposta: Partial<Tables<"propostas">> & Record<string, unknown>;
+    orcamento: Partial<Tables<"orcamentos">> & Record<string, unknown>;
   }) => {
     data.handleProposalSent(args, () => setPedidosSubTab("enviados"));
   };
 
-  const handleNavigateToNotifPedido = (n: any) => {
+  const handleNavigateToNotifPedido = (n: Notification) => {
     markNotifAsRead(n.id);
     if (n.pedidoId) {
       const titleLower = n.title.toLowerCase();
@@ -204,7 +209,7 @@ function ProfissionalArea() {
         titleLower.includes("conclu");
       navigate({
         to: "/profissional",
-        search: (prev: any) => ({
+        search: (prev: ProfissionalSearch) => ({
           ...prev,
           tab: isServicos ? "servicos" : "orcamentos",
           orcamentoId: n.pedidoId,
@@ -214,10 +219,13 @@ function ProfissionalArea() {
       try {
         const url = new URL(n.link, window.location.origin);
         const oid = url.searchParams.get("orcamentoId");
-        const t = (url.searchParams.get("tab") as any) || "orcamentos";
+        const rawTab = url.searchParams.get("tab");
+        const t = (profissionalSearchSchema.shape.tab.safeParse(rawTab).success
+          ? (rawTab as ProfissionalTab)
+          : "orcamentos") satisfies ProfissionalTab;
         navigate({
           to: "/profissional",
-          search: (prev: any) => ({
+          search: (prev: ProfissionalSearch) => ({
             ...prev,
             tab: t,
             orcamentoId: oid ?? undefined,
@@ -226,7 +234,7 @@ function ProfissionalArea() {
       } catch {
         navigate({
           to: "/profissional",
-          search: (prev: any) => ({ ...prev, tab: "orcamentos" }),
+          search: (prev: ProfissionalSearch) => ({ ...prev, tab: "orcamentos" }),
         });
       }
     }
@@ -236,7 +244,7 @@ function ProfissionalArea() {
     setSheetOrcamentoId(null);
     navigate({
       to: "/profissional",
-      search: (prev: any) => ({ ...prev, orcamentoId: undefined }),
+      search: (prev: ProfissionalSearch) => ({ ...prev, orcamentoId: undefined }),
     });
   };
 
@@ -245,7 +253,7 @@ function ProfissionalArea() {
     ? (data.orcamentos.find((o) => o.id === sheetOrcamentoId) ?? null)
     : null;
 
-  const sheetMode = sheetOrc
+  const sheetMode: SheetMode = sheetOrc
     ? sheetOrc.profissional_id === user?.id
       ? sheetOrc.status === "enviado"
         ? "revisar"
@@ -258,7 +266,7 @@ function ProfissionalArea() {
   const setActiveTab = (newTab: ProfissionalTab) =>
     navigate({
       to: "/profissional",
-      search: (prev: any) => ({
+      search: (prev: ProfissionalSearch) => ({
         ...prev,
         tab: newTab,
         orcamentoId: undefined,
@@ -282,7 +290,7 @@ function ProfissionalArea() {
           sheetOrc?.service_id ? data.catalog[sheetOrc.service_id] : undefined
         }
         materiais={sheetOrc ? (data.orcMats[sheetOrc.id] ?? []) : []}
-        mode={sheetMode as any}
+        mode={sheetMode}
         enviar={enviar}
         onProposalSent={handleProposalSent}
         refresh={data.refresh}
@@ -422,7 +430,7 @@ function ProfissionalArea() {
                   setTab={(t) =>
                     navigate({
                       to: "/profissional",
-                      search: (prev: any) => ({ ...prev, tab: t }),
+                      search: (prev: ProfissionalSearch) => ({ ...prev, tab: t }),
                     })
                   }
                   setPedidosSubTab={setPedidosSubTab}

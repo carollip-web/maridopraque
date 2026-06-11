@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -19,17 +21,35 @@ import { DadosTab } from "@/features/cliente/DadosTab";
 import { SegurancaTab } from "@/features/cliente/SegurancaTab";
 import { FavoritosTab } from "@/features/cliente/FavoritosTab";
 import { SuporteTab } from "@/features/cliente/SuporteTab";
+
+const TAB_VALUES = [
+  "inicio",
+  "pedidos",
+  "servicos",
+  "pagamentos",
+  "dados",
+  "seguranca",
+  "favoritos",
+  "suporte",
+  "notificacoes",
+] as const satisfies readonly Tab[];
+
+const clienteSearchSchema = z.object({
+  tab: z.enum(TAB_VALUES).optional().catch("inicio").default("inicio"),
+  id: z.string().optional(),
+  pedidoId: z.string().optional(),
+  chat: z.string().optional(),
+  details: z
+    .union([z.boolean(), z.literal("true"), z.literal("false")])
+    .optional()
+    .transform((v) => (v === true || v === "true" ? true : undefined)),
+  payment: z.enum(["success", "failure", "pending"]).optional().catch(undefined),
+});
+
+type ClienteSearch = z.infer<typeof clienteSearchSchema>;
+
 export const Route = createFileRoute("/cliente")({
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      tab: (search.tab as Tab) || "inicio",
-      id: search.id ? String(search.id) : undefined,
-      pedidoId: search.pedidoId ? String(search.pedidoId) : undefined,
-      chat: search.chat ? String(search.chat) : undefined,
-      details: search.details === "true" || search.details === true ? true : undefined,
-      payment: typeof search.payment === "string" ? search.payment : undefined,
-    } as any;
-  },
+  validateSearch: clienteSearchSchema,
   component: ClienteArea,
 });
 
@@ -52,7 +72,7 @@ function ClienteArea() {
       } catch {}
       navigate({
         to: "/cliente",
-        search: { tab: "pedidos", pedidoId: pendente } as any,
+        search: { tab: "pedidos", pedidoId: pendente } satisfies ClienteSearch,
         replace: true,
       });
     }
@@ -70,8 +90,8 @@ function ClienteArea() {
     // Limpa o parâmetro da URL sem recarregar a página
     navigate({
       to: "/cliente",
-      search: (prev: any) => {
-        const { payment: _, ...rest } = prev;
+      search: (prev: ClienteSearch) => {
+        const { payment: _payment, ...rest } = prev;
         return rest;
       },
       replace: true,
@@ -81,13 +101,13 @@ function ClienteArea() {
   const setActiveTab = (newTab: Tab) => {
     navigate({
       to: "/cliente",
-      search: (prev: any) => ({
+      search: (prev: ClienteSearch) => ({
         ...prev,
         tab: newTab,
         id: undefined,
         pedidoId: undefined,
         chat: undefined,
-        details: false,
+        details: undefined,
       }),
     });
   };
@@ -147,7 +167,7 @@ function ClienteArea() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const n: any = payload.new;
+          const n = payload.new as Tables<"notificacoes">;
           const titulo = String(n?.titulo || "Notificação");
           const mensagem = String(n?.mensagem || "");
           // Destaca cancelamento/multa/reembolso/disputa
