@@ -16,3 +16,16 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
 
 export const WHATSAPP_LINK =
   "mailto:contato@maridopraque.com?subject=Suporte%20para%20profissional";
+
+import type { ProfissionalTab } from "./types";
+
+export const TAB_TITLES: Record<ProfissionalTab, string> = {
+  pedidos: "Visão Geral",
+  orcamentos: "Pedidos e Orçamentos",
+  servicos: "Meus Serviços",
+  agenda: "Agenda",
+  financeiro: "Financeiro",
+  avaliacoes: "Avaliações",
+  configuracoes: "Configurações",
+  notificacoes: "Notificações",
+};
