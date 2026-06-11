@@ -338,7 +338,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       .maybeSingle();
 
     let proposalId: string;
-    let propRow: any;
+    let propRow: PropostaRow;
 
     if (existingProp) {
       // Update existing proposal
