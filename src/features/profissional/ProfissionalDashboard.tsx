@@ -15,6 +15,7 @@ import { NivelBadge } from "@/components/NivelBadge";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { ProfissionalHeader } from "./ProfissionalHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 import { ActionStat, QuickLink } from "./ProfissionalStats";
@@ -38,9 +39,24 @@ interface ProfissionalDashboardProps {
     mediaAvaliacoes: string;
   };
   orcamentos: Orcamento[];
+  loading?: boolean;
   setTab: (tab: ProfissionalTab) => void;
   setPedidosSubTab: (sub: string) => void;
   setServicosSubTab: (sub: string) => void;
+}
+
+function StatSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-10 rounded-xl" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+      <Skeleton className="h-3 w-32" />
+      <Skeleton className="h-7 w-20" />
+      <Skeleton className="h-8 w-full mt-2" />
+    </div>
+  );
 }
 
 export function ProfissionalDashboard({
@@ -48,6 +64,7 @@ export function ProfissionalDashboard({
   counts,
   metrics,
   orcamentos,
+  loading = false,
   setTab,
   setPedidosSubTab,
   setServicosSubTab,
