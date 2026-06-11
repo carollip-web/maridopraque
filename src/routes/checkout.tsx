@@ -8,12 +8,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Copy,
-  Check,
-  FileText,
-  QrCode,
   CreditCard,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,8 +21,6 @@ function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 }
 
-// BTG desativado temporariamente — não homologado em produção, aguardando split MP
-// import { QRCodeSVG } from "qrcode.react";
 
 
 export const Route = createFileRoute("/checkout")({
