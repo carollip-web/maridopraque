@@ -163,6 +163,50 @@ serve(async (req) => {
     let parsed: any; try { parsed = JSON.parse(txt); } catch { parsed = { raw: txt }; }
     if (!resp.ok) {
       console.error(`[processar-estorno] MP refund falhou (token=${tokenSource})`, resp.status, parsed);
+
+      // Detecta erro de saldo insuficiente (MP code 2031 / "enough available money")
+      const causes: any[] = Array.isArray(parsed?.cause) ? parsed.cause : [];
+      const hasCode2031 = causes.some((c) => String(c?.code) === "2031");
+      const msgStr = String(parsed?.message ?? "");
+      const hasMsgMatch = /enough available money/i.test(msgStr) ||
+        causes.some((c) => /enough available money/i.test(String(c?.description ?? "")));
+
+      if (hasCode2031 || hasMsgMatch) {
+        const nowIso = new Date().toISOString();
+        const alreadyPending = Boolean((splitMetadata as any).estorno_pendente_saldo);
+        const mergedMetadata = {
+          ...splitMetadata,
+          estorno_pendente_saldo: true,
+          estorno_pendente_desde: (splitMetadata as any).estorno_pendente_desde ?? nowIso,
+          ultimo_erro_estorno: "2031",
+          ultima_tentativa_estorno: nowIso,
+        };
+
+        await admin
+          .from("pagamento_splits")
+          .update({ metadata: mergedMetadata })
+          .eq("id", split!.id);
+
+        if (!alreadyPending) {
+          const { data: admins } = await admin
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+          const rows = (admins || []).map((a: any) => ({
+            user_id: a.user_id,
+            titulo: "Estorno pendente — saldo insuficiente",
+            mensagem: `Pedido ${orcamentoId}: saldo insuficiente na conta do profissional para reembolso de R$ ${valorReembolso.toFixed(2)}.`,
+            orcamento_id: orcamentoId,
+            link: "/admin?tab=disputas",
+          }));
+          if (rows.length > 0) {
+            await admin.from("notificacoes").insert(rows);
+          }
+        }
+
+        return json({ ok: false, pendente: true, motivo: "saldo_insuficiente", valor: valorReembolso }, 200);
+      }
+
       return json({ error: "Falha no estorno MP", details: parsed }, 502);
     }
     console.info(`[processar-estorno] MP refund ok (token=${tokenSource})`, parsed?.id);
@@ -175,6 +219,7 @@ serve(async (req) => {
           ...splitMetadata,
           refund_id: parsed?.id,
           refund_at: new Date().toISOString(),
+          estorno_pendente_saldo: false,
         },
       })
       .eq("id", split!.id);
