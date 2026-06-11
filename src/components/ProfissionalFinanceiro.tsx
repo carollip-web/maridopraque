@@ -327,13 +327,10 @@ export function ProfissionalFinanceiro() {
               </thead>
               <tbody>
                 {listaFiltrada.map((sp) => {
-                  const isEstornado = sp.status === "estornado" || sp.status === "cancelado";
-                  const meta = isEstornado
-                    ? SPLIT_STATUS[sp.status] ?? {
-                        label: sp.status,
-                        color: "bg-slate-100 text-slate-700",
-                      }
-                    : { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" };
+                  const ds = deriveStatus(sp);
+                  const meta = DERIVED_LABEL[ds];
+                  const isCancelled = ds === "cancelado" || ds === "estornado";
+
                   const mm = methodMeta(
                     sp.pagamentos?.payment_method_id ?? null,
                     sp.pagamentos?.metodo ?? null,
