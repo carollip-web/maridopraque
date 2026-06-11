@@ -39,7 +39,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$categoria'
 import { Route as MpCallbackRouteImport } from './routes/mp.callback'
 import { Route as LoginProfissionalRouteImport } from './routes/login_.profissional'
-import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
@@ -193,11 +192,6 @@ const LoginProfissionalRoute = LoginProfissionalRouteImport.update({
   path: '/login/profissional',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutSimularRoute = CheckoutSimularRouteImport.update({
-  id: '/simular',
-  path: '/simular',
-  getParentRoute: () => CheckoutRoute,
-} as any)
 const AuthRedirectRoute = AuthRedirectRouteImport.update({
   id: '/auth/redirect',
   path: '/auth/redirect',
@@ -217,7 +211,7 @@ export interface FileRoutesByFullPath {
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
   '/cancelamento': typeof CancelamentoRoute
-  '/checkout': typeof CheckoutRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
@@ -238,7 +232,6 @@ export interface FileRoutesByFullPath {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -252,7 +245,7 @@ export interface FileRoutesByTo {
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
   '/cancelamento': typeof CancelamentoRoute
-  '/checkout': typeof CheckoutRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
@@ -273,7 +266,6 @@ export interface FileRoutesByTo {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -288,7 +280,7 @@ export interface FileRoutesById {
   '/ajuda': typeof AjudaRoute
   '/apoio-feminino': typeof ApoioFemininoRoute
   '/cancelamento': typeof CancelamentoRoute
-  '/checkout': typeof CheckoutRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/cliente': typeof ClienteRoute
   '/contato': typeof ContatoRoute
   '/convite': typeof ConviteRoute
@@ -309,7 +301,6 @@ export interface FileRoutesById {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/checkout/simular': typeof CheckoutSimularRoute
   '/login_/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
@@ -346,7 +337,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/checkout/simular'
     | '/login/profissional'
     | '/mp/callback'
     | '/servicos/$categoria'
@@ -381,7 +371,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/checkout/simular'
     | '/login/profissional'
     | '/mp/callback'
     | '/servicos/$categoria'
@@ -416,7 +405,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/checkout/simular'
     | '/login_/profissional'
     | '/mp/callback'
     | '/servicos/$categoria'
@@ -431,7 +419,7 @@ export interface RootRouteChildren {
   AjudaRoute: typeof AjudaRoute
   ApoioFemininoRoute: typeof ApoioFemininoRoute
   CancelamentoRoute: typeof CancelamentoRoute
-  CheckoutRoute: typeof CheckoutRouteWithChildren
+  CheckoutRoute: typeof CheckoutRoute
   ClienteRoute: typeof ClienteRoute
   ContatoRoute: typeof ContatoRoute
   ConviteRoute: typeof ConviteRoute
@@ -668,13 +656,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginProfissionalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout/simular': {
-      id: '/checkout/simular'
-      path: '/simular'
-      fullPath: '/checkout/simular'
-      preLoaderRoute: typeof CheckoutSimularRouteImport
-      parentRoute: typeof CheckoutRoute
-    }
     '/auth/redirect': {
       id: '/auth/redirect'
       path: '/auth/redirect'
@@ -691,18 +672,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface CheckoutRouteChildren {
-  CheckoutSimularRoute: typeof CheckoutSimularRoute
-}
-
-const CheckoutRouteChildren: CheckoutRouteChildren = {
-  CheckoutSimularRoute: CheckoutSimularRoute,
-}
-
-const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
-  CheckoutRouteChildren,
-)
 
 interface ProfissionaisRouteChildren {
   ProfissionaisPerfilSlugRoute: typeof ProfissionaisPerfilSlugRoute
@@ -736,7 +705,7 @@ const rootRouteChildren: RootRouteChildren = {
   AjudaRoute: AjudaRoute,
   ApoioFemininoRoute: ApoioFemininoRoute,
   CancelamentoRoute: CancelamentoRoute,
-  CheckoutRoute: CheckoutRouteWithChildren,
+  CheckoutRoute: CheckoutRoute,
   ClienteRoute: ClienteRoute,
   ContatoRoute: ContatoRoute,
   ConviteRoute: ConviteRoute,
