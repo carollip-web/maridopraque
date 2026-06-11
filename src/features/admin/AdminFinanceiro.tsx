@@ -88,15 +88,14 @@ export function AdminFinanceiro() {
   const [refreshing, setRefreshing] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
   const [profiles, setProfiles] = useState<ProfMap>({});
-  const [saques, setSaques] = useState<SaqueRow[]>([]);
   const [ledger, setLedger] = useState<{
     totalRecebido: number;
     totalTaxaPlat: number;
-    totalAPagar: number;
-  }>({ totalRecebido: 0, totalTaxaPlat: 0, totalAPagar: 0 });
+  }>({ totalRecebido: 0, totalTaxaPlat: 0 });
 
   // UI state
-  const [tab, setTab] = useState<"mp" | "apoio" | "saques">("mp");
+  const [tab, setTab] = useState<"mp" | "apoio">("mp");
+
   const [periodo, setPeriodo] = useState<string>("30");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [search, setSearch] = useState("");
