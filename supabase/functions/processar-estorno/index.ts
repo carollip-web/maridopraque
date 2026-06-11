@@ -89,13 +89,25 @@ serve(async (req) => {
     return json({ ok: true, skipped: "nenhum pagamento confirmado" });
   }
 
-  const { data: split } = await admin
+  let { data: split } = await admin
     .from("pagamento_splits")
     .select("id, valor_reembolso, status, motivo_cancelamento, metadata")
-    .eq("orcamento_id", orcamentoId)
+    .eq("pagamento_id", pag.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (!split || Number(split.valor_reembolso || 0) <= 0) {
+    const { data: fallback } = await admin
+      .from("pagamento_splits")
+      .select("id, valor_reembolso, status, motivo_cancelamento, metadata")
+      .eq("orcamento_id", orcamentoId)
+      .gt("valor_reembolso", 0)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (fallback) split = fallback;
+  }
 
   const valorReembolso = Number(split?.valor_reembolso || 0);
   if (valorReembolso <= 0) {
