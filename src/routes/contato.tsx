@@ -61,17 +61,10 @@ function Contato() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl border border-border p-8">
-              <Phone className="h-6 w-6 text-brand mb-4" />
-              <h3 className="font-bold">Telefone</h3>
-              <p className="mt-1 text-sm text-muted-foreground">(21) 99999-9999</p>
-            </div>
-            <div className="rounded-3xl border border-border p-8">
-              <Mail className="h-6 w-6 text-brand mb-4" />
-              <h3 className="font-bold">E-mail</h3>
-              <p className="mt-1 text-sm text-muted-foreground">contato@maridopraque.com</p>
-            </div>
+          <div className="rounded-3xl border border-border p-8">
+            <Mail className="h-6 w-6 text-brand mb-4" />
+            <h3 className="font-bold">E-mail</h3>
+            <p className="mt-1 text-sm text-muted-foreground">contato@maridopraque.com</p>
           </div>
         </div>
 
