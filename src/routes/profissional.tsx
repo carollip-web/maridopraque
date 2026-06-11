@@ -256,10 +256,10 @@ function ProfissionalArea() {
     inicioMes.setHours(0, 0, 0, 0);
     const ganhosM = pagos
       .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
-      .reduce((acc, o) => acc + Number(o.valor || 0), 0) +
+      .reduce((acc, o) => acc + liquido(Number(o.valor || 0)), 0) +
       pagosApoio
         .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
-        .reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+        .reduce((acc, o) => acc + liquido(Number((o as any).valor_apoio_feminino || 0)), 0);
     setGanhosMes(ganhosM);
 
     const enviadasOuFinalizadas = [...meus, ...meusApoio].filter((o) =>
