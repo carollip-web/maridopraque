@@ -230,8 +230,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // 1.1 Validar compatibilidade de atendimento (Gênero/Apoio) com fallback
-    let perfilProfissional: any = null;
-    const { data: perfCompleto, error: perfilError } = await (supabase as any)
+    let perfilProfissional: PerfilProfissionalParaEnvio | null = null;
+    const { data: perfCompleto, error: perfilError } = await supabase
       .from("profissional_perfil")
       .select("genero, oferece_apoio_feminino, mp_user_id")
       .eq("user_id", userId)
@@ -249,13 +249,11 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (perfBasico && typeof perfBasico === "object" && !Array.isArray(perfBasico)) {
-        const pb = perfBasico as any;
+      if (perfBasico) {
         perfilProfissional = {
-          id: pb.id,
           genero: null,
           oferece_apoio_feminino: false,
-          mp_user_id: pb.mp_user_id ?? null,
+          mp_user_id: perfBasico.mp_user_id ?? null,
         };
       } else {
         perfilProfissional = null;
@@ -265,8 +263,8 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     const compat = isProfissionalCompativelComTipoAtendimento({
-      tipoAtendimento: orc.tipo_atendimento ?? null,
-      genero: perfilProfissional?.genero as any,
+      tipoAtendimento: (orc.tipo_atendimento ?? null) as TipoAtendimento,
+      genero: (perfilProfissional?.genero ?? null) as GeneroProfissional,
       ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino ?? false,
     });
 
