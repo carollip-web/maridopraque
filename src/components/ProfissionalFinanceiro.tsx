@@ -256,11 +256,12 @@ export function ProfissionalFinanceiro() {
         />
         <StatBox
           icon={Clock}
-          label="A liberar"
-          value={brl(metricas.totalALiberar)}
-          sub={`${metricas.qtdALiberar} serviço(s) em andamento`}
+          label="Taxas no período"
+          value={brl(metricas.taxasTotal)}
+          sub="comissão + taxa Mercado Pago"
           accent="bg-amber-50 text-amber-700 border-amber-200"
         />
+
         <StatBox
           icon={CheckCircle2}
           label="Ticket médio"
