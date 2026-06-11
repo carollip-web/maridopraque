@@ -326,13 +326,6 @@ export function AdminFinanceiro() {
           sub={`${metrics.qtdPendentes} aguardando`}
           tone="amber"
         />
-        <KpiCard
-          icon={Wallet}
-          label="Saques a Pagar"
-          value={brl(saquesPendentes)}
-          sub={`${saques.filter((s) => s.status === "solicitado" || s.status === "aprovado").length} solicitações`}
-          tone="brand"
-        />
       </div>
 
       {/* Ledger consolidado */}
@@ -347,12 +340,6 @@ export function AdminFinanceiro() {
           value={brl(ledger.totalTaxaPlat)}
           hint="Plataforma + gateway"
           accent="text-emerald-600"
-        />
-        <MiniCard
-          label="Ledger · A pagar"
-          value={brl(ledger.totalAPagar)}
-          hint="Disponível + em saque"
-          accent="text-amber-600"
         />
         {metrics.apoio > 0 && (
           <MiniCard
@@ -377,16 +364,9 @@ export function AdminFinanceiro() {
           >
             Apoio Feminino
           </TabBtn>
-          <TabBtn active={tab === "saques"} onClick={() => setTab("saques")} icon={Landmark}>
-            Saques{" "}
-            {saques.filter((s) => s.status === "solicitado").length > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
-                {saques.filter((s) => s.status === "solicitado").length}
-              </span>
-            )}
-          </TabBtn>
         </div>
       </div>
+
 
       {/* CONTEÚDO DAS TABS */}
       {tab === "mp" && (
