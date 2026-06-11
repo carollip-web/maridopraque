@@ -203,8 +203,8 @@ function Checkout() {
 
     let cancelled = false;
 
-    async function ensureSdk(): Promise<any> {
-      if ((window as any).MercadoPago) return (window as any).MercadoPago;
+    async function ensureSdk(): Promise<MercadoPagoSDK> {
+      if (window.MercadoPago) return window.MercadoPago;
       await new Promise<void>((resolve, reject) => {
         const existing = document.querySelector('script[data-mp-sdk="v2"]');
         if (existing) {
@@ -220,7 +220,8 @@ function Checkout() {
         s.onerror = () => reject(new Error("Falha ao carregar SDK MP"));
         document.head.appendChild(s);
       });
-      return (window as any).MercadoPago;
+      if (!window.MercadoPago) throw new Error("SDK do Mercado Pago indisponível.");
+      return window.MercadoPago;
     }
 
     (async () => {
