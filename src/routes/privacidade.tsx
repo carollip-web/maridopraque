@@ -19,7 +19,7 @@ function Pagina() {
         <p>Esta Política de Privacidade descreve como a Marido pra Quê? coleta, usa, armazena e protege os dados pessoais dos usuários, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD).</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">1. Controladora dos Dados</h2>
-        <p>A controladora dos dados é MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, CNPJ 66.782.882/0001-00, com sede em Avenida Adilson Seroa da Motta, número 65.</p>
+        <p>A controladora dos dados é MARIDO PARA QUE DESENVOLVIMENTO DE SOFTWARE LTDA, CNPJ 66.782.882/0001-00, com sede em Avenida Adilson Seroa da Motta, 65, Barra da Tijuca, Rio de Janeiro – RJ, CEP 22621-290.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">2. Quais Dados Coletamos</h2>
         <p><strong>De clientes:</strong> nome, e-mail, telefone/WhatsApp, endereço para realização do serviço, dados de pagamento (processados pelo Mercado Pago — não armazenamos o número completo do cartão), histórico de pedidos e avaliações.</p>

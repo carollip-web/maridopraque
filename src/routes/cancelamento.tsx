@@ -29,7 +29,7 @@ function Pagina() {
         <p>Caso o profissional não compareça ao atendimento agendado, ou o serviço não seja realizado por motivo atribuível ao profissional ou à plataforma, o cliente terá direito a reembolso integral do valor pago, processado automaticamente no cartão via Mercado Pago.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">4. Forma de Reembolso</h2>
-        <p>Todos os reembolsos são processados como estorno automático no cartão de crédito ou débito utilizado no pagamento, por meio do Mercado Pago. O prazo para o valor aparecer na fatura depende da operadora do cartão.</p>
+        <p>Todos os reembolsos são processados como estorno automático no cartão de crédito ou débito utilizado no pagamento, por meio do Mercado Pago. O prazo para o valor aparecer na fatura depende da operadora do cartão. A sede da empresa está localizada na Avenida Adilson Seroa da Motta, 65, Barra da Tijuca, Rio de Janeiro – RJ, CEP 22621-290.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">5. Garantia dos Serviços</h2>
         <p>Os serviços realizados pela plataforma contam com garantia de 30 (trinta) dias. Caso o serviço apresente problema dentro desse prazo, o profissional retornará para corrigir sem custo adicional ao cliente, mediante solicitação pelo suporte.</p>
