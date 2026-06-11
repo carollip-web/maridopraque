@@ -1,10 +1,34 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Calendar, Clock, Landmark, Wallet, CheckCircle2, Loader2, CreditCard, Users } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpRight,
+  Calendar,
+  Clock,
+  Landmark,
+  Wallet,
+  CheckCircle2,
+  Loader2,
+  CreditCard,
+  TrendingUp,
+  AlertTriangle,
+  DollarSign,
+  Search,
+  RefreshCw,
+  User,
+  Copy,
+  Check,
+  Inbox,
+  Receipt,
+  PiggyBank,
+  HeartHandshake,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoRepasses";
+
+// Taxa estimada do Mercado Pago para crédito à vista
+const TAXA_MP_CREDITO = 0.0549;
 
 type SaqueRow = {
   id: string;
@@ -18,113 +42,226 @@ type SaqueRow = {
   profissional_nome?: string | null;
 };
 
+type PagamentoRow = {
+  id: string;
+  status: string;
+  valor_total: number | null;
+  created_at: string;
+  gateway: string | null;
+  metadata: any;
+  profissional_id: string | null;
+  cliente_id: string | null;
+  orcamentos?: { service_name: string | null; data_pagamento?: string | null } | null;
+};
+
+type ProfMap = Record<string, { nome: string; email: string | null }>;
+
 const brl = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const STATUS_BADGES: Record<string, { bg: string; label: string }> = {
+  pending: { bg: "bg-amber-50 border-amber-200 text-amber-700", label: "Pendente" },
+  paid: { bg: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Pago" },
+  approved: { bg: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Aprovado" },
+  failed: { bg: "bg-red-50 border-red-200 text-red-700", label: "Falhou" },
+  cancelled: { bg: "bg-slate-100 border-slate-200 text-slate-600", label: "Cancelado" },
+  canceled: { bg: "bg-slate-100 border-slate-200 text-slate-600", label: "Cancelado" },
+  rejected: { bg: "bg-red-50 border-red-200 text-red-700", label: "Rejeitado" },
+};
 
+const PERIODOS = [
+  { id: "7", label: "7 dias" },
+  { id: "30", label: "30 dias" },
+  { id: "90", label: "90 dias" },
+  { id: "all", label: "Tudo" },
+];
+
+// Extrai a taxa de marketplace do pagamento (com fallback 15%)
+function getMarketplaceFee(r: PagamentoRow): number {
+  const meta = r?.metadata || {};
+  const direct =
+    meta?.marketplace_fee_amount ??
+    meta?.application_fee ??
+    meta?.application_fee_amount;
+  if (direct != null && !isNaN(Number(direct))) return Number(direct);
+  const details = meta?.last_webhook_payload?.fee_details;
+  if (Array.isArray(details)) {
+    const app = details.find((d: any) => d?.type === "application_fee");
+    if (app?.amount != null) return Number(app.amount);
+  }
+  return Number(r?.valor_total || 0) * 0.15;
+}
 
 export function AdminFinanceiro() {
-  const [data, setData] = useState<{
-    totalFaturado: number;
-    lucroPlataforma: number;
-    saldoPendenteBtg: number;
-    totalApoioFeminino: number;
-    pagos: any[];
-  } | null>(null);
-
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
+  const [profiles, setProfiles] = useState<ProfMap>({});
+  const [saques, setSaques] = useState<SaqueRow[]>([]);
   const [ledger, setLedger] = useState<{
     totalRecebido: number;
-    totalTaxa: number;
+    totalTaxaPlat: number;
     totalAPagar: number;
-  } | null>(null);
-  const [saques, setSaques] = useState<SaqueRow[]>([]);
+  }>({ totalRecebido: 0, totalTaxaPlat: 0, totalAPagar: 0 });
+
+  // UI state
+  const [tab, setTab] = useState<"mp" | "apoio" | "saques">("mp");
+  const [periodo, setPeriodo] = useState<string>("30");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [search, setSearch] = useState("");
   const [comprovantes, setComprovantes] = useState<Record<string, string>>({});
   const [processandoId, setProcessandoId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const loadAll = useCallback(async () => {
-    // Há duas FKs de pagamentos.orcamento_id → orcamentos.id, então é preciso
-    // desambiguar a relação no embed do PostgREST para não retornar erro/vazio.
-    const { data: pgs } = await supabase
-      .from("pagamentos")
-      .select(`
-        id, status, valor_total, created_at, gateway, metadata,
-        orcamentos!fk_pag_orcamento ( service_name, data_pagamento )
-      `)
-      .eq("gateway", "mercado_pago")
-      .order("created_at", { ascending: false })
-      .limit(200);
+  const loadAll = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    else setRefreshing(true);
 
-    const list = pgs || [];
+    const [{ data: pgs }, { data: splits }, { data: sqRows }] = await Promise.all([
+      supabase
+        .from("pagamentos")
+        .select(
+          `id, status, valor_total, created_at, gateway, metadata, profissional_id, cliente_id,
+           orcamentos!fk_pag_orcamento ( service_name, data_pagamento )`,
+        )
+        .eq("gateway", "mercado_pago")
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase
+        .from("pagamento_splits")
+        .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status"),
+      supabase
+        .from("profissional_saques")
+        .select(
+          "id, profissional_id, valor, status, chave_pix, observacao, solicitado_em, comprovante_url",
+        )
+        .order("solicitado_em", { ascending: false })
+        .limit(100),
+    ]);
 
-    // "Total Faturado" considera apenas pagamentos que realmente entraram (pago/aprovado).
-    // Pagamentos cancelados/falhos não geram receita.
-    const efetivados = list.filter((r: any) => r.status === "paid" || r.status === "approved");
-    const totalFaturado = efetivados.reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+    const list = (pgs || []) as PagamentoRow[];
+    setPagamentos(list);
 
-    let totalApoioFeminino = 0;
+    // Profiles em batch
+    const userIds = Array.from(
+      new Set(
+        [
+          ...list.map((r) => r.profissional_id).filter(Boolean) as string[],
+          ...list.map((r) => r.cliente_id).filter(Boolean) as string[],
+          ...(sqRows || []).map((s: any) => s.profissional_id).filter(Boolean),
+        ],
+      ),
+    );
+    if (userIds.length) {
+      const { data: profsData } = await supabase
+        .from("profiles")
+        .select("id, nome, email")
+        .in("id", userIds);
+      const map: ProfMap = {};
+      (profsData || []).forEach((p: any) => {
+        map[p.id] = { nome: p.nome, email: p.email };
+      });
+      setProfiles(map);
+    }
 
-    const lucroPlataforma = efetivados.reduce((s: number, r: any) => {
-      const fee = (r.metadata as any)?.marketplace_fee_amount || 0;
-      const apoioFemininoCut = (r.metadata as any)?.valor_apoio_feminino || 0;
-      totalApoioFeminino += Number(apoioFemininoCut);
-      return s + Number(fee) - Number(apoioFemininoCut);
-    }, 0);
-    const saldoPendenteBtg = list
-      .filter((r: any) => r.status === "pending")
-      .reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+    // Saques
+    const sList = (sqRows || []) as SaqueRow[];
+    setSaques(sList);
 
-    // Histórico esconde os cancelados — admin não precisa de ruído de tentativas falhas
-    const pagos = list
-      .filter((r: any) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "failed" && r.status !== "rejected")
-      .map((r: any) => ({
-        id: r.id,
-        service_name: r.orcamentos?.service_name || "Serviço",
-        data_pagamento: r.orcamentos?.data_pagamento || r.created_at,
-        valor: r.valor_total,
-        fee: (r.metadata as any)?.marketplace_fee_amount || 0,
-        status: r.status,
-      }));
-
-    setData({ totalFaturado, lucroPlataforma, saldoPendenteBtg, totalApoioFeminino, pagos });
-
-    // novo ledger (pagamento_splits)
-    const { data: splits } = await supabase
-      .from("pagamento_splits")
-      .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status");
-    const sList = splits || [];
-    const totalRecebido = sList.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
-    const totalTaxa = sList.reduce(
+    // Ledger (pagamento_splits)
+    const sp = splits || [];
+    const totalRecebido = sp.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
+    const totalTaxaPlat = sp.reduce(
       (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
       0,
     );
-    const totalAPagar = sList
-      .filter((x: any) => ["aguardando_conclusao", "disponivel", "solicitado"].includes(x.status))
+    const totalAPagar = sp
+      .filter((x: any) =>
+        ["aguardando_conclusao", "disponivel", "solicitado"].includes(x.status),
+      )
       .reduce((s, x: any) => s + Number(x.valor_profissional || 0), 0);
-    setLedger({ totalRecebido, totalTaxa, totalAPagar });
+    setLedger({ totalRecebido, totalTaxaPlat, totalAPagar });
 
-    // saques
-    const { data: sqRows } = await supabase
-      .from("profissional_saques")
-      .select("id, profissional_id, valor, status, chave_pix, observacao, solicitado_em, comprovante_url")
-      .order("solicitado_em", { ascending: false })
-      .limit(100);
-    const rows = (sqRows || []) as SaqueRow[];
-    const ids = Array.from(new Set(rows.map((r) => r.profissional_id)));
-    if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id, nome")
-        .in("id", ids);
-      const nameMap = new Map((profs || []).map((p: any) => [p.id, p.nome]));
-      rows.forEach((r) => (r.profissional_nome = nameMap.get(r.profissional_id) ?? null));
-    }
-    setSaques(rows);
+    setLoading(false);
+    setRefreshing(false);
   }, []);
 
   useEffect(() => {
     loadAll();
   }, [loadAll]);
 
+  // Aplica filtro de período aos pagamentos
+  const pagamentosPeriodo = useMemo(() => {
+    if (periodo === "all") return pagamentos;
+    const dias = Number(periodo);
+    const limite = Date.now() - dias * 24 * 60 * 60 * 1000;
+    return pagamentos.filter((p) => new Date(p.created_at).getTime() >= limite);
+  }, [pagamentos, periodo]);
+
+  // Métricas
+  const metrics = useMemo(() => {
+    const aprovados = pagamentosPeriodo.filter(
+      (r) => r.status === "approved" || r.status === "paid",
+    );
+    const bruto = aprovados.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const comissao = aprovados.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
+    const taxaMP = aprovados.reduce(
+      (acc, r) => acc + Number(r.valor_total || 0) * TAXA_MP_CREDITO,
+      0,
+    );
+    const liquidoPro = bruto - comissao - taxaMP;
+    const pendente = pagamentosPeriodo
+      .filter((r) => r.status === "pending")
+      .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const apoio = aprovados.reduce(
+      (acc, r) => acc + Number((r.metadata as any)?.valor_apoio_feminino || 0),
+      0,
+    );
+    return {
+      bruto,
+      comissao,
+      taxaMP,
+      liquidoPro,
+      pendente,
+      apoio,
+      qtdAprovados: aprovados.length,
+      qtdPendentes: pagamentosPeriodo.filter((r) => r.status === "pending").length,
+    };
+  }, [pagamentosPeriodo]);
+
+  const saquesPendentes = useMemo(
+    () =>
+      saques
+        .filter((s) => s.status === "solicitado" || s.status === "aprovado")
+        .reduce((acc, s) => acc + Number(s.valor || 0), 0),
+    [saques],
+  );
+
+  // Tabela filtrada
+  const pagamentosFiltrados = useMemo(() => {
+    return pagamentosPeriodo.filter((r) => {
+      const matchStatus =
+        statusFilter === "todos" ||
+        r.status === statusFilter ||
+        (statusFilter === "paid" && r.status === "approved");
+      const q = search.toLowerCase().trim();
+      if (!q) return matchStatus;
+      const profName = r.profissional_id
+        ? (profiles[r.profissional_id]?.nome || "").toLowerCase()
+        : "";
+      const cliName = r.cliente_id ? (profiles[r.cliente_id]?.nome || "").toLowerCase() : "";
+      const srv = (r.orcamentos?.service_name || "").toLowerCase();
+      return (
+        matchStatus &&
+        (profName.includes(q) ||
+          cliName.includes(q) ||
+          srv.includes(q) ||
+          r.id.toLowerCase().includes(q))
+      );
+    });
+  }, [pagamentosPeriodo, statusFilter, search, profiles]);
+
+  // Saques actions
   const atualizarSaque = async (
     id: string,
     patch: { status: string; comprovante_url?: string | null; aprovado_em?: string },
@@ -139,11 +276,14 @@ export function AdminFinanceiro() {
 
   const aprovar = async (id: string) => {
     setProcessandoId(id);
-    const ok = await atualizarSaque(id, { status: "aprovado", aprovado_em: new Date().toISOString() });
+    const ok = await atualizarSaque(id, {
+      status: "aprovado",
+      aprovado_em: new Date().toISOString(),
+    });
     setProcessandoId(null);
     if (ok) {
       toast.success("Saque aprovado");
-      loadAll();
+      loadAll(false);
     }
   };
 
@@ -154,7 +294,7 @@ export function AdminFinanceiro() {
     setProcessandoId(null);
     if (ok) {
       toast.success("Saque recusado");
-      loadAll();
+      loadAll(false);
     }
   };
 
@@ -171,199 +311,521 @@ export function AdminFinanceiro() {
       return;
     }
     toast.success("Saque pago e splits liquidados");
-    loadAll();
+    loadAll(false);
   };
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    toast.success("Copiado!");
+    setTimeout(() => setCopiedId(null), 1500);
+  };
 
+  if (loading) {
+    return (
+      <div className="py-24 grid place-items-center">
+        <Loader2 className="h-10 w-10 animate-spin text-brand" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <h2 className="text-2xl font-bold">Relatório Financeiro</h2>
-        <Link
-          to="/admin-repasses"
-          className="inline-flex h-11 items-center justify-center rounded-xl bg-brand px-6 text-sm font-bold text-white shadow-md shadow-brand/20 transition hover:-translate-y-0.5 hover:bg-brand/90 gap-2"
-        >
-          <CreditCard className="h-4 w-4" /> Pagamentos MP
-        </Link>
+      {/* HEADER + FILTRO DE PERÍODO */}
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Painel Financeiro
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Visão unificada de pagamentos Mercado Pago, repasses e saques.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex bg-slate-100 p-1 rounded-xl">
+            {PERIODOS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPeriodo(p.id)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                  periodo === p.id
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadAll(false)}
+            disabled={refreshing}
+            className="gap-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
-      {!data && <p className="text-sm text-slate-400">Carregando…</p>}
+      {/* KPIs */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <KpiCard
+          icon={DollarSign}
+          label="Volume Bruto"
+          value={brl(metrics.bruto)}
+          sub={`${metrics.qtdAprovados} pagamentos`}
+          tone="slate"
+        />
+        <KpiCard
+          icon={TrendingUp}
+          label="Comissão Plataforma"
+          value={brl(metrics.comissao)}
+          sub="15% retidos no MP"
+          tone="emerald"
+        />
+        <KpiCard
+          icon={Receipt}
+          label="Taxa Gateway (est.)"
+          value={brl(metrics.taxaMP)}
+          sub="5,49% Mercado Pago"
+          tone="rose"
+        />
+        <KpiCard
+          icon={PiggyBank}
+          label="Líquido Profissionais"
+          value={brl(metrics.liquidoPro)}
+          sub="repasse efetivo"
+          tone="indigo"
+        />
+        <KpiCard
+          icon={Clock}
+          label="Pendentes (MP)"
+          value={brl(metrics.pendente)}
+          sub={`${metrics.qtdPendentes} aguardando`}
+          tone="amber"
+        />
+        <KpiCard
+          icon={Wallet}
+          label="Saques a Pagar"
+          value={brl(saquesPendentes)}
+          sub={`${saques.filter((s) => s.status === "solicitado" || s.status === "aprovado").length} solicitações`}
+          tone="brand"
+        />
+      </div>
 
-      {data && (
-        <>
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 mb-1">Total Faturado (Volume)</p>
-              <h3 className="text-3xl font-bold">R$ {data.totalFaturado.toFixed(2)}</h3>
-              <div className="mt-4 flex items-center gap-1 text-emerald-600 text-xs font-bold">
-                <ArrowUpRight className="h-3 w-3" /> {data.pagos.length}{" "}
-                {data.pagos.length === 1 ? "pagamento total" : "pagamentos totais"}
-              </div>
-            </div>
-            <div className="flex flex-col gap-6">
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-sm text-slate-500 mb-1">Lucro Plataforma</p>
-                <h3 className="text-3xl font-bold text-emerald-600">
-                  R$ {data.lucroPlataforma.toFixed(2)}
-                </h3>
-                <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
-                  Taxas retidas
-                </div>
-              </div>
+      {/* Ledger consolidado */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <MiniCard
+          label="Ledger · Total recebido"
+          value={brl(ledger.totalRecebido)}
+          hint="Soma dos splits registrados"
+        />
+        <MiniCard
+          label="Ledger · Taxas totais"
+          value={brl(ledger.totalTaxaPlat)}
+          hint="Plataforma + gateway"
+          accent="text-emerald-600"
+        />
+        <MiniCard
+          label="Ledger · A pagar"
+          value={brl(ledger.totalAPagar)}
+          hint="Disponível + em saque"
+          accent="text-amber-600"
+        />
+        {metrics.apoio > 0 && (
+          <MiniCard
+            label="Repasses Apoio Feminino"
+            value={brl(metrics.apoio)}
+            hint="Retidos via Mercado Pago"
+            accent="text-pink-600"
+          />
+        )}
+      </div>
 
-              {data.totalApoioFeminino > 0 && (
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-pink-500">
-                  <p className="text-sm text-slate-500 mb-1">Repasses Apoio Feminino</p>
-                  <h3 className="text-3xl font-bold text-pink-600">
-                    R$ {data.totalApoioFeminino.toFixed(2)}
-                  </h3>
-                  <div className="mt-4 flex items-center gap-1 text-slate-500 text-xs font-bold">
-                    Retidos via Mercado Pago
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-brand">
-              <p className="text-sm text-slate-500 mb-1">Pagamentos Pendentes (MP)</p>
-              <h3 className="text-3xl font-bold">R$ {data.saldoPendenteBtg.toFixed(2)}</h3>
-              <div className="mt-4 flex items-center gap-1 text-amber-600 text-xs font-bold">
-                <Clock className="h-3 w-3" /> Aguardando pagamento
-              </div>
-            </div>
-          </div>
+      {/* TABS */}
+      <div className="border-b border-slate-200">
+        <div className="flex gap-1">
+          <TabBtn active={tab === "mp"} onClick={() => setTab("mp")} icon={CreditCard}>
+            Transações MP
+          </TabBtn>
+          <TabBtn
+            active={tab === "apoio"}
+            onClick={() => setTab("apoio")}
+            icon={HeartHandshake}
+          >
+            Apoio Feminino
+          </TabBtn>
+          <TabBtn active={tab === "saques"} onClick={() => setTab("saques")} icon={Landmark}>
+            Saques{" "}
+            {saques.filter((s) => s.status === "solicitado").length > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+                {saques.filter((s) => s.status === "solicitado").length}
+              </span>
+            )}
+          </TabBtn>
+        </div>
+      </div>
 
-          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="p-6 border-b border-slate-100 font-bold flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" /> Histórico de Transações
-            </div>
-            <div className="p-6 space-y-4">
-              {data.pagos.length === 0 && (
-                <p className="text-sm text-slate-400">Nenhum repasse criado ainda.</p>
-              )}
-              {data.pagos.slice(0, 10).map((f: any) => (
-                <div
-                  key={f.id}
-                  className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-0 last:pb-0"
+      {/* CONTEÚDO DAS TABS */}
+      {tab === "mp" && (
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          {/* Filtros */}
+          <div className="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl">
+              {[
+                { id: "todos", label: "Todos" },
+                { id: "pending", label: "Pendentes" },
+                { id: "paid", label: "Pagos" },
+                { id: "failed", label: "Falharam" },
+                { id: "cancelled", label: "Cancelados" },
+              ].map((it) => (
+                <button
+                  key={it.id}
+                  onClick={() => setStatusFilter(it.id)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                    statusFilter === it.id
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold">{f.service_name}</p>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                        f.status === 'paid' || f.status === 'approved' ? 'bg-emerald-100 text-emerald-700'
-                        : f.status === 'pending' ? 'bg-amber-100 text-amber-700'
-                        : 'bg-red-100 text-red-700'
-                      }`}>
-                        {f.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      #{f.id.slice(0, 8)} ·{" "}
-                      {f.data_pagamento
-                        ? new Date(f.data_pagamento).toLocaleDateString("pt-BR")
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-900">+ R$ {Number(f.valor || 0).toFixed(2)}</p>
-                    {f.fee > 0 && (
-                      <p className="text-[10px] text-brand font-medium mt-0.5">Fee: R$ {Number(f.fee).toFixed(2)}</p>
-                    )}
-                  </div>
-                </div>
+                  {it.label}
+                </button>
               ))}
             </div>
-          </section>
-        </>
-      )}
+            <div className="relative w-full lg:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                placeholder="Buscar profissional, serviço, ID…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-10 text-sm"
+              />
+            </div>
+          </div>
 
-      {ledger && (
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <p className="text-sm text-slate-500 mb-1 flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5"/> Total recebido (ledger)</p>
-            <h3 className="text-2xl font-bold">{brl(ledger.totalRecebido)}</h3>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <p className="text-sm text-slate-500 mb-1">Taxas da plataforma</p>
-            <h3 className="text-2xl font-bold text-emerald-600">{brl(ledger.totalTaxa)}</h3>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-amber-400">
-            <p className="text-sm text-slate-500 mb-1">A pagar aos profissionais</p>
-            <h3 className="text-2xl font-bold">{brl(ledger.totalAPagar)}</h3>
-          </div>
-        </div>
-      )}
-
-      <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <div className="p-6 border-b border-slate-100 font-bold flex items-center gap-2">
-          <Landmark className="h-4 w-4 text-brand" /> Saques solicitados
-        </div>
-        <div className="p-6 space-y-3">
-          {saques.length === 0 && (
-            <p className="text-sm text-slate-400">Nenhum saque solicitado.</p>
+          {pagamentosFiltrados.length === 0 ? (
+            <div className="py-16 flex flex-col items-center text-center gap-2">
+              <Inbox className="h-8 w-8 text-slate-300" />
+              <p className="text-sm text-slate-500 font-medium">
+                Nenhum pagamento encontrado
+              </p>
+              <p className="text-xs text-slate-400">Tente ajustar período ou filtros.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left min-w-[960px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold border-b border-slate-100 bg-slate-50/50">
+                    <th className="px-5 py-3">ID / Data</th>
+                    <th className="px-5 py-3">Serviço / Profissional</th>
+                    <th className="px-5 py-3">Cliente</th>
+                    <th className="px-5 py-3 text-right">Bruto</th>
+                    <th className="px-5 py-3 text-right">Fee 15%</th>
+                    <th className="px-5 py-3 text-right">Taxa MP</th>
+                    <th className="px-5 py-3 text-right">Líquido Pro</th>
+                    <th className="px-5 py-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {pagamentosFiltrados.slice(0, 100).map((p) => {
+                    const prof = p.profissional_id ? profiles[p.profissional_id] : null;
+                    const cli = p.cliente_id ? profiles[p.cliente_id] : null;
+                    const valor = Number(p.valor_total || 0);
+                    const fee = getMarketplaceFee(p);
+                    const taxaMP = Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
+                    const liquido = Math.round((valor - fee - taxaMP) * 100) / 100;
+                    const badge =
+                      STATUS_BADGES[p.status] || {
+                        bg: "bg-slate-100 text-slate-700 border-slate-200",
+                        label: p.status,
+                      };
+                    const efetivado = p.status === "paid" || p.status === "approved";
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/60 transition group">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-semibold text-slate-600">
+                              #{p.id.slice(0, 8)}
+                            </span>
+                            <button
+                              onClick={() => handleCopy(p.id)}
+                              className="text-slate-400 hover:text-slate-900"
+                              title="Copiar ID"
+                            >
+                              {copiedId === p.id ? (
+                                <Check className="h-3 w-3 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition" />
+                              )}
+                            </button>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(p.created_at).toLocaleString("pt-BR")}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="font-bold text-sm text-slate-900">
+                            {p.orcamentos?.service_name || "Serviço"}
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            <User className="h-3 w-3" /> {prof?.nome || "—"}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-slate-600">
+                          {cli?.nome || "—"}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold text-sm text-slate-900 tabular-nums">
+                          {brl(valor)}
+                        </td>
+                        <td className="px-5 py-3 text-right text-sm text-brand font-bold tabular-nums">
+                          {efetivado ? brl(fee) : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3 text-right text-sm text-rose-500 font-bold tabular-nums">
+                          {efetivado ? (
+                            <>
+                              − {brl(taxaMP)}
+                              <div className="text-[9px] text-slate-300 font-medium">est.</div>
+                            </>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right text-sm text-emerald-600 font-bold tabular-nums">
+                          {efetivado ? brl(liquido) : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span
+                            className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold border ${badge.bg}`}
+                          >
+                            {badge.label}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {pagamentosFiltrados.length > 100 && (
+                <p className="px-5 py-3 text-xs text-slate-400 text-center border-t border-slate-100">
+                  Mostrando 100 de {pagamentosFiltrados.length}. Refine os filtros para ver mais.
+                </p>
+              )}
+            </div>
           )}
-          {saques.map((s) => {
-            const isFinal = s.status === "pago" || s.status === "recusado" || s.status === "cancelado";
-            return (
-              <div key={s.id} className="border border-slate-100 rounded-xl p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold">{s.profissional_nome || "Profissional"}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(s.solicitado_em).toLocaleString("pt-BR")} · Pix: {s.chave_pix || "—"}
-                    </p>
-                    {s.observacao && (
-                      <p className="text-xs text-slate-500 mt-1">Obs: {s.observacao}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold tabular-nums">{brl(Number(s.valor))}</p>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                      s.status === "pago" ? "bg-emerald-100 text-emerald-700"
-                      : s.status === "solicitado" ? "bg-amber-100 text-amber-700"
-                      : s.status === "aprovado" ? "bg-sky-100 text-sky-700"
-                      : "bg-slate-100 text-slate-700"
-                    }`}>{s.status}</span>
-                  </div>
-                </div>
+        </section>
+      )}
 
-                {!isFinal && (
-                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder="URL do comprovante (opcional)"
-                      value={comprovantes[s.id] ?? s.comprovante_url ?? ""}
-                      onChange={(e) => setComprovantes((m) => ({ ...m, [s.id]: e.target.value }))}
-                      className="text-xs"
-                    />
-                    {s.status === "solicitado" && (
-                      <Button size="sm" variant="outline" onClick={() => aprovar(s.id)} disabled={processandoId === s.id}>
-                        Aprovar
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                      onClick={() => marcarPago(s.id)}
-                      disabled={processandoId === s.id}
-                    >
-                      {processandoId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : <CheckCircle2 className="h-3.5 w-3.5"/>}
-                      <span className="ml-1">Marcar pago</span>
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => recusar(s.id)} disabled={processandoId === s.id}>
-                      Recusar
-                    </Button>
+      {tab === "apoio" && (
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <AdminApoioFemininoRepasses />
+        </section>
+      )}
+
+      {tab === "saques" && (
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="p-5 border-b border-slate-100 font-bold flex items-center gap-2">
+            <Landmark className="h-4 w-4 text-brand" /> Saques solicitados pelos profissionais
+          </div>
+          <div className="p-5 space-y-3">
+            {saques.length === 0 && (
+              <p className="text-sm text-slate-400 py-8 text-center">
+                Nenhum saque solicitado.
+              </p>
+            )}
+            {saques.map((s) => {
+              const isFinal =
+                s.status === "pago" || s.status === "recusado" || s.status === "cancelado";
+              const profNome =
+                profiles[s.profissional_id]?.nome || s.profissional_nome || "Profissional";
+              return (
+                <div
+                  key={s.id}
+                  className="border border-slate-100 rounded-xl p-4 hover:border-slate-200 transition"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-slate-900">{profNome}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {new Date(s.solicitado_em).toLocaleString("pt-BR")} · Pix:{" "}
+                        {s.chave_pix || "—"}
+                      </p>
+                      {s.observacao && (
+                        <p className="text-xs text-slate-500 mt-1">Obs: {s.observacao}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold tabular-nums text-slate-900">
+                        {brl(Number(s.valor))}
+                      </p>
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                          s.status === "pago"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : s.status === "solicitado"
+                              ? "bg-amber-100 text-amber-700"
+                              : s.status === "aprovado"
+                                ? "bg-sky-100 text-sky-700"
+                                : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {s.status}
+                      </span>
+                    </div>
                   </div>
-                )}
-                {s.comprovante_url && (
-                  <a href={s.comprovante_url} target="_blank" rel="noreferrer" className="text-xs text-brand underline mt-2 inline-block">
-                    Ver comprovante
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+
+                  {!isFinal && (
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                      <Input
+                        placeholder="URL do comprovante (opcional)"
+                        value={comprovantes[s.id] ?? s.comprovante_url ?? ""}
+                        onChange={(e) =>
+                          setComprovantes((m) => ({ ...m, [s.id]: e.target.value }))
+                        }
+                        className="text-xs"
+                      />
+                      {s.status === "solicitado" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => aprovar(s.id)}
+                          disabled={processandoId === s.id}
+                        >
+                          Aprovar
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        onClick={() => marcarPago(s.id)}
+                        disabled={processandoId === s.id}
+                      >
+                        {processandoId === s.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                        <span className="ml-1">Marcar pago</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => recusar(s.id)}
+                        disabled={processandoId === s.id}
+                      >
+                        Recusar
+                      </Button>
+                    </div>
+                  )}
+                  {s.comprovante_url && (
+                    <a
+                      href={s.comprovante_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-brand underline mt-2 inline-block"
+                    >
+                      Ver comprovante
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
+  );
+}
+
+// ============== Subcomponentes ==============
+
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tone,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  sub?: string;
+  tone: "slate" | "emerald" | "amber" | "brand" | "rose" | "indigo";
+}) {
+  const tones: Record<string, string> = {
+    slate: "from-slate-50 to-white text-slate-700 ring-slate-200",
+    emerald: "from-emerald-50 to-white text-emerald-700 ring-emerald-200",
+    amber: "from-amber-50 to-white text-amber-700 ring-amber-200",
+    brand: "from-orange-50 to-white text-brand ring-orange-200",
+    rose: "from-rose-50 to-white text-rose-600 ring-rose-200",
+    indigo: "from-indigo-50 to-white text-indigo-700 ring-indigo-200",
+  };
+  const valColor: Record<string, string> = {
+    slate: "text-slate-900",
+    emerald: "text-emerald-700",
+    amber: "text-amber-700",
+    brand: "text-brand",
+    rose: "text-rose-600",
+    indigo: "text-indigo-700",
+  };
+  return (
+    <div
+      className={`bg-gradient-to-br ${tones[tone]} ring-1 rounded-2xl p-5 shadow-sm hover:shadow-md transition`}
+    >
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider font-extrabold opacity-80">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <p className={`text-2xl font-black mt-2 tabular-nums ${valColor[tone]}`}>{value}</p>
+      {sub && <p className="text-[11px] opacity-70 mt-1 font-medium">{sub}</p>}
+    </div>
+  );
+}
+
+function MiniCard({
+  label,
+  value,
+  hint,
+  accent = "text-slate-900",
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  accent?: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+      <p className="text-xs text-slate-500 font-medium">{label}</p>
+      <h3 className={`text-xl font-bold mt-1 tabular-nums ${accent}`}>{value}</h3>
+      <p className="text-[11px] text-slate-400 mt-1">{hint}</p>
+    </div>
+  );
+}
+
+function TabBtn({
+  active,
+  onClick,
+  icon: Icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: any;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold border-b-2 transition ${
+        active
+          ? "border-brand text-brand"
+          : "border-transparent text-slate-500 hover:text-slate-900"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
+    </button>
   );
 }
