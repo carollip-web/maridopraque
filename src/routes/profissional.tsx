@@ -193,13 +193,13 @@ function ProfissionalArea() {
 
   const handleProposalSent = (args: {
     orcamentoId: string;
-    proposta: any;
-    orcamento: any;
+    proposta: Partial<Tables<"propostas">> & Record<string, unknown>;
+    orcamento: Partial<Tables<"orcamentos">> & Record<string, unknown>;
   }) => {
     data.handleProposalSent(args, () => setPedidosSubTab("enviados"));
   };
 
-  const handleNavigateToNotifPedido = (n: any) => {
+  const handleNavigateToNotifPedido = (n: Notification) => {
     markNotifAsRead(n.id);
     if (n.pedidoId) {
       const titleLower = n.title.toLowerCase();
@@ -209,7 +209,7 @@ function ProfissionalArea() {
         titleLower.includes("conclu");
       navigate({
         to: "/profissional",
-        search: (prev: any) => ({
+        search: (prev: ProfissionalSearch) => ({
           ...prev,
           tab: isServicos ? "servicos" : "orcamentos",
           orcamentoId: n.pedidoId,
@@ -219,10 +219,13 @@ function ProfissionalArea() {
       try {
         const url = new URL(n.link, window.location.origin);
         const oid = url.searchParams.get("orcamentoId");
-        const t = (url.searchParams.get("tab") as any) || "orcamentos";
+        const rawTab = url.searchParams.get("tab");
+        const t = (profissionalSearchSchema.shape.tab.safeParse(rawTab).success
+          ? (rawTab as ProfissionalTab)
+          : "orcamentos") satisfies ProfissionalTab;
         navigate({
           to: "/profissional",
-          search: (prev: any) => ({
+          search: (prev: ProfissionalSearch) => ({
             ...prev,
             tab: t,
             orcamentoId: oid ?? undefined,
@@ -231,7 +234,7 @@ function ProfissionalArea() {
       } catch {
         navigate({
           to: "/profissional",
-          search: (prev: any) => ({ ...prev, tab: "orcamentos" }),
+          search: (prev: ProfissionalSearch) => ({ ...prev, tab: "orcamentos" }),
         });
       }
     }
@@ -241,7 +244,7 @@ function ProfissionalArea() {
     setSheetOrcamentoId(null);
     navigate({
       to: "/profissional",
-      search: (prev: any) => ({ ...prev, orcamentoId: undefined }),
+      search: (prev: ProfissionalSearch) => ({ ...prev, orcamentoId: undefined }),
     });
   };
 
@@ -250,7 +253,7 @@ function ProfissionalArea() {
     ? (data.orcamentos.find((o) => o.id === sheetOrcamentoId) ?? null)
     : null;
 
-  const sheetMode = sheetOrc
+  const sheetMode: SheetMode = sheetOrc
     ? sheetOrc.profissional_id === user?.id
       ? sheetOrc.status === "enviado"
         ? "revisar"
@@ -263,7 +266,7 @@ function ProfissionalArea() {
   const setActiveTab = (newTab: ProfissionalTab) =>
     navigate({
       to: "/profissional",
-      search: (prev: any) => ({
+      search: (prev: ProfissionalSearch) => ({
         ...prev,
         tab: newTab,
         orcamentoId: undefined,
