@@ -31,10 +31,24 @@ serve(async (req) => {
   // Authenticate caller
   const authHeader = req.headers.get("Authorization") || "";
   const token = authHeader.replace("Bearer ", "");
-  if (!token) return json({ error: "Unauthorized" }, 401);
-  const { data: userData, error: userErr } = await admin.auth.getUser(token);
-  if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
-  const callerId = userData.user.id;
+  if (!token) {
+    console.warn("[processar-estorno] 401: token ausente no header Authorization");
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  // Suporte a chamadas internas: server pode chamar com o SERVICE_ROLE_KEY
+  // como Bearer. Nesse caso a permissão já foi validada pela RPC de
+  // cancelamento — pulamos getUser e checagem de cliente_id/has_role.
+  const isInternalCaller = token === SUPABASE_SERVICE_ROLE_KEY;
+  let callerId: string | null = null;
+  if (!isInternalCaller) {
+    const { data: userData, error: userErr } = await admin.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      console.warn(`[processar-estorno] 401: getUser falhou (${userErr?.message ?? "sem usuário"})`);
+      return json({ error: "Unauthorized" }, 401);
+    }
+    callerId = userData.user.id;
+  }
 
   let body: { orcamentoId?: string } = {};
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
@@ -47,12 +61,18 @@ serve(async (req) => {
     .select("id, cliente_id, status, profissional_id")
     .eq("id", orcamentoId)
     .single();
-  if (orcErr || !orc) return json({ error: "Pedido não encontrado" }, 404);
+  if (orcErr || !orc) {
+    console.warn(`[processar-estorno] 404: pedido não encontrado (orcamentoId=${orcamentoId}, err=${orcErr?.message ?? "n/a"})`);
+    return json({ error: "Pedido não encontrado" }, 404);
+  }
 
-  // Caller deve ser o cliente OU um admin
-  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: callerId, _role: "admin" });
-  if (orc.cliente_id !== callerId && !isAdmin) {
-    return json({ error: "Sem permissão" }, 403);
+  // Caller deve ser o cliente OU um admin (pulado em chamadas internas)
+  if (!isInternalCaller) {
+    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: callerId, _role: "admin" });
+    if (orc.cliente_id !== callerId && !isAdmin) {
+      console.warn(`[processar-estorno] 403: sem permissão (orcamentoId=${orcamentoId}, callerId=${callerId})`);
+      return json({ error: "Sem permissão" }, 403);
+    }
   }
 
   const { data: pag } = await admin
@@ -64,7 +84,10 @@ serve(async (req) => {
     .limit(1)
     .maybeSingle();
 
-  if (!pag) return json({ ok: true, skipped: "nenhum pagamento confirmado" });
+  if (!pag) {
+    console.warn(`[processar-estorno] skipped: nenhum pagamento confirmado (orcamentoId=${orcamentoId})`);
+    return json({ ok: true, skipped: "nenhum pagamento confirmado" });
+  }
 
   const { data: split } = await admin
     .from("pagamento_splits")
@@ -76,12 +99,14 @@ serve(async (req) => {
 
   const valorReembolso = Number(split?.valor_reembolso || 0);
   if (valorReembolso <= 0) {
+    console.warn(`[processar-estorno] skipped: sem valor a reembolsar (orcamentoId=${orcamentoId}, regra=${split?.motivo_cancelamento ?? "n/a"})`);
     return json({ ok: true, skipped: "sem valor a reembolsar", regra: split?.motivo_cancelamento });
   }
 
   // Idempotência: se já houve refund registrado em metadata, não chama o MP novamente
   const splitMetadata = (split?.metadata as Record<string, unknown>) || {};
   if (splitMetadata.refund_id) {
+    console.warn(`[processar-estorno] skipped: estorno já processado (orcamentoId=${orcamentoId}, refundId=${splitMetadata.refund_id})`);
     return json({ ok: true, skipped: "estorno já processado", refundId: splitMetadata.refund_id });
   }
 
