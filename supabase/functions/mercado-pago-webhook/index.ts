@@ -178,6 +178,8 @@ serve(async (req) => {
           status: finalStatus,
           paid_at: mpStatus === "approved" ? new Date().toISOString() : null,
           webhook_last_received_at: new Date().toISOString(),
+          payment_method_id: mpPayment.payment_method_id,
+          installments: mpPayment.installments,
           metadata: {
             ...currentMetadata,
             last_webhook_payload: mpPayment,
