@@ -145,6 +145,15 @@ function AdminValidacao() {
       .update({ status: "aprovado" })
       .eq("user_id", selected.user_id);
 
+    // Notificar o profissional que foi aprovado
+    await supabase.from("notificacoes").insert({
+      user_id: selected.user_id,
+      titulo: "🎉 Cadastro aprovado!",
+      mensagem: "Seu cadastro foi aprovado. Agora você pode receber pedidos e conectar sua conta Mercado Pago para receber pagamentos.",
+      link: "/profissional",
+      lida: false,
+    });
+
     toast.success("Profissional aprovado! Acesso liberado.");
     setSelected(null);
     refresh();
