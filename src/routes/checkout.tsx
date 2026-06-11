@@ -36,25 +36,6 @@ function CheckoutGuard() {
   return <Checkout />;
 }
 
-type Cobranca = {
-  txId: string;
-  emv: string;
-  qrcode_url: string | null;
-  status: string;
-  expiresAt: string;
-  amount: number;
-  cobrancaId: string;
-};
-
-type Boleto = {
-  id: string;
-  paymentUrl: string;
-  amount: number;
-  dueDate: string;
-  status: string;
-};
-
-type PaymentMethod = "pix" | "boleto" | "cartao";
 
 async function getFunctionErrorMessage(error: any, fallback: string) {
   const context = error?.context;
