@@ -94,7 +94,7 @@ export function ProfissionalFinanceiro() {
     const { data: sp } = await supabase
       .from("pagamento_splits")
       .select(
-        "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at)",
+        "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at,status)",
       )
       .eq("profissional_id", user.id)
       .order("created_at", { ascending: false })
