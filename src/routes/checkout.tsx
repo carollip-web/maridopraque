@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 
 import {
   ShieldCheck,
@@ -13,38 +14,83 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
+
+type OrcamentoRow = Pick<
+  Tables<"orcamentos">,
+  | "id"
+  | "status"
+  | "cliente_id"
+  | "service_name"
+  | "valor"
+  | "valor_servico"
+  | "taxa_material"
+  | "tipo_atendimento"
+>;
+type OrcamentoMaterialRow = Pick<
+  Tables<"orcamento_materiais">,
+  "id" | "nome_snapshot" | "quantidade" | "preco_unitario"
+>;
+type OrcamentoCheckout = OrcamentoRow & {
+  orcamento_materiais: OrcamentoMaterialRow[];
+};
+
+// SDK do Mercado Pago é carregado externamente — tipagem mínima.
+type MercadoPagoBrickController = { unmount?: () => void } | null;
+type MercadoPagoSDK = new (
+  publicKey: string,
+  options?: { locale?: string },
+) => {
+  bricks: () => {
+    create: (
+      kind: string,
+      containerId: string,
+      settings: Record<string, unknown>,
+    ) => Promise<MercadoPagoBrickController>;
+  };
+};
+declare global {
+  interface Window {
+    MercadoPago?: MercadoPagoSDK;
+  }
+}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 }
 
+const checkoutSearchSchema = z.object({
+  orcamentoId: z.string().optional(),
+  service: z.string().optional(),
+  step: z.coerce.number().int().min(1).optional().catch(1).default(1),
+});
+
 export const Route = createFileRoute("/checkout")({
   component: CheckoutGuard,
-  validateSearch: (search: Record<string, unknown>) => ({
-    orcamentoId: (search.orcamentoId as string) || undefined,
-    service: (search.service as string) || undefined,
-    step: Number(search.step) || 1,
-  }),
+  validateSearch: checkoutSearchSchema,
 });
 
 function CheckoutGuard() {
   return <Checkout />;
 }
 
-async function getFunctionErrorMessage(error: any, fallback: string) {
-  const context = error?.context;
+async function getFunctionErrorMessage(error: unknown, fallback: string) {
+  const err = error as { context?: unknown; message?: string } | null;
+  const context = err?.context;
   try {
     if (context instanceof Response) {
-      const payload = await context.clone().json();
+      const payload = (await context.clone().json()) as
+        | { message?: string; error?: string }
+        | null;
       return payload?.message || payload?.error || fallback;
     }
   } catch {
     // Mantém fallback abaixo.
   }
-  return error?.message || fallback;
+  return err?.message || fallback;
 }
 
 function Checkout() {
@@ -52,7 +98,7 @@ function Checkout() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [orcamento, setOrcamento] = useState<any>(null);
+  const [orcamento, setOrcamento] = useState<OrcamentoCheckout | null>(null);
   const [loading, setLoading] = useState(!!orcamentoId);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -62,7 +108,7 @@ function Checkout() {
     payerEmail: string;
   } | null>(null);
   const [brickError, setBrickError] = useState<string | null>(null);
-  const brickControllerRef = useRef<any>(null);
+  const brickControllerRef = useRef<MercadoPagoBrickController>(null);
   const brickMountedRef = useRef(false);
 
   useEffect(() => {
