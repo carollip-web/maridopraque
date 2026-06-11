@@ -30,24 +30,28 @@ import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
 import { MobilePanelBar } from "@/components/MobilePanelBar";
 
+const profissionalSearchSchema = z.object({
+  tab: z
+    .enum([
+      "pedidos",
+      "orcamentos",
+      "servicos",
+      "agenda",
+      "financeiro",
+      "avaliacoes",
+      "configuracoes",
+      "notificacoes",
+    ])
+    .optional()
+    .catch("pedidos"),
+  orcamentoId: z.string().optional(),
+  chat: z.string().optional(),
+});
+
+type ProfissionalSearch = z.infer<typeof profissionalSearchSchema>;
+
 export const Route = createFileRoute("/profissional")({
-  validateSearch: z.object({
-    tab: z
-      .enum([
-        "pedidos",
-        "orcamentos",
-        "servicos",
-        "agenda",
-        "financeiro",
-        "avaliacoes",
-        "configuracoes",
-        "notificacoes",
-      ])
-      .optional()
-      .catch("pedidos"),
-    orcamentoId: z.string().optional(),
-    chat: z.string().optional(),
-  }),
+  validateSearch: profissionalSearchSchema,
   component: ProfissionalArea,
 });
 
