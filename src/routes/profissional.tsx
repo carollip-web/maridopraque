@@ -236,8 +236,9 @@ function ProfissionalArea() {
     const pagosApoio = meusApoio.filter((o) => o.status === "pago" || o.status === "concluido");
     const aReceberOrcsApoio = meusApoio.filter((o) => o.status === "pago");
 
-    // Taxas: 15% plataforma + 5,49% MP (estimado para crédito à vista)
-    const TAXA_TOTAL = 0.15 + 0.0549;
+    // Taxas: 15% plataforma + 4,98% MP (estimado para crédito à vista)
+    // PIX: 0,99% | Boleto: R$3,49 fixo | Parcelado: 2,99%-3,09%
+    const TAXA_TOTAL = 0.15 + 0.0498;
     const liquido = (bruto: number) => Math.round(bruto * (1 - TAXA_TOTAL) * 100) / 100;
 
     const ganhosNormais = pagos.reduce((acc, o) => acc + liquido(Number(o.valor || 0)), 0);
