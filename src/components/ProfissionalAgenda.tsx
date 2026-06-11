@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,14 @@ import { AgendaCalendar } from "@/components/AgendaCalendar";
 type Bloqueio = { id: string; data_inicio: string; data_fim: string; motivo: string | null };
 type JanelaRow = Janela & { id: string };
 
+const EMPTY_JANELAS: JanelaRow[] = [];
+const EMPTY_BLOQS: Bloqueio[] = [];
+
 export function ProfissionalAgenda() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [janelas, setJanelas] = useState<JanelaRow[]>([]);
-  const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
+  const queryClient = useQueryClient();
+  const userId = user?.id;
+
   const [duracao, setDuracao] = useState(60);
 
   // form janela
@@ -29,95 +33,121 @@ export function ProfissionalAgenda() {
   const [bFim, setBFim] = useState("");
   const [bMotivo, setBMotivo] = useState("");
 
-  const carregar = async () => {
-    if (!user) return;
-    setLoading(true);
-    const [{ data: jans }, { data: blocs }, { data: perfil }] = await Promise.all([
-      supabase
-        .from("profissional_disponibilidade")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("dia_semana")
-        .order("hora_inicio"),
-      supabase
-        .from("profissional_bloqueios")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_inicio"),
-      supabase
-        .from("profissional_perfil")
-        .select("duracao_padrao_min")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-    ]);
-    setJanelas((jans as JanelaRow[]) ?? []);
-    setBloqueios((blocs as Bloqueio[]) ?? []);
-    setDuracao(perfil?.duracao_padrao_min ?? 60);
-    setLoading(false);
-  };
+  const agendaQuery = useQuery({
+    queryKey: ["profissional", "agenda-config", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const [{ data: jans }, { data: blocs }, { data: perfil }] = await Promise.all([
+        supabase
+          .from("profissional_disponibilidade")
+          .select("*")
+          .eq("user_id", userId!)
+          .order("dia_semana")
+          .order("hora_inicio"),
+        supabase
+          .from("profissional_bloqueios")
+          .select("*")
+          .eq("user_id", userId!)
+          .order("data_inicio"),
+        supabase
+          .from("profissional_perfil")
+          .select("duracao_padrao_min")
+          .eq("user_id", userId!)
+          .maybeSingle(),
+      ]);
+      return {
+        janelas: (jans as JanelaRow[]) ?? EMPTY_JANELAS,
+        bloqueios: (blocs as Bloqueio[]) ?? EMPTY_BLOQS,
+        duracao: perfil?.duracao_padrao_min ?? 60,
+      };
+    },
+  });
 
+  const janelas = agendaQuery.data?.janelas ?? EMPTY_JANELAS;
+  const bloqueios = agendaQuery.data?.bloqueios ?? EMPTY_BLOQS;
+  const loading = agendaQuery.isLoading;
+
+  // Sincroniza duracao do form com o servidor quando carrega
   useEffect(() => {
-    carregar();
-  }, [user?.id]);
+    if (agendaQuery.data) setDuracao(agendaQuery.data.duracao);
+  }, [agendaQuery.data]);
 
-  const addJanela = async () => {
-    if (!user || horaFim <= horaIni) {
-      toast.error("Horário final deve ser maior que o inicial.");
-      return;
-    }
-    const { error } = await supabase.from("profissional_disponibilidade").insert({
-      user_id: user.id,
-      dia_semana: diaSel,
-      hora_inicio: horaIni,
-      hora_fim: horaFim,
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["profissional", "agenda-config", userId],
     });
-    if (error) return toast.error("Erro ao adicionar", { description: error.message });
-    toast.success("Janela adicionada");
-    carregar();
-  };
 
-  const removerJanela = async (id: string) => {
-    const { error } = await supabase.from("profissional_disponibilidade").delete().eq("id", id);
-    if (error) return toast.error("Erro", { description: error.message });
-    carregar();
-  };
+  const addJanelaMut = useMutation({
+    mutationFn: async () => {
+      if (!userId || horaFim <= horaIni) throw new Error("Horário final deve ser maior que o inicial.");
+      const { error } = await supabase.from("profissional_disponibilidade").insert({
+        user_id: userId,
+        dia_semana: diaSel,
+        hora_inicio: horaIni,
+        hora_fim: horaFim,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Janela adicionada");
+      invalidate();
+    },
+    onError: (e: any) => toast.error("Erro ao adicionar", { description: e?.message }),
+  });
 
-  const addBloqueio = async () => {
-    if (!user || !bIni || !bFim) {
-      toast.error("Preencha início e fim do bloqueio.");
-      return;
-    }
-    if (new Date(bFim) <= new Date(bIni)) {
-      toast.error("Fim deve ser posterior ao início.");
-      return;
-    }
-    const { error } = await supabase.from("profissional_bloqueios").insert({
-      user_id: user.id,
-      data_inicio: bIni,
-      data_fim: bFim,
-      motivo: bMotivo || null,
-    });
-    if (error) return toast.error("Erro", { description: error.message });
-    setBIni("");
-    setBFim("");
-    setBMotivo("");
-    toast.success("Bloqueio criado");
-    carregar();
-  };
+  const removerJanelaMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("profissional_disponibilidade").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e: any) => toast.error("Erro", { description: e?.message }),
+  });
 
-  const removerBloqueio = async (id: string) => {
-    const { error } = await supabase.from("profissional_bloqueios").delete().eq("id", id);
-    if (error) return toast.error("Erro", { description: error.message });
-    carregar();
-  };
+  const addBloqueioMut = useMutation({
+    mutationFn: async () => {
+      if (!userId || !bIni || !bFim) throw new Error("Preencha início e fim do bloqueio.");
+      if (new Date(bFim) <= new Date(bIni)) throw new Error("Fim deve ser posterior ao início.");
+      const { error } = await supabase.from("profissional_bloqueios").insert({
+        user_id: userId,
+        data_inicio: bIni,
+        data_fim: bFim,
+        motivo: bMotivo || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setBIni("");
+      setBFim("");
+      setBMotivo("");
+      toast.success("Bloqueio criado");
+      invalidate();
+    },
+    onError: (e: any) => toast.error("Erro", { description: e?.message }),
+  });
+
+  const removerBloqueioMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("profissional_bloqueios").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (e: any) => toast.error("Erro", { description: e?.message }),
+  });
+
+  const addJanela = () => addJanelaMut.mutate();
+  const removerJanela = (id: string) => removerJanelaMut.mutate(id);
+  const addBloqueio = () => addBloqueioMut.mutate();
+  const removerBloqueio = (id: string) => removerBloqueioMut.mutate(id);
 
   const salvarDuracao = async (val: number) => {
-    if (!user) return;
+    if (!userId) return;
     setDuracao(val);
     await supabase
       .from("profissional_perfil")
       .update({ duracao_padrao_min: val })
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
+    invalidate();
   };
 
   if (loading) {

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -99,30 +100,31 @@ const PERIODOS = [
 
 export function ProfissionalFinanceiro() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [splits, setSplits] = useState<Split[]>([]);
+  const userId = user?.id;
   const [periodo, setPeriodo] = useState("30");
   const [statusFiltro, setStatusFiltro] = useState<string>("all");
   const [busca, setBusca] = useState("");
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data: sp } = await supabase
-      .from("pagamento_splits")
-      .select(
-        "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at,status)",
-      )
-      .eq("profissional_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(200);
-    setSplits((sp as any as Split[]) ?? []);
-    setLoading(false);
-  }, [user]);
+  const splitsQuery = useQuery({
+    queryKey: ["profissional", "splits", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<Split[]> => {
+      const { data, error } = await supabase
+        .from("pagamento_splits")
+        .select(
+          "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at,status)",
+        )
+        .eq("profissional_id", userId!)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data as any as Split[]) ?? [];
+    },
+  });
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const splits = splitsQuery.data ?? [];
+  const loading = splitsQuery.isLoading;
+  const load = () => splitsQuery.refetch();
 
   const splitsPeriodo = useMemo(() => {
     if (periodo === "all") return splits;
