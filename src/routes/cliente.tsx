@@ -72,7 +72,7 @@ function ClienteArea() {
       } catch {}
       navigate({
         to: "/cliente",
-        search: { tab: "pedidos", pedidoId: pendente } as any,
+        search: { tab: "pedidos", pedidoId: pendente } satisfies ClienteSearch,
         replace: true,
       });
     }
@@ -90,8 +90,8 @@ function ClienteArea() {
     // Limpa o parâmetro da URL sem recarregar a página
     navigate({
       to: "/cliente",
-      search: (prev: any) => {
-        const { payment: _, ...rest } = prev;
+      search: (prev: ClienteSearch) => {
+        const { payment: _payment, ...rest } = prev;
         return rest;
       },
       replace: true,
@@ -101,13 +101,13 @@ function ClienteArea() {
   const setActiveTab = (newTab: Tab) => {
     navigate({
       to: "/cliente",
-      search: (prev: any) => ({
+      search: (prev: ClienteSearch) => ({
         ...prev,
         tab: newTab,
         id: undefined,
         pedidoId: undefined,
         chat: undefined,
-        details: false,
+        details: undefined,
       }),
     });
   };
