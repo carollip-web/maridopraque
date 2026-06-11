@@ -236,12 +236,16 @@ function ProfissionalArea() {
     const pagosApoio = meusApoio.filter((o) => o.status === "pago" || o.status === "concluido");
     const aReceberOrcsApoio = meusApoio.filter((o) => o.status === "pago");
 
-    const ganhosNormais = pagos.reduce((acc, o) => acc + Number(o.valor || 0), 0);
-    const ganhosApoio = pagosApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+    // Taxas: 15% plataforma + 5,49% MP (estimado para crédito à vista)
+    const TAXA_TOTAL = 0.15 + 0.0549;
+    const liquido = (bruto: number) => Math.round(bruto * (1 - TAXA_TOTAL) * 100) / 100;
+
+    const ganhosNormais = pagos.reduce((acc, o) => acc + liquido(Number(o.valor || 0)), 0);
+    const ganhosApoio = pagosApoio.reduce((acc, o) => acc + liquido(Number((o as any).valor_apoio_feminino || 0)), 0);
     const ganhos = ganhosNormais + ganhosApoio;
 
-    const receberNormais = aReceberOrcs.reduce((acc, o) => acc + Number(o.valor || 0), 0);
-    const receberApoio = aReceberOrcsApoio.reduce((acc, o) => acc + Number((o as any).valor_apoio_feminino || 0), 0);
+    const receberNormais = aReceberOrcs.reduce((acc, o) => acc + liquido(Number(o.valor || 0)), 0);
+    const receberApoio = aReceberOrcsApoio.reduce((acc, o) => acc + liquido(Number((o as any).valor_apoio_feminino || 0)), 0);
     const receber = receberNormais + receberApoio;
 
     const ticket = (pagos.length + pagosApoio.length) > 0 ? ganhos / (pagos.length + pagosApoio.length) : 0;
