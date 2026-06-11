@@ -225,7 +225,7 @@ serve(async (req) => {
         pending: `${baseUrl}/checkout?orcamentoId=${orcamento.id}&payment=pending`,
       },
       auto_return: "approved",
-      notification_url: `${SUPABASE_URL}/functions/v1/mercado-pago-webhook`,
+      notification_url: `${SUPABASE_URL}/functions/v1/mercado-pago-webhook?orcamentoId=${orcamento.id}`,
       statement_descriptor: "MARIDO PRA QUE",
       payment_methods: {
         installments: 12,
