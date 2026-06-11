@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoRepasses";
 
+const TAXA_MP_CREDITO = 0.0549; // 5,49% para crédito à vista — fonte: mercadopago.com.br/costs-section
+
 type PagamentoRow = Database["public"]["Tables"]["pagamentos"]["Row"] & {
   orcamentos?: { service_name: string | null } | null;
 };
