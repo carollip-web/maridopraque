@@ -557,9 +557,9 @@ export function useProfissionalData(user: User | null) {
   });
 
   const recusarOrcamento = useCallback(
-    (id: string) => {
+    async (id: string) => {
       if (!userId) return;
-      recusarMutation.mutate(id);
+      await recusarMutation.mutateAsync(id).catch(() => {});
     },
     [userId, recusarMutation],
   );
