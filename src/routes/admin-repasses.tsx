@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoRepasses";
 
+const TAXA_MP_CREDITO = 0.0549; // 5,49% para crédito à vista — fonte: mercadopago.com.br/costs-section
+
 type PagamentoRow = Database["public"]["Tables"]["pagamentos"]["Row"] & {
   orcamentos?: { service_name: string | null } | null;
 };
@@ -176,18 +178,16 @@ function AdminPagamentosPage() {
 
   // Métricas rápidas no topo
   const metrics = useMemo(() => {
-    // Exclui pagamentos cancelados/falhos do volume bruto — só consideram-se transações reais
-    const ativos = pagamentos.filter(
-      (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "failed" && r.status !== "rejected",
+    // Apenas pagamentos efetivamente aprovados entram no volume bruto
+    const pagamentosAprovados = pagamentos.filter(
+      (r) => r.status === "approved" || r.status === "paid" || r.status === "pago",
     );
-    const brutoTotal = ativos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagos = pagamentos.filter((r) => r.status === "paid" || r.status === "approved");
-    const comissaoTotal = pagos.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
+    const brutoTotal = pagamentosAprovados.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
+    const comissaoTotal = pagamentosAprovados.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
     const pendenteTotal = pagamentos
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagoBruto = pagos.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const pagoTotal = pagoBruto - comissaoTotal; // líquido repassado ao profissional
+    const pagoTotal = brutoTotal - comissaoTotal; // líquido repassado ao profissional
 
     return { brutoTotal, comissaoTotal, pendenteTotal, pagoTotal };
   }, [pagamentos]);
@@ -430,6 +430,7 @@ function AdminPagamentosPage() {
                     <th className="px-6 py-4">Serviço / Profissional</th>
                     <th className="px-6 py-4 text-right">Valor Total</th>
                     <th className="px-6 py-4 text-right">Fee (15%)</th>
+                    <th className="px-6 py-4 text-right">Taxa MP (est.)</th>
                     <th className="px-6 py-4 text-right">Líquido Pro</th>
                     <th className="px-6 py-4 text-center">Status</th>
                   </tr>
@@ -444,7 +445,9 @@ function AdminPagamentosPage() {
                     };
                     
                     const fee = getMarketplaceFee(pag);
-                    const liquido = Number(pag.valor_total || 0) - fee;
+                    const valorTotal = Number(pag.valor_total || 0);
+                    const taxaMP = Math.round(valorTotal * TAXA_MP_CREDITO * 100) / 100;
+                    const liquido = Math.round((valorTotal - fee - taxaMP) * 100) / 100;
 
                     return (
                       <tr key={pag.id} className="hover:bg-slate-50/40 transition group">
@@ -504,6 +507,14 @@ function AdminPagamentosPage() {
                                <span className="text-slate-300">—</span>
                             )}
                           </div>
+                        </td>
+
+                        {/* Taxa MP estimada */}
+                        <td className="px-6 py-4 text-right">
+                          <div className="font-bold text-sm text-slate-400">
+                            − R$ {taxaMP.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-[10px] text-slate-300 mt-0.5">estimado</div>
                         </td>
 
                         {/* Líquido Pro */}
