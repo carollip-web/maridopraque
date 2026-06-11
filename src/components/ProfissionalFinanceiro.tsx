@@ -286,10 +286,10 @@ export function ProfissionalFinanceiro() {
           <TabsList className="bg-slate-100">
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="pago">Recebidos</TabsTrigger>
-            <TabsTrigger value="aguardando_conclusao">A liberar</TabsTrigger>
             <TabsTrigger value="estornado">Estornados</TabsTrigger>
           </TabsList>
         </Tabs>
+
 
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
