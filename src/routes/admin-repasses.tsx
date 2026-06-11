@@ -430,6 +430,7 @@ function AdminPagamentosPage() {
                     <th className="px-6 py-4">Serviço / Profissional</th>
                     <th className="px-6 py-4 text-right">Valor Total</th>
                     <th className="px-6 py-4 text-right">Fee (15%)</th>
+                    <th className="px-6 py-4 text-right">Taxa MP (est.)</th>
                     <th className="px-6 py-4 text-right">Líquido Pro</th>
                     <th className="px-6 py-4 text-center">Status</th>
                   </tr>
