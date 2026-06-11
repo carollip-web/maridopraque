@@ -249,11 +249,11 @@ function Checkout() {
             },
             callbacks: {
               onReady: () => console.info("[brick] ready"),
-              onError: (err: any) => {
+              onError: (err: { message?: string } | null) => {
                 console.error("[brick] error", err);
                 toast.error(err?.message || "Erro no formulário de pagamento.");
               },
-              onSubmit: async ({ formData }: any) => {
+              onSubmit: async ({ formData }: { formData: unknown }) => {
                 try {
                   setIsProcessing(true);
                   const { data: sessionData } = await supabase.auth.getSession();
