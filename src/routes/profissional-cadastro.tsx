@@ -882,11 +882,11 @@ function ProfissionalCadastro() {
                 className="rounded-full bg-brand text-white gap-2"
                 onClick={() => {
                   if (step === 1) {
-                    if (!form.nome.trim() || !form.cpf || !form.telefone || !form.cnpj) {
-                      toast.error("Preencha nome, CPF, CNPJ e telefone");
+                    if (!form.nome.trim() || !form.cpf || !form.telefone) {
+                      toast.error("Preencha nome, CPF e telefone");
                       return;
                     }
-                    if (!isValidCnpj(form.cnpj)) {
+                    if (form.cnpj && !isValidCnpj(form.cnpj)) {
                       toast.error("CNPJ inválido — confira os dígitos");
                       return;
                     }
