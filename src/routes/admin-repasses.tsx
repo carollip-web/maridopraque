@@ -445,7 +445,9 @@ function AdminPagamentosPage() {
                     };
                     
                     const fee = getMarketplaceFee(pag);
-                    const liquido = Number(pag.valor_total || 0) - fee;
+                    const valorTotal = Number(pag.valor_total || 0);
+                    const taxaMP = Math.round(valorTotal * TAXA_MP_CREDITO * 100) / 100;
+                    const liquido = Math.round((valorTotal - fee - taxaMP) * 100) / 100;
 
                     return (
                       <tr key={pag.id} className="hover:bg-slate-50/40 transition group">
