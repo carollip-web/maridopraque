@@ -4,19 +4,100 @@ import { Star, ShieldCheck, MapPin, ArrowLeft, MessageCircle } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
+type PerfilSEO = {
+  user_id: string;
+  nome: string;
+  bio: string | null;
+  foto_url: string | null;
+  cidade: string | null;
+  especialidades: string[] | null;
+} | null;
+
 export const Route = createFileRoute("/profissionais/perfil/$slug")({
-  head: ({ params }) => ({
-    meta: [
-      { title: `Profissional ${params.slug} — Marido pra Quê?` },
-      {
-        name: "description",
-        content:
-          "Perfil verificado de profissional Marido pra Quê?: avaliações, especialidades e contato.",
+  loader: async ({ params }): Promise<{ seo: PerfilSEO }> => {
+    const { data: p } = await supabase
+      .from("profissionais_publicos" as any)
+      .select("user_id, bio, foto_url, cidade, especialidades")
+      .eq("slug", params.slug)
+      .maybeSingle();
+    if (!p) return { seo: null };
+    const pub = p as unknown as {
+      user_id: string;
+      bio: string | null;
+      foto_url: string | null;
+      cidade: string | null;
+      especialidades: string[] | null;
+    };
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", pub.user_id)
+      .maybeSingle();
+    return {
+      seo: {
+        user_id: pub.user_id,
+        nome: prof?.nome || "Profissional verificado",
+        bio: pub.bio,
+        foto_url: pub.foto_url,
+        cidade: pub.cidade,
+        especialidades: pub.especialidades,
       },
-      { property: "og:title", content: `Profissional verificado — Marido pra Quê?` },
-      { property: "og:description", content: "Veja avaliações reais e solicite um orçamento." },
-    ],
-  }),
+    };
+  },
+  head: ({ params, loaderData }) => {
+    const seo = loaderData?.seo;
+    if (!seo) {
+      return {
+        meta: [
+          { title: "Perfil não encontrado — Marido pra Quê?" },
+          { name: "description", content: "Esse profissional pode ter saído da plataforma." },
+          { name: "robots", content: "noindex" },
+        ],
+      };
+    }
+    const especs = (seo.especialidades || []).slice(0, 4).join(", ");
+    const cidade = seo.cidade ? ` em ${seo.cidade}` : "";
+    const title = `${seo.nome}${cidade} — Marido pra Quê?`;
+    const description =
+      (seo.bio && seo.bio.trim().slice(0, 155)) ||
+      `${seo.nome} é profissional verificado Marido pra Quê?${cidade}${
+        especs ? `. Especialidades: ${especs}` : ""
+      }. Veja avaliações reais e solicite um orçamento.`;
+    const canonical = `https://www.maridopraque.com/profissionais/perfil/${params.slug}`;
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "profile" },
+      { property: "og:url", content: canonical },
+    ];
+    if (seo.foto_url) {
+      meta.push({ property: "og:image", content: seo.foto_url });
+      meta.push({ name: "twitter:image", content: seo.foto_url });
+    }
+    return {
+      meta,
+      links: [{ rel: "canonical", href: canonical }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: seo.nome,
+            description,
+            ...(seo.foto_url ? { image: seo.foto_url } : {}),
+            ...(seo.cidade
+              ? { address: { "@type": "PostalAddress", addressLocality: seo.cidade } }
+              : {}),
+            ...(especs ? { knowsAbout: especs.split(", ") } : {}),
+            url: canonical,
+          }),
+        },
+      ],
+    };
+  },
   component: PerfilProfissional,
 });
 
