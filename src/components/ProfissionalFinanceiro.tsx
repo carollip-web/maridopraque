@@ -258,11 +258,12 @@ export function ProfissionalFinanceiro() {
         />
         <StatBox
           icon={Clock}
-          label="Taxas no período"
-          value={brl(metricas.taxasTotal)}
-          sub="comissão + taxa Mercado Pago"
+          label="Aguardando pagamento"
+          value={brl(metricas.totalPendente)}
+          sub={`${metricas.qtdPendentes} pendente(s)`}
           accent="bg-amber-50 text-amber-700 border-amber-200"
         />
+
 
         <StatBox
           icon={CheckCircle2}
