@@ -105,17 +105,57 @@ serve(async (req) => {
       throw new Error("MERCADO_PAGO_ACCESS_TOKEN não configurado na Edge Function.");
     }
 
+    // Inicializar cliente Supabase com Service Role para bypass RLS (antes do MP p/ fallback)
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
     // 1. Consultar o Mercado Pago para validar o pagamento (Segurança: não confiar apenas no body)
-    console.log(`[Webhook ${requestId}] Consultando pagamento ${resourceId} no Mercado Pago...`);
-    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
+    console.log(`[Webhook ${requestId}] Consultando pagamento ${resourceId} no Mercado Pago (token marketplace)...`);
+    let mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
       },
     });
 
-    if (!mpRes.ok) {
+    // Fallback: split usa token do seller (profissional); tente buscar token dele via orcamentoId no query param
+    if (!mpRes.ok && (mpRes.status === 401 || mpRes.status === 404)) {
+      console.warn(`[Webhook ${requestId}] MP retornou ${mpRes.status} com token marketplace. Tentando fallback com token do profissional...`);
+      const orcamentoIdQp = searchParams.get("orcamentoId");
+      if (orcamentoIdQp) {
+        const { data: orc } = await supabase
+          .from("orcamentos")
+          .select("id, profissional_id")
+          .eq("id", orcamentoIdQp)
+          .maybeSingle();
+        if (orc?.profissional_id) {
+          const { data: perfil } = await supabase
+            .from("profissional_perfil")
+            .select("mp_access_token")
+            .eq("user_id", orc.profissional_id)
+            .maybeSingle();
+          if (perfil?.mp_access_token) {
+            console.log(`[Webhook ${requestId}] Refazendo consulta MP com token do profissional ${orc.profissional_id}...`);
+            mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
+              headers: { Authorization: `Bearer ${perfil.mp_access_token}` },
+            });
+            if (!mpRes.ok) {
+              const errorBody = await mpRes.text();
+              throw new Error(`Erro ao buscar pagamento no MP (token=profissional ${orc.profissional_id}): ${mpRes.status} - ${errorBody}`);
+            }
+          } else {
+            const errorBody = await mpRes.text();
+            throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; profissional sem mp_access_token): ${mpRes.status} - ${errorBody}`);
+          }
+        } else {
+          const errorBody = await mpRes.text();
+          throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; orcamento ${orcamentoIdQp} sem profissional): ${mpRes.status} - ${errorBody}`);
+        }
+      } else {
+        const errorBody = await mpRes.text();
+        throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; sem orcamentoId no query): ${mpRes.status} - ${errorBody}`);
+      }
+    } else if (!mpRes.ok) {
       const errorBody = await mpRes.text();
-      throw new Error(`Erro ao buscar pagamento no MP: ${mpRes.status} - ${errorBody}`);
+      throw new Error(`Erro ao buscar pagamento no MP (token=marketplace): ${mpRes.status} - ${errorBody}`);
     }
 
     const mpPayment = await mpRes.json();
@@ -131,8 +171,6 @@ serve(async (req) => {
       });
     }
 
-    // 2. Inicializar cliente Supabase com Service Role para bypass RLS
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // 3. Mapear status MP para nosso sistema
     let finalStatus = "pending";
