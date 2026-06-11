@@ -299,10 +299,13 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       statusAtual: orc.status,
     });
 
-    const { data: updatedRows, error: updateError } = await (supabase as any)
-      .rpc("marcar_orcamento_enviado", {
-        _orcamento_id: data.orcamentoId,
-      });
+    const rpcMarcarRes = (await supabase.rpc("marcar_orcamento_enviado", {
+      _orcamento_id: data.orcamentoId,
+    })) as unknown as {
+      data: MarcarOrcamentoEnviadoRow[] | MarcarOrcamentoEnviadoRow | null;
+      error: PostgrestError | null;
+    };
+    const { data: updatedRows, error: updateError } = rpcMarcarRes;
 
     if (updateError) {
       console.error("[enviarOrcamento] erro na RPC marcar_orcamento_enviado", {
