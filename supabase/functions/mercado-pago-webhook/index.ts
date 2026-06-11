@@ -277,10 +277,16 @@ serve(async (req) => {
           } : {})
         })
         .eq("id", orcamentoId)
-        .select("id, profissional_id, cliente_id, data_preferida, periodo_preferido, horario_preferido")
-        .single();
+        .select("id, profissional_id, cliente_id, data_preferida, periodo_preferido, horario_preferido, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (orcError) throw orcError;
+      if (!updatedOrc) {
+        console.warn(`[Webhook ${requestId}] Nenhum orçamento encontrado para id=${orcamentoId} ao atualizar como pago.`);
+        return new Response(JSON.stringify({ received: true, skipped: "orcamento_not_found" }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
       console.log(`[Webhook ${requestId}] Orçamento ${orcamentoId} atualizado com sucesso.`);
 
       // Criar/atualizar registro de split com valores reais
