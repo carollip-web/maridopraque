@@ -322,7 +322,7 @@ function ProfissionalCadastro() {
         especialidades: form.especialidades,
         cidade: form.cidade,
         cpf: form.cpf.replace(/\D/g, ""),
-        cnpj: form.cnpj.replace(/\D/g, ""),
+        cnpj: form.cnpj ? form.cnpj.replace(/\D/g, "") : null,
         data_nascimento: form.data_nascimento || null,
         telefone: form.telefone,
         cep: form.cep.replace(/\D/g, ""),
