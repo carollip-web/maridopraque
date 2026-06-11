@@ -21,7 +21,7 @@ export const Route = createFileRoute("/profissionais/perfil/$slug")({
       .eq("slug", params.slug)
       .maybeSingle();
     if (!p) return { seo: null };
-    const pub = p as {
+    const pub = p as unknown as {
       user_id: string;
       bio: string | null;
       foto_url: string | null;
