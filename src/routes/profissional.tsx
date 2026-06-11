@@ -132,7 +132,7 @@ function ProfissionalArea() {
     if (tab !== targetTab) {
       navigate({
         to: "/profissional",
-        search: (prev: any) => ({ ...prev, tab: targetTab, orcamentoId, chat }),
+        search: (prev: ProfissionalSearch) => ({ ...prev, tab: targetTab, orcamentoId, chat }),
       });
       return;
     }
