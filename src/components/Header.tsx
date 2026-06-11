@@ -61,6 +61,12 @@ export function Header() {
     const isMessage = isMessageNotification(notification);
     const link = notification.link ?? "";
 
+    if (link.startsWith("/admin")) {
+      const searchParams = new URL(link, window.location.origin).searchParams;
+      navigate({ to: "/admin", search: Object.fromEntries(searchParams) as any });
+      return;
+    }
+
     if (orcamentoId) {
       // Professionals always go to their own panel regardless of the stored link
       if (isProfissional) {
@@ -85,11 +91,6 @@ export function Header() {
         to: "/cliente",
         search: { tab: "pedidos", pedidoId: orcamentoId, chat: isMessage ? "1" : undefined } as any,
       });
-      return;
-    }
-
-    if (link.startsWith("/admin")) {
-      navigate({ to: "/admin" as any });
       return;
     }
 
