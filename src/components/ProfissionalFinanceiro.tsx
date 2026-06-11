@@ -287,10 +287,13 @@ export function ProfissionalFinanceiro() {
         <Tabs value={statusFiltro} onValueChange={setStatusFiltro} className="mb-3">
           <TabsList className="bg-slate-100">
             <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pago">Recebidos</TabsTrigger>
+            <TabsTrigger value="recebido">Recebidos</TabsTrigger>
+            <TabsTrigger value="pendente">Pendentes</TabsTrigger>
+            <TabsTrigger value="cancelado">Cancelados</TabsTrigger>
             <TabsTrigger value="estornado">Estornados</TabsTrigger>
           </TabsList>
         </Tabs>
+
 
 
         <div className="relative mb-3">
