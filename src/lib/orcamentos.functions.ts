@@ -1,10 +1,41 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { requireAdminLevel } from "./admin-permissions.server";
-import { isProfissionalCompativelComTipoAtendimento } from "./atendimento.compat";
+import {
+  isProfissionalCompativelComTipoAtendimento,
+  type GeneroProfissional,
+  type TipoAtendimento,
+} from "./atendimento.compat";
+
+type OrcamentoStatus = Database["public"]["Enums"]["orcamento_status"];
+type PropostaRow = Database["public"]["Tables"]["propostas"]["Row"];
+
+/** Forma usada para validar status/posse e compatibilidade ao enviar uma proposta. */
+interface OrcamentoParaEnvio {
+  id: string;
+  status: OrcamentoStatus;
+  cliente_id: string | null;
+  service_id: string | null;
+  service_name: string | null;
+  tipo_atendimento: string | null;
+}
+
+/** Perfil do profissional usado na validação de envio de proposta. */
+interface PerfilProfissionalParaEnvio {
+  genero: string | null;
+  oferece_apoio_feminino: boolean | null;
+  mp_user_id: string | null;
+}
+
+/** Resultado mínimo lido da RPC `marcar_orcamento_enviado` (Returns Json no DB). */
+interface MarcarOrcamentoEnviadoRow {
+  id?: string;
+  status: OrcamentoStatus;
+}
 
 const materialItemSchema = z.object({
   materialId: z.string().uuid(),
