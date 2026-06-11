@@ -113,18 +113,6 @@ serve(async (req) => {
     return json({ ok: true, gateway: "mercado_pago", refundId: parsed?.id, valor: valorReembolso });
   }
 
-  // BTG (placeholder — integração de estorno PIX/Boleto não homologada)
-  if ((pag.gateway || "").toLowerCase().includes("btg")) {
-    console.warn("[processar-estorno] BTG: estorno automático ainda não implementado. Marcando para processamento manual.");
-    await admin.from("notificacoes").insert({
-      user_id: orc.cliente_id,
-      titulo: "Reembolso em processamento",
-      mensagem: `Seu reembolso de R$ ${valorReembolso.toFixed(2)} via BTG foi registrado e será processado manualmente pelo financeiro em até 5 dias úteis.`,
-      orcamento_id: orcamentoId,
-      link: `/cliente?tab=pedidos&pedidoId=${orcamentoId}`,
-    });
-    return json({ ok: true, gateway: "btg", manual: true, valor: valorReembolso });
-  }
 
   return json({ error: `Gateway desconhecido: ${pag.gateway}` }, 400);
 });
