@@ -191,7 +191,7 @@ serve(async (req) => {
           const { data: admins } = await admin
             .from("user_roles")
             .select("user_id")
-            .eq("role", "admin");
+            .in("role", ["admin", "super_admin"]);
           const rows = (admins || []).map((a: any) => ({
             user_id: a.user_id,
             titulo: "Estorno pendente — saldo insuficiente",
