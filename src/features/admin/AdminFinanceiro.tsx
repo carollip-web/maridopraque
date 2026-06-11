@@ -3,8 +3,9 @@ import {
   ArrowUpRight,
   Calendar,
   Clock,
-  Landmark,
-  Wallet,
+
+
+
   CheckCircle2,
   Loader2,
   CreditCard,
@@ -30,17 +31,8 @@ import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoR
 // Taxa estimada do Mercado Pago para crédito à vista
 const TAXA_MP_CREDITO = 0.0549;
 
-type SaqueRow = {
-  id: string;
-  profissional_id: string;
-  valor: number;
-  status: string;
-  chave_pix: string | null;
-  observacao: string | null;
-  solicitado_em: string;
-  comprovante_url: string | null;
-  profissional_nome?: string | null;
-};
+
+
 
 type PagamentoRow = {
   id: string;
@@ -97,27 +89,26 @@ export function AdminFinanceiro() {
   const [refreshing, setRefreshing] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
   const [profiles, setProfiles] = useState<ProfMap>({});
-  const [saques, setSaques] = useState<SaqueRow[]>([]);
   const [ledger, setLedger] = useState<{
     totalRecebido: number;
     totalTaxaPlat: number;
-    totalAPagar: number;
-  }>({ totalRecebido: 0, totalTaxaPlat: 0, totalAPagar: 0 });
+  }>({ totalRecebido: 0, totalTaxaPlat: 0 });
 
   // UI state
-  const [tab, setTab] = useState<"mp" | "apoio" | "saques">("mp");
+  const [tab, setTab] = useState<"mp" | "apoio">("mp");
+
   const [periodo, setPeriodo] = useState<string>("30");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [search, setSearch] = useState("");
-  const [comprovantes, setComprovantes] = useState<Record<string, string>>({});
-  const [processandoId, setProcessandoId] = useState<string | null>(null);
+
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadAll = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     else setRefreshing(true);
 
-    const [{ data: pgs }, { data: splits }, { data: sqRows }] = await Promise.all([
+    const [{ data: pgs }, { data: splits }] = await Promise.all([
       supabase
         .from("pagamentos")
         .select(
@@ -130,13 +121,6 @@ export function AdminFinanceiro() {
       supabase
         .from("pagamento_splits")
         .select("valor_total, taxa_plataforma, taxa_gateway, valor_profissional, status"),
-      supabase
-        .from("profissional_saques")
-        .select(
-          "id, profissional_id, valor, status, chave_pix, observacao, solicitado_em, comprovante_url",
-        )
-        .order("solicitado_em", { ascending: false })
-        .limit(100),
     ]);
 
     const list = (pgs || []) as PagamentoRow[];
@@ -148,7 +132,6 @@ export function AdminFinanceiro() {
         [
           ...list.map((r) => r.profissional_id).filter(Boolean) as string[],
           ...list.map((r) => r.cliente_id).filter(Boolean) as string[],
-          ...(sqRows || []).map((s: any) => s.profissional_id).filter(Boolean),
         ],
       ),
     );
@@ -164,27 +147,19 @@ export function AdminFinanceiro() {
       setProfiles(map);
     }
 
-    // Saques
-    const sList = (sqRows || []) as SaqueRow[];
-    setSaques(sList);
-
-    // Ledger (pagamento_splits)
+    // Ledger (pagamento_splits) — splits MP são liquidados automaticamente
     const sp = splits || [];
     const totalRecebido = sp.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
     const totalTaxaPlat = sp.reduce(
       (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
       0,
     );
-    const totalAPagar = sp
-      .filter((x: any) =>
-        ["aguardando_conclusao", "disponivel", "solicitado"].includes(x.status),
-      )
-      .reduce((s, x: any) => s + Number(x.valor_profissional || 0), 0);
-    setLedger({ totalRecebido, totalTaxaPlat, totalAPagar });
+    setLedger({ totalRecebido, totalTaxaPlat });
 
     setLoading(false);
     setRefreshing(false);
   }, []);
+
 
   useEffect(() => {
     loadAll();
@@ -229,13 +204,8 @@ export function AdminFinanceiro() {
     };
   }, [pagamentosPeriodo]);
 
-  const saquesPendentes = useMemo(
-    () =>
-      saques
-        .filter((s) => s.status === "solicitado" || s.status === "aprovado")
-        .reduce((acc, s) => acc + Number(s.valor || 0), 0),
-    [saques],
-  );
+
+
 
   // Tabela filtrada
   const pagamentosFiltrados = useMemo(() => {
@@ -261,58 +231,8 @@ export function AdminFinanceiro() {
     });
   }, [pagamentosPeriodo, statusFilter, search, profiles]);
 
-  // Saques actions
-  const atualizarSaque = async (
-    id: string,
-    patch: { status: string; comprovante_url?: string | null; aprovado_em?: string },
-  ) => {
-    const { error } = await supabase.from("profissional_saques").update(patch).eq("id", id);
-    if (error) {
-      toast.error("Erro: " + error.message);
-      return false;
-    }
-    return true;
-  };
 
-  const aprovar = async (id: string) => {
-    setProcessandoId(id);
-    const ok = await atualizarSaque(id, {
-      status: "aprovado",
-      aprovado_em: new Date().toISOString(),
-    });
-    setProcessandoId(null);
-    if (ok) {
-      toast.success("Saque aprovado");
-      loadAll(false);
-    }
-  };
 
-  const recusar = async (id: string) => {
-    if (!confirm("Recusar este saque?")) return;
-    setProcessandoId(id);
-    const ok = await atualizarSaque(id, { status: "recusado" });
-    setProcessandoId(null);
-    if (ok) {
-      toast.success("Saque recusado");
-      loadAll(false);
-    }
-  };
-
-  const marcarPago = async (id: string) => {
-    setProcessandoId(id);
-    const comp = comprovantes[id];
-    if (comp) {
-      await atualizarSaque(id, { status: "aprovado", comprovante_url: comp });
-    }
-    const { error } = await supabase.rpc("processar_saque_pago", { _saque_id: id });
-    setProcessandoId(null);
-    if (error) {
-      toast.error("Erro ao marcar pago: " + error.message);
-      return;
-    }
-    toast.success("Saque pago e splits liquidados");
-    loadAll(false);
-  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -338,7 +258,7 @@ export function AdminFinanceiro() {
             Painel Financeiro
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Visão unificada de pagamentos Mercado Pago, repasses e saques.
+            Visão unificada de pagamentos e splits Mercado Pago. Repasses ao profissional são automáticos.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -407,13 +327,6 @@ export function AdminFinanceiro() {
           sub={`${metrics.qtdPendentes} aguardando`}
           tone="amber"
         />
-        <KpiCard
-          icon={Wallet}
-          label="Saques a Pagar"
-          value={brl(saquesPendentes)}
-          sub={`${saques.filter((s) => s.status === "solicitado" || s.status === "aprovado").length} solicitações`}
-          tone="brand"
-        />
       </div>
 
       {/* Ledger consolidado */}
@@ -428,12 +341,6 @@ export function AdminFinanceiro() {
           value={brl(ledger.totalTaxaPlat)}
           hint="Plataforma + gateway"
           accent="text-emerald-600"
-        />
-        <MiniCard
-          label="Ledger · A pagar"
-          value={brl(ledger.totalAPagar)}
-          hint="Disponível + em saque"
-          accent="text-amber-600"
         />
         {metrics.apoio > 0 && (
           <MiniCard
@@ -458,16 +365,9 @@ export function AdminFinanceiro() {
           >
             Apoio Feminino
           </TabBtn>
-          <TabBtn active={tab === "saques"} onClick={() => setTab("saques")} icon={Landmark}>
-            Saques{" "}
-            {saques.filter((s) => s.status === "solicitado").length > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center h-4 min-w-[16px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
-                {saques.filter((s) => s.status === "solicitado").length}
-              </span>
-            )}
-          </TabBtn>
         </div>
       </div>
+
 
       {/* CONTEÚDO DAS TABS */}
       {tab === "mp" && (
@@ -625,117 +525,8 @@ export function AdminFinanceiro() {
         </section>
       )}
 
-      {tab === "saques" && (
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <div className="p-5 border-b border-slate-100 font-bold flex items-center gap-2">
-            <Landmark className="h-4 w-4 text-brand" /> Saques solicitados pelos profissionais
-          </div>
-          <div className="p-5 space-y-3">
-            {saques.length === 0 && (
-              <p className="text-sm text-slate-400 py-8 text-center">
-                Nenhum saque solicitado.
-              </p>
-            )}
-            {saques.map((s) => {
-              const isFinal =
-                s.status === "pago" || s.status === "recusado" || s.status === "cancelado";
-              const profNome =
-                profiles[s.profissional_id]?.nome || s.profissional_nome || "Profissional";
-              return (
-                <div
-                  key={s.id}
-                  className="border border-slate-100 rounded-xl p-4 hover:border-slate-200 transition"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-900">{profNome}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {new Date(s.solicitado_em).toLocaleString("pt-BR")} · Pix:{" "}
-                        {s.chave_pix || "—"}
-                      </p>
-                      {s.observacao && (
-                        <p className="text-xs text-slate-500 mt-1">Obs: {s.observacao}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold tabular-nums text-slate-900">
-                        {brl(Number(s.valor))}
-                      </p>
-                      <span
-                        className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                          s.status === "pago"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : s.status === "solicitado"
-                              ? "bg-amber-100 text-amber-700"
-                              : s.status === "aprovado"
-                                ? "bg-sky-100 text-sky-700"
-                                : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {s.status}
-                      </span>
-                    </div>
-                  </div>
 
-                  {!isFinal && (
-                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
-                      <Input
-                        placeholder="URL do comprovante (opcional)"
-                        value={comprovantes[s.id] ?? s.comprovante_url ?? ""}
-                        onChange={(e) =>
-                          setComprovantes((m) => ({ ...m, [s.id]: e.target.value }))
-                        }
-                        className="text-xs"
-                      />
-                      {s.status === "solicitado" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => aprovar(s.id)}
-                          disabled={processandoId === s.id}
-                        >
-                          Aprovar
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        onClick={() => marcarPago(s.id)}
-                        disabled={processandoId === s.id}
-                      >
-                        {processandoId === s.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        )}
-                        <span className="ml-1">Marcar pago</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => recusar(s.id)}
-                        disabled={processandoId === s.id}
-                      >
-                        Recusar
-                      </Button>
-                    </div>
-                  )}
-                  {s.comprovante_url && (
-                    <a
-                      href={s.comprovante_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-brand underline mt-2 inline-block"
-                    >
-                      Ver comprovante
-                    </a>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+
     </div>
   );
 }

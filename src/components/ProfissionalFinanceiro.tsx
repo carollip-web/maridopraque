@@ -132,10 +132,7 @@ export function ProfissionalFinanceiro() {
     };
 
     const recebidos = splitsPeriodo.filter(
-      (s) => isPagoMP(s) && s.status !== "estornado" && s.status !== "cancelado",
-    );
-    const aLiberar = splitsPeriodo.filter(
-      (s) => !isPagoMP(s) && s.status === "aguardando_conclusao",
+      (s) => s.status !== "estornado" && s.status !== "cancelado",
     );
 
     const liquidoRecebido = recebidos.reduce(
@@ -144,10 +141,6 @@ export function ProfissionalFinanceiro() {
     );
     const brutoRecebido = recebidos.reduce(
       (acc, s) => acc + Number(s.valor_total || 0),
-      0,
-    );
-    const totalALiberar = aLiberar.reduce(
-      (acc, s) => acc + Number(s.valor_profissional || 0),
       0,
     );
     const taxasTotal = recebidos.reduce(
@@ -162,20 +155,24 @@ export function ProfissionalFinanceiro() {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
-      .filter((s) => isPagoMP(s) && new Date(s.created_at) >= inicioMes)
+      .filter(
+        (s) =>
+          s.status !== "estornado" &&
+          s.status !== "cancelado" &&
+          new Date(s.created_at) >= inicioMes,
+      )
       .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
 
     return {
       liquidoRecebido,
       brutoRecebido,
-      totalALiberar,
       taxasTotal,
       ticket,
       noMes,
       qtdRecebidos: recebidos.length,
-      qtdALiberar: aLiberar.length,
     };
   }, [splitsPeriodo, splits]);
+
 
   const listaFiltrada = useMemo(() => {
     let l = splitsPeriodo;
@@ -259,11 +256,12 @@ export function ProfissionalFinanceiro() {
         />
         <StatBox
           icon={Clock}
-          label="A liberar"
-          value={brl(metricas.totalALiberar)}
-          sub={`${metricas.qtdALiberar} serviço(s) em andamento`}
+          label="Taxas no período"
+          value={brl(metricas.taxasTotal)}
+          sub="comissão + taxa Mercado Pago"
           accent="bg-amber-50 text-amber-700 border-amber-200"
         />
+
         <StatBox
           icon={CheckCircle2}
           label="Ticket médio"
@@ -288,10 +286,10 @@ export function ProfissionalFinanceiro() {
           <TabsList className="bg-slate-100">
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="pago">Recebidos</TabsTrigger>
-            <TabsTrigger value="aguardando_conclusao">A liberar</TabsTrigger>
             <TabsTrigger value="estornado">Estornados</TabsTrigger>
           </TabsList>
         </Tabs>
+
 
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -324,18 +322,13 @@ export function ProfissionalFinanceiro() {
               </thead>
               <tbody>
                 {listaFiltrada.map((sp) => {
-                  const pagPaid =
-                    !!sp.pagamentos?.paid_at ||
-                    sp.pagamentos?.status === "paid" ||
-                    sp.pagamentos?.status === "pago" ||
-                    sp.pagamentos?.status === "approved";
-                  const meta =
-                    pagPaid && sp.status === "aguardando_conclusao"
-                      ? { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" }
-                      : SPLIT_STATUS[sp.status] ?? {
-                          label: sp.status,
-                          color: "bg-slate-100 text-slate-700",
-                        };
+                  const isEstornado = sp.status === "estornado" || sp.status === "cancelado";
+                  const meta = isEstornado
+                    ? SPLIT_STATUS[sp.status] ?? {
+                        label: sp.status,
+                        color: "bg-slate-100 text-slate-700",
+                      }
+                    : { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" };
                   const mm = methodMeta(
                     sp.pagamentos?.payment_method_id ?? null,
                     sp.pagamentos?.metodo ?? null,
@@ -369,12 +362,8 @@ export function ProfissionalFinanceiro() {
                         >
                           {meta.label}
                         </span>
-                        {!pagPaid && sp.status === "aguardando_conclusao" && sp.disponivel_em && (
-                          <div className="text-[10px] text-slate-500 mt-0.5">
-                            libera {new Date(sp.disponivel_em).toLocaleDateString("pt-BR")}
-                          </div>
-                        )}
                       </td>
+
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
                         {brl(Number(sp.valor_total))}
                       </td>
