@@ -430,7 +430,7 @@ function ProfissionalArea() {
                   setTab={(t) =>
                     navigate({
                       to: "/profissional",
-                      search: (prev: any) => ({ ...prev, tab: t }),
+                      search: (prev: ProfissionalSearch) => ({ ...prev, tab: t }),
                     })
                   }
                   setPedidosSubTab={setPedidosSubTab}
