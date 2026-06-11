@@ -167,7 +167,7 @@ function ClienteArea() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const n: any = payload.new;
+          const n = payload.new as Tables<"notificacoes">;
           const titulo = String(n?.titulo || "Notificação");
           const mensagem = String(n?.mensagem || "");
           // Destaca cancelamento/multa/reembolso/disputa
