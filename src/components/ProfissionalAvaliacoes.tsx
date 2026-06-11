@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,58 +20,84 @@ type Avaliacao = {
   service_name: string;
 };
 
+const EMPTY: Avaliacao[] = [];
+
 export function ProfissionalAvaliacoes() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [avs, setAvs] = useState<Avaliacao[]>([]);
+  const queryClient = useQueryClient();
+  const userId = user?.id;
+
   const [filtro, setFiltro] = useState<"todas" | "pendentes" | "5" | "4" | "baixas">("todas");
   const [editing, setEditing] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  const carregar = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data: avals } = await supabase
-      .from("avaliacoes")
-      .select(
-        "id, nota, comentario, created_at, cliente_id, orcamento_id, resposta_profissional, resposta_em",
-      )
-      .eq("profissional_id", user.id)
-      .order("created_at", { ascending: false });
-    const list = avals ?? [];
-    const cliIds = Array.from(new Set(list.map((a: any) => a.cliente_id)));
-    const orcIds = Array.from(new Set(list.map((a: any) => a.orcamento_id)));
-    const [{ data: profs }, { data: orcs }] = await Promise.all([
-      cliIds.length
-        ? supabase.from("profiles").select("id, nome").in("id", cliIds)
-        : { data: [] as any[] },
-      orcIds.length
-        ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds)
-        : { data: [] as any[] },
-    ]);
-    const nomeMap: Record<string, string> = {};
-    (profs ?? []).forEach((p: any) => {
-      nomeMap[p.id] = p.nome ?? "Cliente";
-    });
-    const servMap: Record<string, string> = {};
-    (orcs ?? []).forEach((o: any) => {
-      servMap[o.id] = o.service_name;
-    });
-
-    setAvs(
-      list.map((a: any) => ({
+  const avsQuery = useQuery({
+    queryKey: ["profissional", "avaliacoes-detalhadas", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<Avaliacao[]> => {
+      const { data: avals } = await supabase
+        .from("avaliacoes")
+        .select(
+          "id, nota, comentario, created_at, cliente_id, orcamento_id, resposta_profissional, resposta_em",
+        )
+        .eq("profissional_id", userId!)
+        .order("created_at", { ascending: false });
+      const list = avals ?? [];
+      const cliIds = Array.from(new Set(list.map((a: any) => a.cliente_id)));
+      const orcIds = Array.from(new Set(list.map((a: any) => a.orcamento_id)));
+      const [{ data: profs }, { data: orcs }] = await Promise.all([
+        cliIds.length
+          ? supabase.from("profiles").select("id, nome").in("id", cliIds)
+          : Promise.resolve({ data: [] as any[] }),
+        orcIds.length
+          ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const nomeMap: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => {
+        nomeMap[p.id] = p.nome ?? "Cliente";
+      });
+      const servMap: Record<string, string> = {};
+      (orcs ?? []).forEach((o: any) => {
+        servMap[o.id] = o.service_name;
+      });
+      return list.map((a: any) => ({
         ...a,
         cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
         service_name: servMap[a.orcamento_id] ?? "Serviço",
-      })),
-    );
-    setLoading(false);
-  };
+      }));
+    },
+  });
 
-  useEffect(() => {
-    carregar();
-  }, [user?.id]);
+  const avs = avsQuery.data ?? EMPTY;
+  const loading = avsQuery.isLoading;
+
+  const responderMutation = useMutation({
+    mutationFn: async ({ id, texto }: { id: string; texto: string }) => {
+      const { error } = await supabase
+        .from("avaliacoes")
+        .update({
+          resposta_profissional: texto,
+          resposta_em: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Resposta publicada!");
+      setEditing(null);
+      setResposta("");
+      queryClient.invalidateQueries({
+        queryKey: ["profissional", "avaliacoes-detalhadas", userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profissional", "avaliacoes", userId],
+      });
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao publicar resposta", { description: err?.message });
+    },
+  });
 
   const filtradas = useMemo(() => {
     return avs.filter((a) => {
@@ -103,27 +130,16 @@ export function ProfissionalAvaliacoes() {
     setResposta("");
   };
 
-  const salvarResposta = async (id: string) => {
+  const salvarResposta = (id: string) => {
     const txt = resposta.trim();
     if (txt.length < 5) {
       toast.error("Sua resposta precisa ter pelo menos 5 caracteres.");
       return;
     }
-    setSaving(true);
-    const { error } = await supabase
-      .from("avaliacoes")
-      .update({ resposta_profissional: txt, resposta_em: new Date().toISOString() })
-      .eq("id", id);
-    setSaving(false);
-    if (error) {
-      toast.error("Erro ao publicar resposta", { description: error.message });
-      return;
-    }
-    toast.success("Resposta publicada!");
-    setEditing(null);
-    setResposta("");
-    carregar();
+    responderMutation.mutate({ id, texto: txt });
   };
+
+  const saving = responderMutation.isPending;
 
   if (loading) {
     return (
