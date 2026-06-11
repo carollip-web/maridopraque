@@ -237,7 +237,7 @@ export function PixRepasseSettings() {
             </h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            Gerencie as informações da chave Pix que você utiliza para receber os repasses do BTG.
+            Gerencie as informações da chave Pix que você utiliza para receber os repasses.
           </p>
         </div>
         <div>

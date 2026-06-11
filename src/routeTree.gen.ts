@@ -40,7 +40,6 @@ import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$catego
 import { Route as MpCallbackRouteImport } from './routes/mp.callback'
 import { Route as LoginProfissionalRouteImport } from './routes/login_.profissional'
 import { Route as CheckoutSimularRouteImport } from './routes/checkout.simular'
-import { Route as BtgCallbackRouteImport } from './routes/btg.callback'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
@@ -199,11 +198,6 @@ const CheckoutSimularRoute = CheckoutSimularRouteImport.update({
   path: '/simular',
   getParentRoute: () => CheckoutRoute,
 } as any)
-const BtgCallbackRoute = BtgCallbackRouteImport.update({
-  id: '/btg/callback',
-  path: '/btg/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRedirectRoute = AuthRedirectRouteImport.update({
   id: '/auth/redirect',
   path: '/auth/redirect',
@@ -244,7 +238,6 @@ export interface FileRoutesByFullPath {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -280,7 +273,6 @@ export interface FileRoutesByTo {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -317,7 +309,6 @@ export interface FileRoutesById {
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
   '/auth/redirect': typeof AuthRedirectRoute
-  '/btg/callback': typeof BtgCallbackRoute
   '/checkout/simular': typeof CheckoutSimularRoute
   '/login_/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -355,7 +346,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/btg/callback'
     | '/checkout/simular'
     | '/login/profissional'
     | '/mp/callback'
@@ -391,7 +381,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/btg/callback'
     | '/checkout/simular'
     | '/login/profissional'
     | '/mp/callback'
@@ -427,7 +416,6 @@ export interface FileRouteTypes {
     | '/termo-adesao'
     | '/termos'
     | '/auth/redirect'
-    | '/btg/callback'
     | '/checkout/simular'
     | '/login_/profissional'
     | '/mp/callback'
@@ -464,7 +452,6 @@ export interface RootRouteChildren {
   TermoAdesaoRoute: typeof TermoAdesaoRoute
   TermosRoute: typeof TermosRoute
   AuthRedirectRoute: typeof AuthRedirectRoute
-  BtgCallbackRoute: typeof BtgCallbackRoute
   LoginProfissionalRoute: typeof LoginProfissionalRoute
   MpCallbackRoute: typeof MpCallbackRoute
 }
@@ -688,13 +675,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSimularRouteImport
       parentRoute: typeof CheckoutRoute
     }
-    '/btg/callback': {
-      id: '/btg/callback'
-      path: '/btg/callback'
-      fullPath: '/btg/callback'
-      preLoaderRoute: typeof BtgCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/redirect': {
       id: '/auth/redirect'
       path: '/auth/redirect'
@@ -777,19 +757,9 @@ const rootRouteChildren: RootRouteChildren = {
   TermoAdesaoRoute: TermoAdesaoRoute,
   TermosRoute: TermosRoute,
   AuthRedirectRoute: AuthRedirectRoute,
-  BtgCallbackRoute: BtgCallbackRoute,
   LoginProfissionalRoute: LoginProfissionalRoute,
   MpCallbackRoute: MpCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
