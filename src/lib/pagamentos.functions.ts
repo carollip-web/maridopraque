@@ -1,10 +1,46 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { PostgrestError } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const checkoutSchema = z.object({
   orcamentoId: z.string().uuid(),
 });
+
+/** Linha retornada pela RPC `criar_checkout_pagamento`. */
+interface CriarCheckoutPagamentoRow {
+  id: string;
+}
+
+/** Linha retornada pela RPC `simular_pagamento_aprovado_cliente`. */
+interface SimularPagamentoAprovadoRow {
+  ok: boolean;
+  orcamento_id: string;
+}
+
+/** Item de material lido para o cálculo do total. */
+interface OrcamentoMaterialPreco {
+  id: string;
+  nome_snapshot: string | null;
+  preco_unitario: number | null;
+  quantidade: number | null;
+}
+
+/** Forma mínima da resposta de criação de preferência do Mercado Pago. */
+interface MercadoPagoPreferenceResponse {
+  id?: string;
+  init_point?: string;
+  message?: string;
+}
+
+function errorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "object" && e !== null && "message" in e) {
+    const m = (e as { message?: unknown }).message;
+    if (typeof m === "string") return m;
+  }
+  return fallback;
+}
 
 export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -13,13 +49,13 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // 1. Buscar orçamento e validar posse/status
-    const { data: orc, error: e1 } = (await supabase
+    const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
       .select(
         "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material",
       )
       .eq("id", data.orcamentoId)
-      .single()) as any;
+      .single();
 
     if (e1 || !orc) {
       console.error("[iniciarPagamentoOrcamento] Orçamento não encontrado:", data.orcamentoId);
@@ -36,10 +72,10 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       throw new Error(`Orçamento em status "${orc.status}" não está pronto para pagamento.`);
     }
 
-    const { data: materiais, error: materiaisError } = (await supabase
+    const { data: materiais, error: materiaisError } = await supabase
       .from("orcamento_materiais")
       .select("id, nome_snapshot, preco_unitario, quantidade")
-      .eq("orcamento_id", data.orcamentoId)) as any;
+      .eq("orcamento_id", data.orcamentoId);
 
     if (materiaisError) {
       console.error("[iniciarPagamentoOrcamento] Erro ao buscar materiais:", materiaisError);
@@ -49,8 +85,8 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     // 2. Calcular valores no servidor (Fonte de verdade)
     // Modelo: cobrança integral antecipada. Valor fica retido até conclusão.
     const valorServico = Number(orc.valor_servico || 0);
-    const valorMateriais = (materiais || []).reduce(
-      (acc: number, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
+    const valorMateriais = ((materiais ?? []) as OrcamentoMaterialPreco[]).reduce(
+      (acc, m) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
       0,
     );
     const valorTotal = valorServico + valorMateriais;
@@ -108,33 +144,36 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
         }),
       });
 
-      const mpData = await mpResponse.json();
+      const mpData = (await mpResponse.json()) as MercadoPagoPreferenceResponse;
       if (!mpResponse.ok) {
         console.error("[Mercado Pago] Erro API:", mpData);
         throw new Error(mpData.message || "Erro na comunicação com Mercado Pago.");
       }
 
-      checkoutUrl = mpData.init_point;
-      preferenceId = mpData.id;
+      checkoutUrl = mpData.init_point ?? "";
+      preferenceId = mpData.id ?? preferenceId;
     }
 
     try {
       // 4. Criar registro de pagamento no servidor usando RPC.
-      const { data: pagRows, error: pagError } = await (supabase as any)
-        .rpc("criar_checkout_pagamento", {
-          _orcamento_id: orc.id,
-          _valor_total: valorTotal,
-          _valor_sinal: valorSinal,
-          _valor_restante: valorRestante,
-          _gateway: gateway,
-          _gateway_preference_id: preferenceId,
-          _checkout_url: checkoutUrl || "",
-          _metadata: {
-            service_name: orc.service_name,
-            mp_preference_id: preferenceId,
-            initiated_at: new Date().toISOString(),
-          },
-        });
+      const rpcRes = (await supabase.rpc("criar_checkout_pagamento" as never, {
+        _orcamento_id: orc.id,
+        _valor_total: valorTotal,
+        _valor_sinal: valorSinal,
+        _valor_restante: valorRestante,
+        _gateway: gateway,
+        _gateway_preference_id: preferenceId,
+        _checkout_url: checkoutUrl || "",
+        _metadata: {
+          service_name: orc.service_name,
+          mp_preference_id: preferenceId,
+          initiated_at: new Date().toISOString(),
+        },
+      } as never)) as unknown as {
+        data: CriarCheckoutPagamentoRow[] | CriarCheckoutPagamentoRow | null;
+        error: PostgrestError | null;
+      };
+      const { data: pagRows, error: pagError } = rpcRes;
 
       if (pagError) {
         console.error("[iniciarPagamentoOrcamento] erro na RPC criar_checkout_pagamento", {
@@ -164,9 +203,9 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
         checkoutUrl,
         pagamentoId: pag.id,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[iniciarPagamentoOrcamento] Falha crítica:", err);
-      throw new Error(err.message || "Falha ao processar pagamento.");
+      throw new Error(errorMessage(err, "Falha ao processar pagamento."));
     }
   });
 
@@ -178,12 +217,15 @@ export const simularPagamentoAprovado = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => simularSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
 
-    const { data: resultRows, error } = await (supabase as any)
-      .rpc("simular_pagamento_aprovado_cliente", {
-        _pagamento_id: data.pagamentoId,
-      });
+    const rpcRes = (await supabase.rpc("simular_pagamento_aprovado_cliente" as never, {
+      _pagamento_id: data.pagamentoId,
+    } as never)) as unknown as {
+      data: SimularPagamentoAprovadoRow[] | SimularPagamentoAprovadoRow | null;
+      error: PostgrestError | null;
+    };
+    const { data: resultRows, error } = rpcRes;
 
     if (error) {
       console.error("[simularPagamentoAprovado] erro na RPC", {
