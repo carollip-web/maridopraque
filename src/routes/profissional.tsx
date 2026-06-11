@@ -427,6 +427,7 @@ function ProfissionalArea() {
                   counts={counts}
                   metrics={data.metrics}
                   orcamentos={data.orcamentos}
+                  loading={data.loadingList}
                   setTab={(t) =>
                     navigate({
                       to: "/profissional",
@@ -436,6 +437,7 @@ function ProfissionalArea() {
                   setPedidosSubTab={setPedidosSubTab}
                   setServicosSubTab={setServicosSubTab}
                 />
+
               </>
             )}
           </main>

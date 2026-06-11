@@ -2275,11 +2275,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_admin_permissions: { Args: { _user_id?: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_admin_section_allowed: {
+        Args: { _need_write?: boolean; _section: string; _user_id?: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
