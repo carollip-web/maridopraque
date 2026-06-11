@@ -286,9 +286,9 @@ function Checkout() {
                   } else {
                     toast.error(`Pagamento ${data.status}: ${data.statusDetail || ""}`);
                   }
-                } catch (e: any) {
+                } catch (e) {
                   console.error("[brick] submit error", e);
-                  toast.error(e?.message || "Falha ao processar pagamento.");
+                  toast.error((e as Error)?.message || "Falha ao processar pagamento.");
                 } finally {
                   setIsProcessing(false);
                 }
@@ -296,10 +296,10 @@ function Checkout() {
             },
           },
         );
-      } catch (e: any) {
+      } catch (e) {
         if (!cancelled) {
           console.error("[brick] init error", e);
-          setBrickError(e?.message || "Falha ao iniciar o formulário.");
+          setBrickError((e as Error)?.message || "Falha ao iniciar o formulário.");
           brickMountedRef.current = false;
         }
       }
