@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
-import { useNotifications } from "@/hooks/useNotifications";
+import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { Loader2 } from "lucide-react";
 import { enviarOrcamento } from "@/lib/orcamentos.functions";
 
