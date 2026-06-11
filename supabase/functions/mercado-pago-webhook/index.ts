@@ -72,7 +72,14 @@ serve(async (req) => {
   try {
     const assinaturaValida = await verificarAssinaturaMP(req, requestId);
     if (!assinaturaValida) {
-      console.error(`[Webhook ${requestId}] Assinatura inválida — requisição rejeitada`);
+      const sp = new URL(req.url).searchParams;
+      const topic = sp.get("topic") || sp.get("type");
+      const dataId = sp.get("data.id") || sp.get("id");
+      console.warn(
+        `[Webhook ${requestId}] Assinatura inválida — requisição rejeitada. ` +
+          `Topic/Type: ${topic || "n/a"}, Data ID: ${dataId || "n/a"}, ` +
+          `x-signature presente: ${req.headers.has("x-signature")}, x-request-id presente: ${req.headers.has("x-request-id")}`,
+      );
       return new Response(JSON.stringify({ error: "Invalid signature" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
