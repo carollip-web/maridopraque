@@ -1,20 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageCircle, Phone, Mail, MapPin, Clock, Instagram, Facebook } from "lucide-react";
+import { MessageCircle, Mail, MapPin, Clock, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/contato")({
   head: () => ({
     meta: [
-      { title: "Contato — WhatsApp, telefone e e-mail | Marido pra Quê?" },
+      { title: "Contato — E-mail | Marido pra Quê?" },
       {
         name: "description",
         content:
-          "Fale com a gente pelo WhatsApp, telefone ou e-mail. Atendimento ágil de segunda a sábado, com plantão 24h para emergências.",
+          "Fale com a gente por e-mail. Atendimento de segunda a sábado.",
       },
       { property: "og:title", content: "Fale com a Marido pra Quê?" },
       {
         property: "og:description",
-        content: "WhatsApp, telefone e e-mail — escolha o canal que prefere.",
+        content: "Envie um e-mail para contato@maridopraque.com.",
       },
     ],
   }),
@@ -61,17 +61,10 @@ function Contato() {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl border border-border p-8">
-              <Phone className="h-6 w-6 text-brand mb-4" />
-              <h3 className="font-bold">Telefone</h3>
-              <p className="mt-1 text-sm text-muted-foreground">(21) 99999-9999</p>
-            </div>
-            <div className="rounded-3xl border border-border p-8">
-              <Mail className="h-6 w-6 text-brand mb-4" />
-              <h3 className="font-bold">E-mail</h3>
-              <p className="mt-1 text-sm text-muted-foreground">contato@maridopraque.com</p>
-            </div>
+          <div className="rounded-3xl border border-border p-8">
+            <Mail className="h-6 w-6 text-brand mb-4" />
+            <h3 className="font-bold">E-mail</h3>
+            <p className="mt-1 text-sm text-muted-foreground">contato@maridopraque.com</p>
           </div>
         </div>
 
@@ -98,8 +91,6 @@ function Contato() {
                 Segunda a Sexta: 08h às 19h
                 <br />
                 Sábado: 08h às 14h
-                <br />
-                Plantão para emergências 24h via WhatsApp.
               </p>
             </div>
           </div>
