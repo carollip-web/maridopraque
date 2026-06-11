@@ -1,5 +1,37 @@
-import { createRouter, useRouter } from "@tanstack/react-router";
+import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+
+function DefaultNotFoundComponent() {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center bg-background px-4 py-20">
+      <div className="max-w-lg text-center">
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+          Erro 404
+        </span>
+        <h1 className="mt-4 text-balance text-5xl font-semibold tracking-tight md:text-6xl">
+          Essa página tirou folga.
+        </h1>
+        <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+          O link pode ter mudado. Peça um orçamento em menos de 2 minutos ou volte para o início.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link
+            to="/servicos"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-brand px-7 text-sm font-semibold text-brand-foreground shadow-brand transition hover:-translate-y-0.5"
+          >
+            Pedir orçamento agora
+          </Link>
+          <Link
+            to="/"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-background px-7 text-sm font-medium text-foreground transition hover:bg-brand-soft"
+          >
+            Voltar para o início
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
