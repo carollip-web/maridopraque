@@ -230,11 +230,39 @@ serve(async (req) => {
           } : {})
         })
         .eq("id", orcamentoId)
-        .select("id, profissional_id, data_preferida, periodo_preferido, horario_preferido")
+        .select("id, profissional_id, cliente_id, data_preferida, periodo_preferido, horario_preferido")
         .single();
 
       if (orcError) throw orcError;
       console.log(`[Webhook ${requestId}] Orçamento ${orcamentoId} atualizado com sucesso.`);
+
+      // Criar/atualizar registro de split com valores reais
+      const TAXA_MP_PERCENT = 0.0549; // 5,49% crédito à vista estimado
+      const MARKETPLACE_FEE_PERCENT = 0.15; // 15% comissão plataforma
+
+      const valorTotal = Number((pagamento as any)?.valor_total || 0);
+      const taxaGateway = Math.round(valorTotal * TAXA_MP_PERCENT * 100) / 100;
+      const taxaPlataforma = Math.round(valorTotal * MARKETPLACE_FEE_PERCENT * 100) / 100;
+      const valorProfissional = Math.round((valorTotal - taxaGateway - taxaPlataforma) * 100) / 100;
+
+      const { error: splitErr } = await supabase.from("pagamento_splits").upsert({
+        orcamento_id: updatedOrc.id,
+        pagamento_id: (pagamento as any)?.id,
+        profissional_id: updatedOrc.profissional_id,
+        cliente_id: updatedOrc.cliente_id,
+        valor_total: valorTotal,
+        taxa_gateway: taxaGateway,
+        taxa_plataforma: taxaPlataforma,
+        valor_profissional: valorProfissional,
+        status: "aguardando_conclusao",
+        disponivel_em: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      }, { onConflict: "orcamento_id" });
+
+      if (splitErr) {
+        console.error(`[Webhook ${requestId}] Erro ao criar split:`, splitErr);
+      } else {
+        console.log(`[Webhook ${requestId}] Split criado/atualizado para Orçamento ${orcamentoId}`);
+      }
 
       // Confirmar reserva de agenda
       console.log(
