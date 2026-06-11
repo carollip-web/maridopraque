@@ -91,8 +91,6 @@ function Contato() {
                 Segunda a Sexta: 08h às 19h
                 <br />
                 Sábado: 08h às 14h
-                <br />
-                Plantão para emergências 24h via WhatsApp.
               </p>
             </div>
           </div>
