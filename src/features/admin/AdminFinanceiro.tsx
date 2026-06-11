@@ -257,7 +257,7 @@ export function AdminFinanceiro() {
             Painel Financeiro
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Visão unificada de pagamentos Mercado Pago, repasses e saques.
+            Visão unificada de pagamentos e splits Mercado Pago. Repasses ao profissional são automáticos.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
