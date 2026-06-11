@@ -108,6 +108,7 @@ function ProfissionalArea() {
   const [propostasEnviadasLocal, setPropostasEnviadasLocal] = useState<Set<string>>(new Set());
   const [profGenero, setProfGenero] = useState<string | null>(null);
   const [profApoioFeminino, setProfApoioFeminino] = useState(false);
+  const [mpConectado, setMpConectado] = useState(false);
 
   // Redirecionar profissional para o formulário completo se o cadastro não estiver completo
   useEffect(() => {
@@ -297,7 +298,7 @@ function ProfissionalArea() {
       const { data: perfilCompleto, error: perfilCompletoError } = await (supabase as any)
         .from("profissional_perfil")
         .select(
-          "ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino",
+          "ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino, mp_user_id",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -352,6 +353,7 @@ function ProfissionalArea() {
         setProfGenero(perfil.genero ?? null);
         // Apoio feminino agora é gerenciado pelo admin — nenhum profissional atua como apoio no radar
         setProfApoioFeminino(false);
+        setMpConectado(!!perfil.mp_user_id);
       }
 
       if (avs && avs.length > 0) {
@@ -974,6 +976,22 @@ function ProfissionalArea() {
               />
             )}
             {tab === "pedidos" && (
+              {!mpConectado && (
+                <div className="mx-4 mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-amber-800 text-sm">Conecte sua conta Mercado Pago para receber pagamentos</p>
+                    <p className="text-amber-700 text-xs mt-0.5">Sem isso, clientes não podem pagar pelos seus serviços.</p>
+                  </div>
+                  
+                  <a
+                    href="/profissional?tab=configuracoes"
+                    className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
+                  >
+                    Conectar agora
+                  </a>
+                </div>
+              )}
               <ProfissionalDashboard
                 user={user}
                 counts={counts}
