@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { aceitarProposta, decidirOrcamento, editarOrcamento } from "@/lib/orcamentos.functions";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { GuestUploader } from "@/components/GuestUploader";
+import { lovable } from "@/integrations/lovable";
 import {
   Loader2,
   CheckCircle2,
