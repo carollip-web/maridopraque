@@ -70,6 +70,34 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
+  const [disputaOpen, setDisputaOpen] = useState(false);
+  const [disputaMotivo, setDisputaMotivo] = useState("");
+  const [disputaLoading, setDisputaLoading] = useState(false);
+
+  const handleAbrirDisputa = async (orcamentoId: string) => {
+    const motivo = disputaMotivo.trim();
+    if (!motivo) {
+      toast.error("Descreva o problema antes de abrir a disputa.");
+      return;
+    }
+    setDisputaLoading(true);
+    try {
+      const { error } = await (supabase as any).rpc("abrir_disputa_orcamento", {
+        _orcamento_id: orcamentoId,
+        _motivo: motivo,
+      });
+      if (error) throw error;
+      toast.success("Disputa aberta — nossa equipe vai analisar e entrar em contato");
+      setDisputaOpen(false);
+      setDisputaMotivo("");
+      await queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao abrir disputa");
+    } finally {
+      setDisputaLoading(false);
+    }
+  };
 
   const handleCompleteOrder = async (orderId: string) => {
     if (!confirm("Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.")) return;
