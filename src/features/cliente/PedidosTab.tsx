@@ -784,6 +784,19 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
               </section>
             )}
 
+            {(pagoOuAgendado || concluido) && sp.profissional_id && (
+              <section className="bg-white rounded-[2rem] border border-border p-5 shadow-soft">
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full h-12 font-bold"
+                  onClick={() => setShowConversar(true)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Conversar com o profissional
+                </Button>
+              </section>
+            )}
+
             <section className="bg-white rounded-[2rem] border border-border p-5 shadow-soft">
               <div className="grid gap-3">
                 <Button
