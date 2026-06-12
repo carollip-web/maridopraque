@@ -711,7 +711,10 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-base">{sp.prof}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-base truncate">{sp.prof}</p>
+                      <FavoritoIconButton profissionalId={selectedPedido?.profissional_id} />
+                    </div>
                     {profPublico.aprovacao_status === "aprovado" && (
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-0.5 mt-1">
                         <ShieldCheck className="h-3.5 w-3.5" />
