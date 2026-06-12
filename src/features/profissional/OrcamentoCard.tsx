@@ -46,6 +46,7 @@ interface OrcamentoCardProps {
   minhaAgenda?: any;
   profGenero?: string | null;
   profApoioFeminino?: boolean;
+  clienteEndereco?: any;
 }
 
 export function OrcamentoCard(props: OrcamentoCardProps) {
@@ -69,6 +70,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     minhaAgenda,
     profGenero,
     profApoioFeminino,
+    clienteEndereco,
   } = props;
 
   const isApoioFemininoVacancy =
@@ -475,6 +477,41 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               O cliente marcou o serviço como concluído. O repasse está em processamento e será
               liberado em breve.
             </p>
+          </div>
+        )}
+
+        {(isPagamentoConfirmado || isServicoConcluido) && (
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2 mt-4">
+            <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
+              <MapPin className="h-4 w-4" />
+              Endereço de atendimento
+            </div>
+            {clienteEndereco ? (
+              <div className="text-xs text-slate-600 leading-relaxed space-y-1">
+                <p>
+                  {clienteEndereco.logradouro}, {clienteEndereco.numero}
+                  {clienteEndereco.complemento && ` - ${clienteEndereco.complemento}`}
+                </p>
+                <p>
+                  {clienteEndereco.bairro}, {clienteEndereco.cidade} - {clienteEndereco.uf}
+                </p>
+                <p>CEP: {clienteEndereco.cep}</p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${clienteEndereco.logradouro}, ${clienteEndereco.numero}, ${clienteEndereco.bairro}, ${clienteEndereco.cidade} - ${clienteEndereco.uf}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-brand font-bold hover:underline"
+                >
+                  Abrir no mapa ↗
+                </a>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic">
+                Endereço não informado — combine pelo chat
+              </p>
+            )}
           </div>
         )}
 

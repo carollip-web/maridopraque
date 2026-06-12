@@ -25,6 +25,7 @@ interface ProfissionalGridProps {
   minhaAgenda?: any;
   profGenero?: string | null;
   profApoioFeminino?: boolean;
+  clienteEndereco?: Record<string, any>;
 }
 
 export function ProfissionalGrid({
@@ -49,6 +50,7 @@ export function ProfissionalGrid({
   minhaAgenda,
   profGenero,
   profApoioFeminino,
+  clienteEndereco,
 }: ProfissionalGridProps) {
   if (items.length === 0) {
     return (
@@ -94,6 +96,7 @@ export function ProfissionalGrid({
           minhaAgenda={minhaAgenda}
           profGenero={profGenero}
           profApoioFeminino={profApoioFeminino}
+          clienteEndereco={clienteEndereco?.[o.cliente_id]}
         />
       ))}
     </div>

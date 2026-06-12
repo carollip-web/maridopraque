@@ -300,6 +300,7 @@ function ProfissionalArea() {
         minhaAgenda={data.minhaAgenda}
         profGenero={data.profGenero}
         profApoioFeminino={data.profApoioFeminino}
+        clienteEndereco={sheetOrc ? data.clienteEndereco[sheetOrc.cliente_id] : undefined}
       />
 
       <MobilePanelBar
@@ -364,6 +365,7 @@ function ProfissionalArea() {
                 catalog={data.catalog}
                 orcMats={data.orcMats}
                 clienteGeo={data.clienteGeo}
+                clienteEndereco={data.clienteEndereco}
                 profGeo={data.profGeo}
                 userId={user?.id ?? ""}
                 enviar={enviar}
@@ -387,6 +389,7 @@ function ProfissionalArea() {
                 catalog={data.catalog}
                 orcMats={data.orcMats}
                 clienteGeo={data.clienteGeo}
+                clienteEndereco={data.clienteEndereco}
                 profGeo={data.profGeo}
                 userId={user?.id ?? ""}
                 enviar={enviar}

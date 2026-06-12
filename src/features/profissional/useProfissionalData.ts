@@ -223,18 +223,23 @@ export function useProfissionalData(user: User | null) {
           .in("id", clienteIds),
         supabase
           .from("cliente_enderecos")
-          .select("user_id, lat, lng, cidade, is_padrao")
+          .select("user_id, rotulo, cep, logradouro, numero, complemento, bairro, cidade, uf, lat, lng, is_padrao")
           .in("user_id", clienteIds),
       ]);
       const profiles: Record<string, Profile> = {};
       (profs ?? []).forEach((p: any) => (profiles[p.id] = p));
       const clienteGeo: Record<string, ClienteGeo> = {};
+      const clienteEndereco: Record<string, any> = {};
       (ends ?? []).forEach((e: any) => {
         const cur = clienteGeo[e.user_id];
         if (!cur || e.is_padrao)
           clienteGeo[e.user_id] = { lat: e.lat, lng: e.lng, cidade: e.cidade };
+        
+        const curEnd = clienteEndereco[e.user_id];
+        if (!curEnd || e.is_padrao)
+          clienteEndereco[e.user_id] = e;
       });
-      return { profiles, clienteGeo };
+      return { profiles, clienteGeo, clienteEndereco };
     },
   });
 
@@ -697,6 +702,7 @@ export function useProfissionalData(user: User | null) {
 
   const profiles = clientesQuery.data?.profiles ?? {};
   const clienteGeo = clientesQuery.data?.clienteGeo ?? {};
+  const clienteEndereco = clientesQuery.data?.clienteEndereco ?? {};
   const catalog = catalogQuery.data ?? {};
   const orcMats = orcMatsQuery.data ?? {};
   const propostasMateriais = propostasMateriaisQuery.data ?? EMPTY_PROPS;
@@ -712,6 +718,7 @@ export function useProfissionalData(user: User | null) {
     catalog,
     orcMats,
     clienteGeo,
+    clienteEndereco,
     minhaAgenda,
     loadingList,
 

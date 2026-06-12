@@ -16,6 +16,7 @@ interface ProfissionalServicosProps {
   catalog: Record<string, ServicoCat>;
   orcMats: Record<string, OrcMat[]>;
   clienteGeo: Record<string, ClienteGeo>;
+  clienteEndereco?: Record<string, any>;
   profGeo: { lat: number | null; lng: number | null; raio: number };
   userId: string;
   enviar: any;
@@ -36,6 +37,7 @@ export function ProfissionalServicos({
   catalog,
   orcMats,
   clienteGeo,
+  clienteEndereco,
   profGeo,
   userId,
   enviar,
@@ -80,6 +82,7 @@ export function ProfissionalServicos({
             catalog={catalog}
             orcMats={orcMats}
             clienteGeo={clienteGeo}
+            clienteEndereco={clienteEndereco}
             profGeo={profGeo}
             userId={userId}
             mode="info"
@@ -101,6 +104,7 @@ export function ProfissionalServicos({
             catalog={catalog}
             orcMats={orcMats}
             clienteGeo={clienteGeo}
+            clienteEndereco={clienteEndereco}
             profGeo={profGeo}
             userId={userId}
             mode="info"

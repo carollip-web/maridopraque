@@ -36,6 +36,7 @@ interface OrcamentoDetailsSheetProps {
   minhaAgenda: any;
   profGenero: string | null;
   profApoioFeminino: boolean;
+  clienteEndereco?: any;
 }
 
 /**
@@ -59,6 +60,7 @@ export function OrcamentoDetailsSheet({
   minhaAgenda,
   profGenero,
   profApoioFeminino,
+  clienteEndereco,
 }: OrcamentoDetailsSheetProps) {
   return (
     <Sheet
@@ -103,6 +105,7 @@ export function OrcamentoDetailsSheet({
               minhaAgenda={minhaAgenda}
               profGenero={profGenero}
               profApoioFeminino={profApoioFeminino}
+              clienteEndereco={clienteEndereco}
               disableChat
             />
           )}
