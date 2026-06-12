@@ -1078,6 +1078,43 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             </div>
           </div>
         )}
+
+        <Dialog open={disputaOpen} onOpenChange={(o) => { setDisputaOpen(o); if (!o) setDisputaMotivo(""); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Abrir disputa</DialogTitle>
+              <DialogDescription>
+                Conte o que aconteceu para que nossa equipe analise o caso.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Descreva o problema</label>
+              <Textarea
+                value={disputaMotivo}
+                onChange={(e) => setDisputaMotivo(e.target.value)}
+                placeholder="Ex.: o serviço não foi executado conforme combinado..."
+                rows={5}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDisputaOpen(false)}
+                disabled={disputaLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleAbrirDisputa(sp.id)}
+                disabled={disputaLoading || !disputaMotivo.trim()}
+              >
+                {disputaLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Abrir disputa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
