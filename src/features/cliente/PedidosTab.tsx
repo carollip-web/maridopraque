@@ -1385,3 +1385,22 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     </div>
   );
 }
+
+function FavoritoIconButton({ profissionalId }: { profissionalId: string | null | undefined }) {
+  const { favorito, toggle, loading, canFavorite } = useFavoritoProfissional(profissionalId);
+  if (!canFavorite) return null;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={loading}
+      aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      aria-pressed={favorito}
+      className="shrink-0 rounded-full p-1 hover:bg-muted transition-colors disabled:opacity-50"
+    >
+      <Heart
+        className={`h-4 w-4 ${favorito ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+      />
+    </button>
+  );
+}
