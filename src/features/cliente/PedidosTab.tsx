@@ -31,6 +31,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Chat } from "@/components/Chat";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Tab, WHATSAPP_LINK } from "./constants";
 
 const gerarPdfOrcamento = (id: string) =>
@@ -61,6 +70,34 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
+  const [disputaOpen, setDisputaOpen] = useState(false);
+  const [disputaMotivo, setDisputaMotivo] = useState("");
+  const [disputaLoading, setDisputaLoading] = useState(false);
+
+  const handleAbrirDisputa = async (orcamentoId: string) => {
+    const motivo = disputaMotivo.trim();
+    if (!motivo) {
+      toast.error("Descreva o problema antes de abrir a disputa.");
+      return;
+    }
+    setDisputaLoading(true);
+    try {
+      const { error } = await (supabase as any).rpc("abrir_disputa_orcamento", {
+        _orcamento_id: orcamentoId,
+        _motivo: motivo,
+      });
+      if (error) throw error;
+      toast.success("Disputa aberta — nossa equipe vai analisar e entrar em contato");
+      setDisputaOpen(false);
+      setDisputaMotivo("");
+      await queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao abrir disputa");
+    } finally {
+      setDisputaLoading(false);
+    }
+  };
 
   const handleCompleteOrder = async (orderId: string) => {
     if (!confirm("Confirmar que o serviço foi concluído com sucesso? Isso vai liberar o repasse para o profissional.")) return;
@@ -759,16 +796,38 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   )}
                   Marcar como Concluído
                 </Button>
+              </section>
+            )}
+
+            {(sp.rawStatus === "pago" || sp.rawStatus === "concluido") && (
+              <section className="bg-white rounded-[2rem] border border-border p-5 shadow-soft">
                 <Button
                   variant="outline"
-                  className="w-full rounded-full h-12 font-bold mt-3 text-red-600 border-red-200 hover:bg-red-50 transition-colors"
-                  onClick={() => window.open(WHATSAPP_LINK, "_blank")}
+                  className="w-full rounded-full h-12 font-bold text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                  onClick={() => {
+                    setDisputaMotivo("");
+                    setDisputaOpen(true);
+                  }}
                 >
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Problemas com o serviço?
                 </Button>
               </section>
             )}
+
+            {sp.rawStatus === "em_disputa" && (
+              <section className="bg-amber-50 rounded-[2rem] border border-amber-200 p-5 shadow-soft">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <p className="text-sm font-bold text-amber-900">
+                    Disputa em análise pela equipe
+                  </p>
+                </div>
+              </section>
+            )}
+
+
+
 
             {concluido && (
               <section className="bg-white rounded-[2rem] border border-green-100 p-6 md:p-8 shadow-soft bg-green-50/30">
@@ -822,22 +881,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   Baixar PDF
                 </Button>
 
-                <Button
-                  variant="outline"
-                  className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
-                  disabled={
-                    isDeleting === sp.id ||
-                    ["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "")
-                  }
-                  onClick={() => handleDeleteOrder(sp.id, sp.title)}
-                >
-                  {isDeleting === sp.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Cancelar pedido
-                </Button>
+                {!["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
+                  <Button
+                    variant="outline"
+                    className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
+                    disabled={isDeleting === sp.id}
+                    onClick={() => handleDeleteOrder(sp.id, sp.title)}
+                  >
+                    {isDeleting === sp.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Cancelar pedido
+                  </Button>
+                )}
               </div>
 
               {["pago", "concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
@@ -1020,6 +1078,43 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             </div>
           </div>
         )}
+
+        <Dialog open={disputaOpen} onOpenChange={(o) => { setDisputaOpen(o); if (!o) setDisputaMotivo(""); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Abrir disputa</DialogTitle>
+              <DialogDescription>
+                Conte o que aconteceu para que nossa equipe analise o caso.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Descreva o problema</label>
+              <Textarea
+                value={disputaMotivo}
+                onChange={(e) => setDisputaMotivo(e.target.value)}
+                placeholder="Ex.: o serviço não foi executado conforme combinado..."
+                rows={5}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDisputaOpen(false)}
+                disabled={disputaLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleAbrirDisputa(sp.id)}
+                disabled={disputaLoading || !disputaMotivo.trim()}
+              >
+                {disputaLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Abrir disputa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
