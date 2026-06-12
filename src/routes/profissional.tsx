@@ -357,6 +357,7 @@ function ProfissionalArea() {
                 onNavigateToPedido={handleNavigateToNotifPedido}
               />
             )}
+            {tab === "mensagens" && <ProfissionalMensagens />}
             {tab === "configuracoes" && <ProfissionalConfiguracoes />}
             {tab === "financeiro" && <ProfissionalFinanceiro />}
             {tab === "avaliacoes" && <ProfissionalAvaliacoes />}
