@@ -696,6 +696,47 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           </div>
 
           <aside className="space-y-6">
+            {profPublico && (
+              <section className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-soft">
+                <h3 className="font-bold text-lg mb-4">Quem vai te atender</h3>
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-14 w-14 rounded-xl">
+                    {profPublico.foto_url ? (
+                      <AvatarImage src={profPublico.foto_url} alt={sp.prof} className="rounded-xl" />
+                    ) : null}
+                    <AvatarFallback className="rounded-xl bg-brand-soft text-brand font-bold text-lg">
+                      {String(sp.prof || "P").charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-base">{sp.prof}</p>
+                    {profPublico.aprovacao_status === "aprovado" && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-0.5 mt-1">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Identidade verificada
+                      </span>
+                    )}
+                    {profPublico.especialidades && profPublico.especialidades.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {profPublico.especialidades.slice(0, 3).map((e: string) => (
+                          <span key={e} className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                            {e}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full h-12 font-bold mt-4"
+                  onClick={() => setShowConversar(true)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Conversar
+                </Button>
+              </section>
+            )}
             {aguardandoAprovacao && temProposta && (
               <section className="bg-white rounded-[2rem] border border-border p-6 md:p-8 shadow-soft">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
