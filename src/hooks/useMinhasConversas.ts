@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -100,6 +100,11 @@ export function useMinhasConversas() {
     setLoading(false);
   }, [user?.id]);
 
+  const carregarRef = useRef(carregar);
+  useEffect(() => {
+    carregarRef.current = carregar;
+  }, [carregar]);
+
   useEffect(() => {
     carregar();
   }, [carregar]);
@@ -107,19 +112,21 @@ export function useMinhasConversas() {
   // Realtime: novas mensagens recebidas OU enviadas pelo usuário
   useEffect(() => {
     if (!user?.id) return;
+    const userId = user.id;
+    const trigger = () => {
+      carregarRef.current();
+    };
     const channel = supabase
-      .channel(`minhas-conversas-${user.id}`)
+      .channel(`minhas-conversas-${userId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "mensagens",
-          filter: `destinatario_id=eq.${user.id}`,
+          filter: `destinatario_id=eq.${userId}`,
         },
-        () => {
-          carregar();
-        },
+        trigger,
       )
       .on(
         "postgres_changes",
@@ -127,11 +134,9 @@ export function useMinhasConversas() {
           event: "INSERT",
           schema: "public",
           table: "mensagens",
-          filter: `remetente_id=eq.${user.id}`,
+          filter: `remetente_id=eq.${userId}`,
         },
-        () => {
-          carregar();
-        },
+        trigger,
       )
       .on(
         "postgres_changes",
@@ -139,17 +144,15 @@ export function useMinhasConversas() {
           event: "UPDATE",
           schema: "public",
           table: "mensagens",
-          filter: `destinatario_id=eq.${user.id}`,
+          filter: `destinatario_id=eq.${userId}`,
         },
-        () => {
-          carregar();
-        },
+        trigger,
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, carregar]);
+  }, [user?.id]);
 
   const marcarConversaLida = useCallback(
     async (orcamentoId: string) => {
