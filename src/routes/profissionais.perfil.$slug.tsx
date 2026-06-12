@@ -320,10 +320,10 @@ function PerfilProfissional() {
 }
 
 function FavoritoButton({ profissionalId }: { profissionalId: string }) {
-  const { user, role } = useAuth();
+  const { user, roles } = useAuth();
   const { favorito, toggle, loading } = useFavoritoProfissional(profissionalId);
-  // Hide for logged-in non-clients (professionals/admins viewing); show for guests + clients
-  if (user && role && role !== "cliente") return null;
+  // Hide for logged-in non-clients (e.g., the professional viewing their own page)
+  if (user && roles.length > 0 && !roles.includes("cliente")) return null;
   return (
     <Button
       type="button"
