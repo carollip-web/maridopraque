@@ -279,6 +279,25 @@ export function Header() {
             {isLoggedIn && (
               <button
                 onClick={() => {
+                  if (isProfissional) {
+                    navigate({ to: "/profissional", search: { tab: "mensagens" } as any });
+                  } else {
+                    navigate({ to: "/cliente", search: { tab: "mensagens" } as any });
+                  }
+                }}
+                className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
+              >
+                <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                {unreadMsgCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-brand text-[10px] text-white font-bold border-2 border-white box-content">
+                    {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {isLoggedIn && (
+              <button
+                onClick={() => {
                   setShowNotifications(!showNotifications);
                   setShowProfileMenu(false);
                 }}
