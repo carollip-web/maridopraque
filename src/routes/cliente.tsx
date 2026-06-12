@@ -244,6 +244,7 @@ function ClienteArea() {
         {activeTab === "servicos" && <ServicosTab />}
         {activeTab === "pagamentos" && <PagamentosTab />}
         {activeTab === "notificacoes" && <NotificacoesTab setActiveTab={setActiveTab} />}
+        {activeTab === "mensagens" && <MensagensTab />}
         {activeTab === "dados" && <DadosTab />}
         {activeTab === "seguranca" && <SegurancaTab />}
         {activeTab === "favoritos" && <FavoritosTab />}
