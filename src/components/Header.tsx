@@ -101,6 +101,15 @@ export function Header() {
       return;
     }
 
+    if (orcamentoId && isMessage) {
+      if (isProfissional) {
+        navigate({ to: "/profissional", search: { tab: "mensagens", orcamentoId } as any });
+      } else {
+        navigate({ to: "/cliente", search: { tab: "mensagens", orcamentoId } as any });
+      }
+      return;
+    }
+
     if (orcamentoId) {
       // Professionals always go to their own panel regardless of the stored link
       if (isProfissional) {
@@ -114,7 +123,6 @@ export function Header() {
           search: {
             tab: isServicos ? "servicos" : "orcamentos",
             orcamentoId,
-            chat: isMessage ? "1" : undefined,
           } as any,
         });
         return;
@@ -123,7 +131,7 @@ export function Header() {
       // Clients go to client area
       navigate({
         to: "/cliente",
-        search: { tab: "pedidos", pedidoId: orcamentoId, chat: isMessage ? "1" : undefined } as any,
+        search: { tab: "pedidos", pedidoId: orcamentoId } as any,
       });
       return;
     }
