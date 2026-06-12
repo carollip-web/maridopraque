@@ -75,31 +75,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [disputaOpen, setDisputaOpen] = useState(false);
   const [disputaMotivo, setDisputaMotivo] = useState("");
   const [disputaLoading, setDisputaLoading] = useState(false);
-  const [profPublico, setProfPublico] = useState<any>(null);
-
-  useEffect(() => {
-    if (!selectedPedido?.profissional_id) {
-      setProfPublico(null);
-      return;
-    }
-    const raw = String(selectedPedido.rawStatus || "").toLowerCase();
-    if (!["pago", "concluido", "em_disputa"].includes(raw)) {
-      setProfPublico(null);
-      return;
-    }
-    let active = true;
-    (async () => {
-      const { data } = await (supabase as any)
-        .from("profissionais_publicos")
-        .select("foto_url, especialidades, aprovacao_status")
-        .eq("user_id", selectedPedido.profissional_id)
-        .maybeSingle();
-      if (active) setProfPublico(data);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [selectedPedido?.profissional_id, selectedPedido?.rawStatus]);
 
   const handleAbrirDisputa = async (orcamentoId: string) => {
     const motivo = disputaMotivo.trim();
