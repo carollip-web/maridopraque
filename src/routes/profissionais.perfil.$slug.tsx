@@ -243,12 +243,15 @@ function PerfilProfissional() {
               </div>
             )}
           </div>
-          <Button
-            asChild
-            className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold"
-          >
-            <Link to="/servicos">Pedir orçamento</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <FavoritoButton profissionalId={perfil.user_id} />
+            <Button
+              asChild
+              className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold"
+            >
+              <Link to="/servicos">Pedir orçamento</Link>
+            </Button>
+          </div>
         </div>
 
         {perfil.bio && (
