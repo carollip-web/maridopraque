@@ -18,6 +18,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useNotifications, type Notification as AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 function extractNotificationOrcamentoId(notification: AppNotification) {
   if (notification.pedidoId) return notification.pedidoId;
