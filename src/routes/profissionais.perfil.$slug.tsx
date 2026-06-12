@@ -318,3 +318,26 @@ function PerfilProfissional() {
     </div>
   );
 }
+
+function FavoritoButton({ profissionalId }: { profissionalId: string }) {
+  const { user, role } = useAuth();
+  const { favorito, toggle, loading } = useFavoritoProfissional(profissionalId);
+  // Hide for logged-in non-clients (professionals/admins viewing); show for guests + clients
+  if (user && role && role !== "cliente") return null;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      onClick={toggle}
+      disabled={loading}
+      aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      aria-pressed={favorito}
+      className="rounded-full h-12 w-12 border-border"
+    >
+      <Heart
+        className={`h-5 w-5 ${favorito ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+      />
+    </Button>
+  );
+}
