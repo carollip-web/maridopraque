@@ -41,13 +41,45 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { notifications: allNotifications, markAsRead, markAllAsRead } = useNotifications();
-  const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData } = useAuth();
+  const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData, user } = useAuth();
   // Filter notifications by user context: professionals only see professional notifications
   const notifications = isProfissional
     ? allNotifications.filter((n) => !n.link || n.link.startsWith("/profissional"))
     : allNotifications.filter((n) => !n.link || !n.link.startsWith("/profissional"));
   const unreadCount = notifications.filter((n) => !n.read).length;
   const navigate = useNavigate();
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("mensagens")
+        .select("*", { head: true, count: "exact" })
+        .eq("destinatario_id", user.id)
+        .eq("lida", false);
+      setUnreadMsgCount(count ?? 0);
+    };
+    fetchCount();
+
+    const channel = supabase
+      .channel(`header-mensagens-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "mensagens",
+          filter: `destinatario_id=eq.${user.id}`,
+        },
+        () => fetchCount(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
