@@ -826,11 +826,8 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
               </section>
             )}
 
-            {/* placeholder-removed */}
-            {false && (
-              <section />
-            
-            )}
+
+
 
             {concluido && (
               <section className="bg-white rounded-[2rem] border border-green-100 p-6 md:p-8 shadow-soft bg-green-50/30">
