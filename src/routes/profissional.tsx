@@ -43,6 +43,7 @@ const profissionalSearchSchema = z.object({
       "financeiro",
       "avaliacoes",
       "configuracoes",
+      "mensagens",
       "notificacoes",
     ])
     .optional()
