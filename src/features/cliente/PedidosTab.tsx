@@ -796,15 +796,40 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   )}
                   Marcar como Concluído
                 </Button>
+              </section>
+            )}
+
+            {(sp.rawStatus === "pago" || sp.rawStatus === "concluido") && (
+              <section className="bg-white rounded-[2rem] border border-border p-5 shadow-soft">
                 <Button
                   variant="outline"
-                  className="w-full rounded-full h-12 font-bold mt-3 text-red-600 border-red-200 hover:bg-red-50 transition-colors"
-                  onClick={() => window.open(WHATSAPP_LINK, "_blank")}
+                  className="w-full rounded-full h-12 font-bold text-red-600 border-red-200 hover:bg-red-50 transition-colors"
+                  onClick={() => {
+                    setDisputaMotivo("");
+                    setDisputaOpen(true);
+                  }}
                 >
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Problemas com o serviço?
                 </Button>
               </section>
+            )}
+
+            {sp.rawStatus === "em_disputa" && (
+              <section className="bg-amber-50 rounded-[2rem] border border-amber-200 p-5 shadow-soft">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <p className="text-sm font-bold text-amber-900">
+                    Disputa em análise pela equipe
+                  </p>
+                </div>
+              </section>
+            )}
+
+            {/* placeholder-removed */}
+            {false && (
+              <section />
+            
             )}
 
             {concluido && (
