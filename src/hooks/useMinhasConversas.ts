@@ -113,11 +113,12 @@ export function useMinhasConversas() {
   useEffect(() => {
     if (!user?.id) return;
     const userId = user.id;
+    const channelName = `minhas-conversas-${userId}-${Math.random().toString(36).slice(2)}`;
     const trigger = () => {
       carregarRef.current();
     };
     const channel = supabase
-      .channel(`minhas-conversas-${userId}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
