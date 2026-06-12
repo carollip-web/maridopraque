@@ -324,6 +324,7 @@ function ProfissionalArea() {
             setActiveTab={setActiveTab}
             counts={counts}
             unreadNotifications={unreadNotifications}
+            unreadMensagens={unreadMensagens}
           />
         </div>
       </MobilePanelBar>
