@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Star, ShieldCheck, MapPin, ArrowLeft, MessageCircle } from "lucide-react";
+import { Star, ShieldCheck, MapPin, ArrowLeft, MessageCircle, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavoritoProfissional } from "@/hooks/useFavoritoProfissional";
 
 type PerfilSEO = {
   user_id: string;
