@@ -1289,7 +1289,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       handleDeleteOrder(p.id, p.title);
                     }}
                     disabled={
-                      isDeleting === p.id || ["pago", "concluido"].includes(p.status.toLowerCase())
+                      isDeleting === p.id || ["pago", "concluido", "cancelado", "em_disputa"].includes(String(p.rawStatus || "").toLowerCase())
                     }
                     title="Cancelar pedido"
                     className="h-10 w-10 rounded-full border border-border flex items-center justify-center hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-30"
