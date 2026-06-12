@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Wallet,
   MessageSquare,
+  MessageCircle,
   Settings,
   Bell,
 } from "lucide-react";
@@ -19,6 +20,7 @@ interface ProfissionalSidebarProps {
     elaboracao: number;
   };
   unreadNotifications: number;
+  unreadMensagens?: number;
 }
 
 export function ProfissionalSidebar({
@@ -26,6 +28,7 @@ export function ProfissionalSidebar({
   setActiveTab,
   counts,
   unreadNotifications,
+  unreadMensagens = 0,
 }: ProfissionalSidebarProps) {
   const menuItems = [
     { id: "pedidos" as const, label: "Visão Geral", icon: LayoutGrid },
@@ -39,6 +42,12 @@ export function ProfissionalSidebar({
     { id: "agenda" as const, label: "Agenda", icon: CalendarClock },
     { id: "financeiro" as const, label: "Financeiro", icon: Wallet },
     { id: "avaliacoes" as const, label: "Avaliações", icon: MessageSquare },
+    {
+      id: "mensagens" as const,
+      label: "Mensagens",
+      icon: MessageCircle,
+      badge: unreadMensagens,
+    },
     { id: "configuracoes" as const, label: "Configurações do Perfil", icon: Settings },
     {
       id: "notificacoes" as const,

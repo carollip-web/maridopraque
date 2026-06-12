@@ -62,4 +62,5 @@ export type ProfissionalTab =
   | "financeiro"
   | "avaliacoes"
   | "configuracoes"
+  | "mensagens"
   | "notificacoes";

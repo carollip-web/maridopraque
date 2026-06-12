@@ -27,5 +27,6 @@ export const TAB_TITLES: Record<ProfissionalTab, string> = {
   financeiro: "Financeiro",
   avaliacoes: "Avaliações",
   configuracoes: "Configurações",
+  mensagens: "Mensagens",
   notificacoes: "Notificações",
 };

@@ -19,6 +19,8 @@ import { ProfissionalDashboard } from "@/features/profissional/ProfissionalDashb
 import { ProfissionalOrcamentos } from "@/features/profissional/ProfissionalOrcamentos";
 import { ProfissionalServicos } from "@/features/profissional/ProfissionalServicos";
 import { ProfissionalNotificacoes } from "@/features/profissional/ProfissionalNotificacoes";
+import { ProfissionalMensagens } from "@/features/profissional/ProfissionalMensagens";
+import { useMinhasConversas } from "@/hooks/useMinhasConversas";
 import { ProfissionalStatusCard } from "@/features/profissional/ProfissionalStatusCard";
 import { OrcamentoDetailsSheet, type SheetMode } from "@/features/profissional/OrcamentoDetailsSheet";
 
@@ -41,6 +43,7 @@ const profissionalSearchSchema = z.object({
       "financeiro",
       "avaliacoes",
       "configuracoes",
+      "mensagens",
       "notificacoes",
     ])
     .optional()
@@ -71,6 +74,7 @@ function ProfissionalArea() {
     (n) => !n.link || n.link.startsWith("/profissional"),
   );
   const unreadNotifications = profNotifications.filter((n) => !n.read).length;
+  const { totalNaoLidas: unreadMensagens } = useMinhasConversas();
 
   // UI state (sub-abas, sheet)
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
@@ -112,6 +116,7 @@ function ProfissionalArea() {
 
   // Deep link: abrir orcamento via querystring
   useEffect(() => {
+    if (tab === "mensagens") return;
     if (!orcamentoId || data.loadingList || data.orcamentos.length === 0)
       return;
     const o = data.orcamentos.find((x) => x.id === orcamentoId);
@@ -320,6 +325,7 @@ function ProfissionalArea() {
             setActiveTab={setActiveTab}
             counts={counts}
             unreadNotifications={unreadNotifications}
+            unreadMensagens={unreadMensagens}
           />
         </div>
       </MobilePanelBar>
@@ -338,6 +344,7 @@ function ProfissionalArea() {
               setActiveTab={setActiveTab}
               counts={counts}
               unreadNotifications={unreadNotifications}
+              unreadMensagens={unreadMensagens}
             />
           </aside>
 
@@ -351,6 +358,7 @@ function ProfissionalArea() {
                 onNavigateToPedido={handleNavigateToNotifPedido}
               />
             )}
+            {tab === "mensagens" && <ProfissionalMensagens />}
             {tab === "configuracoes" && <ProfissionalConfiguracoes />}
             {tab === "financeiro" && <ProfissionalFinanceiro />}
             {tab === "avaliacoes" && <ProfissionalAvaliacoes />}
