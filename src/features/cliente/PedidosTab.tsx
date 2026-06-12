@@ -20,7 +20,9 @@ import {
   Calendar,
   AlertTriangle,
   Star,
+  ShieldCheck,
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
