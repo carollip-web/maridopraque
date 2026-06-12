@@ -881,22 +881,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   Baixar PDF
                 </Button>
 
-                <Button
-                  variant="outline"
-                  className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
-                  disabled={
-                    isDeleting === sp.id ||
-                    ["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "")
-                  }
-                  onClick={() => handleDeleteOrder(sp.id, sp.title)}
-                >
-                  {isDeleting === sp.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Cancelar pedido
-                </Button>
+                {!["concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
+                  <Button
+                    variant="outline"
+                    className="rounded-full h-12 font-bold text-red-500 hover:bg-red-50 hover:border-red-200"
+                    disabled={isDeleting === sp.id}
+                    onClick={() => handleDeleteOrder(sp.id, sp.title)}
+                  >
+                    {isDeleting === sp.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Cancelar pedido
+                  </Button>
+                )}
               </div>
 
               {["pago", "concluido", "cancelado", "em_disputa"].includes(sp.rawStatus?.toLowerCase?.() || "") && (
