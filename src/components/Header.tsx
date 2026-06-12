@@ -10,6 +10,7 @@ import {
   FileText,
   Settings,
   Menu,
+  MessageCircle,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
