@@ -400,6 +400,31 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
+  const [profPublico, setProfPublico] = useState<any>(null);
+
+  useEffect(() => {
+    if (!selectedPedido?.profissional_id) {
+      setProfPublico(null);
+      return;
+    }
+    const raw = String(selectedPedido.rawStatus || "").toLowerCase();
+    if (!["pago", "concluido", "em_disputa"].includes(raw)) {
+      setProfPublico(null);
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("profissionais_publicos")
+        .select("foto_url, especialidades, aprovacao_status")
+        .eq("user_id", selectedPedido.profissional_id)
+        .maybeSingle();
+      if (active) setProfPublico(data);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [selectedPedido?.profissional_id, selectedPedido?.rawStatus]);
 
   useEffect(() => {
     if (chat === "1" && selectedPedido?.profissional_id) {
