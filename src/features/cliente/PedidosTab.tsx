@@ -31,6 +31,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Chat } from "@/components/Chat";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Tab, WHATSAPP_LINK } from "./constants";
 
 const gerarPdfOrcamento = (id: string) =>
