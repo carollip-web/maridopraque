@@ -110,6 +110,7 @@ function ClienteArea() {
         id: undefined,
         pedidoId: undefined,
         chat: undefined,
+        orcamentoId: undefined,
         details: undefined,
       }),
     });
