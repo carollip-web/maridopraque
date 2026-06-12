@@ -116,6 +116,7 @@ function ProfissionalArea() {
 
   // Deep link: abrir orcamento via querystring
   useEffect(() => {
+    if (tab === "mensagens") return;
     if (!orcamentoId || data.loadingList || data.orcamentos.length === 0)
       return;
     const o = data.orcamentos.find((x) => x.id === orcamentoId);
