@@ -74,6 +74,7 @@ function ProfissionalArea() {
     (n) => !n.link || n.link.startsWith("/profissional"),
   );
   const unreadNotifications = profNotifications.filter((n) => !n.read).length;
+  const { totalNaoLidas: unreadMensagens } = useMinhasConversas();
 
   // UI state (sub-abas, sheet)
   const [pedidosSubTab, setPedidosSubTab] = useState<string>("oportunidades");
