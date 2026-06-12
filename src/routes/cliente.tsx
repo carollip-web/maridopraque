@@ -17,6 +17,7 @@ import { PedidosTab } from "@/features/cliente/PedidosTab";
 import { ServicosTab } from "@/features/cliente/ServicosTab";
 import { PagamentosTab } from "@/features/cliente/PagamentosTab";
 import { NotificacoesTab } from "@/features/cliente/NotificacoesTab";
+import { MensagensTab } from "@/features/cliente/MensagensTab";
 import { DadosTab } from "@/features/cliente/DadosTab";
 import { SegurancaTab } from "@/features/cliente/SegurancaTab";
 import { FavoritosTab } from "@/features/cliente/FavoritosTab";
@@ -31,6 +32,7 @@ const TAB_VALUES = [
   "seguranca",
   "favoritos",
   "suporte",
+  "mensagens",
   "notificacoes",
 ] as const satisfies readonly Tab[];
 
@@ -38,6 +40,7 @@ const clienteSearchSchema = z.object({
   tab: z.enum(TAB_VALUES).optional().catch("inicio").default("inicio"),
   id: z.string().optional(),
   pedidoId: z.string().optional(),
+  orcamentoId: z.string().optional(),
   chat: z.string().optional(),
   details: z
     .union([z.boolean(), z.literal("true"), z.literal("false")])
