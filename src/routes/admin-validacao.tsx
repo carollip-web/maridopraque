@@ -60,6 +60,23 @@ const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon
   rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle },
 };
 
+async function getSignedUrl(publicUrl: string | null) {
+  if (!publicUrl) return null;
+  try {
+    const parts = publicUrl.split("/documentos-profissionais/");
+    if (parts.length < 2) return publicUrl;
+    const path = decodeURIComponent(parts[1]);
+    const { data, error } = await supabase.storage
+      .from("documentos-profissionais")
+      .createSignedUrl(path, 3600);
+    if (error) throw error;
+    return data.signedUrl;
+  } catch (error) {
+    console.error("Erro ao gerar signed URL:", error);
+    return null;
+  }
+}
+
 function StatusBadge({ status }: { status: Status }) {
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.pendente;
   const Icon = cfg.icon;
@@ -79,6 +96,8 @@ function AdminValidacao() {
   const [prestadores, setPrestadores] = useState<any[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [selected, setSelected] = useState<Prestador | null>(null);
+  const [signedUrls, setSignedUrls] = useState<{ frente: string | null; verso: string | null; selfie: string | null }>({ frente: null, verso: null, selfie: null });
+  const [loadingUrls, setLoadingUrls] = useState(false);
   const [filterStatus, setFilterStatus] = useState<Status | "todos">("em_analise");
   const [search, setSearch] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -118,6 +137,22 @@ function AdminValidacao() {
   useEffect(() => {
     if (user && isAdmin) refresh();
   }, [user, isAdmin]);
+
+  useEffect(() => {
+    async function fetchSignedUrls() {
+      if (!selected) {
+        setSignedUrls({ frente: null, verso: null, selfie: null });
+        return;
+      }
+      setLoadingUrls(true);
+      const frente = await getSignedUrl(selected.foto_documento_frente);
+      const verso = await getSignedUrl(selected.foto_documento_verso);
+      const selfie = await getSignedUrl(selected.foto_selfie);
+      setSignedUrls({ frente, verso, selfie });
+      setLoadingUrls(false);
+    }
+    fetchSignedUrls();
+  }, [selected]);
 
   const handleAprovar = async () => {
     if (!selected) return;
@@ -430,15 +465,19 @@ function AdminValidacao() {
                   <Section title="Documentos" icon={FileText}>
                     <div className="grid sm:grid-cols-3 gap-3">
                       {[
-                        { label: "Doc. Frente", url: selected.foto_documento_frente },
-                        { label: "Doc. Verso", url: selected.foto_documento_verso },
-                        { label: "Selfie", url: selected.foto_selfie },
-                      ].map(({ label, url }) => (
+                        { label: "Doc. Frente", url: signedUrls.frente, original: selected.foto_documento_frente },
+                        { label: "Doc. Verso", url: signedUrls.verso, original: selected.foto_documento_verso },
+                        { label: "Selfie", url: signedUrls.selfie, original: selected.foto_selfie },
+                      ].map(({ label, url, original }) => (
                         <div key={label}>
                           <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
                             {label}
                           </p>
-                          {url ? (
+                          {loadingUrls ? (
+                            <div className="w-full h-28 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+                              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : url ? (
                             <a href={url} target="_blank" rel="noopener noreferrer">
                               <img
                                 src={url}
