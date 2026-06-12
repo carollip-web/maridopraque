@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Star, ShieldCheck, MapPin, ArrowLeft, MessageCircle } from "lucide-react";
+import { Star, ShieldCheck, MapPin, ArrowLeft, MessageCircle, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavoritoProfissional } from "@/hooks/useFavoritoProfissional";
 
 type PerfilSEO = {
   user_id: string;
@@ -241,12 +243,15 @@ function PerfilProfissional() {
               </div>
             )}
           </div>
-          <Button
-            asChild
-            className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold"
-          >
-            <Link to="/servicos">Pedir orçamento</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <FavoritoButton profissionalId={perfil.user_id} />
+            <Button
+              asChild
+              className="rounded-full bg-brand text-brand-foreground h-12 px-8 font-bold"
+            >
+              <Link to="/servicos">Pedir orçamento</Link>
+            </Button>
+          </div>
         </div>
 
         {perfil.bio && (
@@ -311,5 +316,28 @@ function PerfilProfissional() {
         )}
       </section>
     </div>
+  );
+}
+
+function FavoritoButton({ profissionalId }: { profissionalId: string }) {
+  const { user, roles } = useAuth();
+  const { favorito, toggle, loading } = useFavoritoProfissional(profissionalId);
+  // Hide for logged-in non-clients (e.g., the professional viewing their own page)
+  if (user && roles.length > 0 && !roles.includes("cliente")) return null;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      onClick={toggle}
+      disabled={loading}
+      aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      aria-pressed={favorito}
+      className="rounded-full h-12 w-12 border-border"
+    >
+      <Heart
+        className={`h-5 w-5 ${favorito ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+      />
+    </Button>
   );
 }

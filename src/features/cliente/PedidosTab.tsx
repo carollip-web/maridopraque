@@ -25,6 +25,8 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useFavoritoProfissional } from "@/hooks/useFavoritoProfissional";
+import { Heart } from "lucide-react";
 import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
 import { cancelarPedidoComSplit } from "@/lib/disputas.functions";
 import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
@@ -709,7 +711,10 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-base">{sp.prof}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-base truncate">{sp.prof}</p>
+                      <FavoritoIconButton profissionalId={selectedPedido?.profissional_id} />
+                    </div>
                     {profPublico.aprovacao_status === "aprovado" && (
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-0.5 mt-1">
                         <ShieldCheck className="h-3.5 w-3.5" />
@@ -1378,5 +1383,24 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         )}
       </div>
     </div>
+  );
+}
+
+function FavoritoIconButton({ profissionalId }: { profissionalId: string | null | undefined }) {
+  const { favorito, toggle, loading, canFavorite } = useFavoritoProfissional(profissionalId);
+  if (!canFavorite) return null;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={loading}
+      aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      aria-pressed={favorito}
+      className="shrink-0 rounded-full p-1 hover:bg-muted transition-colors disabled:opacity-50"
+    >
+      <Heart
+        className={`h-4 w-4 ${favorito ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+      />
+    </button>
   );
 }
