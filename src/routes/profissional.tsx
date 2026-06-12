@@ -19,6 +19,8 @@ import { ProfissionalDashboard } from "@/features/profissional/ProfissionalDashb
 import { ProfissionalOrcamentos } from "@/features/profissional/ProfissionalOrcamentos";
 import { ProfissionalServicos } from "@/features/profissional/ProfissionalServicos";
 import { ProfissionalNotificacoes } from "@/features/profissional/ProfissionalNotificacoes";
+import { ProfissionalMensagens } from "@/features/profissional/ProfissionalMensagens";
+import { useMinhasConversas } from "@/hooks/useMinhasConversas";
 import { ProfissionalStatusCard } from "@/features/profissional/ProfissionalStatusCard";
 import { OrcamentoDetailsSheet, type SheetMode } from "@/features/profissional/OrcamentoDetailsSheet";
 
