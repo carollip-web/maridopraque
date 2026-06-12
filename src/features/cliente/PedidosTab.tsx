@@ -25,6 +25,8 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useFavoritoProfissional } from "@/hooks/useFavoritoProfissional";
+import { Heart } from "lucide-react";
 import { aceitarProposta, cancelarPedido, concluirPedido } from "@/lib/orcamentos.functions";
 import { cancelarPedidoComSplit } from "@/lib/disputas.functions";
 import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
