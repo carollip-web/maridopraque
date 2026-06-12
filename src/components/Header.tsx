@@ -10,6 +10,7 @@ import {
   FileText,
   Settings,
   Menu,
+  MessageCircle,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useNotifications, type Notification as AppNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 function extractNotificationOrcamentoId(notification: AppNotification) {
   if (notification.pedidoId) return notification.pedidoId;
@@ -39,13 +41,45 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { notifications: allNotifications, markAsRead, markAllAsRead } = useNotifications();
-  const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData } = useAuth();
+  const { isLoggedIn, logout, profilePhoto, isAdmin, isProfissional, userData, user } = useAuth();
   // Filter notifications by user context: professionals only see professional notifications
   const notifications = isProfissional
     ? allNotifications.filter((n) => !n.link || n.link.startsWith("/profissional"))
     : allNotifications.filter((n) => !n.link || !n.link.startsWith("/profissional"));
   const unreadCount = notifications.filter((n) => !n.read).length;
   const navigate = useNavigate();
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("mensagens")
+        .select("*", { head: true, count: "exact" })
+        .eq("destinatario_id", user.id)
+        .eq("lida", false);
+      setUnreadMsgCount(count ?? 0);
+    };
+    fetchCount();
+
+    const channel = supabase
+      .channel(`header-mensagens-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "mensagens",
+          filter: `destinatario_id=eq.${user.id}`,
+        },
+        () => fetchCount(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -67,6 +101,15 @@ export function Header() {
       return;
     }
 
+    if (orcamentoId && isMessage) {
+      if (isProfissional) {
+        navigate({ to: "/profissional", search: { tab: "mensagens", orcamentoId } as any });
+      } else {
+        navigate({ to: "/cliente", search: { tab: "mensagens", orcamentoId } as any });
+      }
+      return;
+    }
+
     if (orcamentoId) {
       // Professionals always go to their own panel regardless of the stored link
       if (isProfissional) {
@@ -80,7 +123,6 @@ export function Header() {
           search: {
             tab: isServicos ? "servicos" : "orcamentos",
             orcamentoId,
-            chat: isMessage ? "1" : undefined,
           } as any,
         });
         return;
@@ -89,7 +131,7 @@ export function Header() {
       // Clients go to client area
       navigate({
         to: "/cliente",
-        search: { tab: "pedidos", pedidoId: orcamentoId, chat: isMessage ? "1" : undefined } as any,
+        search: { tab: "pedidos", pedidoId: orcamentoId } as any,
       });
       return;
     }
@@ -234,6 +276,25 @@ export function Header() {
           )}
 
           <div id="header-menu-container" className="flex items-center gap-4 relative">
+            {isLoggedIn && (
+              <button
+                onClick={() => {
+                  if (isProfissional) {
+                    navigate({ to: "/profissional", search: { tab: "mensagens" } as any });
+                  } else {
+                    navigate({ to: "/cliente", search: { tab: "mensagens" } as any });
+                  }
+                }}
+                className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
+              >
+                <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                {unreadMsgCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-brand text-[10px] text-white font-bold border-2 border-white box-content">
+                    {unreadMsgCount > 9 ? "9+" : unreadMsgCount}
+                  </span>
+                )}
+              </button>
+            )}
             {isLoggedIn && (
               <button
                 onClick={() => {
