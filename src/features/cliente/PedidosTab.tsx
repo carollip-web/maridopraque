@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Chat } from "@/components/Chat";
+import { NivelBadge } from "@/components/NivelBadge";
 import {
   Dialog,
   DialogContent,
@@ -186,7 +187,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       let propostas: any[] = [];
       const profsMap: Record<
         string,
-        { nome: string; slug?: string; media?: string; totalAvaliacoes?: number }
+        { nome: string; slug?: string; media?: string; totalAvaliacoes?: number; concluidos?: number }
       > = {};
 
       if (orcIds.length > 0) {
@@ -216,9 +217,17 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             .select("profissional_id, nota")
             .in("profissional_id", profIds);
 
+          // fetch concluidos
+          const { data: concluidosData } = await supabase
+            .from("orcamentos")
+            .select("profissional_id")
+            .in("profissional_id", profIds)
+            .eq("status", "concluido");
+
           (prData || []).forEach((p) => {
             const perf = (perfilData || []).find((pf) => pf.user_id === p.id);
             const avs = (avData || []).filter((av) => av.profissional_id === p.id);
+            const concluidosCount = (concluidosData || []).filter((c) => c.profissional_id === p.id).length;
             const media =
               avs.length > 0
                 ? (avs.reduce((acc, a) => acc + a.nota, 0) / avs.length).toFixed(1)
@@ -229,6 +238,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
               slug: perf?.slug ?? undefined,
               media,
               totalAvaliacoes: avs.length,
+              concluidos: concluidosCount,
             };
           });
         }
@@ -243,6 +253,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             profSlug: profsMap[p.profissional_id]?.slug,
             profMedia: profsMap[p.profissional_id]?.media,
             profTotalAvaliacoes: profsMap[p.profissional_id]?.totalAvaliacoes,
+            profConcluidos: profsMap[p.profissional_id]?.concluidos,
           }));
         const uiStatus =
           o.status === "customizado_pendente" && propsForOrc.length > 0
@@ -720,6 +731,23 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                         Identidade verificada
                       </span>
                     )}
+                    {(() => {
+                      const prop = sp.propostas?.find((p: any) => p.profissional_id === sp.profissional_id) || sp.propostas?.[0];
+                      if (!prop) return null;
+                      return (
+                        <div className="mt-3 mb-1 space-y-1">
+                          <NivelBadge concluidos={prop.profConcluidos || 0} notaMedia={Number(prop.profMedia) || 0} compact />
+                          <p className="text-xs text-slate-500 font-medium">
+                            {prop.profTotalAvaliacoes > 0 ? (
+                              <>⭐ {prop.profMedia} ({prop.profTotalAvaliacoes} avaliações)</>
+                            ) : "Novo na plataforma"}
+                          </p>
+                          <p className="text-xs text-slate-500 font-medium">
+                            {prop.profConcluidos || 0} serviços realizados
+                          </p>
+                        </div>
+                      );
+                    })()}
                     {profPublico.especialidades && profPublico.especialidades.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {profPublico.especialidades.slice(0, 3).map((e: string) => (
@@ -758,13 +786,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   </p>
                   <p className="font-bold text-lg flex items-center gap-2">
                     {primeiraProposta.profNome || "Profissional"}
-                    {primeiraProposta.profMedia && (
-                      <span className="inline-flex items-center gap-1 text-sm bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-bold border border-amber-100">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        {primeiraProposta.profMedia}
-                      </span>
-                    )}
                   </p>
+                  <div className="mt-2 space-y-1 mb-3">
+                    <NivelBadge concluidos={primeiraProposta.profConcluidos || 0} notaMedia={Number(primeiraProposta.profMedia) || 0} compact />
+                    <p className="text-xs text-slate-500 font-medium">
+                      {primeiraProposta.profTotalAvaliacoes > 0 ? (
+                        <>⭐ {primeiraProposta.profMedia} ({primeiraProposta.profTotalAvaliacoes} avaliações)</>
+                      ) : "Novo na plataforma"}
+                    </p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {primeiraProposta.profConcluidos || 0} serviços realizados
+                    </p>
+                  </div>
                   {primeiraProposta.profSlug && (
                     <a
                       href={`/profissionais/perfil/${primeiraProposta.profSlug}`}
