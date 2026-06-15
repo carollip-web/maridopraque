@@ -16,7 +16,9 @@ export interface Orcamento {
     | "recusado"
     | "pago"
     | "concluido"
-    | "cancelado";
+    | "cancelado"
+    | "em_disputa"
+    | "disputa_resolvida";
   observacoes_profissional: string | null;
   created_at: string;
   updated_at: string;
