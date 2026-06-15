@@ -461,6 +461,7 @@ export function AdminClientes() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
 
   const {
     data: clientes = [],
