@@ -174,7 +174,7 @@ function AdminArea() {
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
             {activeTab === "kpis" && <AdminKPIs />}
             {activeTab === "disputas" && <AdminDisputas />}
-            {activeTab === "suporte" && <AdminSuporte />}
+            {(activeTab as string) === "suporte" && <AdminSuporte />}
           </div>
         </div>
       </main>
