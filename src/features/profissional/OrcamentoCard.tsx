@@ -500,19 +500,21 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               <MapPin className="h-4 w-4" />
               Endereço de atendimento
             </div>
-            {clienteEndereco ? (
+            {(() => {
+              const enderecoToShow = (o as any).endereco_snapshot || clienteEndereco;
+              return enderecoToShow ? (
               <div className="text-xs text-slate-600 leading-relaxed space-y-1">
                 <p>
-                  {clienteEndereco.logradouro}, {clienteEndereco.numero}
-                  {clienteEndereco.complemento && ` - ${clienteEndereco.complemento}`}
+                  {enderecoToShow.logradouro}, {enderecoToShow.numero}
+                  {enderecoToShow.complemento && ` - ${enderecoToShow.complemento}`}
                 </p>
                 <p>
-                  {clienteEndereco.bairro}, {clienteEndereco.cidade} - {clienteEndereco.uf}
+                  {enderecoToShow.bairro}, {enderecoToShow.cidade} - {enderecoToShow.uf}
                 </p>
-                <p>CEP: {clienteEndereco.cep}</p>
+                <p>CEP: {enderecoToShow.cep}</p>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    `${clienteEndereco.logradouro}, ${clienteEndereco.numero}, ${clienteEndereco.bairro}, ${clienteEndereco.cidade} - ${clienteEndereco.uf}`
+                    `${enderecoToShow.logradouro}, ${enderecoToShow.numero}, ${enderecoToShow.bairro}, ${enderecoToShow.cidade} - ${enderecoToShow.uf}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
