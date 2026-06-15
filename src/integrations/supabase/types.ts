@@ -2178,6 +2178,28 @@ export type Database = {
       }
     }
     Views: {
+      avaliacoes_publicas: {
+        Row: {
+          cliente_nome: string | null
+          comentario: string | null
+          created_at: string | null
+          id: string | null
+          nota: number | null
+          profissional_id: string | null
+          resposta_em: string | null
+          resposta_profissional: string | null
+          service_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_aval_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profissionais_publicos: {
         Row: {
           anos_experiencia: number | null
