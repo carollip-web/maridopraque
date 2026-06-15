@@ -68,6 +68,21 @@ serve(async (req) => {
     if (orcErr || !orcamento) {
       return json({ error: "NOT_FOUND", message: "Orçamento não encontrado." }, 404);
     }
+
+    // Snapshot do endereço do cliente para o profissional ver após o pagamento
+    const { data: endereco } = await admin
+      .from("cliente_enderecos")
+      .select("logradouro, numero, complemento, bairro, cidade, uf, cep, lat, lng")
+      .eq("user_id", orcamento.cliente_id)
+      .eq("is_padrao", true)
+      .maybeSingle();
+    if (endereco) {
+      await admin.from("orcamentos").update({ endereco_snapshot: endereco } as any).eq("id", orcamento.id);
+    }
+
+    if (orcErr || !orcamento) {
+      return json({ error: "NOT_FOUND", message: "Orçamento não encontrado." }, 404);
+    }
     if (orcamento.cliente_id !== user.id) {
       return json({ error: "FORBIDDEN", message: "Sem permissão para este orçamento." }, 403);
     }
