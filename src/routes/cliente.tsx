@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -61,6 +61,26 @@ function ClienteArea() {
   const { logout, userData, isProfissional, isAdmin, user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const { data: userRoles } = useQuery({
+    queryKey: ["user_roles", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data?.map((r) => r.role) || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    if (userRoles?.includes("admin")) {
+      navigate({ to: "/admin", replace: true });
+    }
+  }, [userRoles, navigate]);
 
   // Visitante que acabou de criar conta + pedido: abrir o pedido automaticamente
   useEffect(() => {
@@ -206,6 +226,10 @@ function ClienteArea() {
 
   const currentLabel =
     sidebarItems.find((i) => i.id === activeTab)?.label || "Minha Conta";
+
+  if (userRoles?.includes("admin")) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">
