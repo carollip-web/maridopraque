@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminLevel } from "./admin-permissions.server";
 import type { Json } from "@/integrations/supabase/types";
 
 const cancelarComSplitSchema = z.object({
@@ -94,7 +95,10 @@ export const resolverDisputaOrcamento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => resolverDisputaSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin", "financeiro"]);
+
+
 
     const rpcRes = (await supabase.rpc("resolver_disputa_orcamento" as never, {
       _orcamento_id: data.orcamentoId,
