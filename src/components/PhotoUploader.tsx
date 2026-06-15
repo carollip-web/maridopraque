@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ImagePlus, X, Loader2, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SignedImage, SignedVideo } from "@/components/SignedMedia";
 
 interface Props {
   userId: string;
@@ -102,7 +103,7 @@ export function PhotoUploader({
             <div key={url} className="relative group">
               {video ? (
                 <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-border bg-slate-900">
-                  <video
+                  <SignedVideo
                     src={url}
                     className="h-full w-full object-cover"
                     muted
@@ -116,7 +117,7 @@ export function PhotoUploader({
                   </div>
                 </div>
               ) : (
-                <img
+                <SignedImage
                   src={url}
                   alt=""
                   className="h-20 w-20 rounded-xl object-cover border border-border"
