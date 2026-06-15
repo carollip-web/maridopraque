@@ -527,7 +527,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               <p className="text-xs text-slate-500 italic">
                 Endereço não informado — combine pelo chat
               </p>
-            )}
+            );
+            })()}
           </div>
         )}
 
