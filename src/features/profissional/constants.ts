@@ -12,6 +12,8 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
   concluido: { label: "Concluído", className: "bg-slate-100 text-slate-700" },
   recusado: { label: "Recusado", className: "bg-red-100 text-red-700" },
   cancelado: { label: "Cancelado", className: "bg-slate-200 text-slate-600" },
+  em_disputa: { label: "Em disputa", className: "bg-rose-100 text-rose-700" },
+  disputa_resolvida: { label: "Disputa resolvida", className: "bg-slate-100 text-slate-700" },
 };
 
 export const WHATSAPP_LINK =
