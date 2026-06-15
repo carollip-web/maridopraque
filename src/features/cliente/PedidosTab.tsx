@@ -380,6 +380,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           data: {
             propostaId: selectedProposta.id,
             orcamentoId: selectedProposta.orcamento_id || selectedPedido.id,
+            dataAgendada: dataAgendada ? dataAgendada.toISOString() : null,
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -397,13 +398,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           );
         }
 
-        if (dataAgendada) {
-          console.info("[PedidosTab] Atualizando data agendada", { data: dataAgendada });
-          await supabase
-            .from("orcamentos")
-            .update({ data_agendada: dataAgendada.toISOString() })
-            .eq("id", selectedPedido.id);
-        }
       } else {
         const { error } = await supabase
           .from("orcamentos")

@@ -486,6 +486,7 @@ export const decidirOrcamento = createServerFn({ method: "POST" })
 const aceitarPropostaSchema = z.object({
   propostaId: z.string().uuid(),
   orcamentoId: z.string().uuid().optional(),
+  dataAgendada: z.string().nullish(),
 });
 
 export const aceitarProposta = createServerFn({ method: "POST" })
@@ -502,6 +503,7 @@ export const aceitarProposta = createServerFn({ method: "POST" })
 
     const { data: resultRows, error } = await supabase.rpc("aceitar_proposta_cliente", {
       _proposta_id: data.propostaId,
+      _data_agendada: data.dataAgendada || null,
     });
 
     if (error) {
