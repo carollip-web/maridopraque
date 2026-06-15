@@ -22,6 +22,68 @@ export function SuporteTab() {
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [respostas, setRespostas] = useState<any[]>([]);
+  const [loadingRespostas, setLoadingRespostas] = useState(false);
+  const [novaResposta, setNovaResposta] = useState("");
+  const [enviandoResposta, setEnviandoResposta] = useState(false);
+
+  const handleSelectTicket = async (ticket: Ticket) => {
+    if (selectedTicketId === ticket.id) {
+      setSelectedTicketId(null);
+      return;
+    }
+    setSelectedTicketId(ticket.id);
+    setLoadingRespostas(true);
+    const { data, error } = await supabase
+      .from("suporte_respostas")
+      .select(`*, profiles!suporte_respostas_autor_id_fkey(nome)`)
+      .eq("ticket_id", ticket.id)
+      .order("created_at", { ascending: true });
+    if (!error) setRespostas(data || []);
+    setLoadingRespostas(false);
+  };
+
+  const handleResponderTicket = async (ticket: Ticket) => {
+    if (!user || !novaResposta.trim()) return;
+    setEnviandoResposta(true);
+    try {
+      const { error: respError } = await supabase
+        .from("suporte_respostas")
+        .insert({
+          ticket_id: ticket.id,
+          autor_id: user.id,
+          mensagem: novaResposta.trim()
+        });
+      if (respError) throw respError;
+
+      const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      if (admins && admins.length > 0) {
+        const notificacoes = admins.map(a => ({
+          user_id: a.user_id,
+          titulo: "Nova resposta no chamado",
+          mensagem: `O cliente respondeu no chamado '${ticket.assunto}'`,
+          link: "/admin?tab=suporte"
+        }));
+        await supabase.from("notificacoes").insert(notificacoes);
+      }
+
+      import("sonner").then(m => m.toast.success("Resposta enviada!"));
+      setNovaResposta("");
+      
+      const { data } = await supabase
+        .from("suporte_respostas")
+        .select(`*, profiles!suporte_respostas_autor_id_fkey(nome)`)
+        .eq("ticket_id", ticket.id)
+        .order("created_at", { ascending: true });
+      if (data) setRespostas(data);
+    } catch (e: any) {
+      import("sonner").then(m => m.toast.error("Erro ao enviar resposta: " + e.message));
+    } finally {
+      setEnviandoResposta(false);
+    }
+  };
+
   const loadTickets = async () => {
     if (!user) return;
     setLoading(true);
@@ -181,21 +243,89 @@ export function SuporteTab() {
             Nenhum chamado de suporte aberto. Se precisar de algo, estamos à disposição!
           </div>
         ) : (
-          tickets.map(ticket => (
-            <div key={ticket.id} className="bg-white rounded-[1.5rem] p-6 border border-border shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <h4 className="font-bold text-slate-800">{ticket.assunto}</h4>
-                  {getStatusBadge(ticket.status)}
+          tickets.map(ticket => {
+            const isSelected = selectedTicketId === ticket.id;
+            return (
+            <div key={ticket.id} className="bg-white rounded-[1.5rem] p-6 border border-border shadow-sm flex flex-col gap-4 transition-all">
+              <div 
+                className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 cursor-pointer"
+                onClick={() => handleSelectTicket(ticket)}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold text-slate-800">{ticket.assunto}</h4>
+                    {getStatusBadge(ticket.status)}
+                  </div>
+                  {!isSelected && <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{ticket.mensagem}</p>}
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase pt-2">
+                    {isSelected ? "Detalhes do Chamado" : `Enviado em ${new Date(ticket.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`}
+                  </p>
                 </div>
-                <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{ticket.mensagem}</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase pt-2">
-                  Enviado em {new Date(ticket.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                </p>
               </div>
+              
+              {isSelected && (
+                <div className="mt-4 pt-4 border-t border-slate-100 space-y-6 animate-in slide-in-from-top-2">
+                  {/* Mensagem original */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 absolute top-4 right-4">Mensagem Original</p>
+                    <div className="font-bold text-sm text-slate-800 mb-2">Você</div>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{ticket.mensagem}</p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-2 text-right">
+                      {new Date(ticket.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+
+                  {/* Respostas */}
+                  {loadingRespostas ? (
+                     <div className="text-center py-4"><span className="animate-pulse text-sm text-slate-400 font-medium">Carregando histórico...</span></div>
+                  ) : (
+                    respostas.map(r => {
+                      const isAdmin = r.autor_id !== user?.id;
+                      return (
+                        <div 
+                          key={r.id} 
+                          className={`p-4 rounded-xl shadow-sm border ${isAdmin ? "bg-brand/5 border-brand/10 mr-8" : "bg-slate-50 border-slate-100 ml-8"}`}
+                        >
+                          <div className={`font-bold text-sm mb-2 flex items-center gap-2 ${isAdmin ? "text-brand" : "text-slate-800"}`}>
+                            {isAdmin ? "Equipe de Suporte" : "Você"}
+                            {isAdmin && <span className="text-[9px] uppercase tracking-widest bg-brand text-white px-2 py-0.5 rounded-full">Equipe</span>}
+                          </div>
+                          <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isAdmin ? "text-slate-800" : "text-slate-600"}`}>{r.mensagem}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-2 text-right">
+                            {new Date(r.created_at).toLocaleString("pt-BR")}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Nova resposta */}
+                  {ticket.status !== "resolvido" ? (
+                    <div className="pt-2">
+                      <textarea
+                        value={novaResposta}
+                        onChange={(e) => setNovaResposta(e.target.value)}
+                        placeholder="Escreva sua resposta..."
+                        className="w-full min-h-[100px] p-3 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none bg-white mb-3"
+                      />
+                      <Button 
+                        onClick={() => handleResponderTicket(ticket)}
+                        disabled={enviandoResposta || !novaResposta.trim()}
+                        className="w-full sm:w-auto bg-brand text-white font-bold rounded-xl shadow-sm"
+                      >
+                        {enviandoResposta ? "Enviando..." : "Responder Chamado"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-50 text-green-700 p-3 rounded-xl border border-green-100 text-center text-sm font-bold shadow-inner">
+                      Chamado encerrado. Se precisar de algo, abra um novo ticket.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          ))
-        )}
+          )}
+        ))}
       </div>
     </div>
   );

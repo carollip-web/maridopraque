@@ -12,6 +12,7 @@ import {
   Crown,
   Bell,
   AlertTriangle,
+  HeadphonesIcon,
 } from "lucide-react";
 import type { AdminSection, AdminLevel } from "@/hooks/useAuth";
 export type { AdminSection, AdminLevel };
@@ -46,6 +47,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "disputas", label: "Disputas", icon: AlertTriangle },
+  { id: "suporte" as any, label: "Suporte", icon: HeadphonesIcon },
   { id: "dados", label: "Meus Dados", icon: UserCog },
 ];
 
