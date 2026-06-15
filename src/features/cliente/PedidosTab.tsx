@@ -87,7 +87,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     }
     setDisputaLoading(true);
     try {
-      const { error } = await supabase.rpc("abrir_disputa_orcamento" as never, {
+      const { error } = await (supabase.rpc as any)("abrir_disputa_orcamento", {
         _orcamento_id: orcamentoId,
         _motivo: motivo,
       });
@@ -427,7 +427,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
-  const [profPublico, setProfPublico] = useState<Record<string, unknown> | null>(null);
+  const [profPublico, setProfPublico] = useState<any>(null);
 
   useEffect(() => {
     if (!selectedPedido?.profissional_id) {
@@ -444,7 +444,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data } = await supabase
         .from("profissionais_publicos")
         .select("foto_url, especialidades, aprovacao_status")
-        .eq("user_id", selectedPedido.profissional_id)
+        .eq("user_id", selectedPedido.profissional_id as string)
         .maybeSingle();
       if (active) setProfPublico(data);
     })();
