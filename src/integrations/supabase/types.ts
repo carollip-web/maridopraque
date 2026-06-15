@@ -983,6 +983,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_orc_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog_publico"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orcamentos_apoio_equipe_id_fkey"
             columns: ["apoio_equipe_id"]
             isOneToOne: false
@@ -1001,6 +1008,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog_publico"
             referencedColumns: ["id"]
           },
         ]
@@ -1981,6 +1995,13 @@ export type Database = {
             referencedRelation: "services_catalog"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_sm_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services_catalog_publico"
+            referencedColumns: ["id"]
+          },
         ]
       }
       services_catalog: {
@@ -2274,6 +2295,60 @@ export type Database = {
           },
         ]
       }
+      services_catalog_publico: {
+        Row: {
+          apoio_feminino_valor: number | null
+          ativo: boolean | null
+          categoria: string | null
+          complexidade: string | null
+          created_at: string | null
+          descricao: string | null
+          domingo_feriado_factor: number | null
+          id: string | null
+          is_fixed_price: boolean | null
+          nome: string | null
+          preco_fixo: number | null
+          preco_max: number | null
+          preco_min: number | null
+          slug: string | null
+          urgencia_noturno_factor: number | null
+        }
+        Insert: {
+          apoio_feminino_valor?: number | null
+          ativo?: boolean | null
+          categoria?: string | null
+          complexidade?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          domingo_feriado_factor?: number | null
+          id?: string | null
+          is_fixed_price?: boolean | null
+          nome?: string | null
+          preco_fixo?: number | null
+          preco_max?: number | null
+          preco_min?: number | null
+          slug?: string | null
+          urgencia_noturno_factor?: number | null
+        }
+        Update: {
+          apoio_feminino_valor?: number | null
+          ativo?: boolean | null
+          categoria?: string | null
+          complexidade?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          domingo_feriado_factor?: number | null
+          id?: string | null
+          is_fixed_price?: boolean | null
+          nome?: string | null
+          preco_fixo?: number | null
+          preco_max?: number | null
+          preco_min?: number | null
+          slug?: string | null
+          urgencia_noturno_factor?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       abrir_disputa_orcamento: {
@@ -2288,6 +2363,10 @@ export type Database = {
           orcamento_id: string
           proposta_id: string
         }[]
+      }
+      assumir_vaga_apoio_feminino: {
+        Args: { _orcamento_id: string }
+        Returns: Json
       }
       auto_concluir_orcamentos_vencidos: { Args: never; Returns: number }
       cancelar_orcamento_com_split: {
