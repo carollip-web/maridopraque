@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Chat } from "@/components/Chat";
 import { NivelBadge } from "@/components/NivelBadge";
+import { AvaliacaoForm } from "@/components/AvaliacaoForm";
 import {
   Dialog,
   DialogContent,
@@ -75,6 +76,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
   const [disputaOpen, setDisputaOpen] = useState(false);
   const [disputaMotivo, setDisputaMotivo] = useState("");
+  const [jaAvaliou, setJaAvaliou] = useState(false);
   const [disputaLoading, setDisputaLoading] = useState(false);
 
   const handleAbrirDisputa = async (orcamentoId: string) => {
@@ -333,6 +335,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "avaliacoes",
+          filter: `cliente_id=eq.${user.id}`,
+        },
+        () => {
+          setJaAvaliou(true);
+        },
+      )
       .subscribe();
 
     return () => {
@@ -438,6 +452,23 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       active = false;
     };
   }, [selectedPedido?.profissional_id, selectedPedido?.rawStatus]);
+
+  useEffect(() => {
+    if (!selectedPedido?.id || selectedPedido.rawStatus !== "concluido") {
+      setJaAvaliou(false);
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("avaliacoes")
+        .select("id")
+        .eq("orcamento_id", selectedPedido.id)
+        .maybeSingle();
+      if (active) setJaAvaliou(!!data);
+    })();
+    return () => { active = false; };
+  }, [selectedPedido?.id, selectedPedido?.rawStatus]);
 
   useEffect(() => {
     if (chat === "1" && selectedPedido?.profissional_id) {
@@ -767,6 +798,27 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Conversar
                 </Button>
+              </section>
+            )}
+            {concluido && sp.profissional_id && (
+              <section className="bg-white rounded-[2rem] border border-amber-100 p-6 md:p-8 shadow-soft">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Star className="h-5 w-5 text-amber-500" />
+                  Como foi o serviço?
+                </h3>
+                <AvaliacaoForm
+                  orcamentoId={sp.id}
+                  clienteId={sp.cliente_id}
+                  profissionalId={sp.profissional_id}
+                />
+                {jaAvaliou && (
+                  <button
+                    onClick={() => setActiveTab("servicos" as Tab)}
+                    className="mt-4 text-sm text-brand hover:underline font-medium"
+                  >
+                    Ver no Histórico de Serviços →
+                  </button>
+                )}
               </section>
             )}
             {aguardandoAprovacao && temProposta && (
