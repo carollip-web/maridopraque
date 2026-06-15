@@ -930,13 +930,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
             <section className="bg-white rounded-[2rem] border border-border p-5 shadow-soft">
               <div className="grid gap-3">
-                <Button
-                  variant="outline"
-                  className="rounded-full h-12 font-bold"
-                  onClick={() => window.open(WHATSAPP_LINK, "_blank")}
-                >
-                  Suporte
-                </Button>
+                <div className="flex flex-col gap-1 text-center">
+                  <Button
+                    variant="outline"
+                    className="rounded-full h-12 font-bold"
+                    onClick={() => {
+                      const idCurto = sp.id.slice(0, 8);
+                      window.location.href = `mailto:suporte@maridopraque.com?subject=Dúvida sobre pedido ${idCurto}&body=Olá, preciso de ajuda com meu pedido ${idCurto}.%0A%0A`;
+                    }}
+                  >
+                    Suporte
+                  </Button>
+                  <p className="text-[10px] text-slate-400 font-medium pt-1">
+                    Ou escreva direto para <span className="select-all">suporte@maridopraque.com</span>
+                  </p>
+                </div>
 
                 <Button
                   variant="outline"
