@@ -59,7 +59,7 @@ export function AdminApoioFeminino() {
       .from("apoio_feminino_equipe")
       .insert({
         nome: novoNome.trim(),
-        telefone: novoTelefone.trim() || null,
+        whatsapp: novoTelefone.trim() || null,
         chave_pix: novoPix.trim() || null,
       });
     setInserindo(false);
