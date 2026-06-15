@@ -427,7 +427,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
-  const [profPublico, setProfPublico] = useState<Record<string, unknown> | null>(null);
+  const [profPublico, setProfPublico] = useState<any>(null);
 
   useEffect(() => {
     if (!selectedPedido?.profissional_id) {
