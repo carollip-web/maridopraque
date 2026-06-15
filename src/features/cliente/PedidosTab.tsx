@@ -54,7 +54,7 @@ interface PedidosTabProps {
 }
 
 export function PedidosTab({ setActiveTab }: PedidosTabProps) {
-  const searchParams = useSearch({ strict: false }) as any;
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const { pedidoId, chat } = searchParams;
   const navigate = useNavigate();
   const { user, session } = useAuth();
@@ -87,7 +87,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     }
     setDisputaLoading(true);
     try {
-      const { error } = await (supabase as any).rpc("abrir_disputa_orcamento", {
+      const { error } = await supabase.rpc("abrir_disputa_orcamento" as never, {
         _orcamento_id: orcamentoId,
         _motivo: motivo,
       });
@@ -126,7 +126,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const handleDeleteOrder = async (orderId: string, title: string) => {
     // Detecta se o pedido já foi pago — nesse caso usa fluxo com split/reembolso.
-    const pedido = (pedidos as any[]).find((p) => p.id === orderId);
+    const pedido = pedidos.find((p) => p.id === orderId);
     const status = String(pedido?.rawStatus || "").toLowerCase();
     const ehPago = ["pago"].includes(status);
 
@@ -140,7 +140,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (pedidoId === orderId) {
         await navigate({
           to: "/cliente",
-          search: (prev: any) => ({ ...prev, pedidoId: undefined, chat: undefined }),
+          search: (prev: Record<string, unknown>) => ({ ...prev, pedidoId: undefined, chat: undefined }),
         });
       }
 
@@ -149,7 +149,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           data: { orcamentoId: orderId },
           headers: { Authorization: `Bearer ${session?.access_token}` },
         });
-        if (!res.ok) throw new Error((res as any).error || "Erro ao cancelar");
+        if (!res.ok) throw new Error((res as {error?: string}).error || "Erro ao cancelar");
         toast.success("Cancelamento processado. Confira o resumo financeiro nos detalhes do pedido.");
       } else {
         const { ok, error: serverError } = await cancelarPedidoFn({
@@ -193,7 +193,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       > = {};
 
       if (orcIds.length > 0) {
-        const { data: pData } = await (supabase as any)
+        const { data: pData } = await supabase
           .from("propostas")
           .select("id, orcamento_id, profissional_id, valor_servico, status, observacoes")
           .in("orcamento_id", orcIds);
@@ -427,7 +427,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
-  const [profPublico, setProfPublico] = useState<any>(null);
+  const [profPublico, setProfPublico] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!selectedPedido?.profissional_id) {
@@ -441,7 +441,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     }
     let active = true;
     (async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabase
         .from("profissionais_publicos")
         .select("foto_url, especialidades, aprovacao_status")
         .eq("user_id", selectedPedido.profissional_id)
@@ -477,19 +477,19 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   }, [chat, selectedPedido?.id, selectedPedido?.profissional_id]);
 
   const openPedido = (id: string) => {
-    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, pedidoId: id }) });
+    navigate({ to: "/cliente", search: (prev: Record<string, unknown>) => ({ ...prev, pedidoId: id }) });
   };
 
   const closePedido = () => {
     navigate({
       to: "/cliente",
-      search: (prev: any) => ({ ...prev, pedidoId: undefined, chat: undefined }),
+      search: (prev: Record<string, unknown>) => ({ ...prev, pedidoId: undefined, chat: undefined }),
     });
   };
 
   const closeConversar = () => {
     setShowConversar(false);
-    navigate({ to: "/cliente", search: (prev: any) => ({ ...prev, chat: undefined }) });
+    navigate({ to: "/cliente", search: (prev: Record<string, unknown>) => ({ ...prev, chat: undefined }) });
   };
 
   const filteredPedidos = pedidos.filter((p) => {
@@ -534,23 +534,23 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       : sp.price;
 
     const tipoAtendimentoLabel =
-      (sp as any).tipo_atendimento === "mulher"
+      sp.tipo_atendimento === "mulher"
         ? "Profissional mulher"
-        : (sp as any).tipo_atendimento === "homem"
+        : sp.tipo_atendimento === "homem"
           ? "Profissional homem"
-          : (sp as any).tipo_atendimento === "homem_com_apoio_feminino"
+          : sp.tipo_atendimento === "homem_com_apoio_feminino"
             ? "Profissional + apoio feminino"
             : null;
 
-    const agendaLabel = (sp as any).data_preferida
-      ? `${new Date((sp as any).data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${
-          (sp as any).periodo_preferido === "manha"
+    const agendaLabel = sp.data_preferida
+      ? `${new Date(sp.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${
+          sp.periodo_preferido === "manha"
             ? "Manhã"
-            : (sp as any).periodo_preferido === "tarde"
+            : sp.periodo_preferido === "tarde"
               ? "Tarde"
-              : (sp as any).periodo_preferido === "noite"
+              : sp.periodo_preferido === "noite"
                 ? "Noite"
-                : (sp as any).horario_preferido?.slice(0, 5) || "Horário a combinar"
+                : sp.horario_preferido?.slice(0, 5) || "Horário a combinar"
         }`
       : null;
 

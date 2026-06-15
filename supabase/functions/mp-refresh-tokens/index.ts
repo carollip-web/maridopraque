@@ -74,6 +74,20 @@ Deno.serve(async (req) => {
         refresh_token: perfil.mp_refresh_token as string,
       });
 
+      const notificarFalha = async () => {
+        const { error: notifErr } = await supabase.from("notificacoes").insert({
+          user_id: perfil.user_id,
+          titulo: "Reconecte seu Mercado Pago",
+          mensagem: "Sua conexão com o Mercado Pago expirou. Reconecte em Configurações para continuar recebendo pagamentos.",
+          link: "/profissional?tab=configuracoes"
+        });
+        if (notifErr) {
+          console.error(`Erro ao notificar user_id=${perfil.user_id}: ${notifErr.message}`);
+        } else {
+          console.log(`Notificação salva para user_id=${perfil.user_id}`);
+        }
+      };
+
       const resp = await fetch("https://api.mercadopago.com/oauth/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -85,6 +99,7 @@ Deno.serve(async (req) => {
         console.error(
           `Falha refresh user_id=${perfil.user_id} status=${resp.status} body=${txt}`,
         );
+        await notificarFalha();
         falhas++;
         continue;
       }
@@ -98,6 +113,7 @@ Deno.serve(async (req) => {
         console.error(
           `Resposta inválida do MP para user_id=${perfil.user_id}`,
         );
+        await notificarFalha();
         falhas++;
         continue;
       }
@@ -119,6 +135,7 @@ Deno.serve(async (req) => {
         console.error(
           `Erro ao atualizar user_id=${perfil.user_id}: ${updErr.message}`,
         );
+        await notificarFalha();
         falhas++;
         continue;
       }
@@ -128,6 +145,7 @@ Deno.serve(async (req) => {
       console.error(
         `Exceção ao renovar user_id=${perfil.user_id}: ${(e as Error).message}`,
       );
+      await notificarFalha();
       falhas++;
     }
   }

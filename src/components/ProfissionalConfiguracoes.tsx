@@ -45,7 +45,6 @@ const profileSchema = z.object({
   atende_emergencias: z.boolean().optional(),
   veiculo_proprio: z.boolean().optional(),
   genero: z.enum(["homem", "mulher", "outro", "nao_informar", "apoio_feminino"]).optional(),
-  oferece_apoio_feminino: z.boolean().optional(),
   chave_pix: z.string().optional(),
   pix_key_type: z.string().optional(),
 }).superRefine((_val, _ctx) => {
@@ -64,7 +63,6 @@ type ProfissionalPerfilData = {
   atende_emergencias?: boolean | null;
   veiculo_proprio?: boolean | null;
   genero?: string | null;
-  oferece_apoio_feminino?: boolean | null;
   mp_user_id?: string | null;
   mp_connected_at?: string | null;
 };
@@ -143,7 +141,7 @@ export function ProfissionalConfiguracoes() {
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
-          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, oferece_apoio_feminino, ativo, lat, lng, cpf, cnpj, mp_user_id, mp_connected_at",
+          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, ativo, lat, lng, cpf, cnpj, mp_user_id, mp_connected_at",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -174,7 +172,6 @@ export function ProfissionalConfiguracoes() {
       atende_emergencias: false,
       veiculo_proprio: false,
       genero: "nao_informar",
-      oferece_apoio_feminino: false,
       chave_pix: "",
       pix_key_type: "cpf",
     },
@@ -194,7 +191,6 @@ export function ProfissionalConfiguracoes() {
       atende_emergencias: !!profissionalPerfil?.atende_emergencias,
       veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
       genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
-      oferece_apoio_feminino: !!profissionalPerfil?.oferece_apoio_feminino,
       chave_pix: (profissionalPerfil as any)?.chave_pix ?? "",
       pix_key_type: (profissionalPerfil as any)?.pix_key_type ?? "cpf",
     });
@@ -251,7 +247,6 @@ export function ProfissionalConfiguracoes() {
         atende_emergencias: !!values.atende_emergencias,
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
-        oferece_apoio_feminino: false,
         chave_pix: values.chave_pix || null,
         pix_key_type: values.pix_key_type || null,
         updated_at: new Date().toISOString(),
@@ -277,7 +272,7 @@ export function ProfissionalConfiguracoes() {
       const { data: savedPerfil } = await supabase
         .from("profissional_perfil")
         .select(
-          "genero, oferece_apoio_feminino, anos_experiencia, raio_atendimento_km, chave_pix",
+          "genero, anos_experiencia, raio_atendimento_km, chave_pix",
         )
         .eq("user_id", user.id)
         .maybeSingle();
