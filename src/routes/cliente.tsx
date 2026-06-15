@@ -41,9 +41,10 @@ const clienteSearchSchema = z.object({
   orcamentoId: z.string().optional(),
   chat: z.string().optional(),
   details: z
-    .union([z.boolean(), z.literal("true"), z.literal("false")])
+    .union([z.boolean(), z.literal("true"), z.literal("false"), z.literal("1")])
     .optional()
-    .transform((v) => (v === true || v === "true" ? true : undefined)),
+    .catch(undefined)
+    .transform((v) => (v === true || v === "true" || v === "1" ? true : undefined)),
   payment: z.enum(["success", "failure", "pending"]).optional().catch(undefined),
 });
 
