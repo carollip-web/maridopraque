@@ -80,9 +80,6 @@ serve(async (req) => {
       await admin.from("orcamentos").update({ endereco_snapshot: endereco } as any).eq("id", orcamento.id);
     }
 
-    if (orcErr || !orcamento) {
-      return json({ error: "NOT_FOUND", message: "Orçamento não encontrado." }, 404);
-    }
     if (orcamento.cliente_id !== user.id) {
       return json({ error: "FORBIDDEN", message: "Sem permissão para este orçamento." }, 403);
     }
