@@ -2,7 +2,22 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Users, Search, FileDown, Trash2, UserPlus, Loader2, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Search,
+  FileDown,
+  Trash2,
+  UserPlus,
+  Loader2,
+  RefreshCw,
+  X,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Star,
+  LifeBuoy,
+  Phone,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -18,9 +33,409 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+
+const STATUS_COLORS: Record<string, string> = {
+  customizado_pendente: "bg-amber-100 text-amber-700",
+  enviado: "bg-blue-100 text-blue-700",
+  aprovado: "bg-indigo-100 text-indigo-700",
+  pago: "bg-emerald-100 text-emerald-700",
+  concluido: "bg-green-100 text-green-700",
+  cancelado: "bg-slate-200 text-slate-600",
+  em_disputa: "bg-red-100 text-red-700",
+  disputa_resolvida: "bg-purple-100 text-purple-700",
+};
+
+const fmtBRL = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const onlyDigits = (s?: string | null) => (s || "").replace(/\D/g, "");
+
+function ClienteDetailPanel({
+  cliente,
+  onClose,
+}: {
+  cliente: any;
+  onClose: () => void;
+}) {
+  const id = cliente.id;
+  const [showAllOrders, setShowAllOrders] = useState(false);
+
+  const { data: endereco } = useQuery({
+    queryKey: ["admin", "cliente-detail", id, "endereco"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("cliente_enderecos")
+        .select("*")
+        .eq("user_id", id)
+        .order("is_padrao", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: orcamentos = [] } = useQuery({
+    queryKey: ["admin", "cliente-detail", id, "orcamentos"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("orcamentos")
+        .select("id, service_name, status, valor, valor_total, created_at, profissional_id")
+        .eq("cliente_id", id)
+        .order("created_at", { ascending: false });
+      const list = data || [];
+      const profIds = Array.from(
+        new Set(list.map((o: any) => o.profissional_id).filter(Boolean)),
+      );
+      let profMap: Record<string, string> = {};
+      if (profIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, nome")
+          .in("id", profIds as string[]);
+        profMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.nome]));
+      }
+      return list.map((o: any) => ({ ...o, profissional_nome: profMap[o.profissional_id] }));
+    },
+  });
+
+  const { data: financeiro } = useQuery({
+    queryKey: ["admin", "cliente-detail", id, "financeiro"],
+    queryFn: async () => {
+      const { data: orcs } = await supabase
+        .from("orcamentos")
+        .select("id")
+        .eq("cliente_id", id);
+      const ids = (orcs || []).map((o: any) => o.id);
+      if (ids.length === 0) return { total: 0, count: 0, ticket: 0 };
+      const { data: pags } = await supabase
+        .from("pagamentos")
+        .select("valor_total, status, orcamento_id")
+        .in("orcamento_id", ids)
+        .eq("status", "paid");
+      const total = (pags || []).reduce(
+        (sum: number, p: any) => sum + Number(p.valor_total || 0),
+        0,
+      );
+      const count = (pags || []).length;
+      return { total, count, ticket: count > 0 ? total / count : 0 };
+    },
+  });
+
+  const { data: avaliacoes = [] } = useQuery({
+    queryKey: ["admin", "cliente-detail", id, "avaliacoes"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("avaliacoes")
+        .select("id, nota, comentario, created_at, orcamento_id")
+        .eq("cliente_id", id)
+        .order("created_at", { ascending: false });
+      const list = data || [];
+      const orcIds = list.map((a: any) => a.orcamento_id).filter(Boolean);
+      let nameMap: Record<string, string> = {};
+      if (orcIds.length > 0) {
+        const { data: orcs } = await supabase
+          .from("orcamentos")
+          .select("id, service_name")
+          .in("id", orcIds);
+        nameMap = Object.fromEntries(
+          (orcs || []).map((o: any) => [o.id, o.service_name]),
+        );
+      }
+      return list.map((a: any) => ({ ...a, service_name: nameMap[a.orcamento_id] }));
+    },
+  });
+
+  const { data: tickets = [] } = useQuery({
+    queryKey: ["admin", "cliente-detail", id, "tickets"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("suporte_tickets")
+        .select("id, assunto, status, created_at")
+        .eq("user_id", id)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const enderecoFmt = endereco
+    ? [
+        [endereco.logradouro, endereco.numero].filter(Boolean).join(", "),
+        endereco.complemento,
+        endereco.bairro,
+        [endereco.cidade, endereco.uf].filter(Boolean).join(" - "),
+        endereco.cep ? `CEP ${endereco.cep}` : null,
+      ]
+        .filter(Boolean)
+        .join(" • ")
+    : null;
+
+  const visibleOrders = showAllOrders ? orcamentos : orcamentos.slice(0, 10);
+  const waDigits = onlyDigits(cliente.whatsapp);
+
+  return (
+    <div className="w-full lg:w-[420px] shrink-0">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm sticky top-20 overflow-hidden max-h-[calc(100vh-6rem)] flex flex-col">
+        {/* Header */}
+        <div className="bg-slate-900 p-6 text-white shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-lg shrink-0">
+                {cliente.nome?.[0]?.toUpperCase() || "?"}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold truncate">{cliente.nome || "Sem nome"}</p>
+                <p className="text-xs text-white/60 truncate">{cliente.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto p-6 space-y-6">
+          {/* PERFIL */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Perfil
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 text-slate-600">
+                <Mail className="h-3.5 w-3.5 text-slate-400" />
+                <span className="truncate">{cliente.email || "—"}</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-600">
+                <Phone className="h-3.5 w-3.5 text-slate-400" />
+                {waDigits ? (
+                  <a
+                    href={`https://wa.me/${waDigits}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-brand hover:underline"
+                  >
+                    {cliente.whatsapp}
+                  </a>
+                ) : (
+                  <span className="text-slate-400">Sem WhatsApp</span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400">
+                Membro desde{" "}
+                {new Date(cliente.created_at).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </section>
+
+          {/* ENDEREÇO */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Endereço
+            </h3>
+            <div className="flex gap-2 text-sm text-slate-600">
+              <MapPin className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+              <p>{enderecoFmt || <span className="text-slate-400">Endereço não cadastrado</span>}</p>
+            </div>
+          </section>
+
+          {/* FINANCEIRO */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Resumo financeiro
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-slate-50 rounded-xl p-3">
+                <p className="text-[10px] text-slate-500 font-medium">Total gasto</p>
+                <p className="text-sm font-bold text-slate-900 mt-1">
+                  {fmtBRL(financeiro?.total || 0)}
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3">
+                <p className="text-[10px] text-slate-500 font-medium">Pedidos pagos</p>
+                <p className="text-sm font-bold text-slate-900 mt-1">
+                  {financeiro?.count || 0}
+                </p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3">
+                <p className="text-[10px] text-slate-500 font-medium">Ticket médio</p>
+                <p className="text-sm font-bold text-slate-900 mt-1">
+                  {fmtBRL(financeiro?.ticket || 0)}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* HISTÓRICO */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Histórico de pedidos
+            </h3>
+            {orcamentos.length === 0 && (
+              <p className="text-xs text-slate-400">Nenhum pedido.</p>
+            )}
+            <div className="space-y-2">
+              {visibleOrders.map((o: any) => (
+                <div
+                  key={o.id}
+                  className="border border-slate-100 rounded-xl p-3 text-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-bold text-slate-900 truncate">{o.service_name}</p>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                        STATUS_COLORS[o.status] || "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {o.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5 text-slate-500">
+                    <span>{o.profissional_nome || "—"}</span>
+                    <span className="font-bold text-slate-700">
+                      {fmtBRL(Number(o.valor_total ?? o.valor ?? 0))}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {new Date(o.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {orcamentos.length > 10 && !showAllOrders && (
+              <button
+                onClick={() => setShowAllOrders(true)}
+                className="mt-2 text-xs font-bold text-brand hover:underline"
+              >
+                Ver todos ({orcamentos.length})
+              </button>
+            )}
+          </section>
+
+          {/* AVALIAÇÕES */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Avaliações dadas
+            </h3>
+            {avaliacoes.length === 0 ? (
+              <p className="text-xs text-slate-400">Nenhuma avaliação</p>
+            ) : (
+              <div className="space-y-2">
+                {avaliacoes.map((a: any) => (
+                  <div key={a.id} className="border border-slate-100 rounded-xl p-3 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className="h-3 w-3"
+                            fill={i < a.nota ? "currentColor" : "none"}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        {new Date(a.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    {a.service_name && (
+                      <p className="text-[10px] text-slate-500 mt-1 font-medium">
+                        {a.service_name}
+                      </p>
+                    )}
+                    {a.comentario && (
+                      <p className="text-slate-600 mt-1 line-clamp-2">{a.comentario}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* TICKETS */}
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Tickets de suporte
+            </h3>
+            {tickets.length === 0 ? (
+              <p className="text-xs text-slate-400">Nenhum chamado</p>
+            ) : (
+              <div className="space-y-2">
+                {tickets.map((t: any) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 border border-slate-100 rounded-xl p-3 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 truncate">{t.assunto}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {t.created_at
+                          ? new Date(t.created_at).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold shrink-0">
+                      {t.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* AÇÕES */}
+          <section className="pt-2 border-t border-slate-100 space-y-2">
+            {waDigits ? (
+              <a
+                href={`https://wa.me/${waDigits}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-bold transition-colors"
+              >
+                <MessageSquare className="h-4 w-4" /> Contato via WhatsApp
+              </a>
+            ) : (
+              <button
+                disabled
+                className="flex items-center justify-center gap-2 w-full bg-slate-100 text-slate-400 rounded-xl py-2.5 text-sm font-bold cursor-not-allowed"
+              >
+                <MessageSquare className="h-4 w-4" /> Sem WhatsApp cadastrado
+              </button>
+            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="block">
+                    <button
+                      disabled
+                      className="flex items-center justify-center gap-2 w-full bg-slate-50 text-slate-400 rounded-xl py-2.5 text-sm font-bold cursor-not-allowed border border-slate-100"
+                    >
+                      <LifeBuoy className="h-4 w-4" /> Ver mensagens
+                    </button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Em breve</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminClientes() {
   const { session } = useAuth();
