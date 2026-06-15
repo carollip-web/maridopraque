@@ -444,7 +444,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data } = await supabase
         .from("profissionais_publicos")
         .select("foto_url, especialidades, aprovacao_status")
-        .eq("user_id", selectedPedido.profissional_id)
+        .eq("user_id", selectedPedido.profissional_id as string)
         .maybeSingle();
       if (active) setProfPublico(data);
     })();
