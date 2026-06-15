@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SLABadge } from "@/components/SLABadge";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { SignedImage, getOrcamentoFotoSignedUrl } from "@/components/SignedMedia";
 import { Button } from "@/components/ui/button";
 import { Chat } from "@/components/Chat";
 import { Orcamento, Profile, ServicoCat, OrcMat } from "./types";
@@ -593,13 +594,31 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     {o.fotos_problema.map((u) => (
-                      <a
+                      <button
                         key={u}
-                        href={u}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        type="button"
+                        onClick={async () => {
+                          const signed = await getOrcamentoFotoSignedUrl(u);
+                          window.open(signed, "_blank", "noopener,noreferrer");
+                        }}
                         className="group relative"
                       >
+                        {isVideo(u) ? (
+                          <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
+                            <Camera className="h-5 w-5 text-slate-500" />
+                            <span className="text-[8px] font-bold text-slate-600 mt-1">
+                              VER VÍDEO
+                            </span>
+                          </div>
+                        ) : (
+                          <SignedImage
+                            src={u}
+                            alt="Anexo"
+                            className="h-16 w-16 rounded-lg object-cover border border-border group-hover:opacity-90 transition shadow-sm"
+                          />
+                        )}
+                      </button>
+                    ))}
                         {isVideo(u) ? (
                           <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
                             <Camera className="h-5 w-5 text-slate-500" />
