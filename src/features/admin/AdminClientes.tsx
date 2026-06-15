@@ -458,6 +458,7 @@ export function AdminClientes() {
     password: "",
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -584,31 +585,116 @@ export function AdminClientes() {
     );
   };
 
-  const handleExportClients = () => {
+  const handleExportClients = async () => {
     if (clientes.length === 0) return;
-    const headers = ["ID", "Nome", "E-mail", "WhatsApp", "Pedidos Pagos", "Cadastro"];
-    const rows = clientes.map((c: any) =>
-      [
-        c.id,
-        c.nome || "—",
-        c.email || "—",
-        c.whatsapp || "—",
-        c.total_servicos_pagos || 0,
-        new Date(c.created_at).toLocaleDateString("pt-BR"),
-      ]
-        .map((val) => `"${String(val).replace(/"/g, '""')}"`)
-        .join(","),
-    );
+    setIsExporting(true);
+    try {
+      const clientIds = clientes.map((c: any) => c.id);
 
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `clientes_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Buscar endereços
+      const { data: enderecos } = await supabase
+        .from("enderecos")
+        .select("*")
+        .in("user_id", clientIds);
+      const endMap = Object.fromEntries((enderecos || []).map((e: any) => [e.user_id, e]));
+
+      // Buscar financeiro
+      const { data: orcs } = await supabase
+        .from("orcamentos")
+        .select("id, cliente_id")
+        .in("cliente_id", clientIds);
+      const orcIds = (orcs || []).map((o: any) => o.id);
+
+      let pags: any[] = [];
+      if (orcIds.length > 0) {
+        // Separa a query em pedaços se houver muitos orçamentos (limite de itens no in)
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < orcIds.length; i += CHUNK_SIZE) {
+          const chunk = orcIds.slice(i, i + CHUNK_SIZE);
+          const { data } = await supabase
+            .from("pagamentos")
+            .select("valor_total, status, orcamento_id")
+            .in("orcamento_id", chunk)
+            .eq("status", "paid");
+          if (data) pags.push(...data);
+        }
+      }
+
+      const orcToClient = Object.fromEntries((orcs || []).map((o: any) => [o.id, o.cliente_id]));
+      const finMap: Record<string, { total: number; count: number; ticket: number }> = {};
+      for (const id of clientIds) finMap[id] = { total: 0, count: 0, ticket: 0 };
+
+      for (const p of pags) {
+        const cid = orcToClient[p.orcamento_id];
+        if (cid) {
+          finMap[cid].total += Number(p.valor_total || 0);
+          finMap[cid].count += 1;
+        }
+      }
+      for (const id of clientIds) {
+        if (finMap[id].count > 0) {
+          finMap[id].ticket = finMap[id].total / finMap[id].count;
+        }
+      }
+
+      // Headers incluindo novos campos
+      const headers = [
+        "ID",
+        "Nome",
+        "E-mail",
+        "WhatsApp",
+        "Cadastro",
+        "Logradouro",
+        "Número",
+        "Complemento",
+        "Bairro",
+        "Cidade",
+        "UF",
+        "CEP",
+        "Total Gasto (R$)",
+        "Pedidos Pagos",
+        "Ticket Médio (R$)"
+      ];
+
+      const rows = clientes.map((c: any) => {
+        const end = endMap[c.id] || {};
+        const fin = finMap[c.id] || { total: 0, count: 0, ticket: 0 };
+
+        return [
+          c.id,
+          c.nome || "—",
+          c.email || "—",
+          c.whatsapp || "—",
+          new Date(c.created_at).toLocaleDateString("pt-BR"),
+          end.logradouro || "—",
+          end.numero || "—",
+          end.complemento || "—",
+          end.bairro || "—",
+          end.cidade || "—",
+          end.uf || "—",
+          end.cep || "—",
+          fin.total.toFixed(2).replace(".", ","),
+          fin.count,
+          fin.ticket.toFixed(2).replace(".", ","),
+        ]
+          .map((val) => `"${String(val).replace(/"/g, '""')}"`)
+          .join(",");
+      });
+
+      const csv = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `clientes_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      toast.error("Erro ao exportar base", { description: err.message });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const filtered = clientes.filter(
@@ -671,9 +757,10 @@ export function AdminClientes() {
             variant="outline"
             size="sm"
             onClick={handleExportClients}
+            disabled={isExporting}
             className="rounded-full h-10 px-5 bg-white border-slate-200 hover:border-brand/30 hover:bg-slate-50 text-slate-600 transition-all shadow-sm gap-2"
           >
-            <FileDown className="h-4 w-4" /> Exportar Base
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar Base
           </Button>
 
 
