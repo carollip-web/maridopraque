@@ -20,7 +20,6 @@ import { NotificacoesTab } from "@/features/cliente/NotificacoesTab";
 import { MensagensTab } from "@/features/cliente/MensagensTab";
 import { DadosTab } from "@/features/cliente/DadosTab";
 import { SegurancaTab } from "@/features/cliente/SegurancaTab";
-import { FavoritosTab } from "@/features/cliente/FavoritosTab";
 import { SuporteTab } from "@/features/cliente/SuporteTab";
 
 const TAB_VALUES = [
@@ -30,7 +29,6 @@ const TAB_VALUES = [
   "pagamentos",
   "dados",
   "seguranca",
-  "favoritos",
   "suporte",
   "mensagens",
   "notificacoes",
@@ -272,7 +270,6 @@ function ClienteArea() {
         {activeTab === "mensagens" && <MensagensTab />}
         {activeTab === "dados" && <DadosTab />}
         {activeTab === "seguranca" && <SegurancaTab />}
-        {activeTab === "favoritos" && <FavoritosTab />}
         {activeTab === "suporte" && <SuporteTab />}
       </main>
     </div>

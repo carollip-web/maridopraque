@@ -5,7 +5,7 @@ import {
   CreditCard,
   Bell,
   User,
-  Heart,
+  User,
   HeadphonesIcon,
   ShieldCheck,
   MessageCircle,
@@ -19,7 +19,6 @@ export type Tab =
   | "pagamentos"
   | "dados"
   | "seguranca"
-  | "favoritos"
   | "suporte"
   | "mensagens"
   | "notificacoes";
@@ -35,7 +34,6 @@ export const ALL_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: "pedidos", label: "Pedidos e Orçamentos", icon: ClipboardList },
   { id: "servicos", label: "Histórico de Serviços", icon: History },
   { id: "pagamentos", label: "Pagamentos", icon: CreditCard },
-  { id: "favoritos", label: "Profissionais Favoritos", icon: Heart },
   { id: "mensagens", label: "Mensagens", icon: MessageCircle },
   { id: "suporte", label: "Central de Ajuda", icon: HeadphonesIcon },
   { id: "notificacoes", label: "Notificações", icon: Bell },
