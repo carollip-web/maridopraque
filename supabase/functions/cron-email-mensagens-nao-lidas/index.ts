@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
   const { data: mensagens, error: msgError } = await supabase
     .from("mensagens")
-    .select("id, remetente_id, destinatario_id, conteudo, created_at")
+    .select("id, remetente_id, destinatario_id, texto, created_at")
     .eq("lida", false)
     .neq("notificada_email", true)
     .lt("created_at", tresHorasAtras)
