@@ -15,7 +15,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { IndicacaoCard } from "@/components/IndicacaoCard";
 import { Tab } from "./constants";
 
 interface DashboardTabProps {
@@ -223,7 +222,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
             </div>
           )}
 
-          <IndicacaoCard />
+
 
           <div className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
             <h3 className="font-bold mb-4">Dica de Segurança</h3>

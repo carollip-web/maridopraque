@@ -13,7 +13,6 @@ import { ProfileCompletenessCard } from "@/components/ProfileCompletenessCard";
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { NivelBadge } from "@/components/NivelBadge";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
-import { ProfissionalIndicacao } from "@/components/ProfissionalIndicacao";
 import { ProfissionalHeader } from "./ProfissionalHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -174,7 +173,7 @@ export function ProfissionalDashboard({
         </div>
       </div>
 
-      <ProfissionalIndicacao nome={(user?.user_metadata as any)?.nome ?? ""} />
+
     </div>
   );
 }
