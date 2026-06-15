@@ -9,8 +9,8 @@ const MP_WEBHOOK_SECRET = Deno.env.get("MERCADO_PAGO_WEBHOOK_SECRET");
 
 async function verificarAssinaturaMP(req: Request, requestId: string): Promise<boolean> {
   if (!MP_WEBHOOK_SECRET) {
-    console.warn(`[Webhook ${requestId}] MERCADO_PAGO_WEBHOOK_SECRET não configurada. Configure no painel MP Developers para máxima segurança.`);
-    return true;
+    console.error(`[Webhook ${requestId}] MERCADO_PAGO_WEBHOOK_SECRET não configurada — rejeitando requisição. Configure o secret no painel MP Developers e nas Edge Function Secrets para liberar o webhook.`);
+    return false;
   }
   const xSignature = req.headers.get("x-signature");
   const xRequestId = req.headers.get("x-request-id");

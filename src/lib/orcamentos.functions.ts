@@ -762,13 +762,9 @@ export const criarCenarioTestePagamento = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    // 1. Verificar se usuário é admin
-    const { data: role } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
+    // 1. Verificar se usuário é admin (bloqueia execução se não for)
+    await requireAdminLevel(supabase, userId, ["super_admin", "admin"]);
+
 
     // 2. Buscar um profissional de teste
     const { data: proRole } = await supabase
