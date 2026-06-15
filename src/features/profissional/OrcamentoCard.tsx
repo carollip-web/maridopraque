@@ -240,31 +240,17 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     setSaving(true);
     
     if (isApoioFemininoVacancy) {
-      const { data } = await supabase
-        .from("orcamentos")
-        .select("apoio_profissional_id")
-        .eq("id", o.id)
-        .single();
-        
-      if (data?.apoio_profissional_id) {
-        toast.error("Poxa! Outra profissional aceitou esta vaga 1 segundo antes de você.");
-        setSaving(false);
-        return;
-      }
+      const { data, error } = await supabase.rpc("assumir_vaga_apoio_feminino", {
+        _orcamento_id: o.id,
+      });
 
-      const { error, data: updated } = await supabase
-        .from("orcamentos")
-        .update({ 
-          apoio_profissional_id: userId,
-          status_apoio: "confirmado" 
-        })
-        .eq("id", o.id)
-        .is("apoio_profissional_id", null)
-        .select()
-        .single();
-
-      if (error || !updated) {
+      if (error) {
         toast.error("Erro ao aceitar vaga", { description: error.message });
+      } else if (data && (data as any).ok === false) {
+        toast.error(
+          (data as any).erro ||
+            "Poxa! Outra profissional aceitou esta vaga 1 segundo antes de você.",
+        );
       } else {
         toast.success("Boa! Você confirmou presença neste serviço como Apoio Feminino.");
         refresh?.();

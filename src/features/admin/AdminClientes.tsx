@@ -593,7 +593,7 @@ export function AdminClientes() {
 
       // Buscar endereços
       const { data: enderecos } = await supabase
-        .from("enderecos")
+        .from("cliente_enderecos")
         .select("*")
         .in("user_id", clientIds);
       const endMap = Object.fromEntries((enderecos || []).map((e: any) => [e.user_id, e]));

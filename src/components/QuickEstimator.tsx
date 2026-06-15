@@ -27,7 +27,7 @@ export function QuickEstimator() {
 
   useEffect(() => {
     supabase
-      .from("services_catalog")
+      .from("services_catalog_publico")
       .select("id, nome, categoria, preco_min, preco_max")
       .eq("ativo", true)
       .then(({ data }) => setServicos((data ?? []) as Servico[]));

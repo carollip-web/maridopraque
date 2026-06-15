@@ -260,7 +260,7 @@ function CategoriaPage() {
   useEffect(() => {
     Promise.all([
       supabase
-        .from("services_catalog")
+        .from("services_catalog_publico")
         .select("id, nome, preco_min, preco_max, descricao")
         .eq("ativo", true)
         .eq("categoria", cat.nome)

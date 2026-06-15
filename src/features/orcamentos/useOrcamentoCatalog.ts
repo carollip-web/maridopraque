@@ -23,7 +23,7 @@ export function useOrcamentoCatalog(
     queryFn: async () => {
       const [s, m, sm] = await Promise.all([
         supabase
-          .from("services_catalog")
+          .from("services_catalog_publico")
           .select("id, nome, categoria, preco_min, preco_max")
           .eq("ativo", true),
         supabase

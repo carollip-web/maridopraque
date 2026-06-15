@@ -203,7 +203,7 @@ function Servicos() {
 
   useEffect(() => {
     supabase
-      .from("services_catalog")
+      .from("services_catalog_publico")
       .select("id, nome, categoria, preco_min, preco_max, descricao")
       .eq("ativo", true)
       .order("nome")
