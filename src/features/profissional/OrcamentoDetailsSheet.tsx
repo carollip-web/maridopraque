@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -79,6 +79,27 @@ export function OrcamentoDetailsSheet({
   const [disputaOpen, setDisputaOpen] = useState(false);
   const [disputaMotivo, setDisputaMotivo] = useState("");
   const [disputaLoading, setDisputaLoading] = useState(false);
+  const [apoioNome, setApoioNome] = useState<string | null>(null);
+
+  const isApoioFeminino = (orcamento as any)?.tipo_atendimento === "homem_com_apoio_feminino";
+  const apoioEquipeId = (orcamento as any)?.apoio_equipe_id;
+
+  useEffect(() => {
+    if (!isApoioFeminino || !apoioEquipeId) {
+      setApoioNome(null);
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("apoio_feminino_equipe")
+        .select("nome")
+        .eq("id", apoioEquipeId)
+        .maybeSingle();
+      if (active && data) setApoioNome(data.nome);
+    })();
+    return () => { active = false; };
+  }, [isApoioFeminino, apoioEquipeId]);
 
   const handleAbrirDisputa = async () => {
     if (!orcamento?.id) return;
@@ -152,6 +173,22 @@ export function OrcamentoDetailsSheet({
               clienteEndereco={clienteEndereco}
               disableChat
             />
+          )}
+
+          {orcamento && isApoioFeminino && (
+            <div className="mt-6 p-4 rounded-xl bg-purple-50 border border-purple-100 space-y-2">
+              <p className="text-sm font-bold text-purple-800 flex items-center gap-2">
+                👩 Com apoio feminino
+              </p>
+              <p className="text-xs text-purple-700 leading-relaxed">
+                Este serviço inclui apoio feminino. Uma mulher de apoio acompanhará a visita, designada pela equipe Marido pra Quê.
+              </p>
+              <p className="text-xs font-bold text-purple-900">
+                {apoioEquipeId && apoioNome
+                  ? `Acompanhante: ${apoioNome}`
+                  : "Acompanhante será designada antes da visita."}
+              </p>
+            </div>
           )}
 
           {orcamento && (orcamento.status === "pago" || orcamento.status === "concluido") && (

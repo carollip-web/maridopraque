@@ -398,6 +398,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           >
             {atendimentoCompat.label}
           </span>
+          {(o as any).tipo_atendimento === "homem_com_apoio_feminino" && (
+            <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
+              👩 Com apoio feminino
+            </span>
+          )}
         </div>
       )}
 
