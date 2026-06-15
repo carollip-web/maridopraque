@@ -543,6 +543,7 @@ export type Database = {
           destinatario_id: string
           id: string
           lida: boolean
+          notificada_email: boolean
           orcamento_id: string
           remetente_id: string
           texto: string
@@ -552,6 +553,7 @@ export type Database = {
           destinatario_id: string
           id?: string
           lida?: boolean
+          notificada_email?: boolean
           orcamento_id: string
           remetente_id: string
           texto: string
@@ -561,6 +563,7 @@ export type Database = {
           destinatario_id?: string
           id?: string
           lida?: boolean
+          notificada_email?: boolean
           orcamento_id?: string
           remetente_id?: string
           texto?: string
@@ -863,6 +866,7 @@ export type Database = {
           data_pagamento: string | null
           data_preferida: string | null
           descricao: string | null
+          endereco_snapshot: Json | null
           flexibilidade_agenda: string | null
           fotos_concluido: string[]
           fotos_problema: string[]
@@ -901,6 +905,7 @@ export type Database = {
           data_pagamento?: string | null
           data_preferida?: string | null
           descricao?: string | null
+          endereco_snapshot?: Json | null
           flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
           fotos_problema?: string[]
@@ -939,6 +944,7 @@ export type Database = {
           data_pagamento?: string | null
           data_preferida?: string | null
           descricao?: string | null
+          endereco_snapshot?: Json | null
           flexibilidade_agenda?: string | null
           fotos_concluido?: string[]
           fotos_problema?: string[]
