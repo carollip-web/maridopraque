@@ -787,90 +787,125 @@ export function AdminClientes() {
         </Button>
       </div>
 
-      {isLoading && (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between py-4 border-b border-slate-50"
-            >
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-              </div>
-              <div className="space-y-1 text-right">
-                <Skeleton className="h-4 w-20 ml-auto" />
-                <Skeleton className="h-3 w-16 ml-auto" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-          <p className="text-slate-400">Nenhum cliente encontrado para sua busca.</p>
-        </div>
-      )}
-
-      <div className="divide-y divide-slate-100">
-        {!isLoading &&
-          filtered.map((c) => (
-            <div
-              key={c.id}
-              className={`flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors group px-4 -mx-4 rounded-2xl ${selectedIds.includes(c.id) ? "bg-brand-soft/20" : ""}`}
-            >
-              <div className="flex items-center gap-4 min-w-0">
-                <Checkbox
-                  checked={selectedIds.includes(c.id)}
-                  onCheckedChange={() => toggleSelect(c.id)}
-                  className="border-slate-300"
-                />
-                <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-base shrink-0">
-                  {c.nome?.[0]?.toUpperCase() || "?"}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-slate-900 truncate">{c.nome || "Sem nome"}</h4>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <span className="truncate">{c.email}</span>
-                    {c.whatsapp && (
-                      <>
-                        <span>·</span>
-                        <span className="truncate">{c.whatsapp}</span>
-                      </>
-                    )}
+      <div className="flex gap-6">
+        <div className={`flex-1 min-w-0 ${selectedClienteId ? "hidden lg:block" : ""}`}>
+          {isLoading && (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between py-4 border-b border-slate-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <Skeleton className="h-4 w-20 ml-auto" />
+                    <Skeleton className="h-3 w-16 ml-auto" />
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-slate-900">
-                    {c.total_servicos_pagos} pedidos pagos
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteClient(c.id, c.nome)}
-                  disabled={isDeleting === c.id}
-                  className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                >
-                  {isDeleting === c.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {!isLoading && filtered.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400">Nenhum cliente encontrado para sua busca.</p>
+            </div>
+          )}
+
+          <div className="divide-y divide-slate-100">
+            {!isLoading &&
+              filtered.map((c) => (
+                <div
+                  key={c.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedClienteId(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedClienteId(c.id);
+                    }
+                  }}
+                  className={`flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors group px-4 -mx-4 rounded-2xl cursor-pointer ${
+                    selectedClienteId === c.id
+                      ? "bg-brand-soft/30 ring-1 ring-brand/20"
+                      : selectedIds.includes(c.id)
+                        ? "bg-brand-soft/20"
+                        : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.includes(c.id)}
+                        onCheckedChange={() => toggleSelect(c.id)}
+                        className="border-slate-300"
+                      />
+                    </div>
+                    <div className="h-12 w-12 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-base shrink-0">
+                      {c.nome?.[0]?.toUpperCase() || "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-slate-900 truncate">{c.nome || "Sem nome"}</h4>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="truncate">{c.email}</span>
+                        {c.whatsapp && (
+                          <>
+                            <span>·</span>
+                            <span className="truncate">{c.whatsapp}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs font-bold text-slate-900">
+                        {c.total_servicos_pagos} pedidos pagos
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClient(c.id, c.nome);
+                      }}
+                      disabled={isDeleting === c.id}
+                      className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      {isDeleting === c.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+
+        {selectedClienteId && (() => {
+          const cliente = clientes.find((c: any) => c.id === selectedClienteId);
+          if (!cliente) return null;
+          return (
+            <ClienteDetailPanel
+              cliente={cliente}
+              onClose={() => setSelectedClienteId(null)}
+            />
+          );
+        })()}
       </div>
     </div>
   );
