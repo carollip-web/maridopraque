@@ -9,6 +9,11 @@ export function AdminApoioFeminino() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
 
+  const [novoNome, setNovoNome] = useState("");
+  const [novoTelefone, setNovoTelefone] = useState("");
+  const [novoPix, setNovoPix] = useState("");
+  const [inserindo, setInserindo] = useState(false);
+
   const carregar = async () => {
     setLoading(true);
     const [pedidosRes, equipeRes] = await Promise.all([
@@ -20,7 +25,6 @@ export function AdminApoioFeminino() {
       supabase
         .from("apoio_feminino_equipe")
         .select("*")
-        .eq("ativo", true)
         .order("nome"),
     ]);
     setPedidos(pedidosRes.data || []);
@@ -31,6 +35,44 @@ export function AdminApoioFeminino() {
   useEffect(() => {
     carregar();
   }, []);
+
+  const alternarStatus = async (id: string, atualAtivo: boolean) => {
+    const { error } = await supabase
+      .from("apoio_feminino_equipe")
+      .update({ ativo: !atualAtivo })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao alterar status.");
+      return;
+    }
+    carregar();
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novoNome.trim()) {
+      toast.error("O nome é obrigatório.");
+      return;
+    }
+    setInserindo(true);
+    const { error } = await supabase
+      .from("apoio_feminino_equipe")
+      .insert({
+        nome: novoNome.trim(),
+        telefone: novoTelefone.trim() || null,
+        chave_pix: novoPix.trim() || null,
+      });
+    setInserindo(false);
+    if (error) {
+      toast.error("Erro ao adicionar: " + error.message);
+      return;
+    }
+    toast.success("Membro da equipe adicionada!");
+    setNovoNome("");
+    setNovoTelefone("");
+    setNovoPix("");
+    carregar();
+  };
 
   const atribuir = async (orcamentoId: string, equipeId: string) => {
     setSaving(orcamentoId);
@@ -49,12 +91,80 @@ export function AdminApoioFeminino() {
 
   if (loading) return <div className="p-8 text-slate-500">Carregando...</div>;
 
+  const equipeAtiva = equipe.filter(m => m.ativo);
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-slate-800 mb-1">Apoio Feminino</h2>
       <p className="text-slate-500 mb-6">
-        Atribua uma das contratadas para cada pedido. Ela recebe 30% do valor do serviço (repasse manual via PIX).
+        Gerencie a equipe e atribua uma das contratadas para cada pedido. Ela recebe 30% do valor do serviço (repasse manual via PIX).
       </p>
+
+      <section className="mb-10 bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-soft">
+        <h3 className="font-bold text-lg mb-4 text-slate-800">Equipe de Apoio</h3>
+        
+        <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 mb-6 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Nome *</label>
+            <input 
+              value={novoNome} onChange={e => setNovoNome(e.target.value)} 
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all" 
+              placeholder="Nome da contratada"
+              required
+            />
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Telefone</label>
+            <input 
+              value={novoTelefone} onChange={e => setNovoTelefone(e.target.value)} 
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all" 
+              placeholder="(11) 99999-9999"
+            />
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Chave PIX</label>
+            <input 
+              value={novoPix} onChange={e => setNovoPix(e.target.value)} 
+              className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all" 
+              placeholder="CPF, E-mail, Celular..."
+            />
+          </div>
+          <Button type="submit" disabled={inserindo} className="h-11 rounded-xl font-bold bg-brand text-white hover:bg-brand/90 shrink-0 px-6">
+            {inserindo ? "Adicionando..." : "Adicionar à equipe"}
+          </Button>
+        </form>
+
+        {equipe.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-4">Nenhuma membro cadastrada na equipe.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {equipe.map((m) => (
+              <div key={m.id} className={`flex flex-col p-5 rounded-2xl border ${m.ativo ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-50 border-slate-200/60 opacity-80'} transition-all`}>
+                <div className="flex justify-between items-start mb-3 gap-2">
+                  <h4 className="font-bold text-slate-800 leading-tight">{m.nome}</h4>
+                  <span className={`shrink-0 text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${m.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                    {m.ativo ? "Ativa" : "Inativa"}
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-sm text-slate-600 mb-5 flex-1">
+                  <p className="flex justify-between border-b border-slate-100 pb-1.5"><span className="font-medium text-slate-400">Tel</span> <span>{m.telefone || "-"}</span></p>
+                  <p className="flex justify-between pt-1"><span className="font-medium text-slate-400">PIX</span> <span className="font-mono text-xs">{m.chave_pix || "-"}</span></p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => alternarStatus(m.id, m.ativo)}
+                  className={`w-full rounded-xl h-9 text-xs font-bold transition-colors ${m.ativo ? 'text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200' : 'text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'}`}
+                >
+                  {m.ativo ? "Desativar Membro" : "Reativar Membro"}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <h3 className="font-bold text-lg mb-4 text-slate-800">Atribuição de Pedidos</h3>
 
       {pedidos.length === 0 ? (
         <p className="text-slate-400">Nenhum pedido com apoio feminino no momento.</p>
@@ -90,7 +200,7 @@ export function AdminApoioFeminino() {
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
                   >
                     <option value="">— Não atribuída —</option>
-                    {equipe.map((m) => (
+                    {equipeAtiva.map((m) => (
                       <option key={m.id} value={m.id}>{m.nome}</option>
                     ))}
                   </select>
