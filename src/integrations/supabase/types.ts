@@ -2067,6 +2067,38 @@ export type Database = {
         }
         Relationships: []
       }
+      suporte_respostas: {
+        Row: {
+          autor_id: string
+          created_at: string
+          id: string
+          mensagem: string
+          ticket_id: string
+        }
+        Insert: {
+          autor_id: string
+          created_at?: string
+          id?: string
+          mensagem: string
+          ticket_id: string
+        }
+        Update: {
+          autor_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suporte_respostas_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "suporte_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suporte_tickets: {
         Row: {
           assunto: string
@@ -2146,6 +2178,28 @@ export type Database = {
       }
     }
     Views: {
+      avaliacoes_publicas: {
+        Row: {
+          cliente_nome: string | null
+          comentario: string | null
+          created_at: string | null
+          id: string | null
+          nota: number | null
+          profissional_id: string | null
+          resposta_em: string | null
+          resposta_profissional: string | null
+          service_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_aval_profissional"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profissionais_publicos: {
         Row: {
           anos_experiencia: number | null
@@ -2352,6 +2406,7 @@ export type Database = {
         | "cancelado"
         | "concluido"
         | "em_disputa"
+        | "disputa_resolvida"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2491,6 +2546,7 @@ export const Constants = {
         "cancelado",
         "concluido",
         "em_disputa",
+        "disputa_resolvida",
       ],
     },
   },

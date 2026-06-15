@@ -21,7 +21,7 @@ import { AdminApoioFeminino } from "@/features/admin/AdminApoioFeminino";
 import { AdminKPIs } from "@/features/admin/AdminKPIs";
 import { AdminDados } from "@/features/admin/AdminDados";
 import { AdminDisputas } from "@/features/admin/AdminDisputas";
-import { AdminSuporte } from "@/features/admin/AdminSuporte";
+
 import { AdminMetrics } from "@/components/AdminMetrics";
 
 export const Route = createFileRoute("/admin")({
@@ -175,7 +175,7 @@ function AdminArea() {
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
             {activeTab === "kpis" && <AdminKPIs />}
             {activeTab === "disputas" && <AdminDisputas />}
-            {activeTab === "suporte" && <AdminSuporte />}
+            
             {activeTab === "dados" && <AdminDados />}
           </div>
         </div>
