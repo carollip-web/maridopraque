@@ -619,22 +619,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                         )}
                       </button>
                     ))}
-                        {isVideo(u) ? (
-                          <div className="h-16 w-24 rounded-lg bg-slate-200 flex flex-col items-center justify-center border border-border group-hover:bg-slate-300 transition-colors">
-                            <Camera className="h-5 w-5 text-slate-500" />
-                            <span className="text-[8px] font-bold text-slate-600 mt-1">
-                              VER VÍDEO
-                            </span>
-                          </div>
-                        ) : (
-                          <img
-                            src={u}
-                            alt="Anexo"
-                            className="h-16 w-16 rounded-lg object-cover border border-border group-hover:opacity-90 transition shadow-sm"
-                          />
-                        )}
-                      </a>
-                    ))}
                   </div>
                 </div>
               )}
