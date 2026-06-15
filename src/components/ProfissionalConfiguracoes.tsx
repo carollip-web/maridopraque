@@ -251,7 +251,7 @@ export function ProfissionalConfiguracoes() {
         atende_emergencias: !!values.atende_emergencias,
         veiculo_proprio: !!values.veiculo_proprio,
         genero: values.genero || "nao_informar",
-        oferece_apoio_feminino: !!values.oferece_apoio_feminino,
+        oferece_apoio_feminino: false,
         chave_pix: values.chave_pix || null,
         pix_key_type: values.pix_key_type || null,
         updated_at: new Date().toISOString(),

@@ -640,19 +640,11 @@ export function AdminProfissionais() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100">
+                <div className="py-3 border-y border-slate-100">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Gênero</p>
                     <p className="text-sm font-medium capitalize">
                       {selected.genero === "nao_informar" ? "Não informado" : selected.genero}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                      Apoio Feminino
-                    </p>
-                    <p className="text-sm font-medium">
-                      {selected.oferece_apoio_feminino ? "✅ Sim" : "❌ Não"}
                     </p>
                   </div>
                 </div>
