@@ -222,14 +222,7 @@ export function AdminLeads() {
                         {new Date(lead.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="font-medium">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span>{lead.nome}</span>
-                          {lead.oferece_apoio_feminino && (
-                            <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200">
-                              Apoio feminino
-                            </Badge>
-                          )}
-                        </div>
+                        {lead.nome}
                       </TableCell>
                       <TableCell>{lead.especialidade_principal}</TableCell>
                       <TableCell>{lead.cidade}</TableCell>
