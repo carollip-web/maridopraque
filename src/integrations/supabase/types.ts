@@ -2361,15 +2361,25 @@ export type Database = {
         Args: { _motivo: string; _orcamento_id: string }
         Returns: undefined
       }
-      aceitar_proposta_cliente: {
-        Args: { _proposta_id: string }
-        Returns: {
-          agenda_reserva: string
-          ok: boolean
-          orcamento_id: string
-          proposta_id: string
-        }[]
-      }
+      aceitar_proposta_cliente:
+        | {
+            Args: { _proposta_id: string }
+            Returns: {
+              agenda_reserva: string
+              ok: boolean
+              orcamento_id: string
+              proposta_id: string
+            }[]
+          }
+        | {
+            Args: { _data_agendada?: string; _proposta_id: string }
+            Returns: {
+              agenda_reserva: string
+              ok: boolean
+              orcamento_id: string
+              proposta_id: string
+            }[]
+          }
       assumir_vaga_apoio_feminino: {
         Args: { _orcamento_id: string }
         Returns: Json
