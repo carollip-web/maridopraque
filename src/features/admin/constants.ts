@@ -48,7 +48,6 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "disputas", label: "Disputas", icon: AlertTriangle },
   { id: "suporte" as any, label: "Suporte", icon: HeadphonesIcon },
-  { id: "dados", label: "Meus Dados", icon: UserCog },
 ];
 
 export const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
