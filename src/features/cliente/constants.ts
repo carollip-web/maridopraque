@@ -5,7 +5,6 @@ import {
   CreditCard,
   Bell,
   User,
-  User,
   HeadphonesIcon,
   ShieldCheck,
   MessageCircle,
