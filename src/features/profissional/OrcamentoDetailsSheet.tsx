@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -5,6 +6,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { OrcamentoCard } from "./OrcamentoCard";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 import {
   Orcamento,
   Profile,
@@ -62,6 +76,36 @@ export function OrcamentoDetailsSheet({
   profApoioFeminino,
   clienteEndereco,
 }: OrcamentoDetailsSheetProps) {
+  const [disputaOpen, setDisputaOpen] = useState(false);
+  const [disputaMotivo, setDisputaMotivo] = useState("");
+  const [disputaLoading, setDisputaLoading] = useState(false);
+
+  const handleAbrirDisputa = async () => {
+    if (!orcamento?.id) return;
+    const motivo = disputaMotivo.trim();
+    if (!motivo) {
+      toast.error("Descreva o problema antes de abrir a disputa.");
+      return;
+    }
+    setDisputaLoading(true);
+    try {
+      const { error } = await (supabase as any).rpc("abrir_disputa_orcamento", {
+        _orcamento_id: orcamento.id,
+        _motivo: motivo,
+      });
+      if (error) throw error;
+      toast.success("Disputa aberta — nossa equipe vai mediar");
+      setDisputaOpen(false);
+      setDisputaMotivo("");
+      refresh();
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao abrir disputa");
+    } finally {
+      setDisputaLoading(false);
+    }
+  };
+
   return (
     <Sheet
       open={!!orcamento}
@@ -109,8 +153,55 @@ export function OrcamentoDetailsSheet({
               disableChat
             />
           )}
+
+          {orcamento && (orcamento.status === "pago" || orcamento.status === "concluido") && (
+            <div className="mt-6 border-t border-slate-200 pt-6">
+              <Button
+                variant="destructive"
+                className="w-full font-bold"
+                onClick={() => setDisputaOpen(true)}
+              >
+                Reportar problema
+              </Button>
+            </div>
+          )}
+
+          {orcamento?.status === "em_disputa" && (
+            <div className="mt-6 p-4 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-slate-500" />
+              <p className="text-sm font-bold text-slate-700">Disputa em análise pela equipe</p>
+            </div>
+          )}
         </div>
       </SheetContent>
+
+      <Dialog open={disputaOpen} onOpenChange={setDisputaOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reportar problema</DialogTitle>
+            <DialogDescription>
+              Descreva detalhadamente o problema com este serviço. Nossa equipe fará a mediação e entrará em contato.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Descreva o motivo da disputa..."
+              value={disputaMotivo}
+              onChange={(e) => setDisputaMotivo(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisputaOpen(false)} disabled={disputaLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAbrirDisputa} disabled={disputaLoading} variant="destructive">
+              {disputaLoading ? "Abrindo..." : "Abrir Disputa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

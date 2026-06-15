@@ -107,6 +107,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const isAguardandoPagamento = o.status === "aprovado";
   const isPagamentoConfirmado = o.status === "pago";
   const isServicoConcluido = o.status === "concluido";
+  const isEmDisputa = o.status === "em_disputa";
+  const isDisputaResolvida = o.status === "disputa_resolvida";
 
   const meta = STATUS_META[o.status];
 
@@ -116,7 +118,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
       ? "Pagamento confirmado"
       : isServicoConcluido
         ? "Finalizado (Aguardando liberação)"
-        : (meta?.label ?? o.status);
+        : isEmDisputa
+          ? "Em disputa"
+          : isDisputaResolvida
+            ? "Disputa resolvida"
+            : (meta?.label ?? o.status);
 
   const statusClassOverride = isAguardandoPagamento
     ? "bg-amber-100 text-amber-700"
@@ -124,7 +130,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
       ? "bg-blue-100 text-blue-700"
       : isServicoConcluido
         ? "bg-green-100 text-green-700"
-        : (meta?.className ?? "bg-slate-100 text-slate-600");
+        : isEmDisputa
+          ? "bg-red-100 text-red-700"
+          : isDisputaResolvida
+            ? "bg-slate-200 text-slate-600"
+            : (meta?.className ?? "bg-slate-100 text-slate-600");
   const min = range?.preco_min != null ? Number(range.preco_min) : null;
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
@@ -425,6 +435,18 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           <p className="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 italic">
             Este pedido foi criado sem preferências de atendimento ou agenda registradas.
           </p>
+        )}
+
+        {isEmDisputa && (
+          <div className="p-4 rounded-xl bg-red-50 border border-red-100 space-y-2">
+            <div className="flex items-center gap-2 text-red-800 font-bold text-sm">
+              <AlertCircle className="h-4 w-4" />
+              Disputa Aberta
+            </div>
+            <p className="text-red-700 text-[11px] leading-relaxed">
+              <strong>Motivo:</strong> {o.observacoes_profissional || "Nenhum motivo fornecido."}
+            </p>
+          </div>
         )}
 
         {isAguardandoPagamento && (

@@ -259,7 +259,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       ? "Agendado"
                       : o.status === "concluido"
                         ? "Concluído"
-                        : o.status;
+                        : o.status === "disputa_resolvida"
+                          ? "Disputa Resolvida"
+                          : o.status;
         return {
           propostas: propsForOrc,
           ...o,
