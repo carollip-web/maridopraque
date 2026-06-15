@@ -36,9 +36,11 @@ Deno.serve(async (req) => {
   const { data: rows, error } = await admin
     .from("pagamento_splits")
     .select("orcamento_id, metadata")
-    .eq("metadata->>estorno_pendente_saldo", "true")
-    .is("metadata->>refund_id", null)
+    .filter("metadata->>estorno_pendente_saldo", "eq", "true")
+    .filter("metadata->>refund_id", "is", "null")
     .limit(50);
+
+  console.log("[cron-retentar-estornos] splits encontradas:", rows?.length || 0);
 
   if (error) {
     console.error("[cron-retentar-estornos] erro ao buscar splits", error.message);
