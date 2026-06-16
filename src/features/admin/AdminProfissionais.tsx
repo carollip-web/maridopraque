@@ -412,7 +412,8 @@ export function AdminProfissionais() {
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">Status:</span>
           {[
             { id: "todos", label: `Todos (${approvedPros.length})` },
             {
@@ -469,8 +470,21 @@ export function AdminProfissionais() {
             </div>
           )}
           {!isLoading && filtered.length === 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-              Nenhum profissional encontrado.
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 flex flex-col items-center justify-center">
+              <p className="font-medium text-slate-600 mb-1">
+                {filterStatus === "inativo"
+                  ? "Nenhum profissional inativo"
+                  : filterStatus === "ativo"
+                  ? "Nenhum profissional ativo"
+                  : search
+                  ? "Nenhum resultado para esta busca"
+                  : "Nenhum profissional cadastrado"}
+              </p>
+              {(search || filterStatus !== "todos") && (
+                <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
+                  Remover filtros
+                </Button>
+              )}
             </div>
           )}
           {!isLoading && (
