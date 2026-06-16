@@ -87,7 +87,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
 
           if (!isApoioFemininoTarget) {
             const compat = isProfissionalCompativelComTipoAtendimento({
-              tipoAtendimento: (o as unknown as Record<string, unknown>).tipo_atendimento as import("@/lib/agenda").TipoAtendimento,
+              tipoAtendimento: (o as unknown as Record<string, unknown>).tipo_atendimento as import("@/lib/atendimento.compat").TipoAtendimento,
               genero: profGenero as "homem" | "mulher",
               ofereceApoioFeminino: profApoioFeminino,
             });

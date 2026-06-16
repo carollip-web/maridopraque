@@ -140,12 +140,12 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
   const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
-    tipoAtendimento: o.tipo_atendimento,
+    tipoAtendimento: o.tipo_atendimento as import("@/lib/atendimento.compat").TipoAtendimento,
     genero: profGenero as "homem" | "mulher",
     ofereceApoioFeminino: profApoioFeminino,
   });
 
-  const atendimentoPedidoLabel = tipoAtendimentoLabel((o as unknown as Record<string, unknown>).tipo_atendimento as import("@/lib/agenda").TipoAtendimento);
+  const atendimentoPedidoLabel = tipoAtendimentoLabel((o as unknown as Record<string, unknown>).tipo_atendimento as import("@/lib/atendimento.compat").TipoAtendimento);
 
   const bloquearEnvioPorAtendimento =
     !atendimentoCompat.compatible && atendimentoCompat.blockProposal;

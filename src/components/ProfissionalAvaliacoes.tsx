@@ -2,11 +2,21 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { type Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Star, Loader2, MessageSquareReply, CheckCircle2, X } from "lucide-react";
+
+type AvaliacaoRow = {
+  id: string;
+  nota: number;
+  comentario: string | null;
+  created_at: string;
+  cliente_id: string;
+  orcamento_id: string;
+  resposta_profissional: string | null;
+  resposta_em: string | null;
+};
 
 type Avaliacao = {
   id: string;
@@ -44,8 +54,9 @@ export function ProfissionalAvaliacoes() {
         .eq("profissional_id", userId!)
         .order("created_at", { ascending: false });
       const list = avals ?? [];
-      const cliIds = Array.from(new Set(list.map((a: Tables<"avaliacoes">) => a.cliente_id)));
-      const orcIds = Array.from(new Set(list.map((a: Tables<"avaliacoes">) => a.orcamento_id)));
+      const typedList = list as AvaliacaoRow[];
+      const cliIds = Array.from(new Set(typedList.map((a) => a.cliente_id)));
+      const orcIds = Array.from(new Set(typedList.map((a) => a.orcamento_id)));
       const [{ data: profs }, { data: orcs }] = await Promise.all([
         cliIds.length
           ? supabase.from("profiles").select("id, nome").in("id", cliIds)
@@ -62,7 +73,7 @@ export function ProfissionalAvaliacoes() {
       (orcs ?? []).forEach((o: { id: string; service_name: string | null }) => {
         servMap[o.id] = o.service_name ?? "Serviço";
       });
-      return list.map((a: Tables<"avaliacoes">) => ({
+      return typedList.map((a) => ({
         ...a,
         cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
         service_name: servMap[a.orcamento_id] ?? "Serviço",

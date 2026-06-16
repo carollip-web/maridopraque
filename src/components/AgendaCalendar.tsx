@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Clock, MapPin, User, ChevronDown, CheckCircle2, Copy } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarDays, ChevronLeft, ChevronRight, X, Clock, MapPin, User, ChevronDown, CheckCircle2, Copy, Loader2 } from "lucide-react";
 import { type Tables } from "@/integrations/supabase/types";
 import { DIAS_SEMANA } from "@/lib/agenda";
 
@@ -25,6 +25,9 @@ type ReservaAgenda = {
   status: string;
   motivo: string | null;
   expires_at: string | null;
+  service_name?: string;
+  valor?: number;
+  cliente?: { nome: string };
 };
 
 const HOUR_START = 7;
@@ -120,25 +123,50 @@ export function AgendaCalendar() {
         console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
       }
       const now = new Date();
-      const reservasValidas = ((pbaRes.data as Tables<"profissional_bloqueios_agenda">[]) || [])
+      type PbaRow = {
+        id: string;
+        orcamento_id: string | null;
+        inicio: string;
+        fim: string;
+        status: string;
+        motivo: string | null;
+        expires_at: string | null;
+        orcamentos?: { service_name?: string | null; valor?: number | null; cliente?: { nome: string } | null } | null;
+      };
+      const reservasValidas: ReservaAgenda[] = ((pbaRes.data as unknown as PbaRow[]) || [])
         .filter((r) => {
           if (r.status !== "temporario") return true;
           if (!r.expires_at) return true;
           return new Date(r.expires_at) > now;
         })
         .map((r) => ({
-          ...r,
+          id: r.id,
+          orcamento_id: r.orcamento_id,
+          inicio: r.inicio,
+          fim: r.fim,
+          status: r.status,
+          motivo: r.motivo,
+          expires_at: r.expires_at,
           service_name: r.orcamentos?.service_name || "Serviço",
-          valor: r.orcamentos?.valor,
-          cliente: r.orcamentos?.cliente,
-        }));
+          valor: r.orcamentos?.valor ?? undefined,
+          cliente: r.orcamentos?.cliente ?? undefined,
+        }) as unknown as ReservaAgenda);
 
       setJanelas((jans as Janela[]) ?? []);
       setBloqueios((blocs as Bloqueio[]) ?? []);
       setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
-      setAgendamentos(((ags as Tables<"orcamentos">[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
+      type OrcRow = { id: string; service_name: string; data_agendada: string | null; status: string; valor: number | null; cliente?: { nome: string } | null };
+      setAgendamentos(((ags as unknown as OrcRow[]) ?? []).map((a) => ({
+        id: a.id,
+        service_name: a.service_name,
+        data_agendada: a.data_agendada ?? "",
+        status: a.status,
+        valor: a.valor ?? undefined,
+        cliente: a.cliente ?? undefined,
+        duracao_min: dur,
+      })));
       setLoading(false);
     };
 

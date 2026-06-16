@@ -191,6 +191,34 @@ export function useAuth() {
 
   const allowedTabs = state.permissions.allowed;
 
+  const refresh = useCallback(async () => {
+    const uid = state.user?.id;
+    if (!uid) return;
+    lastLoadedUserRef.current = null;
+    loadingForUserRef.current = null;
+    const [{ data: profile }, { data: roles }, { data: permsData }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.rpc("get_admin_permissions", { _user_id: uid }),
+    ]);
+    const roleList = (roles ?? []).map((r) => r.role as Role);
+    const permsRaw = (permsData ?? {}) as { level?: string | null; allowed?: string[]; read_only?: string[] };
+    setState((s) => ({
+      ...s,
+      profile: profile
+        ? { id: profile.id, nome: profile.nome, email: profile.email, whatsapp: profile.whatsapp, avatar_url: profile.avatar_url }
+        : null,
+      roles: roleList,
+      permissions: {
+        level: (permsRaw.level ?? null) as AdminLevel,
+        allowed: (permsRaw.allowed ?? []) as AdminSection[],
+        readOnly: (permsRaw.read_only ?? []) as AdminSection[],
+      },
+      rolesLoaded: true,
+    }));
+    lastLoadedUserRef.current = uid;
+  }, [state.user?.id]);
+
   return {
     ...state,
     loading: !isReady,
@@ -202,6 +230,7 @@ export function useAuth() {
     canAccess,
     isReadOnly,
     allowedTabs,
+    refresh,
     // legacy compatibility
     profilePhoto: state.profile?.avatar_url ?? null,
     userData: {
