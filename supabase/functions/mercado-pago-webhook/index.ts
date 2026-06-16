@@ -292,6 +292,11 @@ serve(async (req) => {
       // Criar/atualizar registro de split com valores reais
       // Taxa real do MP por método de pagamento
       const calcularTaxaMP = (mpData: any): number => {
+        if (mpData.fee_details && Array.isArray(mpData.fee_details) && mpData.fee_details.length > 0) {
+          const totalFee = mpData.fee_details.reduce((acc: number, f: any) => acc + (Number(f.amount) || 0), 0);
+          if (totalFee > 0) return Math.round(totalFee * 100) / 100;
+        }
+
         const method = mpData.payment_method_id || "";
         const installments = mpData.installments || 1;
         const amount = Number(mpData.transaction_amount || 0);

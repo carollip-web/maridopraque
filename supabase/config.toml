@@ -1,18 +1,43 @@
 project_id = "rbfonmpuepqfhivvoqku"
 
+[functions.cron-email-mensagens-nao-lidas]
+verify_jwt = false
+
 [functions.cron-limpeza-agenda]
 verify_jwt = false
 
-[functions.mercado-pago-webhook]
+[functions.cron-retentar-estornos]
 verify_jwt = false
 
-[functions.mercado-pago-oauth-start]
+[functions.impersonate-user]
+verify_jwt = true
+
+[functions.manage-professionals]
 verify_jwt = true
 
 [functions.mercado-pago-oauth-callback]
 verify_jwt = false
 
+[functions.mercado-pago-oauth-start]
+verify_jwt = true
+
+[functions.mercado-pago-webhook]
+verify_jwt = false
+
+[functions.mercadopago-cartao-init]
+verify_jwt = true
+
+[functions.mercadopago-cartao-processar]
+verify_jwt = true
+
 [functions.mp-refresh-tokens]
 verify_jwt = false
 
+[functions.processar-estorno]
+verify_jwt = false
 
+[functions.reset-test-data]
+verify_jwt = true
+
+[functions.seed-test-data]
+verify_jwt = true
