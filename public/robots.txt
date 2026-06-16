@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-*
+Disallow: /cliente
+Disallow: /profissional
+Disallow: /auth/
+Disallow: /login
+Disallow: /mp/
+Disallow: /checkout
+Disallow: /reset-password
+
+Sitemap: https://www.maridopraque.com/sitemap.xml
