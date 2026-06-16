@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { carregarAgendaProfissional } from "@/lib/agenda";
 import {
   Orcamento,
@@ -20,6 +21,82 @@ import {
 const TAXA_TOTAL = 0.15 + 0.0498;
 const liquido = (bruto: number) =>
   Math.round(bruto * (1 - TAXA_TOTAL) * 100) / 100;
+
+/* ─── Local row types (mirror DB / Supabase select results) ─── */
+
+/** Orcamento extended with DB-side apoio feminino columns not in the base interface */
+interface OrcamentoWithApoio extends Orcamento {
+  apoio_profissional_id?: string | null;
+  valor_apoio_feminino?: number | null;
+  status_apoio?: string | null;
+}
+
+/** Row returned by `select("*")` on the `propostas` table */
+type PropostaRow = Tables<"propostas">;
+
+/** Row returned by `select(...)` on `orcamento_materiais` */
+interface OrcMatRow {
+  orcamento_id: string;
+  nome_snapshot: string;
+  unidade_snapshot: string;
+  quantidade: number;
+  subtotal: number;
+}
+
+/** Row returned by `select(...)` on `services_catalog` */
+interface CatalogRow {
+  id: string;
+  preco_min: number | null;
+  preco_max: number | null;
+  categoria: string;
+}
+
+/** Row returned by `select(...)` on `cliente_enderecos` */
+interface ClienteEnderecoRow {
+  user_id: string;
+  rotulo: string;
+  cep: string | null;
+  logradouro: string;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  lat: number | null;
+  lng: number | null;
+  is_padrao: boolean;
+}
+
+/** Partial proposta used in optimistic updates from server responses */
+interface PropostaPartial {
+  id?: string;
+  orcamento_id?: string;
+  profissional_id?: string;
+  status?: string;
+  valor_servico?: number;
+  observacoes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Partial orcamento used in optimistic updates from server responses */
+interface OrcamentoPartial {
+  id?: string;
+  status?: string;
+  profissional_id?: string | null;
+  valor_servico?: number | null;
+  updated_at?: string;
+}
+
+/** Shape returned by the orcamentos queryFn */
+interface OrcamentosQueryData {
+  orcamentos: Orcamento[];
+  propostasIniciais: PropostaRow[];
+}
+
+interface RecusaRow {
+  orcamento_id: string;
+}
 
 export interface ProfissionalMetrics {
   ganhosMes: number;
@@ -51,7 +128,7 @@ interface PerfilRow {
 }
 
 const EMPTY_ORCS: Orcamento[] = [];
-const EMPTY_PROPS: any[] = [];
+const EMPTY_PROPS: PropostaRow[] = [];
 const EMPTY_RECUSAS: string[] = [];
 
 /**
@@ -90,30 +167,30 @@ export function useProfissionalData(user: User | null) {
       if (propsRes.error) throw propsRes.error;
       if (orcsRes.error) throw orcsRes.error;
 
-      const propsList = propsRes.data ?? [];
-      const propOrcIds = propsList.map((p: any) => p.orcamento_id);
+      const propsList = (propsRes.data ?? []) as PropostaRow[];
+      const propOrcIds = propsList.map((p) => p.orcamento_id);
       const missingOrcIds = propOrcIds.filter(
-        (id: string) => !orcsRes.data?.some((o: any) => o.id === id),
+        (id) => !orcsRes.data?.some((o) => o.id === id),
       );
 
-      let list = (orcsRes.data || []) as Orcamento[];
+      let list = (orcsRes.data || []) as OrcamentoWithApoio[];
       if (missingOrcIds.length > 0) {
         const { data: missingOrcs } = await supabase
           .from("orcamentos")
           .select("*")
           .in("id", missingOrcIds);
-        if (missingOrcs) list = [...list, ...(missingOrcs as Orcamento[])];
+        if (missingOrcs) list = [...list, ...(missingOrcs as OrcamentoWithApoio[])];
       }
 
       // Repasse 30% apoio feminino
-      const apoioOrcs = (list as any[]).filter(
+      const apoioOrcs = list.filter(
         (o) =>
           o.tipo_atendimento === "homem_com_apoio_feminino" &&
           !o.apoio_profissional_id,
       );
       if (apoioOrcs.length > 0) {
         const apoioIds = apoioOrcs.map((o) => o.id);
-        const { data: propostasHomem } = await (supabase as any)
+        const { data: propostasHomem } = await supabase
           .from("propostas")
           .select("orcamento_id, valor_servico, status, created_at")
           .in("orcamento_id", apoioIds)
@@ -128,7 +205,7 @@ export function useProfissionalData(user: User | null) {
               valorPorOrc[p.orcamento_id] = Number(p.valor_servico);
             }
           }
-          list = (list as any[]).map((o) => {
+          list = list.map((o) => {
             if (
               o.tipo_atendimento === "homem_com_apoio_feminino" &&
               valorPorOrc[o.id] != null
@@ -140,11 +217,11 @@ export function useProfissionalData(user: User | null) {
               };
             }
             return o;
-          }) as typeof list;
+          });
         }
       }
 
-      return { orcamentos: list, propostasIniciais: propsList };
+      return { orcamentos: list as Orcamento[], propostasIniciais: propsList } satisfies OrcamentosQueryData;
     },
   });
 
@@ -152,25 +229,25 @@ export function useProfissionalData(user: User | null) {
   const orcIds = useMemo(() => orcamentos.map((o) => o.id), [orcamentos]);
 
   // Propostas detalhadas (após carregar orçamentos) — sobrescreve a lista inicial
-  const propostasQuery = useQuery({
+  const propostasQuery = useQuery<PropostaRow[]>({
     queryKey: ["profissional", "propostas", userId, orcIds.join(",")],
     enabled: enabled && orcIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("propostas")
         .select("*")
         .eq("profissional_id", userId!)
         .in("orcamento_id", orcIds);
       if (error) throw error;
-      return data || [];
+      return (data ?? []) as PropostaRow[];
     },
   });
 
-  const minhasPropostas: any[] =
+  const minhasPropostas: PropostaRow[] =
     propostasQuery.data ?? orcamentosQuery.data?.propostasIniciais ?? EMPTY_PROPS;
 
   const propIds = useMemo(
-    () => minhasPropostas.map((p: any) => p.id).filter(Boolean),
+    () => minhasPropostas.map((p) => p.id).filter(Boolean),
     [minhasPropostas],
   );
 
@@ -199,8 +276,9 @@ export function useProfissionalData(user: User | null) {
         .in("orcamento_id", orcIds);
       if (error) throw error;
       const grouped: Record<string, OrcMat[]> = {};
-      (data ?? []).forEach((m: any) => {
-        (grouped[m.orcamento_id] ||= []).push(m as OrcMat);
+      (data ?? []).forEach((m) => {
+        const row: OrcMat = m as unknown as OrcMat;
+        (grouped[row.orcamento_id] ||= []).push(row);
       });
       return grouped;
     },
@@ -227,17 +305,18 @@ export function useProfissionalData(user: User | null) {
           .in("user_id", clienteIds),
       ]);
       const profiles: Record<string, Profile> = {};
-      (profs ?? []).forEach((p: any) => (profiles[p.id] = p));
+      (profs ?? []).forEach((p) => (profiles[p.id] = p as Profile));
       const clienteGeo: Record<string, ClienteGeo> = {};
-      const clienteEndereco: Record<string, any> = {};
-      (ends ?? []).forEach((e: any) => {
-        const cur = clienteGeo[e.user_id];
-        if (!cur || e.is_padrao)
-          clienteGeo[e.user_id] = { lat: e.lat, lng: e.lng, cidade: e.cidade };
+      const clienteEndereco: Record<string, ClienteEnderecoRow> = {};
+      (ends ?? []).forEach((e) => {
+        const row = e as unknown as ClienteEnderecoRow;
+        const cur = clienteGeo[row.user_id];
+        if (!cur || row.is_padrao)
+          clienteGeo[row.user_id] = { lat: row.lat, lng: row.lng, cidade: row.cidade };
         
-        const curEnd = clienteEndereco[e.user_id];
-        if (!curEnd || e.is_padrao)
-          clienteEndereco[e.user_id] = e;
+        const curEnd = clienteEndereco[row.user_id];
+        if (!curEnd || row.is_padrao)
+          clienteEndereco[row.user_id] = row;
       });
       return { profiles, clienteGeo, clienteEndereco };
     },
@@ -262,7 +341,7 @@ export function useProfissionalData(user: User | null) {
         .in("id", serviceIds);
       if (error) throw error;
       const cmap: Record<string, ServicoCat> = {};
-      (data ?? []).forEach((c: any) => (cmap[c.id] = c));
+      (data ?? []).forEach((c) => (cmap[c.id] = c as ServicoCat));
       return cmap;
     },
   });
@@ -272,7 +351,7 @@ export function useProfissionalData(user: User | null) {
     queryKey: ["profissional", "perfil", userId],
     enabled,
     queryFn: async (): Promise<PerfilRow | null> => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
           "ativo, especialidades, lat, lng, raio_atendimento_km, genero, oferece_apoio_feminino, mp_user_id",
@@ -281,7 +360,7 @@ export function useProfissionalData(user: User | null) {
         .maybeSingle();
 
       if (error) {
-        const { data: basico } = await (supabase as any)
+        const { data: basico } = await supabase
           .from("profissional_perfil")
           .select("ativo, especialidades, lat, lng, raio_atendimento_km")
           .eq("user_id", userId!)
@@ -326,7 +405,7 @@ export function useProfissionalData(user: User | null) {
         .select("orcamento_id")
         .eq("profissional_id", userId!);
       if (error) throw error;
-      return (data ?? []).map((r: any) => r.orcamento_id as string);
+      return (data ?? []).map((r) => (r as unknown as RecusaRow).orcamento_id);
     },
   });
 
@@ -385,8 +464,8 @@ export function useProfissionalData(user: User | null) {
   const propostasEnviadasLocal = useMemo(
     () =>
       new Set(
-        (minhasPropostas as any[])
-          .map((p) => p?.orcamento_id)
+        minhasPropostas
+          .map((p) => p.orcamento_id)
           .filter(Boolean) as string[],
       ),
     [minhasPropostas],
@@ -431,8 +510,8 @@ export function useProfissionalData(user: User | null) {
     );
     const aReceberOrcs = meus.filter((o) => o.status === "pago");
 
-    const meusApoio = list.filter(
-      (o) => (o as any).apoio_profissional_id === userId,
+    const meusApoio = (list as OrcamentoWithApoio[]).filter(
+      (o) => o.apoio_profissional_id === userId,
     );
     const pagosApoio = meusApoio.filter(
       (o) => o.status === "pago" || o.status === "concluido",
@@ -444,7 +523,7 @@ export function useProfissionalData(user: User | null) {
       0,
     );
     const ganhosApoio = pagosApoio.reduce(
-      (acc, o) => acc + liquido(Number((o as any).valor_apoio_feminino || 0)),
+      (acc, o) => acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
       0,
     );
     const ganhos = ganhosNormais + ganhosApoio;
@@ -454,7 +533,7 @@ export function useProfissionalData(user: User | null) {
       0,
     );
     const receberApoio = aReceberOrcsApoio.reduce(
-      (acc, o) => acc + liquido(Number((o as any).valor_apoio_feminino || 0)),
+      (acc, o) => acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
       0,
     );
     const receber = receberNormais + receberApoio;
@@ -473,7 +552,7 @@ export function useProfissionalData(user: User | null) {
         .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
         .reduce(
           (acc, o) =>
-            acc + liquido(Number((o as any).valor_apoio_feminino || 0)),
+            acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
           0,
         );
 
@@ -592,14 +671,14 @@ export function useProfissionalData(user: User | null) {
       }
       return { previous };
     },
-    onError: (err: any, _checked, ctx) => {
+    onError: (err: unknown, _checked, ctx) => {
       if (ctx?.previous !== undefined) {
         queryClient.setQueryData(
           ["profissional", "perfil", userId],
           ctx.previous,
         );
       }
-      toast.error("Erro ao alterar status", { description: err?.message });
+      toast.error("Erro ao alterar status", { description: err instanceof Error ? err.message : String(err) });
     },
     onSuccess: (checked) => {
       toast.success(
@@ -617,7 +696,7 @@ export function useProfissionalData(user: User | null) {
 
   const handleProposalSent = useCallback(
     (
-      args: { orcamentoId: string; proposta: any; orcamento: any },
+      args: { orcamentoId: string; proposta: PropostaPartial; orcamento: OrcamentoPartial },
       onAfter?: () => void,
     ) => {
       const { orcamentoId, proposta, orcamento } = args;
@@ -643,17 +722,17 @@ export function useProfissionalData(user: User | null) {
         status: orcamento?.status ?? "enviado",
       };
 
-      queryClient.setQueryData<typeof orcamentosQuery.data>(orcKey, (prev) => {
-        if (!prev) return prev;
+      queryClient.setQueryData<OrcamentosQueryData>(orcKey, (prev): OrcamentosQueryData | undefined => {
+        if (!prev) return undefined;
         return {
           ...prev,
           orcamentos: prev.orcamentos.map((o) =>
-            o.id === orcamentoId ? { ...o, ...orcamentoNormalizado } : o,
+            o.id === orcamentoId ? ({ ...o, ...orcamentoNormalizado } as Orcamento) : o,
           ),
         };
       });
 
-      queryClient.setQueryData<any[]>(propKey, (prev) => {
+      queryClient.setQueryData<PropostaRow[]>(propKey, (prev) => {
         const list = prev ?? [];
         const idx = list.findIndex((p) =>
           propostaNormalizada.id && p.id
@@ -662,10 +741,10 @@ export function useProfissionalData(user: User | null) {
         );
         if (idx >= 0) {
           const copy = [...list];
-          copy[idx] = { ...copy[idx], ...propostaNormalizada };
+          copy[idx] = { ...copy[idx], ...propostaNormalizada } as PropostaRow;
           return copy;
         }
-        return [propostaNormalizada, ...list];
+        return [propostaNormalizada as PropostaRow, ...list];
       });
 
       queryClient.invalidateQueries({ queryKey: ["orcamentos"] });
@@ -685,7 +764,7 @@ export function useProfissionalData(user: User | null) {
   // ---- Setter compatível (consumidores antigos que faziam setOrcamentos) ----
   const setOrcamentos = useCallback(
     (updater: Orcamento[] | ((prev: Orcamento[]) => Orcamento[])) => {
-      queryClient.setQueryData<typeof orcamentosQuery.data>(
+      queryClient.setQueryData<OrcamentosQueryData>(
         ["profissional", "orcamentos", userId],
         (prev) => {
           if (!prev) return prev;
@@ -705,7 +784,7 @@ export function useProfissionalData(user: User | null) {
   const clienteEndereco = clientesQuery.data?.clienteEndereco ?? {};
   const catalog = catalogQuery.data ?? {};
   const orcMats = orcMatsQuery.data ?? {};
-  const propostasMateriais = propostasMateriaisQuery.data ?? EMPTY_PROPS;
+  const propostasMateriais = propostasMateriaisQuery.data ?? [];
   const minhaAgenda = agendaQuery.data ?? null;
 
   return {
