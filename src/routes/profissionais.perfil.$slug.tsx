@@ -166,7 +166,7 @@ function PerfilProfissional() {
           .maybeSingle();
         if (prof?.nome) setNome(prof.nome);
         const { data: avs } = await supabase
-          .from("avaliacoes")
+          .from("avaliacoes_publicas")
           .select("id, nota, comentario, created_at, resposta_profissional, resposta_em")
           .eq("profissional_id", p.user_id)
           .order("created_at", { ascending: false })
