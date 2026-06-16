@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { UserPlus, Loader2, Trash2, Lock } from "lucide-react";
+import { UserPlus, Loader2, Trash2, Lock, Edit2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -19,6 +19,9 @@ export function AdminEquipe() {
   const [inviting, setInviting] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [changingLevel, setChangingLevel] = useState<string | null>(null);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [updatingEmail, setUpdatingEmail] = useState(false);
 
   const { data: team = [], isLoading } = useQuery({
     queryKey: ["admin", "equipe"],
@@ -111,6 +114,35 @@ export function AdminEquipe() {
     }
     toast.success("Nível atualizado com sucesso.");
     qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
+  };
+
+  const handleUpdateMyEmail = async () => {
+    if (!newEmail || !newEmail.includes("@")) {
+      toast.error("E-mail inválido.");
+      return;
+    }
+    setUpdatingEmail(true);
+    try {
+      const { error: authError } = await supabase.auth.updateUser({ email: newEmail });
+      if (authError) throw authError;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ email: newEmail })
+        .eq("id", user?.id);
+      
+      if (profileError) throw profileError;
+
+      toast.success("E-mail atualizado com sucesso!", {
+        description: "Seu e-mail de login foi alterado.",
+      });
+      setEditingEmail(false);
+      qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
+    } catch (e: any) {
+      toast.error("Erro ao atualizar e-mail", { description: e.message });
+    } finally {
+      setUpdatingEmail(false);
+    }
   };
 
   return (
@@ -229,7 +261,34 @@ export function AdminEquipe() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                      
+                      {isSelf && editingEmail ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            type="email"
+                            placeholder="Novo e-mail"
+                            value={newEmail}
+                            onChange={(e) => setNewEmail(e.target.value)}
+                            className="text-xs p-1.5 border border-slate-200 rounded"
+                          />
+                          <Button size="sm" className="h-7 text-xs bg-brand text-white" disabled={updatingEmail} onClick={handleUpdateMyEmail}>
+                            {updatingEmail ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEmail(false)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-slate-500 truncate">{member.email}</p>
+                          {isSelf && (
+                            <button onClick={() => { setEditingEmail(true); setNewEmail(member.email); }} className="text-slate-400 hover:text-brand transition-colors">
+                              <Edit2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {meta && (
                         <span
                           className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${meta.color}`}
