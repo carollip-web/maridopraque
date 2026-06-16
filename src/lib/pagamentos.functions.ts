@@ -161,6 +161,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           service_name: orc.service_name,
           mp_preference_id: preferenceId,
           initiated_at: new Date().toISOString(),
+          valor_apoio_feminino: valorApoio,
         },
       } as never)) as unknown as {
         data: CriarCheckoutPagamentoRow[] | CriarCheckoutPagamentoRow | null;
