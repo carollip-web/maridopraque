@@ -83,7 +83,10 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       (acc, m) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
       0,
     );
-    const valorTotal = valorServico + valorMateriais;
+    const valorBase = valorServico + valorMateriais;
+    const requiresApoio = orc.tipo_atendimento === "homem_com_apoio_feminino";
+    const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
+    const valorTotal = Math.round((valorBase + valorApoio) * 100) / 100;
     const valorSinal = valorTotal; // 100% upfront
     const valorRestante = 0;
 
