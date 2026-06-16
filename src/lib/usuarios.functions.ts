@@ -233,20 +233,21 @@ export const atualizarEmailAdminFn = createServerFn({ method: "POST" })
 
     if (data.forceReplace) {
       try {
+        const dummyEmail = `conflito_${Date.now()}_${data.newEmail}`;
         // Tenta achar o usuário conflitante no profile
         const { data: conflito } = await admin.from("profiles").select("id").ilike("email", data.newEmail).maybeSingle();
         if (conflito?.id && conflito.id !== data.targetUserId) {
-          console.log("Deletando conta conflitante (profile encontrado):", conflito.id);
-          await admin.from("user_roles").delete().eq("user_id", conflito.id);
-          await admin.auth.admin.deleteUser(conflito.id);
-          await admin.from("profiles").delete().eq("id", conflito.id);
+          console.log("Renomeando conta conflitante (profile encontrado):", conflito.id);
+          // Renomeia em vez de deletar para evitar erros de Foreign Key
+          await admin.auth.admin.updateUserById(conflito.id, { email: dummyEmail, user_metadata: { email: dummyEmail } });
+          await admin.from("profiles").update({ email: dummyEmail }).eq("id", conflito.id);
         } else {
           // Se não estiver no profile por algum motivo, busca na lista do auth
           const { data: authList } = await admin.auth.admin.listUsers({ perPage: 1000 });
           const conflitoAuth = authList?.users?.find(u => u.email?.toLowerCase() === data.newEmail.toLowerCase());
           if (conflitoAuth?.id && conflitoAuth.id !== data.targetUserId) {
-            console.log("Deletando conta conflitante (auth list):", conflitoAuth.id);
-            await admin.auth.admin.deleteUser(conflitoAuth.id);
+            console.log("Renomeando conta conflitante (auth list):", conflitoAuth.id);
+            await admin.auth.admin.updateUserById(conflitoAuth.id, { email: dummyEmail, user_metadata: { email: dummyEmail } });
           }
         }
       } catch (err) {
