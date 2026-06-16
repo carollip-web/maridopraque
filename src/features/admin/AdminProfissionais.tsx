@@ -167,18 +167,18 @@ export function AdminProfissionais() {
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
   const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
-  const search = searchParams.pro_q || "";
-  const filterStatus = searchParams.pro_status || "todos";
+  const search = (searchParams.pro_q as string | undefined) || "";
+  const filterStatus = (searchParams.pro_status as string | undefined) || "todos";
 
   const setSearch = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, pro_q: val || undefined }),
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_q: val || undefined })) as never,
     });
   const setFilterStatus = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, pro_status: val || "todos" }),
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_status: val || "todos" })) as never,
     });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as never });
 
   const [selected, setSelected] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"lista" | "leads" | "apoio">("lista");

@@ -28,28 +28,28 @@ export function AdminPedidos() {
   const qc = useQueryClient();
   const excluirPedidoFn = useServerFn(excluirPedidoAdmin);
   const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
-  const search = searchParams.q || "";
-  const filter = searchParams.status || "todos";
-  const proFilter = searchParams.pro_id || "todos";
-  const dateRange = searchParams.range || "all";
+  const search = (searchParams.q as string | undefined) || "";
+  const filter = (searchParams.status as string | undefined) || "todos";
+  const proFilter = (searchParams.pro_id as string | undefined) || "todos";
+  const dateRange = (searchParams.range as string | undefined) || "all";
 
   const setSearch = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, q: val || undefined }),
+      search: ((old: Record<string, unknown>) => ({ ...old, q: val || undefined })) as never,
     });
   const setFilter = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, status: val || "todos" }),
+      search: ((old: Record<string, unknown>) => ({ ...old, status: val || "todos" })) as never,
     });
   const setProFilter = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, pro_id: val || "todos" }),
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_id: val || "todos" })) as never,
     });
   const setDateRange = (val: string) =>
     navigate({
-      search: (old: any) => ({ ...old, range: val || "all" }),
+      search: ((old: Record<string, unknown>) => ({ ...old, range: val || "all" })) as never,
     });
-  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
+  const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as never });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);

@@ -439,7 +439,7 @@ export function useOrcamentoForm({
 
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
-          .insert(insertPayload)
+          .insert(insertPayload as never)
           .select("*")
           .single();
 

@@ -62,9 +62,11 @@ type ProfissionalPerfilData = {
   raio_atendimento_km?: number | null;
   atende_emergencias?: boolean | null;
   veiculo_proprio?: boolean | null;
-  genero?: string | null;
+  genero?: "homem" | "mulher" | "outro" | "nao_informar" | "apoio_feminino" | null;
   mp_user_id?: string | null;
   mp_connected_at?: string | null;
+  chave_pix?: string | null;
+  pix_key_type?: string | null;
 };
 
 function fmtCnpj(v: string) {
