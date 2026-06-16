@@ -7,19 +7,20 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { convidarAdminFn } from "@/lib/usuarios.functions";
+import { convidarAdminFn, atualizarEmailAdminFn } from "@/lib/usuarios.functions";
 import { ADMIN_LEVEL_LABELS, AdminLevel } from "./constants";
 
 export function AdminEquipe() {
   const { user, session } = useAuth();
   const qc = useQueryClient();
   const convidarFn = useServerFn(convidarAdminFn);
+  const atualizarEmailFn = useServerFn(atualizarEmailAdminFn);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLevel, setInviteLevel] = useState<NonNullable<AdminLevel>>("suporte");
   const [inviting, setInviting] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [changingLevel, setChangingLevel] = useState<string | null>(null);
-  const [editingEmail, setEditingEmail] = useState(false);
+  const [editingEmailFor, setEditingEmailFor] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [updatingEmail, setUpdatingEmail] = useState(false);
 
@@ -116,27 +117,33 @@ export function AdminEquipe() {
     qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
   };
 
-  const handleUpdateMyEmail = async () => {
+  const handleUpdateEmail = async (targetUserId: string, isSelf: boolean) => {
     if (!newEmail || !newEmail.includes("@")) {
       toast.error("E-mail inválido.");
       return;
     }
     setUpdatingEmail(true);
     try {
-      const { error: authError } = await supabase.auth.updateUser({ email: newEmail });
-      if (authError) throw authError;
+      if (isSelf) {
+        // Usa o auth local para atualizar a si mesmo
+        const { error: authError } = await supabase.auth.updateUser({ email: newEmail });
+        if (authError) throw authError;
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ email: newEmail })
-        .eq("id", user?.id);
-      
-      if (profileError) throw profileError;
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ email: newEmail })
+          .eq("id", user?.id);
+        if (profileError) throw profileError;
+      } else {
+        // Usa a server function para atualizar outro admin
+        await atualizarEmailFn({
+          data: { targetUserId, newEmail },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        });
+      }
 
-      toast.success("E-mail atualizado com sucesso!", {
-        description: "Seu e-mail de login foi alterado.",
-      });
-      setEditingEmail(false);
+      toast.success("E-mail atualizado com sucesso!");
+      setEditingEmailFor(null);
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
       toast.error("Erro ao atualizar e-mail", { description: e.message });
@@ -144,6 +151,8 @@ export function AdminEquipe() {
       setUpdatingEmail(false);
     }
   };
+
+  const isSuperAdmin = team.find((m: any) => m.id === user?.id)?.admin_level === "super_admin";
 
   return (
     <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
@@ -262,7 +271,7 @@ export function AdminEquipe() {
                         )}
                       </div>
                       
-                      {isSelf && editingEmail ? (
+                      {editingEmailFor === member.id ? (
                         <div className="flex items-center gap-2 mt-1">
                           <input
                             type="email"
@@ -271,18 +280,18 @@ export function AdminEquipe() {
                             onChange={(e) => setNewEmail(e.target.value)}
                             className="text-xs p-1.5 border border-slate-200 rounded"
                           />
-                          <Button size="sm" className="h-7 text-xs bg-brand text-white" disabled={updatingEmail} onClick={handleUpdateMyEmail}>
+                          <Button size="sm" className="h-7 text-xs bg-brand text-white" disabled={updatingEmail} onClick={() => handleUpdateEmail(member.id, isSelf)}>
                             {updatingEmail ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEmail(false)}>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEmailFor(null)}>
                             Cancelar
                           </Button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-slate-500 truncate">{member.email}</p>
-                          {isSelf && (
-                            <button onClick={() => { setEditingEmail(true); setNewEmail(member.email); }} className="text-slate-400 hover:text-brand transition-colors">
+                          {(isSelf || isSuperAdmin) && (
+                            <button onClick={() => { setEditingEmailFor(member.id); setNewEmail(member.email); }} className="text-slate-400 hover:text-brand transition-colors">
                               <Edit2 className="h-3 w-3" />
                             </button>
                           )}

@@ -203,3 +203,49 @@ export const convidarAdminFn = createServerFn({ method: "POST" })
 
     return { ok: true, invited, alreadyAdmin: false, userId: targetUserId };
   });
+
+const updateEmailSchema = z.object({
+  targetUserId: z.string().uuid(),
+  newEmail: z.string().email(),
+});
+
+export const atualizarEmailAdminFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => updateEmailSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Apenas super_admin pode alterar emails de outros admins via esta função
+    await requireSuperAdmin(supabase, userId);
+
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      throw new Error(
+        "Configuração do servidor ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios no servidor.",
+      );
+    }
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Atualiza auth.users
+    const { error: authError } = await admin.auth.admin.updateUserById(data.targetUserId, {
+      email: data.newEmail,
+      user_metadata: { email: data.newEmail },
+    });
+    if (authError) throw new Error(`Erro no Auth ao atualizar email: ${authError.message}`);
+
+    // Atualiza profiles
+    const { error: profileError } = await admin
+      .from("profiles")
+      .update({ email: data.newEmail })
+      .eq("id", data.targetUserId);
+
+    if (profileError) {
+      console.warn("Falha ao atualizar profiles:", profileError);
+    }
+
+    return { ok: true };
+  });
