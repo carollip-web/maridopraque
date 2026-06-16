@@ -194,8 +194,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         },
       });
 
-      console.log("[profissional.enviarOrcamento] resposta bruta", res);
-
       const propostaNormalizada = res?.proposta ?? {
         id: `optimistic-${o.id}`,
         orcamento_id: o.id,

@@ -153,7 +153,6 @@ function ClienteArea() {
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log("[ClienteArea] Subscribing to realtime for user:", user.id);
     const channel = supabase
       .channel(`cliente-realtime-${user.id}`)
       .on(
@@ -164,8 +163,7 @@ function ClienteArea() {
           table: "orcamentos",
           filter: `cliente_id=eq.${user.id}`,
         },
-        (payload) => {
-          console.log("Realtime update: orcamentos changed", payload);
+        (_payload) => {
           queryClient.invalidateQueries({ queryKey: ["cliente"] });
         },
       )
@@ -176,8 +174,7 @@ function ClienteArea() {
           schema: "public",
           table: "propostas",
         },
-        (payload) => {
-          console.log("Realtime update: propostas changed", payload);
+        (_payload) => {
           queryClient.invalidateQueries({ queryKey: ["cliente"] });
         },
       )
@@ -218,7 +215,6 @@ function ClienteArea() {
       .subscribe();
 
     return () => {
-      console.log("[ClienteArea] Unsubscribing from realtime");
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);

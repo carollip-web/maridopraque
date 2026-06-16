@@ -353,9 +353,7 @@ export function ProfissionalConfiguracoes() {
   const handleConnectMercadoPago = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
-      
-      console.log("MP Connect Response:", { data, error });
-      
+
       if (error) {
         let errorBody = error.message || "Erro desconhecido";
         if (error.context) {
