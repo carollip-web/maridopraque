@@ -292,8 +292,12 @@ serve(async (req) => {
       // Criar/atualizar registro de split com valores reais
       // Taxa real do MP por método de pagamento
       const calcularTaxaMP = (mpData: any): number => {
-        if (mpData.fee_details && Array.isArray(mpData.fee_details) && mpData.fee_details.length > 0) {
-          const totalFee = mpData.fee_details.reduce((acc: number, f: any) => acc + (Number(f.amount) || 0), 0);
+        // Somar APENAS a taxa do gateway (mercadopago_fee). NÃO incluir application_fee:
+        // ela é a comissão de 15% do marketplace, já descontada à parte em taxaPlataforma.
+        if (mpData.fee_details && Array.isArray(mpData.fee_details)) {
+          const totalFee = mpData.fee_details
+            .filter((f: any) => f?.type === "mercadopago_fee")
+            .reduce((acc: number, f: any) => acc + (Number(f.amount) || 0), 0);
           if (totalFee > 0) return Math.round(totalFee * 100) / 100;
         }
 
