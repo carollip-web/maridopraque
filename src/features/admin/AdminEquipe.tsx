@@ -22,6 +22,7 @@ export function AdminEquipe() {
   const [changingLevel, setChangingLevel] = useState<string | null>(null);
   const [editingEmailFor, setEditingEmailFor] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState("");
+  const [forceReplace, setForceReplace] = useState(false);
   const [updatingEmail, setUpdatingEmail] = useState(false);
 
   const { data: team = [], isLoading } = useQuery({
@@ -117,6 +118,8 @@ export function AdminEquipe() {
     qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
   };
 
+  const isSuperAdmin = team.find((m: any) => m.id === user?.id)?.admin_level === "super_admin";
+
   const handleUpdateEmail = async (targetUserId: string, isSelf: boolean) => {
     if (!newEmail || !newEmail.includes("@")) {
       toast.error("E-mail inválido.");
@@ -124,8 +127,8 @@ export function AdminEquipe() {
     }
     setUpdatingEmail(true);
     try {
-      if (isSelf) {
-        // Usa o auth local para atualizar a si mesmo
+      if (isSelf && !isSuperAdmin) {
+        // Usa o auth local para atualizar a si mesmo (se não for super admin)
         const { error: authError } = await supabase.auth.updateUser({ email: newEmail });
         if (authError) throw authError;
 
@@ -135,15 +138,16 @@ export function AdminEquipe() {
           .eq("id", user?.id);
         if (profileError) throw profileError;
       } else {
-        // Usa a server function para atualizar outro admin
+        // Usa a server function (que tem bypass e forceReplace)
         await atualizarEmailFn({
-          data: { targetUserId, newEmail },
+          data: { targetUserId, newEmail, forceReplace },
           headers: { Authorization: `Bearer ${session?.access_token}` },
         });
       }
 
       toast.success("E-mail atualizado com sucesso!");
       setEditingEmailFor(null);
+      setForceReplace(false);
       qc.invalidateQueries({ queryKey: ["admin", "equipe"] });
     } catch (e: any) {
       toast.error("Erro ao atualizar e-mail", { description: e.message });
@@ -151,8 +155,6 @@ export function AdminEquipe() {
       setUpdatingEmail(false);
     }
   };
-
-  const isSuperAdmin = team.find((m: any) => m.id === user?.id)?.admin_level === "super_admin";
 
   return (
     <div className="max-w-4xl space-y-8 animate-in fade-in duration-500">
@@ -272,20 +274,28 @@ export function AdminEquipe() {
                       </div>
                       
                       {editingEmailFor === member.id ? (
-                        <div className="flex items-center gap-2 mt-1">
-                          <input
-                            type="email"
-                            placeholder="Novo e-mail"
-                            value={newEmail}
-                            onChange={(e) => setNewEmail(e.target.value)}
-                            className="text-xs p-1.5 border border-slate-200 rounded"
-                          />
-                          <Button size="sm" className="h-7 text-xs bg-brand text-white" disabled={updatingEmail} onClick={() => handleUpdateEmail(member.id, isSelf)}>
-                            {updatingEmail ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEmailFor(null)}>
-                            Cancelar
-                          </Button>
+                        <div className="flex flex-col gap-2 mt-1 w-full max-w-sm">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="email"
+                              placeholder="Novo e-mail"
+                              value={newEmail}
+                              onChange={(e) => setNewEmail(e.target.value)}
+                              className="text-xs p-1.5 border border-slate-200 rounded flex-1"
+                            />
+                            <Button size="sm" className="h-7 text-xs bg-brand text-white" disabled={updatingEmail} onClick={() => handleUpdateEmail(member.id, isSelf)}>
+                              {updatingEmail ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar"}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingEmailFor(null)}>
+                              Cancelar
+                            </Button>
+                          </div>
+                          {isSuperAdmin && (
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-slate-500">
+                              <input type="checkbox" checked={forceReplace} onChange={(e) => setForceReplace(e.target.checked)} className="rounded border-slate-300 text-brand focus:ring-brand" />
+                              Forçar troca (Exclui conta existente se houver conflito de email)
+                            </label>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
