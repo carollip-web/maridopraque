@@ -16,6 +16,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -63,7 +64,7 @@ function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servi
       )}
 
       {view === "nota"
-        ? (details as Tables<"avaliacoes">[]).map((av) => (
+        ? (details as unknown as Tables<"avaliacoes">[]).map((av) => (
             <div key={av.id} className="text-left border-b border-white/5 pb-2 last:border-0">
               <div className="flex justify-between items-center mb-1">
                 <div className="flex gap-0.5">
@@ -83,7 +84,7 @@ function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servi
               )}
             </div>
           ))
-        : (details as Tables<"orcamentos">[]).map((orc) => (
+        : (details as unknown as Tables<"orcamentos">[]).map((orc) => (
             <div
               key={orc.id}
               className="flex justify-between items-center text-left border-b border-white/5 pb-2 last:border-0"
@@ -171,13 +172,13 @@ export function AdminProfissionais() {
 
   const setSearch = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, pro_q: val || undefined })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, pro_q: val || undefined }),
     });
   const setFilterStatus = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, pro_status: val || "todos" })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, pro_status: val || "todos" }),
     });
-  const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as Record<string, unknown> });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
 
   const [selected, setSelected] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"lista" | "leads" | "apoio">("lista");
@@ -384,7 +385,7 @@ export function AdminProfissionais() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as "avaliacoes" | "orcamentos")}
+            onClick={() => setActiveTab(tab.id as "leads" | "apoio" | "lista")}
             className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
               activeTab === tab.id
                 ? "border-brand text-brand"

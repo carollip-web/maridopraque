@@ -35,21 +35,21 @@ export function AdminPedidos() {
 
   const setSearch = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, q: val || undefined })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, q: val || undefined }),
     });
   const setFilter = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, status: val || "todos" })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, status: val || "todos" }),
     });
   const setProFilter = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, pro_id: val || "todos" })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, pro_id: val || "todos" }),
     });
   const setDateRange = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, range: val || "all" })) as Record<string, unknown>,
+      search: (old: any) => ({ ...old, range: val || "all" }),
     });
-  const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as Record<string, unknown> });
+  const clearFilters = () => navigate({ search: (old: any) => ({ tab: old.tab }) });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);

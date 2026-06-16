@@ -81,8 +81,8 @@ export function OrcamentoDetailsSheet({
   const [disputaLoading, setDisputaLoading] = useState(false);
   const [apoioNome, setApoioNome] = useState<string | null>(null);
 
-  const isApoioFeminino = (orcamento as Record<string, unknown>)?.tipo_atendimento === "homem_com_apoio_feminino";
-  const apoioEquipeId = (orcamento as Record<string, unknown>)?.apoio_equipe_id;
+  const isApoioFeminino = (orcamento as unknown as Record<string, unknown>)?.tipo_atendimento === "homem_com_apoio_feminino";
+  const apoioEquipeId = (orcamento as unknown as Record<string, unknown>)?.apoio_equipe_id as string | undefined;
 
   useEffect(() => {
     if (!isApoioFeminino || !apoioEquipeId) {

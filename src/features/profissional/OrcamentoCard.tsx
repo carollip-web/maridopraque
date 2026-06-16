@@ -77,7 +77,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const isApoioFemininoVacancy =
     profApoioFeminino &&
     o.tipo_atendimento === "homem_com_apoio_feminino" &&
-    !(o as Record<string, unknown>).apoio_profissional_id;
+    !(o as unknown as Record<string, unknown>).apoio_profissional_id;
 
   const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
   const isOportunidade = !minhaProposta && mode === "pegar";
@@ -141,11 +141,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
   const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
     tipoAtendimento: o.tipo_atendimento,
-    genero: profGenero as string,
+    genero: profGenero as "homem" | "mulher",
     ofereceApoioFeminino: profApoioFeminino,
   });
 
-  const atendimentoPedidoLabel = tipoAtendimentoLabel(o.tipo_atendimento as string);
+  const atendimentoPedidoLabel = tipoAtendimentoLabel((o as unknown as Record<string, unknown>).tipo_atendimento as import("@/lib/agenda").TipoAtendimento);
 
   const bloquearEnvioPorAtendimento =
     !atendimentoCompat.compatible && atendimentoCompat.blockProposal;
@@ -245,9 +245,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
       if (error) {
         toast.error("Erro ao aceitar vaga", { description: error.message });
-      } else if (data && (data as Record<string, unknown>).ok === false) {
+      } else if (data && (data as unknown as Record<string, unknown>).ok === false) {
         toast.error(
-          (data as Record<string, unknown>).erro ||
+          ((data as unknown as Record<string, unknown>).erro as string) ||
             "Poxa! Outra profissional aceitou esta vaga 1 segundo antes de você.",
         );
       } else {
@@ -499,7 +499,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               Endereço de atendimento
             </div>
             {(() => {
-              const enderecoToShow = (o as Record<string, unknown>).endereco_snapshot || clienteEndereco;
+              const enderecoToShow = (o as unknown as Record<string, unknown>).endereco_snapshot || clienteEndereco;
               return enderecoToShow ? (
               <div className="text-xs text-slate-600 leading-relaxed space-y-1">
                 <p>
@@ -637,7 +637,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               </p>
               <p className="text-xl font-black text-slate-800">
                 {profApoioFeminino 
-                  ? ((o as Record<string, unknown>).valor_apoio_feminino ? `R$ ${Number((o as Record<string, unknown>).valor_apoio_feminino).toFixed(2)}` : "A definir")
+                  ? ((o as unknown as Record<string, unknown>).valor_apoio_feminino ? `R$ ${Number((o as unknown as Record<string, unknown>).valor_apoio_feminino).toFixed(2)}` : "A definir")
                   : (initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir")}
               </p>
             </div>

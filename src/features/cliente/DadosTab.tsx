@@ -188,7 +188,7 @@ export function DadosTab() {
         .eq("user_id", user.id)
         .order("is_padrao", { ascending: false })
         .order("created_at", { ascending: true });
-      return (data as Tables<"enderecos">[]) || [];
+      return (data as unknown as Endereco[]) || [];
     },
     enabled: !!user,
   });
@@ -296,8 +296,8 @@ export function DadosTab() {
           <div className="mt-8 pt-8 border-t border-border flex justify-around">
             <div>
               <p className="text-xl font-bold">
-                {profile && profile.total_servicos_pagos != null
-                  ? profile.total_servicos_pagos
+                {profile && (profile as unknown as Record<string, unknown>).total_servicos_pagos != null
+                  ? (profile as unknown as Record<string, unknown>).total_servicos_pagos
                   : "—"}
               </p>
               <p className="text-[10px] uppercase font-bold text-muted-foreground">

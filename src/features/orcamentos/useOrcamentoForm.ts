@@ -155,7 +155,7 @@ export function useOrcamentoForm({
         if (m.material_id) p[m.material_id] = Number(m.quantidade);
       });
       setPicked(p);
-      setFotos((o.fotos_problema as string[]) ?? []);
+      setFotos(((o as unknown as Record<string, unknown>).fotos_problema as string[]) ?? []);
       setStep(1);
       setShowNew(true);
     },
@@ -424,7 +424,7 @@ export function useOrcamentoForm({
         toast.success("Orçamento atualizado.");
       } else {
         const insertPayload = {
-          cliente_id: userId,
+          cliente_id: user?.id as string,
           service_id: payload.serviceId,
           service_name: payload.serviceName,
           descricao: payload.descricao ?? null,
