@@ -27,6 +27,7 @@ function Pagina() {
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">3. Para Que Usamos os Dados</h2>
         <p>Viabilizar a conexão entre clientes e profissionais; processar pagamentos e repasses; verificar a identidade dos profissionais; comunicar sobre pedidos, agendamentos e propostas; oferecer suporte e mediar disputas; cumprir obrigações legais; e melhorar a plataforma.</p>
+        <p>As mensagens trocadas entre clientes e profissionais dentro da plataforma podem ser acessadas pela equipe administrativa para fins de mediação de conflitos, análise de disputas e garantia da segurança dos usuários.</p>
 
         <h2 className="text-xl font-bold text-slate-800 mt-8 mb-3">4. Base Legal</h2>
         <p>O tratamento dos dados se fundamenta nas bases legais previstas na LGPD, especialmente: execução de contrato, cumprimento de obrigação legal, legítimo interesse e consentimento do titular, conforme o caso.</p>
