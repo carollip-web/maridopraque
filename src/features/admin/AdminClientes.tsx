@@ -444,10 +444,10 @@ export function AdminClientes() {
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
   const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
-  const q = searchParams.cli_q || "";
+  const q = (searchParams.cli_q as string | undefined) || "";
   const setQ = (val: string) =>
     navigate({
-      search: ((old: Record<string, unknown>) => ({ ...old, cli_q: val || undefined })) as Record<string, unknown>,
+      search: ((old: Record<string, unknown>) => ({ ...old, cli_q: val || undefined })) as never,
     });
 
   const [isCreating, setIsCreating] = useState(false);
