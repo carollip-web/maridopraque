@@ -46,7 +46,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
       .select(
-        "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material",
+        "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material, tipo_atendimento",
       )
       .eq("id", data.orcamentoId)
       .single();
