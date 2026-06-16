@@ -74,7 +74,7 @@ function AdminArea() {
         const first = allowedTabs[0];
         if (first) {
           setActiveTab(first);
-          navigate({ to: "/admin", search: ((old: Record<string, unknown>) => ({ ...old, tab: first })) as never });
+          navigate({ to: "/admin", search: { tab: first } as never });
         }
       }
     } else if (!searchParams.tab) {
@@ -82,7 +82,7 @@ function AdminArea() {
       const defaultTab = canAccess("dashboard") ? "dashboard" : allowedTabs[0];
       if (defaultTab) {
         setActiveTab(defaultTab);
-        navigate({ to: "/admin", search: ((old: Record<string, unknown>) => ({ ...old, tab: defaultTab })) as never });
+        navigate({ to: "/admin", search: { tab: defaultTab } as never });
       }
     }
   }, [loading, isLoggedIn, isAdmin, navigate, searchParams.tab, activeTab, canAccess, allowedTabs]);
@@ -102,7 +102,8 @@ function AdminArea() {
 
   const handleTabChange = (tab: AdminSection) => {
     setActiveTab(tab);
-    navigate({ to: "/admin", search: ((old: Record<string, unknown>) => ({ ...old, tab })) as never });
+    // Removemos o spread de `old` para limpar os filtros quando o usuário troca de menu lateral
+    navigate({ to: "/admin", search: { tab } as never });
   };
 
   if (loading) {
