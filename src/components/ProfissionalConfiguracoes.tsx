@@ -190,9 +190,9 @@ export function ProfissionalConfiguracoes() {
       raio_atendimento_km: profissionalPerfil?.raio_atendimento_km ?? 15,
       atende_emergencias: !!profissionalPerfil?.atende_emergencias,
       veiculo_proprio: !!profissionalPerfil?.veiculo_proprio,
-      genero: (profissionalPerfil?.genero as any) ?? "nao_informar",
-      chave_pix: (profissionalPerfil as any)?.chave_pix ?? "",
-      pix_key_type: (profissionalPerfil as any)?.pix_key_type ?? "cpf",
+      genero: profissionalPerfil?.genero ?? "nao_informar",
+      chave_pix: profissionalPerfil?.chave_pix ?? "",
+      pix_key_type: profissionalPerfil?.pix_key_type ?? "cpf",
     });
   }, [profile, profissionalPerfil, reset]);
 
@@ -205,7 +205,7 @@ export function ProfissionalConfiguracoes() {
       !!watched.bio && watched.bio.length > 10,
       !!watched.cpf && watched.cpf.replace(/\D/g, "").length === 11,
       !!profissionalPerfil?.especialidades && profissionalPerfil.especialidades.length > 0,
-      !!(profissionalPerfil as any)?.mp_user_id
+      !!profissionalPerfil?.mp_user_id
     ];
     const done = checks.filter(Boolean).length;
     return Math.round((done / checks.length) * 100);
@@ -254,7 +254,7 @@ export function ProfissionalConfiguracoes() {
 
       const { error: perfilError } = await supabase
         .from("profissional_perfil")
-        .upsert(profissionalPayload as any, { onConflict: "user_id" });
+        .upsert(profissionalPayload, { onConflict: "user_id" });
       if (perfilError) {
         console.error(
           "[ProfissionalConfiguracoes] erro ao salvar profissional_perfil",
@@ -280,7 +280,7 @@ export function ProfissionalConfiguracoes() {
       return {
         confirmed:
           !savedPerfil ||
-          (savedPerfil as any).genero === profissionalPayload.genero,
+          savedPerfil.genero === profissionalPayload.genero,
       };
     },
     onSuccess: ({ confirmed }) => {

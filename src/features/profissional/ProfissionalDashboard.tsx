@@ -14,6 +14,7 @@ import { NotificationPermissionBanner } from "@/components/NotificationPermissio
 import { NivelBadge } from "@/components/NivelBadge";
 import { ProfissionalChart } from "@/components/ProfissionalChart";
 import { ProfissionalHeader } from "./ProfissionalHeader";
+import { type Tables } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -73,7 +74,7 @@ export function ProfissionalDashboard({
       <NotificationPermissionBanner />
 
       <ProfissionalHeader
-        userName={(user?.user_metadata as any)?.nome || "profissional"}
+        userName={(user?.user_metadata as { nome?: string })?.nome || "profissional"}
         counts={counts}
         metrics={metrics}
         onVerPedidos={() => setTab("orcamentos")}
@@ -142,7 +143,7 @@ export function ProfissionalDashboard({
           {loading ? (
             <Skeleton className="h-64 w-full rounded-2xl" />
           ) : (
-            <ProfissionalChart orcamentos={orcamentos as any} userId={user?.id} />
+            <ProfissionalChart orcamentos={orcamentos as Tables<"orcamentos">[]} userId={user?.id} />
           )}
         </div>
         <div className="space-y-4">

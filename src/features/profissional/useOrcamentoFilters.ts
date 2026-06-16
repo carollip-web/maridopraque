@@ -66,8 +66,8 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
         if (type === "oportunidades") {
           const isApoioFemininoTarget =
             profApoioFeminino &&
-            (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
-            !(o as any).apoio_profissional_id &&
+            (o as Record<string, unknown>).tipo_atendimento === "homem_com_apoio_feminino" &&
+            !(o as Record<string, unknown>).apoio_profissional_id &&
             ((o.status as string) === "enviado" ||
               (o.status as string) === "aprovado" ||
               (o.status as string) === "agendado");
@@ -87,15 +87,15 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
 
           if (!isApoioFemininoTarget) {
             const compat = isProfissionalCompativelComTipoAtendimento({
-              tipoAtendimento: (o as any).tipo_atendimento,
-              genero: profGenero as any,
+              tipoAtendimento: (o as Record<string, unknown>).tipo_atendimento as string,
+              genero: profGenero as string,
               ofereceApoioFeminino: profApoioFeminino,
             });
             if (!compat.compatible && compat.blockProposal) return false;
           }
 
           if (especialidades.length > 0) {
-            const serviceId = (o as any).service_id;
+            const serviceId = (o as Record<string, unknown>).service_id;
             if (serviceId) {
               const cat = catalog[serviceId]?.categoria?.toLowerCase();
               if (
@@ -123,7 +123,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
         }
         if (type === "ativos") {
           const isApoioAceito =
-            (o as any).apoio_profissional_id === userId &&
+            (o as Record<string, unknown>).apoio_profissional_id === userId &&
             !["concluido", "recusado", "cancelado"].includes(o.status);
           return (
             (["aprovado", "pago"].includes(o.status) &&
@@ -133,7 +133,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
         }
         if (type === "finalizados") {
           const isApoioFinalizado =
-            (o as any).apoio_profissional_id === userId &&
+            (o as Record<string, unknown>).apoio_profissional_id === userId &&
             ["concluido"].includes(o.status);
           return (
             (["recusado", "cancelado", "concluido"].includes(o.status) &&

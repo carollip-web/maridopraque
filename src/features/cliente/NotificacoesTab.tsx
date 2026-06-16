@@ -13,7 +13,7 @@ interface NotificacoesTabProps {
 
 export function NotificacoesTab({ setActiveTab }: NotificacoesTabProps) {
   const { notifications, markAsRead, markAllAsRead, unreadCount } = useNotifications();
-  const searchParams = useSearch({ strict: false }) as any;
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
 
   const [selectedNotification, setSelectedNotification] = React.useState<any | null>(null);

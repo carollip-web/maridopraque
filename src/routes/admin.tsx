@@ -56,7 +56,7 @@ function AdminArea() {
   } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminSection>("dashboard");
   const navigate = useNavigate();
-  const searchParams = useSearch({ from: "/admin" }) as any;
+  const searchParams = useSearch({ from: "/admin" });
 
   useEffect(() => {
     if (loading) return;
@@ -74,7 +74,7 @@ function AdminArea() {
         const first = allowedTabs[0];
         if (first) {
           setActiveTab(first);
-          navigate({ to: "/admin", search: (old: any) => ({ ...old, tab: first }) });
+          navigate({ to: "/admin", search: (old) => ({ ...old, tab: first }) });
         }
       }
     } else if (!searchParams.tab) {
@@ -82,7 +82,7 @@ function AdminArea() {
       const defaultTab = canAccess("dashboard") ? "dashboard" : allowedTabs[0];
       if (defaultTab) {
         setActiveTab(defaultTab);
-        navigate({ to: "/admin", search: (old: any) => ({ ...old, tab: defaultTab }) });
+        navigate({ to: "/admin", search: (old) => ({ ...old, tab: defaultTab }) });
       }
     }
   }, [loading, isLoggedIn, isAdmin, navigate, searchParams.tab, activeTab, canAccess, allowedTabs]);
@@ -102,7 +102,7 @@ function AdminArea() {
 
   const handleTabChange = (tab: AdminSection) => {
     setActiveTab(tab);
-    navigate({ to: "/admin", search: (old: any) => ({ ...old, tab }) });
+    navigate({ to: "/admin", search: (old) => ({ ...old, tab }) });
   };
 
   if (loading) {
@@ -135,9 +135,9 @@ function AdminArea() {
           profile={profile}
           user={user}
           initials={initials}
-          levelMeta={levelMeta as any}
+          levelMeta={levelMeta}
           logout={logout}
-          navigate={navigate as any}
+          navigate={navigate}
           inDrawer
         />
       </MobilePanelBar>
@@ -149,9 +149,9 @@ function AdminArea() {
         profile={profile}
         user={user}
         initials={initials}
-        levelMeta={levelMeta as any}
+        levelMeta={levelMeta}
         logout={logout}
-        navigate={navigate as any}
+        navigate={navigate}
       />
 
       <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { type Tables } from "@/integrations/supabase/types";
 
 export type Janela = { dia_semana: number; hora_inicio: string; hora_fim: string };
 export type Bloqueio = { data_inicio: string; data_fim: string };
@@ -75,7 +76,7 @@ export async function carregarAgendaProfissional(profissionalId: string) {
       .select("duracao_padrao_min")
       .eq("user_id", profissionalId)
       .maybeSingle(),
-    (supabase as any)
+    supabase
       .from("profissional_bloqueios_agenda")
       .select("*")
       .eq("profissional_id", profissionalId)
@@ -93,7 +94,7 @@ export async function carregarAgendaProfissional(profissionalId: string) {
   }
 
   const now = new Date();
-  const bloqueiosValidos = ((pbaRaw as any[]) || []).filter((b) => {
+  const bloqueiosValidos = ((pbaRaw as Tables<"profissional_bloqueios_agenda">[]) || []).filter((b) => {
     if (b.status !== "temporario") return true;
     if (!b.expires_at) return true;
     return new Date(b.expires_at) > now;
@@ -117,8 +118,8 @@ export async function carregarAgendaProfissional(profissionalId: string) {
 export const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function isAgendaCompativel(
-  orcamento: any,
-  agenda: any,
+  orcamento: { data_preferida?: string | null; periodo_preferido?: string | null; horario_preferido?: string | null; flexibilidade_agenda?: string | null },
+  agenda: { janelas: Janela[]; bloqueios: Bloqueio[]; agendados: Agendado[]; duracaoMin: number }
 ): { compativel: boolean; motivo?: string } {
   if (!orcamento.data_preferida) return { compativel: true };
 

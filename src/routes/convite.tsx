@@ -8,7 +8,7 @@ export const Route = createFileRoute("/convite")({
 });
 
 function ConvitePage() {
-  const { id } = (Route.useSearch as any)() as { id?: string };
+  const { id } = Route.useSearch() as { id?: string };
   const navigate = useNavigate();
 
   useEffect(() => {

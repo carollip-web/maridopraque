@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Camera, ShieldCheck, User, MapPin, ChevronRight, Bell } from "lucide-react";
+import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -187,7 +188,7 @@ export function DadosTab() {
         .eq("user_id", user.id)
         .order("is_padrao", { ascending: false })
         .order("created_at", { ascending: true });
-      return (data as any) || [];
+      return (data as Tables<"enderecos">[]) || [];
     },
     enabled: !!user,
   });
@@ -295,8 +296,8 @@ export function DadosTab() {
           <div className="mt-8 pt-8 border-t border-border flex justify-around">
             <div>
               <p className="text-xl font-bold">
-                {profile && (profile as any).total_servicos_pagos != null
-                  ? (profile as any).total_servicos_pagos
+                {profile && profile.total_servicos_pagos != null
+                  ? profile.total_servicos_pagos
                   : "—"}
               </p>
               <p className="text-[10px] uppercase font-bold text-muted-foreground">

@@ -484,7 +484,7 @@ function CategoriaPage() {
                     <Link
                       to="/orcamentos"
                       search={
-                        { new: 1, serviceId: s.id, categoria: cat.nome, serviceName: s.nome } as any
+                        { new: 1, serviceId: s.id, categoria: cat.nome, serviceName: s.nome }
                       }
                     >
                       Pedir orçamento <ArrowRight className="ml-1 h-3.5 w-3.5" />
@@ -512,7 +512,7 @@ function CategoriaPage() {
                   serviceId: undefined,
                   categoria: undefined,
                   serviceName: undefined,
-                } as any
+                }
               }
             >
               Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />

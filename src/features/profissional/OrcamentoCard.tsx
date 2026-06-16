@@ -76,8 +76,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
   const isApoioFemininoVacancy =
     profApoioFeminino &&
-    (o as any).tipo_atendimento === "homem_com_apoio_feminino" &&
-    !(o as any).apoio_profissional_id;
+    o.tipo_atendimento === "homem_com_apoio_feminino" &&
+    !(o as Record<string, unknown>).apoio_profissional_id;
 
   const agendaResult = minhaAgenda ? isAgendaCompativel(o, minhaAgenda) : null;
   const isOportunidade = !minhaProposta && mode === "pegar";
@@ -140,12 +140,12 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const max = range?.preco_max != null ? Number(range.preco_max) : null;
 
   const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
-    tipoAtendimento: (o as any).tipo_atendimento,
-    genero: profGenero as any,
+    tipoAtendimento: o.tipo_atendimento,
+    genero: profGenero as string,
     ofereceApoioFeminino: profApoioFeminino,
   });
 
-  const atendimentoPedidoLabel = tipoAtendimentoLabel((o as any).tipo_atendimento);
+  const atendimentoPedidoLabel = tipoAtendimentoLabel(o.tipo_atendimento as string);
 
   const bloquearEnvioPorAtendimento =
     !atendimentoCompat.compatible && atendimentoCompat.blockProposal;
@@ -245,9 +245,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
       if (error) {
         toast.error("Erro ao aceitar vaga", { description: error.message });
-      } else if (data && (data as any).ok === false) {
+      } else if (data && (data as Record<string, unknown>).ok === false) {
         toast.error(
-          (data as any).erro ||
+          (data as Record<string, unknown>).erro ||
             "Poxa! Outra profissional aceitou esta vaga 1 segundo antes de você.",
         );
       } else {
@@ -371,7 +371,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         </div>
       </div>
 
-      {(o as any).tipo_atendimento && (
+      {o.tipo_atendimento && (
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
             {atendimentoPedidoLabel}
@@ -383,7 +383,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           >
             {atendimentoCompat.label}
           </span>
-          {(o as any).tipo_atendimento === "homem_com_apoio_feminino" && (
+          {o.tipo_atendimento === "homem_com_apoio_feminino" && (
             <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
               👩 Com apoio feminino
             </span>
@@ -499,7 +499,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               Endereço de atendimento
             </div>
             {(() => {
-              const enderecoToShow = (o as any).endereco_snapshot || clienteEndereco;
+              const enderecoToShow = (o as Record<string, unknown>).endereco_snapshot || clienteEndereco;
               return enderecoToShow ? (
               <div className="text-xs text-slate-600 leading-relaxed space-y-1">
                 <p>
@@ -637,7 +637,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               </p>
               <p className="text-xl font-black text-slate-800">
                 {profApoioFeminino 
-                  ? ((o as any).valor_apoio_feminino ? `R$ ${Number((o as any).valor_apoio_feminino).toFixed(2)}` : "A definir")
+                  ? ((o as Record<string, unknown>).valor_apoio_feminino ? `R$ ${Number((o as Record<string, unknown>).valor_apoio_feminino).toFixed(2)}` : "A definir")
                   : (initialValor != null ? `R$ ${Number(initialValor).toFixed(2)}` : "A definir")}
               </p>
             </div>

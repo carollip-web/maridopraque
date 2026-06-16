@@ -1,5 +1,6 @@
 import { Wrench, LogOut } from "lucide-react";
 import { type AdminSection, type AdminLevel } from "@/hooks/useAuth";
+import { type UseNavigateResult } from "@tanstack/react-router";
 import React from "react";
 
 interface SidebarItem {
@@ -21,7 +22,7 @@ interface AdminSidebarProps {
     icon: React.ElementType;
   } | null;
   logout: () => Promise<void>;
-  navigate: (params: { to: string }) => void;
+  navigate: UseNavigateResult<string>;
   inDrawer?: boolean;
 }
 

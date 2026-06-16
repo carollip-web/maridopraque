@@ -87,7 +87,7 @@ export function SuporteTab() {
   const loadTickets = async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("suporte_tickets")
       .select("*")
       .eq("user_id", user.id)
@@ -115,7 +115,7 @@ export function SuporteTab() {
     if (!user || !assunto.trim() || !mensagem.trim()) return;
     
     setEnviando(true);
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("suporte_tickets")
       .insert({
         user_id: user.id,

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CalendarDays, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, Clock, MapPin, User, ChevronDown, CheckCircle2, Copy } from "lucide-react";
+import { type Tables } from "@/integrations/supabase/types";
 import { DIAS_SEMANA } from "@/lib/agenda";
 
 type Janela = { dia_semana: number; hora_inicio: string; hora_fim: string };
@@ -106,7 +107,7 @@ export function AgendaCalendar() {
             .select("duracao_padrao_min")
             .eq("user_id", user.id)
             .maybeSingle(),
-          (supabase as any)
+          supabase
             .from("profissional_bloqueios_agenda")
             .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name, valor, cliente:profiles!cliente_id(nome))")
             .eq("profissional_id", user.id)
@@ -119,7 +120,7 @@ export function AgendaCalendar() {
         console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
       }
       const now = new Date();
-      const reservasValidas = ((pbaRes.data as any[]) || [])
+      const reservasValidas = ((pbaRes.data as Tables<"profissional_bloqueios_agenda">[]) || [])
         .filter((r) => {
           if (r.status !== "temporario") return true;
           if (!r.expires_at) return true;
@@ -137,7 +138,7 @@ export function AgendaCalendar() {
       setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
-      setAgendamentos(((ags as any[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
+      setAgendamentos(((ags as Tables<"orcamentos">[]) ?? []).map((a) => ({ ...a, duracao_min: dur })));
       setLoading(false);
     };
 

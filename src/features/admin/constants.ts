@@ -47,7 +47,7 @@ export const ALL_SIDEBAR_ITEMS: {
   { id: "equipe", label: "Equipe Admin", icon: UserCog },
   { id: "notificacoes", label: "Notificações", icon: Bell },
   { id: "disputas", label: "Disputas", icon: AlertTriangle },
-  { id: "suporte" as any, label: "Suporte", icon: HeadphonesIcon },
+  { id: "suporte", label: "Suporte", icon: HeadphonesIcon },
 ];
 
 export const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {

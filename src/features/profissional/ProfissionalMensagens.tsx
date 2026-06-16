@@ -7,7 +7,7 @@ import { useMinhasConversas, formatHoraRelativa, type Conversa } from "@/hooks/u
 
 export function ProfissionalMensagens() {
   const { conversas, loading, marcarConversaLida } = useMinhasConversas();
-  const searchParams = useSearch({ strict: false }) as any;
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
   const [aberta, setAberta] = useState<Conversa | null>(null);
 

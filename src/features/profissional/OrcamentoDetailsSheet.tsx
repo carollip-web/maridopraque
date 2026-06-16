@@ -81,8 +81,8 @@ export function OrcamentoDetailsSheet({
   const [disputaLoading, setDisputaLoading] = useState(false);
   const [apoioNome, setApoioNome] = useState<string | null>(null);
 
-  const isApoioFeminino = (orcamento as any)?.tipo_atendimento === "homem_com_apoio_feminino";
-  const apoioEquipeId = (orcamento as any)?.apoio_equipe_id;
+  const isApoioFeminino = (orcamento as Record<string, unknown>)?.tipo_atendimento === "homem_com_apoio_feminino";
+  const apoioEquipeId = (orcamento as Record<string, unknown>)?.apoio_equipe_id;
 
   useEffect(() => {
     if (!isApoioFeminino || !apoioEquipeId) {
@@ -110,7 +110,7 @@ export function OrcamentoDetailsSheet({
     }
     setDisputaLoading(true);
     try {
-      const { error } = await (supabase as any).rpc("abrir_disputa_orcamento", {
+      const { error } = await supabase.rpc("abrir_disputa_orcamento", {
         _orcamento_id: orcamento.id,
         _motivo: motivo,
       });

@@ -37,7 +37,7 @@ function AuthRedirectPage() {
       if (list.includes("admin")) dest = "/admin";
       else if (list.includes("profissional")) dest = "/profissional";
 
-      navigate({ to: dest, replace: true } as any);
+      navigate({ to: dest, replace: true } as Parameters<typeof navigate>[0]);
     };
 
     decide();

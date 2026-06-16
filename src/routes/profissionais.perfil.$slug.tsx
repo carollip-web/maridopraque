@@ -17,7 +17,7 @@ type PerfilSEO = {
 export const Route = createFileRoute("/profissionais/perfil/$slug")({
   loader: async ({ params }): Promise<{ seo: PerfilSEO }> => {
     const { data: p } = await supabase
-      .from("profissionais_publicos" as any)
+      .from("profissionais_publicos")
       .select("user_id, bio, foto_url, cidade, especialidades")
       .eq("slug", params.slug)
       .maybeSingle();
@@ -153,7 +153,7 @@ function PerfilProfissional() {
   useEffect(() => {
     (async () => {
       const { data: p } = (await supabase
-        .from("profissionais_publicos" as any)
+        .from("profissionais_publicos")
         .select("*")
         .eq("slug", slug)
         .maybeSingle()) as { data: ProfissionalPublico | null };

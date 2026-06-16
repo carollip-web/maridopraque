@@ -443,11 +443,11 @@ export function AdminClientes() {
   const qc = useQueryClient();
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
-  const searchParams = (useSearch({ strict: false }) || {}) as any;
+  const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
   const q = searchParams.cli_q || "";
   const setQ = (val: string) =>
     navigate({
-      search: ((old: any) => ({ ...old, cli_q: val || undefined })) as any,
+      search: ((old: Record<string, unknown>) => ({ ...old, cli_q: val || undefined })) as Record<string, unknown>,
     });
 
   const [isCreating, setIsCreating] = useState(false);

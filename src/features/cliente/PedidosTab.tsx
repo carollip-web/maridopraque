@@ -87,7 +87,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     }
     setDisputaLoading(true);
     try {
-      const { error } = await (supabase.rpc as any)("abrir_disputa_orcamento", {
+      const { error } = await supabase.rpc("abrir_disputa_orcamento", {
         _orcamento_id: orcamentoId,
         _motivo: motivo,
       });

@@ -26,7 +26,7 @@ export function AdminDisputas() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, service_name, valor, cliente_id, profissional_id, observacoes_profissional, updated_at, status")
-        .eq("status", "em_disputa" as any)
+        .eq("status", "em_disputa")
         .order("updated_at", { ascending: false });
       if (error) throw error;
       return data || [];

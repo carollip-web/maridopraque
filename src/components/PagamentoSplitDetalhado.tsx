@@ -85,8 +85,8 @@ export function PagamentoSplitDetalhado({ orcamentoId }: Props) {
           .maybeSingle(),
       ]);
       if (active) {
-        setSplits((sData as any) || []);
-        setOrc((oData as any) || null);
+        setSplits((sData as unknown as Split[]) || []);
+        setOrc((oData as unknown as Orcamento) || null);
         setLoading(false);
       }
     }

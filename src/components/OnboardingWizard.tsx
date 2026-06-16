@@ -56,7 +56,7 @@ const ESPECIALIDADES_LABEL: Record<string, string> = {
 };
 
 export function OnboardingWizard() {
-  const { user, profile, refresh, updatePhoto } = useAuth() as any;
+  const { user, profile, refresh, updatePhoto } = useAuth();
   const [open, setOpen] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
 

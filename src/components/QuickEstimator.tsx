@@ -149,12 +149,12 @@ export function QuickEstimator() {
                 <Link
                   to="/servicos/$categoria"
                   params={{ categoria: selected.categoria }}
-                  search={{ service: selected.id, q: undefined } as any}
+                  search={{ service: selected.id, q: undefined }}
                 >
                   Ver catálogo completo
                 </Link>
               ) : (
-                <Link to="/servicos" search={{ q: undefined } as any}>
+                <Link to="/servicos" search={{ q: undefined }}>
                   Ver catálogo completo
                 </Link>
               )}

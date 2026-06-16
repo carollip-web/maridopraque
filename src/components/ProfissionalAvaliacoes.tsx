@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { type Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -43,25 +44,25 @@ export function ProfissionalAvaliacoes() {
         .eq("profissional_id", userId!)
         .order("created_at", { ascending: false });
       const list = avals ?? [];
-      const cliIds = Array.from(new Set(list.map((a: any) => a.cliente_id)));
-      const orcIds = Array.from(new Set(list.map((a: any) => a.orcamento_id)));
+      const cliIds = Array.from(new Set(list.map((a: Tables<"avaliacoes">) => a.cliente_id)));
+      const orcIds = Array.from(new Set(list.map((a: Tables<"avaliacoes">) => a.orcamento_id)));
       const [{ data: profs }, { data: orcs }] = await Promise.all([
         cliIds.length
           ? supabase.from("profiles").select("id, nome").in("id", cliIds)
-          : Promise.resolve({ data: [] as any[] }),
+          : Promise.resolve({ data: [] as { id: string; nome: string | null }[] }),
         orcIds.length
           ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds)
-          : Promise.resolve({ data: [] as any[] }),
+          : Promise.resolve({ data: [] as { id: string; service_name: string | null }[] }),
       ]);
       const nomeMap: Record<string, string> = {};
-      (profs ?? []).forEach((p: any) => {
+      (profs ?? []).forEach((p: { id: string; nome: string | null }) => {
         nomeMap[p.id] = p.nome ?? "Cliente";
       });
       const servMap: Record<string, string> = {};
-      (orcs ?? []).forEach((o: any) => {
-        servMap[o.id] = o.service_name;
+      (orcs ?? []).forEach((o: { id: string; service_name: string | null }) => {
+        servMap[o.id] = o.service_name ?? "Serviço";
       });
-      return list.map((a: any) => ({
+      return list.map((a: Tables<"avaliacoes">) => ({
         ...a,
         cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
         service_name: servMap[a.orcamento_id] ?? "Serviço",
@@ -94,8 +95,8 @@ export function ProfissionalAvaliacoes() {
         queryKey: ["profissional", "avaliacoes", userId],
       });
     },
-    onError: (err: any) => {
-      toast.error("Erro ao publicar resposta", { description: err?.message });
+    onError: (err: unknown) => {
+      toast.error("Erro ao publicar resposta", { description: (err as Error)?.message });
     },
   });
 
@@ -225,7 +226,7 @@ export function ProfissionalAvaliacoes() {
             ].map((f) => (
               <button
                 key={f.v}
-                onClick={() => setFiltro(f.v as any)}
+                onClick={() => setFiltro(f.v as "todas" | "pendentes" | "5" | "4" | "baixas")}
                 className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${filtro === f.v ? "bg-brand text-white border-brand" : "bg-white text-slate-700 border-slate-200 hover:border-brand"}`}
               >
                 {f.l}

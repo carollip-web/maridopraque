@@ -157,7 +157,7 @@ function AdminValidacao() {
   const handleAprovar = async () => {
     if (!selected) return;
     setSaving(true);
-    const { error } = await (supabase.from("profissional_perfil") as any)
+    const { error } = await supabase.from("profissional_perfil")
       .update({
         aprovacao_status: "aprovado",
         ativo: true,
@@ -201,7 +201,7 @@ function AdminValidacao() {
       return;
     }
     setSaving(true);
-    const { error } = await (supabase.from("profissional_perfil") as any)
+    const { error } = await supabase.from("profissional_perfil")
       .update({
         aprovacao_status: "rejeitado",
         ativo: false,
@@ -220,7 +220,7 @@ function AdminValidacao() {
   };
 
   const handleMarcarAnalise = async (p: Prestador) => {
-    await (supabase.from("profissional_perfil") as any)
+    await supabase.from("profissional_perfil")
       .update({ aprovacao_status: "em_analise" })
       .eq("user_id", p.user_id);
     refresh();

@@ -48,7 +48,7 @@ export function PagamentoSplitResumo({ orcamentoId, compact }: Props) {
         .limit(1)
         .maybeSingle();
       if (active) {
-        setSplit((data as any) || null);
+        setSplit((data as unknown as Split) || null);
         setLoading(false);
       }
     }

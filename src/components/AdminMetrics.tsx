@@ -543,7 +543,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           <h3 className="font-bold text-slate-900">Últimos Pedidos</h3>
           <Link
             to="/orcamentos"
-            search={{ new: 0 } as any}
+            search={{ new: 0 }}
             className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-1"
           >
             Ver todos <ArrowUpRight className="h-3 w-3" />

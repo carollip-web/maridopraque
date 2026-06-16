@@ -155,7 +155,7 @@ export function useOrcamentoForm({
         if (m.material_id) p[m.material_id] = Number(m.quantidade);
       });
       setPicked(p);
-      setFotos(((o as any).fotos_problema as string[]) ?? []);
+      setFotos((o.fotos_problema as string[]) ?? []);
       setStep(1);
       setShowNew(true);
     },
@@ -419,7 +419,7 @@ export function useOrcamentoForm({
         });
         await supabase
           .from("orcamentos")
-          .update({ fotos_problema: fotos } as any)
+          .update({ fotos_problema: fotos })
           .eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
@@ -439,7 +439,7 @@ export function useOrcamentoForm({
 
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
-          .insert(insertPayload as any)
+          .insert(insertPayload)
           .select("*")
           .single();
 
@@ -531,7 +531,7 @@ export function useOrcamentoForm({
         } catch {}
         navigate({
           to: "/cliente",
-          search: { tab: "pedidos", pedidoId: novoIdCriado } as any,
+          search: { tab: "pedidos", pedidoId: novoIdCriado },
         });
       } else {
         refresh();

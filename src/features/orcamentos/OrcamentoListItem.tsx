@@ -210,7 +210,7 @@ export function OrcamentoListItem({
               asChild
               className="w-full sm:w-auto bg-brand text-brand-foreground rounded-full font-bold h-11 px-6 shadow-lg shadow-brand/20"
             >
-              <Link to="/checkout" search={{ orcamentoId: o.id } as any}>
+              <Link to="/checkout" search={{ orcamentoId: o.id }}>
                 Ir para pagamento seguro{" "}
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Link>

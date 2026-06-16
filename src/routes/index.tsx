@@ -202,9 +202,9 @@ function Index() {
         .eq("user_id", user.id);
       if (cancelled) return;
       const list = (roles ?? []).map((r: any) => r.role);
-      if (list.includes("admin")) navigate({ to: "/admin", replace: true } as any);
+      if (list.includes("admin")) navigate({ to: "/admin", replace: true });
       else if (list.includes("profissional"))
-        navigate({ to: "/profissional", replace: true } as any);
+        navigate({ to: "/profissional", replace: true });
       // clientes ficam no home
     })();
     return () => {

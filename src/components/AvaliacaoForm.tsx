@@ -24,7 +24,7 @@ export function AvaliacaoForm({ orcamentoId, clienteId, profissionalId }: Props)
         .select("nota, comentario")
         .eq("orcamento_id", orcamentoId)
         .maybeSingle();
-      if (data) setEnviada(data as any);
+      if (data) setEnviada(data as { nota: number; comentario: string | null });
     })();
   }, [orcamentoId]);
 

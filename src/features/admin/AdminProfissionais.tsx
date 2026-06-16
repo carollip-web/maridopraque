@@ -63,7 +63,7 @@ function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servi
       )}
 
       {view === "nota"
-        ? (details as any[]).map((av) => (
+        ? (details as Tables<"avaliacoes">[]).map((av) => (
             <div key={av.id} className="text-left border-b border-white/5 pb-2 last:border-0">
               <div className="flex justify-between items-center mb-1">
                 <div className="flex gap-0.5">
@@ -83,7 +83,7 @@ function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servi
               )}
             </div>
           ))
-        : (details as any[]).map((orc) => (
+        : (details as Tables<"orcamentos">[]).map((orc) => (
             <div
               key={orc.id}
               className="flex justify-between items-center text-left border-b border-white/5 pb-2 last:border-0"
@@ -165,19 +165,19 @@ export function AdminProfissionais() {
   const navigate = useNavigate();
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
-  const searchParams = (useSearch({ strict: false }) || {}) as any;
+  const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
   const search = searchParams.pro_q || "";
   const filterStatus = searchParams.pro_status || "todos";
 
   const setSearch = (val: string) =>
     navigate({
-      search: ((old: any) => ({ ...old, pro_q: val || undefined })) as any,
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_q: val || undefined })) as Record<string, unknown>,
     });
   const setFilterStatus = (val: string) =>
     navigate({
-      search: ((old: any) => ({ ...old, pro_status: val || "todos" })) as any,
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_status: val || "todos" })) as Record<string, unknown>,
     });
-  const clearFilters = () => navigate({ search: ((old: any) => ({ tab: old.tab })) as any });
+  const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as Record<string, unknown> });
 
   const [selected, setSelected] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"lista" | "leads" | "apoio">("lista");
@@ -384,7 +384,7 @@ export function AdminProfissionais() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as "avaliacoes" | "orcamentos")}
             className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
               activeTab === tab.id
                 ? "border-brand text-brand"
@@ -425,7 +425,7 @@ export function AdminProfissionais() {
           ].map((s) => (
             <button
               key={s.id}
-              onClick={() => setFilterStatus(s.id as any)}
+              onClick={() => setFilterStatus(s.id)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${
                 filterStatus === s.id
                   ? "bg-slate-900 text-white"

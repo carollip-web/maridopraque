@@ -52,7 +52,7 @@ function ResetPasswordPage() {
             pedidoId: undefined,
             chat: undefined,
             details: false,
-          } as any,
+          } as Parameters<typeof navigate>[0],
         }),
       1500,
     );

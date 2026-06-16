@@ -118,7 +118,7 @@ export function ProfissionalFinanceiro() {
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data as any as Split[]) ?? [];
+      return (data as unknown as Split[]) ?? [];
     },
   });
 

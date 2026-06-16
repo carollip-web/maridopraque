@@ -236,7 +236,7 @@ function ProfissionalCadastro() {
 
   useEffect(() => {
     if (!user) return;
-    (supabase.from("profissional_perfil") as any)
+    supabase.from("profissional_perfil")
       .select("aprovacao_status, cadastro_completo, nome, email, especialidades, cidade")
       .eq("user_id", user.id)
       .maybeSingle()
@@ -347,7 +347,7 @@ function ProfissionalCadastro() {
         oferece_apoio_feminino: false,
       };
 
-      const { error } = await (supabase.from("profissional_perfil") as any).upsert(payload);
+      const { error } = await supabase.from("profissional_perfil").upsert(payload);
       if (error) throw error;
 
       // update profile name

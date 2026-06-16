@@ -31,7 +31,7 @@ type Lead = {
   status: string;
   oferece_apoio_feminino?: boolean;
 };
-const db = supabase as any;
+const db = supabase;
 
 export function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);

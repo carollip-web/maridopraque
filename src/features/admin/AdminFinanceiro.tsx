@@ -201,7 +201,7 @@ export function AdminFinanceiro() {
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
     const apoio = aprovados.reduce(
-      (acc, r) => acc + Number((r.metadata as any)?.valor_apoio_feminino || 0),
+      (acc, r) => acc + Number((r.metadata as Record<string, unknown>)?.valor_apoio_feminino || 0),
       0,
     );
     return {

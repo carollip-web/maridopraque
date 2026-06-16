@@ -31,7 +31,7 @@ export function ProfileCompletenessCard() {
         {
           key: "mp",
           label: "Mercado Pago conectado",
-          done: !!(perfil as any)?.mp_user_id,
+          done: !!perfil?.mp_user_id,
         },
       ];
       setItems(list);

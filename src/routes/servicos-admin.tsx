@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { type Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -167,7 +168,7 @@ function ServicosAdmin() {
         ),
     ]);
     setServicos(
-      ((s.data ?? []) as any[]).map((r) => ({
+      ((s.data ?? []) as Tables<"services_catalog">[]).map((r) => ({
         ...r,
         tipo_preco: inferTipo(r),
         preco_fixo: r.preco_fixo != null ? Number(r.preco_fixo) : null,
@@ -178,10 +179,10 @@ function ServicosAdmin() {
       })),
     );
     setMateriais(
-      ((m.data ?? []) as any[]).map((r) => ({ ...r, preco_atual: Number(r.preco_atual) })),
+      ((m.data ?? []) as Tables<"materiais">[]).map((r) => ({ ...r, preco_atual: Number(r.preco_atual) })),
     );
     const grouped: Record<string, Vinculo[]> = {};
-    for (const v of (sm.data ?? []) as any[]) {
+    for (const v of (sm.data ?? []) as unknown as (Tables<"service_materiais"> & { material: Tables<"materiais"> | null })[]) {
       const item: Vinculo = {
         id: v.id,
         service_id: v.service_id,
@@ -386,7 +387,7 @@ function ServicosAdmin() {
           </select>
           <select
             value={filterAtivo}
-            onChange={(e) => setFilterAtivo(e.target.value as any)}
+            onChange={(e) => setFilterAtivo(e.target.value as "todos" | "ativo" | "inativo")}
             className="h-10 px-3 rounded-xl border border-border bg-slate-50 text-sm"
           >
             <option value="todos">Todos</option>

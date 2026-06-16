@@ -153,7 +153,7 @@ export function AdminSuporte() {
         </div>
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value as any)}
+          onChange={(e) => setFilter(e.target.value as "Todos" | TicketStatus)}
           className="p-3 border border-slate-200 rounded-xl bg-slate-50 font-medium text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
         >
           <option value="Todos">Todos os Tickets</option>

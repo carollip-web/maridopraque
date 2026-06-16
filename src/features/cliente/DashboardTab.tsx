@@ -11,6 +11,7 @@ import {
   X,
   FileText,
 } from "lucide-react";
+import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,7 +30,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["cliente", "stats", user?.id],
     queryFn: async () => {
-      if (!user) return { concluidos: 0, ativos: 0, pendentes: 0, total: 0, recentes: [] as any[] };
+      if (!user) return { concluidos: 0, ativos: 0, pendentes: 0, total: 0, recentes: [] as Tables<"orcamentos">[] };
       const { data, error } = await supabase
         .from("orcamentos")
         .select("status, valor, service_name, created_at")

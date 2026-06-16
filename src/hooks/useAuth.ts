@@ -19,6 +19,7 @@ export type AdminSection =
   | "apoio_feminino"
   | "kpis"
   | "disputas"
+  | "suporte"
   | "dados";
 
 /**
@@ -252,7 +253,7 @@ export function useAuth() {
           ...s,
           profile: s.profile ? { ...s.profile, avatar_url: publicUrl } : null,
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("[useAuth] Erro ao atualizar foto:", err);
         throw err;
       }
