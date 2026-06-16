@@ -20,6 +20,35 @@ import { useNotifications, type Notification as AppNotification } from "@/hooks/
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
+/* ─── Route-specific search param types (mirror each route's validateSearch) ─── */
+
+interface AdminSearch {
+  tab?: string;
+  q?: string;
+  status?: string;
+  pro_id?: string;
+  range?: string;
+  cli_q?: string;
+  pro_q?: string;
+  pro_status?: string;
+}
+
+interface ClienteSearch {
+  tab?: "inicio" | "pedidos" | "servicos" | "pagamentos" | "dados" | "seguranca" | "suporte" | "mensagens" | "notificacoes";
+  id?: string;
+  pedidoId?: string;
+  orcamentoId?: string;
+  chat?: string;
+  details?: boolean;
+  payment?: "success" | "failure" | "pending";
+}
+
+interface ProfissionalSearch {
+  tab?: "pedidos" | "orcamentos" | "servicos" | "agenda" | "financeiro" | "avaliacoes" | "configuracoes" | "mensagens" | "notificacoes";
+  orcamentoId?: string;
+  chat?: string;
+}
+
 function extractNotificationOrcamentoId(notification: AppNotification) {
   if (notification.pedidoId) return notification.pedidoId;
   if (!notification.link || typeof window === "undefined") return undefined;
@@ -97,15 +126,15 @@ export function Header() {
 
     if (link.startsWith("/admin")) {
       const searchParams = new URL(link, window.location.origin).searchParams;
-      navigate({ to: "/admin", search: Object.fromEntries(searchParams) as any });
+      navigate({ to: "/admin", search: Object.fromEntries(searchParams) as AdminSearch });
       return;
     }
 
     if (orcamentoId && isMessage) {
       if (isProfissional) {
-        navigate({ to: "/profissional", search: { tab: "mensagens", orcamentoId } as any });
+        navigate({ to: "/profissional", search: { tab: "mensagens", orcamentoId } as ProfissionalSearch });
       } else {
-        navigate({ to: "/cliente", search: { tab: "mensagens", orcamentoId } as any });
+        navigate({ to: "/cliente", search: { tab: "mensagens", orcamentoId } as ClienteSearch });
       }
       return;
     }
@@ -123,7 +152,7 @@ export function Header() {
           search: {
             tab: isServicos ? "servicos" : "orcamentos",
             orcamentoId,
-          } as any,
+          } as ProfissionalSearch,
         });
         return;
       }
@@ -131,17 +160,17 @@ export function Header() {
       // Clients go to client area
       navigate({
         to: "/cliente",
-        search: { tab: "pedidos", pedidoId: orcamentoId } as any,
+        search: { tab: "pedidos", pedidoId: orcamentoId } as ClienteSearch,
       });
       return;
     }
 
     if (isProfissional) {
-      navigate({ to: "/profissional", search: { tab: "notificacoes" } as any });
+      navigate({ to: "/profissional", search: { tab: "notificacoes" } as ProfissionalSearch });
     } else {
       navigate({
         to: "/cliente",
-        search: { tab: "notificacoes", id: String(notification.id) } as any,
+        search: { tab: "notificacoes", id: String(notification.id) } as ClienteSearch,
       });
     }
   };
@@ -280,9 +309,9 @@ export function Header() {
               <button
                 onClick={() => {
                   if (isProfissional) {
-                    navigate({ to: "/profissional", search: { tab: "mensagens" } as any });
+                    navigate({ to: "/profissional", search: { tab: "mensagens" } as ProfissionalSearch });
                   } else {
-                    navigate({ to: "/cliente", search: { tab: "mensagens" } as any });
+                    navigate({ to: "/cliente", search: { tab: "mensagens" } as ClienteSearch });
                   }
                 }}
                 className="relative h-11 w-11 rounded-full border border-border bg-white flex items-center justify-center hover:bg-slate-50 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/20"
@@ -382,9 +411,9 @@ export function Header() {
                       if (isAdmin && !isProfissional) {
                         navigate({ to: "/admin" });
                       } else if (isProfissional) {
-                        navigate({ to: "/profissional", search: { tab: "notificacoes" } as any });
+                        navigate({ to: "/profissional", search: { tab: "notificacoes" } as ProfissionalSearch });
                       } else {
-                        navigate({ to: "/cliente", search: { tab: "notificacoes" } as any });
+                        navigate({ to: "/cliente", search: { tab: "notificacoes" } as ClienteSearch });
                       }
                     }}
                   >
@@ -427,7 +456,7 @@ export function Header() {
                       {isAdmin && !isProfissional ? (
                         <Link
                           to="/admin"
-                          search={{ tab: "dados" } as any}
+                          search={{ tab: "dados" } as AdminSearch}
                           className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                           onClick={() => setShowProfileMenu(false)}
                         >
@@ -438,7 +467,7 @@ export function Header() {
                         <>
                           <Link
                             to="/cliente"
-                            search={{ tab: "inicio" } as any}
+                            search={{ tab: "inicio" } as ClienteSearch}
                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                             onClick={() => setShowProfileMenu(false)}
                           >
@@ -446,7 +475,7 @@ export function Header() {
                           </Link>
                           <Link
                             to="/cliente"
-                            search={{ tab: "pedidos" } as any}
+                            search={{ tab: "pedidos" } as ClienteSearch}
                             className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-slate-50 rounded-xl transition-colors flex items-center gap-2"
                             onClick={() => setShowProfileMenu(false)}
                           >
