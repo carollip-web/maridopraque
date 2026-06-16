@@ -312,12 +312,11 @@ serve(async (req) => {
         return Math.round(amount * 0.0498 * 100) / 100; // à vista padrão
       };
 
-      const MARKETPLACE_FEE_PERCENT = 0.15; // 15% comissão plataforma
-
-      const valorTotal = Number((pagamento as any)?.valor_total || 0);
-      const taxaGateway = calcularTaxaMP(mpPayment);
-      const taxaPlataforma = Math.round(valorTotal * MARKETPLACE_FEE_PERCENT * 100) / 100;
+      const valorApoioFeminino = Number(currentMetadata?.valor_apoio_feminino || 0);
+      const valorBase = Math.round((valorTotal - valorApoioFeminino) * 100) / 100;
+      const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT + valorApoioFeminino) * 100) / 100;
       const valorProfissional = Math.round((valorTotal - taxaGateway - taxaPlataforma) * 100) / 100;
+
 
       const { error: splitErr } = await supabase.from("pagamento_splits").upsert({
         orcamento_id: updatedOrc.id,

@@ -46,7 +46,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     const { data: orc, error: e1 } = await supabase
       .from("orcamentos")
       .select(
-        "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material",
+        "id, status, cliente_id, profissional_id, service_name, valor, valor_servico, taxa_material, tipo_atendimento",
       )
       .eq("id", data.orcamentoId)
       .single();
@@ -83,7 +83,10 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
       (acc, m) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
       0,
     );
-    const valorTotal = valorServico + valorMateriais;
+    const valorBase = valorServico + valorMateriais;
+    const requiresApoio = orc.tipo_atendimento === "homem_com_apoio_feminino";
+    const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
+    const valorTotal = Math.round((valorBase + valorApoio) * 100) / 100;
     const valorSinal = valorTotal; // 100% upfront
     const valorRestante = 0;
 
@@ -158,6 +161,7 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
           service_name: orc.service_name,
           mp_preference_id: preferenceId,
           initiated_at: new Date().toISOString(),
+          valor_apoio_feminino: valorApoio,
         },
       } as never)) as unknown as {
         data: CriarCheckoutPagamentoRow[] | CriarCheckoutPagamentoRow | null;
