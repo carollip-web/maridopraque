@@ -415,8 +415,6 @@ function Servicos() {
         <div className="mt-10 flex flex-wrap justify-center gap-4">
           <a
             href={CONTATO_EMAIL}
-            target="_blank"
-            rel="noreferrer"
             className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
           >
             Entrar em Contato
