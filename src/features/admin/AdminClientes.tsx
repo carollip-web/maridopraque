@@ -86,11 +86,16 @@ function ClienteDetailPanel({
   const { data: orcamentos = [] } = useQuery({
     queryKey: ["admin", "cliente-detail", id, "orcamentos"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, service_name, status, valor, valor_total, created_at, profissional_id, pagamentos(id, valor_total, status, paid_at)")
+        .select("id, service_name, status, valor, valor_total, created_at, profissional_id, pagamentos(id, valor_total, status)")
         .eq("cliente_id", id)
         .order("created_at", { ascending: false });
+      // Debug: remove after confirming the query works
+      console.log("[AdminClientes] orcamentos query:", { id, data, error });
+      if (error) {
+        toast.error("Erro ao carregar pedidos", { description: error.message });
+      }
       const list = data || [];
       const profIds = Array.from(
         new Set(list.map((o: any) => o.profissional_id).filter(Boolean)),
@@ -277,7 +282,10 @@ function ClienteDetailPanel({
               Histórico de pedidos
             </h3>
             {orcamentos.length === 0 && (
-              <p className="text-xs text-slate-400">Nenhum pedido.</p>
+              <div>
+                <p className="text-xs text-slate-400">Nenhum pedido encontrado</p>
+                <p className="text-[10px] text-slate-300 mt-0.5 font-mono">cliente_id: {id}</p>
+              </div>
             )}
             <div className="space-y-2">
               {visibleOrders.map((o: any) => (
@@ -949,9 +957,19 @@ export function AdminClientes() {
                          be slightly out of sync with the real pagamentos data.
                          A per-client orcamentos query here would be too expensive
                          for a list view with many clients. */}
-                      <p className="text-xs font-bold text-slate-900">
-                        {c.total_servicos_pagos} pedidos pagos
-                      </p>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-xs font-bold text-slate-900 cursor-default">
+                              {c.total_servicos_pagos} pedidos pagos{" "}
+                              <span className="text-[10px] font-normal text-slate-400">(aprox.)</span>
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            <p className="text-xs">Valor aproximado — abra o detalhe do cliente para dados exatos</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <p className="text-[10px] text-slate-400">
                         Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}
                       </p>
