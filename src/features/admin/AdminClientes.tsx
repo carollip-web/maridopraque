@@ -88,7 +88,7 @@ function ClienteDetailPanel({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, service_name, status, valor, valor_total, created_at, profissional_id, pagamentos(id, valor_total, status)")
+        .select("id, service_name, status, valor, valor_total, created_at, profissional_id, pagamentos!pagamentos_orcamento_id_fkey(id, valor_total, status)")
         .eq("cliente_id", id)
         .order("created_at", { ascending: false });
       // Debug: remove after confirming the query works
