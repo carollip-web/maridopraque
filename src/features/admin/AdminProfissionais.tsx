@@ -15,6 +15,8 @@ import {
   ArrowUpRight,
   Trash2,
   Users,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -250,6 +252,7 @@ export function AdminProfissionais() {
           avaliacoes: s.n,
           genero: perfil?.genero || "nao_informar",
           oferece_apoio_feminino: !!perfil?.oferece_apoio_feminino,
+          mp_user_id: perfil?.mp_user_id || null,
         };
       });
     },
@@ -661,6 +664,23 @@ export function AdminProfissionais() {
                     <p className="text-sm font-medium capitalize">
                       {selected.genero === "nao_informar" ? "Não informado" : selected.genero}
                     </p>
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Mercado Pago</p>
+                    {selected.mp_user_id ? (
+                      <p className="text-sm font-medium text-green-600 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4" /> Conectado
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-red-500 flex items-center gap-1.5">
+                          <XCircle className="h-4 w-4" /> Não conectado
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                          O profissional precisa conectar o Mercado Pago em Configurações para receber pagamentos
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
 
