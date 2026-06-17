@@ -227,6 +227,11 @@ function ProfissionalCadastro() {
   const [submitted, setSubmitted] = useState(false);
   const [fetchingCep, setFetchingCep] = useState(false);
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [existingDocFrente, setExistingDocFrente] = useState<string | null>(null);
+  const [existingDocVerso, setExistingDocVerso] = useState<string | null>(null);
+  const [existingSelfie, setExistingSelfie] = useState<string | null>(null);
+  const [savingStep, setSavingStep] = useState(false);
 
   const set = (k: keyof FormData, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -236,36 +241,106 @@ function ProfissionalCadastro() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profissional_perfil")
-      .select("aprovacao_status, cadastro_completo, nome, email, especialidades, cidade")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }: { data: any }) => {
-        if (data) {
-          setExistingStatus(data.aprovacao_status ?? "pendente");
-          if (data.cadastro_completo) setSubmitted(true);
-          // pre-fill
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        // Fetch ALL fields from profissional_perfil
+        const { data: perfil } = await supabase
+          .from("profissional_perfil")
+          .select(
+            "aprovacao_status, cadastro_completo, especialidades, cidade, bio, genero, " +
+            "cpf, cnpj, data_nascimento, telefone, cep, bairro, endereco, numero, complemento, estado, " +
+            "anos_experiencia, experiencia_anos, atende_emergencias, veiculo_proprio, " +
+            "como_conheceu, observacoes_cadastro, oferece_apoio_feminino, " +
+            "foto_documento_frente, foto_documento_verso, foto_selfie"
+          )
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // Fetch from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("nome, email, whatsapp")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (perfil) {
+          const status = perfil.aprovacao_status ?? "pendente";
+          setExistingStatus(status);
+
+          // If cadastro_completo and not yet approved, go straight to submitted screen
+          if (perfil.cadastro_completo && status !== "aprovado") {
+            setSubmitted(true);
+            setLoadingProfile(false);
+            return;
+          }
+
+          // Track already-uploaded docs
+          if (perfil.foto_documento_frente) setExistingDocFrente(perfil.foto_documento_frente as string);
+          if (perfil.foto_documento_verso) setExistingDocVerso(perfil.foto_documento_verso as string);
+          if (perfil.foto_selfie) setExistingSelfie(perfil.foto_selfie as string);
+
+          // Pre-fill ALL form fields from profissional_perfil
           setForm((f) => ({
             ...f,
-            especialidades: data.especialidades || [],
-            cidade: data.cidade || "",
+            especialidades: (perfil.especialidades as string[]) || [],
+            cidade: (perfil.cidade as string) || "",
+            bio: (perfil.bio as string) || "",
+            genero: (perfil.genero as string) || "nao_informar",
+            cpf: perfil.cpf ? fmtCpf(perfil.cpf as string) : "",
+            cnpj: perfil.cnpj ? fmtCnpj(perfil.cnpj as string) : "",
+            data_nascimento: (perfil.data_nascimento as string) || "",
+            telefone: perfil.telefone ? fmtPhone(perfil.telefone as string) : (profile?.whatsapp ? fmtPhone(profile.whatsapp) : ""),
+            cep: perfil.cep ? fmtCep(perfil.cep as string) : "",
+            bairro: (perfil.bairro as string) || "",
+            endereco: (perfil.endereco as string) || "",
+            numero: (perfil.numero as string) || "",
+            complemento: (perfil.complemento as string) || "",
+            estado: (perfil.estado as string) || "",
+            experiencia_anos: perfil.experiencia_anos != null ? String(perfil.experiencia_anos) : (perfil.anos_experiencia != null ? String(perfil.anos_experiencia) : ""),
+            atende_emergencias: (perfil.atende_emergencias as boolean) ?? false,
+            veiculo_proprio: (perfil.veiculo_proprio as boolean) ?? false,
+            como_conheceu: (perfil.como_conheceu as string) || "",
+            observacoes_cadastro: (perfil.observacoes_cadastro as string) || "",
+            oferece_apoio_feminino: (perfil.oferece_apoio_feminino as boolean) ?? (apoio === true),
+            nome: (profile?.nome as string) || "",
+            email: (profile?.email as string) || "",
           }));
+
+          // Compute first incomplete step to resume from
+          const hasStep1 = !!((profile?.nome || perfil.cpf) && (perfil.telefone || profile?.whatsapp));
+          const hasStep2 = !!(perfil.cep && perfil.endereco && perfil.cidade);
+          const hasStep3 = !!((perfil.especialidades as string[] | null)?.length && perfil.bio);
+          const hasStep4 = !!(perfil.foto_documento_frente && perfil.foto_documento_verso && perfil.foto_selfie);
+
+          if (hasStep1 && hasStep2 && hasStep3 && hasStep4) {
+            setStep(5);
+          } else if (hasStep1 && hasStep2 && hasStep3) {
+            setStep(4);
+          } else if (hasStep1 && hasStep2) {
+            setStep(3);
+          } else if (hasStep1) {
+            setStep(2);
+          }
+          // else stay on step 1
+        } else {
+          // No perfil yet — just fill from profiles
+          if (profile) {
+            setForm((f) => ({
+              ...f,
+              nome: profile.nome || "",
+              email: profile.email || "",
+              telefone: profile.whatsapp ? fmtPhone(profile.whatsapp) : "",
+            }));
+          }
         }
-      });
-    supabase
-      .from("profiles")
-      .select("nome, email, whatsapp")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data)
-          setForm((f) => ({
-            ...f,
-            nome: data.nome || "",
-            email: data.email || "",
-            telefone: data.whatsapp || "",
-          }));
-      });
+      } catch (e: any) {
+        console.error("Error loading profile:", e);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    loadProfile();
   }, [user]);
 
   const buscarCep = async (cep: string) => {
@@ -303,18 +378,148 @@ function ProfissionalCadastro() {
     return data.publicUrl;
   };
 
+  // Save partial progress after each step
+  const saveStepProgress = async (currentStep: number) => {
+    if (!user) return;
+    setSavingStep(true);
+    try {
+      if (currentStep === 1) {
+        // Save personal data to profiles + profissional_perfil
+        const { error: profileErr } = await supabase
+          .from("profiles")
+          .update({ nome: form.nome, email: form.email, whatsapp: form.telefone })
+          .eq("id", user.id);
+        if (profileErr) throw profileErr;
+
+        const { error: perfilErr } = await supabase
+          .from("profissional_perfil")
+          .upsert({
+            user_id: user.id,
+            genero: form.genero || "nao_informar",
+            cpf: form.cpf.replace(/\D/g, "") || null,
+            cnpj: form.cnpj ? form.cnpj.replace(/\D/g, "") : null,
+            data_nascimento: form.data_nascimento || null,
+            telefone: form.telefone,
+          });
+        if (perfilErr) throw perfilErr;
+      } else if (currentStep === 2) {
+        // Save address data
+        const { error } = await supabase
+          .from("profissional_perfil")
+          .upsert({
+            user_id: user.id,
+            cidade: form.cidade,
+            cep: form.cep.replace(/\D/g, ""),
+            bairro: form.bairro,
+            endereco: form.endereco,
+            numero: form.numero,
+            complemento: form.complemento || null,
+            estado: form.estado,
+          });
+        if (error) throw error;
+      } else if (currentStep === 3) {
+        // Save specialties and bio
+        const { error } = await supabase
+          .from("profissional_perfil")
+          .upsert({
+            user_id: user.id,
+            especialidades: form.especialidades,
+            bio: form.bio,
+            anos_experiencia: form.experiencia_anos ? Number(form.experiencia_anos) : null,
+            atende_emergencias: form.atende_emergencias ?? false,
+            veiculo_proprio: form.veiculo_proprio ?? false,
+            como_conheceu: form.como_conheceu || null,
+            observacoes_cadastro: form.observacoes_cadastro || null,
+          });
+        if (error) throw error;
+      } else if (currentStep === 4) {
+        // Upload documents and save URLs immediately
+        let urlFrente = existingDocFrente;
+        let urlVerso = existingDocVerso;
+        let urlSelfie = existingSelfie;
+
+        if (form.foto_documento_frente) {
+          try {
+            urlFrente = await uploadFile(form.foto_documento_frente, "doc_frente");
+          } catch (e: any) {
+            toast.error("Erro ao enviar documento (frente)", { description: e?.message });
+            throw e;
+          }
+        }
+        if (form.foto_documento_verso) {
+          try {
+            urlVerso = await uploadFile(form.foto_documento_verso, "doc_verso");
+          } catch (e: any) {
+            toast.error("Erro ao enviar documento (verso)", { description: e?.message });
+            throw e;
+          }
+        }
+        if (form.foto_selfie) {
+          try {
+            urlSelfie = await uploadFile(form.foto_selfie, "selfie");
+          } catch (e: any) {
+            toast.error("Erro ao enviar selfie", { description: e?.message });
+            throw e;
+          }
+        }
+
+        const { error } = await supabase
+          .from("profissional_perfil")
+          .upsert({
+            user_id: user.id,
+            ...(urlFrente && { foto_documento_frente: urlFrente }),
+            ...(urlVerso && { foto_documento_verso: urlVerso }),
+            ...(urlSelfie && { foto_selfie: urlSelfie }),
+          });
+        if (error) throw error;
+
+        // Update local state so review step shows them as uploaded
+        if (urlFrente) setExistingDocFrente(urlFrente);
+        if (urlVerso) setExistingDocVerso(urlVerso);
+        if (urlSelfie) setExistingSelfie(urlSelfie);
+      }
+    } catch (e: any) {
+      toast.error("Erro ao salvar progresso", { description: e?.message });
+      throw e; // Re-throw to prevent advancing step
+    } finally {
+      setSavingStep(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     setSaving(true);
     try {
-      let urlFrente = null,
-        urlVerso = null,
-        urlSelfie = null;
-      if (form.foto_documento_frente)
-        urlFrente = await uploadFile(form.foto_documento_frente, "doc_frente");
-      if (form.foto_documento_verso)
-        urlVerso = await uploadFile(form.foto_documento_verso, "doc_verso");
-      if (form.foto_selfie) urlSelfie = await uploadFile(form.foto_selfie, "selfie");
+      // Documents should already be uploaded by step 4 save.
+      // Only upload if new files were selected and not yet persisted.
+      let urlFrente = existingDocFrente;
+      let urlVerso = existingDocVerso;
+      let urlSelfie = existingSelfie;
+
+      if (form.foto_documento_frente) {
+        try {
+          urlFrente = await uploadFile(form.foto_documento_frente, "doc_frente");
+        } catch (e: any) {
+          toast.error("Erro ao enviar documento (frente)", { description: e?.message });
+          throw e;
+        }
+      }
+      if (form.foto_documento_verso) {
+        try {
+          urlVerso = await uploadFile(form.foto_documento_verso, "doc_verso");
+        } catch (e: any) {
+          toast.error("Erro ao enviar documento (verso)", { description: e?.message });
+          throw e;
+        }
+      }
+      if (form.foto_selfie) {
+        try {
+          urlSelfie = await uploadFile(form.foto_selfie, "selfie");
+        } catch (e: any) {
+          toast.error("Erro ao enviar selfie", { description: e?.message });
+          throw e;
+        }
+      }
 
       const payload = {
         user_id: user.id,
@@ -351,21 +556,22 @@ function ProfissionalCadastro() {
       if (error) throw error;
 
       // update profile name
-      await supabase
+      const { error: profileErr } = await supabase
         .from("profiles")
         .update({ nome: form.nome, whatsapp: form.telefone })
         .eq("id", user.id);
+      if (profileErr) throw profileErr;
 
       toast.success("Cadastro enviado para análise!");
       setSubmitted(true);
     } catch (e: any) {
-      toast.error("Erro ao enviar", { description: e?.message });
+      toast.error("Erro ao enviar cadastro", { description: e?.message });
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading)
+  if (loading || loadingProfile)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-brand" />
@@ -795,24 +1001,63 @@ function ProfissionalCadastro() {
                 documento.
               </p>
               <div className="space-y-4">
-                <FileUploadBox
-                  label="Documento — Frente *"
-                  accept="image/*,application/pdf"
-                  value={form.foto_documento_frente}
-                  onChange={(f) => set("foto_documento_frente", f)}
-                />
-                <FileUploadBox
-                  label="Documento — Verso *"
-                  accept="image/*,application/pdf"
-                  value={form.foto_documento_verso}
-                  onChange={(f) => set("foto_documento_verso", f)}
-                />
-                <FileUploadBox
-                  label="Selfie segurando o documento *"
-                  accept="image/*"
-                  value={form.foto_selfie}
-                  onChange={(f) => set("foto_selfie", f)}
-                />
+                {existingDocFrente ? (
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Documento — Frente</label>
+                    <div className="mt-1.5 flex items-center gap-3 p-4 border-2 border-green-200 bg-green-50 rounded-2xl">
+                      <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-700">Documento já enviado ✓</p>
+                        <p className="text-xs text-green-600">Arquivo recebido anteriormente</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <FileUploadBox
+                    label="Documento — Frente *"
+                    accept="image/*,application/pdf"
+                    value={form.foto_documento_frente}
+                    onChange={(f) => set("foto_documento_frente", f)}
+                  />
+                )}
+                {existingDocVerso ? (
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Documento — Verso</label>
+                    <div className="mt-1.5 flex items-center gap-3 p-4 border-2 border-green-200 bg-green-50 rounded-2xl">
+                      <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-700">Documento já enviado ✓</p>
+                        <p className="text-xs text-green-600">Arquivo recebido anteriormente</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <FileUploadBox
+                    label="Documento — Verso *"
+                    accept="image/*,application/pdf"
+                    value={form.foto_documento_verso}
+                    onChange={(f) => set("foto_documento_verso", f)}
+                  />
+                )}
+                {existingSelfie ? (
+                  <div>
+                    <label className="text-xs font-bold uppercase text-muted-foreground">Selfie segurando o documento</label>
+                    <div className="mt-1.5 flex items-center gap-3 p-4 border-2 border-green-200 bg-green-50 rounded-2xl">
+                      <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-green-700">Selfie já enviada ✓</p>
+                        <p className="text-xs text-green-600">Arquivo recebido anteriormente</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <FileUploadBox
+                    label="Selfie segurando o documento *"
+                    accept="image/*"
+                    value={form.foto_selfie}
+                    onChange={(f) => set("foto_selfie", f)}
+                  />
+                )}
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-muted-foreground">
                 🔒 Seus documentos são armazenados com segurança e utilizados apenas para
@@ -846,10 +1091,10 @@ function ProfissionalCadastro() {
                   },
                   {
                     label: "Doc. frente",
-                    value: form.foto_documento_frente?.name ?? "Não enviado",
+                    value: existingDocFrente ? "Já enviado ✓" : (form.foto_documento_frente?.name ?? "Não enviado"),
                   },
-                  { label: "Doc. verso", value: form.foto_documento_verso?.name ?? "Não enviado" },
-                  { label: "Selfie", value: form.foto_selfie?.name ?? "Não enviado" },
+                  { label: "Doc. verso", value: existingDocVerso ? "Já enviado ✓" : (form.foto_documento_verso?.name ?? "Não enviado") },
+                  { label: "Selfie", value: existingSelfie ? "Já enviada ✓" : (form.foto_selfie?.name ?? "Não enviado") },
                 ].map(({ label, value }) => (
                   <div
                     key={label}
@@ -880,7 +1125,8 @@ function ProfissionalCadastro() {
             {step < 5 ? (
               <Button
                 className="rounded-full bg-brand text-white gap-2"
-                onClick={() => {
+                disabled={savingStep}
+                onClick={async () => {
                   if (step === 1) {
                     if (!form.nome.trim() || !form.cpf || !form.telefone) {
                       toast.error("Preencha nome, CPF e telefone");
@@ -901,15 +1147,27 @@ function ProfissionalCadastro() {
                   }
                   if (
                     step === 4 &&
-                    (!form.foto_documento_frente || !form.foto_documento_verso || !form.foto_selfie)
+                    ((!form.foto_documento_frente && !existingDocFrente) ||
+                     (!form.foto_documento_verso && !existingDocVerso) ||
+                     (!form.foto_selfie && !existingSelfie))
                   ) {
                     toast.error("Envie todos os documentos obrigatórios");
                     return;
                   }
-                  setStep((s) => s + 1);
+                  // Save progress before advancing
+                  try {
+                    await saveStepProgress(step);
+                    setStep((s) => s + 1);
+                  } catch {
+                    // Error toast already shown inside saveStepProgress
+                  }
                 }}
               >
-                Próximo <ChevronRight className="h-4 w-4" />
+                {savingStep ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                ) : (
+                  <>Próximo <ChevronRight className="h-4 w-4" /></>
+                )}
               </Button>
             ) : (
               <Button
