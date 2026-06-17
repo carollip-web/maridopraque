@@ -25,6 +25,7 @@ import {
   CreditCard,
   Banknote,
   QrCode,
+  FileDown,
 } from "lucide-react";
 
 type Split = {
@@ -192,6 +193,48 @@ export function ProfissionalFinanceiro() {
   }, [splitsPeriodo, statusFiltro, busca]);
 
 
+  const handleExportCSV = () => {
+    if (listaFiltrada.length === 0) {
+      import("sonner").then(m => m.toast.error("Nenhum dado para exportar"));
+      return;
+    }
+
+    const headers = [
+      "Data",
+      "Serviço",
+      "Valor Total (R$)",
+      "Sua Parte (R$)",
+      "Taxa Plataforma (R$)",
+      "Taxa Gateway (R$)",
+      "Status",
+    ];
+
+    const rows = listaFiltrada.map((sp) => {
+      const ds = deriveStatus(sp);
+      const meta = DERIVED_LABEL[ds];
+
+      return [
+        new Date(sp.created_at).toLocaleDateString("pt-BR"),
+        sp.orcamentos?.service_name || "Serviço",
+        Number(sp.valor_total || 0).toFixed(2).replace(".", ","),
+        Number(sp.valor_profissional || 0).toFixed(2).replace(".", ","),
+        Number(sp.taxa_plataforma || 0).toFixed(2).replace(".", ","),
+        Number(sp.taxa_gateway || 0).toFixed(2).replace(".", ","),
+        meta.label,
+      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
+    });
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `financeiro_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="py-24 grid place-items-center">
@@ -222,6 +265,14 @@ export function ProfissionalFinanceiro() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="rounded-full h-10 px-4 text-slate-600 border-slate-200 gap-2 hover:bg-slate-50"
+          >
+            <FileDown className="h-4 w-4" /> Exportar CSV
+          </Button>
           <Button
             variant="outline"
             size="icon"

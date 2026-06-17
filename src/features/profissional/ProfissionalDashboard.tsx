@@ -20,6 +20,236 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { CheckCircle2, Circle, BadgeCheck, HeartHandshake } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
+} from "recharts";
+
+function startOfWeek(d: Date) {
+  const x = new Date(d);
+  const day = (x.getDay() + 6) % 7; // segunda = 0
+  x.setHours(0, 0, 0, 0);
+  x.setDate(x.getDate() - day);
+  return x;
+}
+
+function fmtLabel(d: Date) {
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
+function ProximoServicoCard({ userId }: { userId?: string }) {
+  const { data: prox, isLoading } = useQuery({
+    queryKey: ["profissional", "proximo-servico", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from("orcamentos")
+        .select(`
+          id, service_name, data_agendada, apoio_feminino,
+          profiles!orcamentos_cliente_id_fkey(nome)
+        `)
+        .eq("profissional_id", userId!)
+        .in("status", ["aprovado", "pago"])
+        .gte("data_agendada", now)
+        .order("data_agendada", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    }
+  });
+
+  if (isLoading) return <Skeleton className="h-24 w-full rounded-2xl" />;
+
+  return (
+    <div className="rounded-2xl border border-border bg-gradient-to-br from-indigo-50 to-blue-50 p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <CalendarClock className="h-5 w-5 text-indigo-600" />
+        <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-widest">Próximo Serviço</h3>
+      </div>
+      {prox ? (
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="font-bold text-slate-900">{prox.service_name}</p>
+            <div className="flex items-center gap-4 mt-1.5 text-sm text-slate-600">
+              <span className="font-medium text-brand">📅 {new Date(prox.data_agendada!).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+              <span>👤 {(prox.profiles as any)?.nome || "Cliente"}</span>
+            </div>
+          </div>
+          {prox.apoio_feminino && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200">
+              <HeartHandshake className="h-3.5 w-3.5" />
+              Apoio Feminino
+            </span>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-indigo-700 font-medium">Nenhum serviço agendado no momento.</p>
+      )}
+    </div>
+  );
+}
+
+function PrimeirosPassosCard({ userId, setTab, metrics }: { userId?: string, setTab: any, metrics: any }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["profissional", "primeiros-passos-check", userId],
+    enabled: !!userId && metrics.totalConcluidos === 0,
+    queryFn: async () => {
+      const { data: perfil } = await supabase
+        .from("profissional_perfil")
+        .select("bio, foto_url, especialidades, mp_user_id, cpf")
+        .eq("user_id", userId!)
+        .maybeSingle();
+      
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("nome, whatsapp")
+        .eq("id", userId!)
+        .maybeSingle();
+      
+      const isComplete = !!(
+        p?.nome && p?.whatsapp && perfil?.foto_url && 
+        perfil?.bio && perfil?.cpf && 
+        perfil?.especialidades && perfil.especialidades.length > 0
+      );
+
+      const { data: agendas } = await supabase
+        .from("profissional_disponibilidade")
+        .select("id")
+        .eq("profissional_id", userId!)
+        .limit(1);
+
+      return {
+        isComplete,
+        mp: !!perfil?.mp_user_id,
+        agenda: agendas && agendas.length > 0
+      };
+    }
+  });
+
+  if (metrics.totalConcluidos > 0) return null;
+  if (!data?.isComplete) return null;
+
+  return (
+    <div className="rounded-3xl border border-brand/20 bg-brand/5 p-6 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <BadgeCheck className="h-6 w-6 text-brand" />
+        <h3 className="font-bold text-lg text-slate-900">Primeiros passos</h3>
+      </div>
+      <ul className="space-y-3">
+        <li className="flex items-center gap-2 text-sm">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+          <span className="text-slate-500 line-through">Perfil completo</span>
+        </li>
+        <li className="flex items-center gap-2 text-sm">
+          {data.mp ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <Circle className="h-4 w-4 text-slate-300 shrink-0" />}
+          {data.mp ? (
+            <span className="text-slate-500 line-through">Conectar Mercado Pago</span>
+          ) : (
+            <span>Conectar Mercado Pago (<button onClick={() => setTab("configuracoes")} className="text-brand font-bold hover:underline">configurar</button>)</span>
+          )}
+        </li>
+        <li className="flex items-center gap-2 text-sm">
+          {data.agenda ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <Circle className="h-4 w-4 text-slate-300 shrink-0" />}
+          {data.agenda ? (
+            <span className="text-slate-500 line-through">Configurar agenda</span>
+          ) : (
+            <span>Configurar agenda (<button onClick={() => setTab("agenda")} className="text-brand font-bold hover:underline">configurar</button>)</span>
+          )}
+        </li>
+        <li className="flex items-start gap-2 text-sm mt-2">
+          <Circle className="h-4 w-4 text-slate-300 shrink-0 mt-0.5" />
+          <span className="text-slate-700 font-medium">
+            Aguardar primeiro pedido
+            <span className="block text-xs text-muted-foreground mt-0.5 font-normal">Quando um cliente solicitar um serviço na sua área, você será notificado aqui.</span>
+          </span>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
+function ProfissionalEarningsChart({ userId }: { userId?: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["profissional", "earnings-chart", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const WEEKS = 8;
+      const now = new Date();
+      const weeks: { start: Date; end: Date; label: string; ganhos: number }[] = [];
+      const base = startOfWeek(now);
+      
+      for (let i = WEEKS - 1; i >= 0; i--) {
+        const start = new Date(base);
+        start.setDate(start.getDate() - i * 7);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+        weeks.push({ start, end, label: fmtLabel(start), ganhos: 0 });
+      }
+
+      const startDate = weeks[0].start;
+
+      const { data: splits } = await supabase
+        .from("pagamento_splits")
+        .select("valor_profissional, created_at, status")
+        .eq("profissional_id", userId!)
+        .gte("created_at", startDate.toISOString());
+
+      if (splits) {
+        splits.forEach(s => {
+          if (s.status === "disponivel" || s.status === "pago" || s.status === "approved" || s.status === "paid") {
+            const t = new Date(s.created_at).getTime();
+            const w = weeks.find(wk => t >= wk.start.getTime() && t < wk.end.getTime());
+            if (w) {
+              w.ganhos += Number(s.valor_profissional || 0);
+            }
+          }
+        });
+      }
+
+      return weeks.map(w => ({
+        semana: w.label,
+        ganhos: Number(w.ganhos.toFixed(2))
+      }));
+    }
+  });
+
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-2xl" />;
+
+  const total = data?.reduce((acc, d) => acc + d.ganhos, 0) || 0;
+
+  return (
+    <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="mb-4">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Evolução Financeira</p>
+        <h3 className="text-lg font-bold tracking-tight text-foreground">Ganhos por semana</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Últimas 8 semanas {total === 0 ? "— sem ganhos no período" : ""}</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data || []} margin={{ top: 8, right: 0, bottom: 0, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="semana" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
+            <RechartsTooltip 
+              contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+              formatter={(value: number) => [`R$ ${value.toFixed(2)}`, "Ganhos"]}
+            />
+            <Bar dataKey="ganhos" fill="hsl(var(--emerald, 142 71% 45%))" radius={[4, 4, 0, 0]} maxBarSize={40} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
+  );
+}
 
 interface ProfissionalDashboardProps {
   user: any;
@@ -80,8 +310,7 @@ export function ProfissionalDashboard({
         onVerPedidos={() => setTab("orcamentos")}
       />
 
-      <ProfileCompletenessCard />
-
+      <ProximoServicoCard userId={user?.id} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
@@ -137,6 +366,12 @@ export function ProfissionalDashboard({
           </>
         )}
       </section>
+
+      <ProfissionalEarningsChart userId={user?.id} />
+
+      <PrimeirosPassosCard userId={user?.id} setTab={setTab} metrics={metrics} />
+      
+      <ProfileCompletenessCard />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

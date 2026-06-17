@@ -176,6 +176,60 @@ function ProfissionalArea() {
     navigate,
   ]);
 
+  // Toast e som para novos pedidos
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel("toast-novo-pedido")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notificacoes", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const newNotif = payload.new as Tables<"notificacoes">;
+          if (newNotif.titulo.toLowerCase().includes("novo pedido")) {
+            // Tocar som opcionalmente se permitido
+            if (typeof window !== "undefined" && "Notification" in window && window.Notification.permission === "granted") {
+              try {
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                osc.frequency.value = 880;
+                osc.connect(ctx.destination);
+                osc.start();
+                setTimeout(() => osc.stop(), 150);
+              } catch (e) {
+                // ignorar
+              }
+            }
+            
+            import("sonner").then((m) => {
+              m.toast(newNotif.titulo, {
+                description: newNotif.mensagem,
+                duration: Infinity, // autoClose: false
+                action: {
+                  label: "Ver pedido",
+                  onClick: () => {
+                    navigate({
+                      to: "/profissional",
+                      search: (prev: ProfissionalSearch) => ({
+                        ...prev,
+                        tab: "orcamentos",
+                        orcamentoId: newNotif.orcamento_id ?? undefined,
+                      })
+                    });
+                  }
+                }
+              });
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, navigate]);
+
   if (loading) {
     return (
       <div className="p-12 text-center">

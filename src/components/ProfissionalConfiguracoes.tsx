@@ -44,7 +44,7 @@ const profileSchema = z.object({
   raio_atendimento_km: z.coerce.number().min(0).optional(),
   atende_emergencias: z.boolean().optional(),
   veiculo_proprio: z.boolean().optional(),
-  genero: z.enum(["homem", "mulher", "outro", "nao_informar", "apoio_feminino"]).optional(),
+  genero: z.enum(["homem", "mulher", "outro", "nao_informar"]).optional(),
   chave_pix: z.string().optional(),
   pix_key_type: z.string().optional(),
 }).superRefine((_val, _ctx) => {
@@ -62,7 +62,7 @@ type ProfissionalPerfilData = {
   raio_atendimento_km?: number | null;
   atende_emergencias?: boolean | null;
   veiculo_proprio?: boolean | null;
-  genero?: "homem" | "mulher" | "outro" | "nao_informar" | "apoio_feminino" | null;
+  genero?: "homem" | "mulher" | "outro" | "nao_informar" | null;
   mp_user_id?: string | null;
   mp_connected_at?: string | null;
   chave_pix?: string | null;
@@ -143,7 +143,7 @@ export function ProfissionalConfiguracoes() {
       const { data, error } = await supabase
         .from("profissional_perfil")
         .select(
-          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, ativo, lat, lng, cpf, cnpj, mp_user_id, mp_connected_at",
+          "user_id, bio, cidade, especialidades, chave_pix, pix_key_type, pix_holder_name, pix_holder_document, anos_experiencia, raio_atendimento_km, atende_emergencias, veiculo_proprio, genero, ativo, lat, lng, cpf, cnpj, mp_user_id, mp_connected_at, slug",
         )
         .eq("user_id", user.id)
         .maybeSingle();
@@ -515,6 +515,22 @@ export function ProfissionalConfiguracoes() {
                 sem atraso.
               </p>
             </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-brand/10">
+            {profissionalPerfil?.slug ? (
+              <a 
+                href={`/profissionais/perfil/${profissionalPerfil.slug}`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-sm font-bold text-brand hover:underline"
+              >
+                Ver meu perfil público ↗
+              </a>
+            ) : (
+              <span className="text-sm text-slate-500 font-medium">
+                Complete seu perfil para ter uma página pública
+              </span>
+            )}
           </div>
         </header>
 

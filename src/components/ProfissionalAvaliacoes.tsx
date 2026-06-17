@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Star, Loader2, MessageSquareReply, CheckCircle2, X } from "lucide-react";
+import { NivelBadge } from "@/components/NivelBadge";
 
 type AvaliacaoRow = {
   id: string;
@@ -83,6 +84,19 @@ export function ProfissionalAvaliacoes() {
 
   const avs = avsQuery.data ?? EMPTY;
   const loading = avsQuery.isLoading;
+
+  const perfilQuery = useQuery({
+    queryKey: ["profissional", "perfil-stats", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("total_servicos_pagos")
+        .eq("id", userId!)
+        .single();
+      return data;
+    },
+  });
 
   const responderMutation = useMutation({
     mutationFn: async ({ id, texto }: { id: string; texto: string }) => {
@@ -226,6 +240,14 @@ export function ProfissionalAvaliacoes() {
               </div>
             </div>
           </section>
+
+          {/* Badge de Nível do Profissional */}
+          <div className="mt-4">
+            <NivelBadge 
+              concluidos={perfilQuery.data?.total_servicos_pagos ?? 0} 
+              notaMedia={stats.media} 
+            />
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {[
