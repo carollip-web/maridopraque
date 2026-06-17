@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import { logAdminAction } from "@/lib/auditLog";
 
 type TicketStatus = "aberto" | "em_andamento" | "resolvido";
 
@@ -13,6 +16,7 @@ export function AdminSuporte() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"Todos" | TicketStatus>("Todos");
+  const [search, setSearch] = useState("");
   
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [respostas, setRespostas] = useState<any[]>([]);
@@ -99,6 +103,13 @@ export function AdminSuporte() {
           link: "/cliente?tab=suporte"
         });
 
+      await logAdminAction(supabase, {
+        acao: "ticket_respondido",
+        detalhes: { assunto: selectedTicket.assunto },
+        entidadeTipo: "ticket_suporte",
+        entidadeId: selectedTicket.id,
+      });
+
       toast.success("Resposta enviada!");
       setNovaResposta("");
       await loadTicketData(selectedTicket);
@@ -126,6 +137,13 @@ export function AdminSuporte() {
           mensagem: `Seu chamado '${selectedTicket.assunto}' foi resolvido`,
           link: "/cliente?tab=suporte"
         });
+
+      await logAdminAction(supabase, {
+        acao: "ticket_resolvido",
+        detalhes: { assunto: selectedTicket.assunto },
+        entidadeTipo: "ticket_suporte",
+        entidadeId: selectedTicket.id,
+      });
         
       toast.success("Ticket marcado como resolvido!");
       setSelectedTicket(null);
@@ -144,23 +162,43 @@ export function AdminSuporte() {
     }
   };
 
+  const filteredTickets = tickets.filter(t => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    const nome = t.profiles?.nome?.toLowerCase() || "";
+    const assunto = t.assunto?.toLowerCase() || "";
+    const id = String(t.id).toLowerCase();
+    return nome.includes(q) || assunto.includes(q) || id.includes(q);
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-border shadow-soft">
+      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-[2rem] border border-border shadow-soft gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Suporte ao Cliente</h2>
           <p className="text-slate-500 text-sm mt-1">Gerencie os tickets abertos pelos usuários.</p>
         </div>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as "Todos" | TicketStatus)}
-          className="p-3 border border-slate-200 rounded-xl bg-slate-50 font-medium text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm"
-        >
-          <option value="Todos">Todos os Tickets</option>
-          <option value="aberto">Abertos</option>
-          <option value="em_andamento">Em Andamento</option>
-          <option value="resolvido">Resolvidos</option>
-        </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="relative flex-1 sm:min-w-[240px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Buscar cliente, assunto ou ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-11 border-slate-200 bg-slate-50 rounded-xl"
+            />
+          </div>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as "Todos" | TicketStatus)}
+            className="p-3 border border-slate-200 rounded-xl bg-slate-50 font-medium text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 shadow-sm h-11"
+          >
+            <option value="Todos">Todos os Tickets</option>
+            <option value="aberto">Abertos</option>
+            <option value="em_andamento">Em Andamento</option>
+            <option value="resolvido">Resolvidos</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -183,7 +221,7 @@ export function AdminSuporte() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {tickets.map(t => (
+                {filteredTickets.map(t => (
                   <tr 
                     key={t.id} 
                     className="hover:bg-slate-50 cursor-pointer transition-colors group"

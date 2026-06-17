@@ -1,6 +1,8 @@
 import { Wrench, LogOut } from "lucide-react";
 import { type AdminSection, type AdminLevel } from "@/hooks/useAuth";
 import { type UseNavigateResult } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import React from "react";
 
 interface SidebarItem {
@@ -43,6 +45,23 @@ export function AdminSidebar({
     ? "flex w-full bg-[#0F172A] text-white shrink-0 z-30 flex-col h-full"
     : "hidden md:flex w-full md:w-64 bg-[#0F172A] text-white shrink-0 z-30 flex-col";
 
+  const { data: badges } = useQuery({
+    queryKey: ["admin", "sidebar-badges"],
+    queryFn: async () => {
+      const [disputas, suporte, leads] = await Promise.all([
+        supabase.from("orcamentos").select("id", { count: "exact", head: true }).eq("status", "em_disputa"),
+        supabase.from("suporte_tickets").select("id", { count: "exact", head: true }).in("status", ["aberto", "em_andamento"]),
+        supabase.from("profissional_perfil").select("id", { count: "exact", head: true }).eq("aprovacao_status", "em_analise"),
+      ]);
+      return {
+        disputas: disputas.count || 0,
+        suporte: suporte.count || 0,
+        leads: leads.count || 0,
+      };
+    },
+    refetchInterval: 30000,
+  });
+
   return (
     <aside className={asideClass}>
       <div className="p-6 flex items-center gap-3">
@@ -63,8 +82,17 @@ export function AdminSidebar({
                 : "text-slate-400 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            <item.icon className="h-4 w-4" />
-            {item.label}
+            <item.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{item.label}</span>
+            {item.id === "disputas" && (badges?.disputas || 0) > 0 && (
+              <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{badges?.disputas}</span>
+            )}
+            {item.id === "suporte" && (badges?.suporte || 0) > 0 && (
+              <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{badges?.suporte}</span>
+            )}
+            {item.id === "leads" && (badges?.leads || 0) > 0 && (
+              <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{badges?.leads}</span>
+            )}
           </button>
         ))}
       </nav>

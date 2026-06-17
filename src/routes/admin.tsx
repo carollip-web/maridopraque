@@ -18,7 +18,6 @@ import { AdminEquipe } from "@/features/admin/AdminEquipe";
 import { AdminNotificacoes } from "@/features/admin/AdminNotificacoes";
 import { AdminLeads } from "@/features/admin/AdminLeads";
 import { AdminApoioFeminino } from "@/features/admin/AdminApoioFeminino";
-import { AdminKPIs } from "@/features/admin/AdminKPIs";
 import { AdminDisputas } from "@/features/admin/AdminDisputas";
 import { AdminSuporte } from "@/features/admin/AdminSuporte";
 import { AdminMetrics } from "@/components/AdminMetrics";
@@ -173,7 +172,6 @@ function AdminArea() {
             {activeTab === "notificacoes" && <AdminNotificacoes />}
             {activeTab === "leads" && <AdminLeads />}
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
-            {activeTab === "kpis" && <AdminKPIs />}
             {activeTab === "disputas" && <AdminDisputas />}
             {(activeTab as string) === "suporte" && <AdminSuporte />}
           </div>

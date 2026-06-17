@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logAdminAction } from "@/lib/auditLog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -85,6 +86,17 @@ export function AdminApoioFeminino() {
       toast.error("Erro ao atribuir: " + error.message);
       return;
     }
+
+    if (equipeId) {
+      const membro = equipe.find(m => m.id === equipeId);
+      await logAdminAction(supabase, {
+        acao: "apoio_feminino_atribuido",
+        detalhes: { nome_equipe: membro?.nome },
+        entidadeTipo: "orcamento",
+        entidadeId: orcamentoId,
+      });
+    }
+
     toast.success("Apoio feminino atribuída!");
     carregar();
   };

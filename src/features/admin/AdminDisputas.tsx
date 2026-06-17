@@ -4,13 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { resolverDisputaOrcamento } from "@/lib/disputas.functions";
+import { logAdminAction } from "@/lib/auditLog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PagamentoSplitResumo } from "@/components/PagamentoSplitResumo";
 import { PagamentoSplitDetalhado } from "@/components/PagamentoSplitDetalhado";
-import { AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Loader2, CheckCircle2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 const BRL = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -25,7 +26,7 @@ export function AdminDisputas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, service_name, valor, cliente_id, profissional_id, observacoes_profissional, updated_at, status")
+        .select("id, service_name, valor, cliente_id, profissional_id, observacoes_profissional, updated_at, status, cliente:profiles!orcamentos_cliente_id_fkey(nome)")
         .eq("status", "em_disputa")
         .order("updated_at", { ascending: false });
       if (error) throw error;
@@ -38,9 +39,19 @@ export function AdminDisputas() {
   const [pctPlat, setPctPlat] = useState(7.5);
   const [motivo, setMotivo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   const pctReemb = Math.max(0, 100 - pctPrest - pctPlat);
   const selected = disputas.find((d: any) => d.id === selectedId);
+
+  const filteredDisputas = disputas.filter((d: any) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    const name = d.cliente?.nome || "";
+    const srv = d.service_name || "";
+    const pid = d.id || "";
+    return name.toLowerCase().includes(q) || srv.toLowerCase().includes(q) || pid.toLowerCase().includes(q);
+  });
 
   async function handleResolver() {
     if (!selectedId) return;
@@ -51,6 +62,14 @@ export function AdminDisputas() {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
       if (!ok) throw new Error(error || "Falha ao resolver");
+
+      await logAdminAction(supabase, {
+        acao: "disputa_resolvida",
+        detalhes: { pctPrestador: pctPrest, pctPlataforma: pctPlat, pctReembolso: pctReemb, motivo },
+        entidadeTipo: "orcamento",
+        entidadeId: selectedId,
+      });
+
       toast.success("Disputa resolvida e estorno disparado.");
       qc.invalidateQueries({ queryKey: ["admin", "disputas"] });
       setSelectedId(null);
@@ -64,11 +83,22 @@ export function AdminDisputas() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Disputas</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Pedidos sinalizados como “em disputa”. Resolva manualmente definindo o split final.
-        </p>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Disputas</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Pedidos sinalizados como “em disputa”. Resolva manualmente definindo o split final.
+          </p>
+        </div>
+        <div className="relative w-full md:max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Buscar por ID, serviço ou cliente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
       </header>
 
       {isLoading ? (
@@ -81,7 +111,7 @@ export function AdminDisputas() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           <div className="space-y-3">
-            {disputas.map((d: any) => (
+            {filteredDisputas.map((d: any) => (
               <button
                 key={d.id}
                 onClick={() => setSelectedId(d.id)}

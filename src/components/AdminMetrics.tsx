@@ -16,7 +16,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { AdminKPIs } from "@/features/admin/AdminKPIs";
 import { supabase } from "@/integrations/supabase/client";
 import { exportDashboardData } from "@/features/admin/exportDashboard";
 import {
@@ -44,7 +43,15 @@ import {
   isSameDay,
   differenceInDays,
   eachDayOfInterval,
+  startOfWeek,
+  endOfWeek,
 } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+import {
+  BarChart,
+  Bar,
+} from "recharts";
 
 type Metric = {
   label: string;
@@ -62,10 +69,11 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [pieData, setPieData] = useState<any[]>([]);
+  const [funnelData, setFunnelData] = useState<any>(null);
+  const [weeklyChartData, setWeeklyChartData] = useState<any[]>([]);
   const [recentes, setRecentes] = useState<any[]>([]);
   const [pendentes, setPendentes] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"geral" | "kpis">("geral");
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -221,6 +229,50 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         .slice(0, 5);
       setPieData(pie);
 
+      // Funnel Data
+      const passouDe = (status: string) => {
+        const statusOrder = ["customizado_pendente", "enviado", "aprovado", "pago", "concluido"];
+        const idx = statusOrder.indexOf(status);
+        return currentPeriod.filter((o) => statusOrder.indexOf(o.status) >= idx).length;
+      };
+      
+      const totalPedidos = currentPeriod.length;
+      const cotados = passouDe("enviado");
+      const aprovados = passouDe("aprovado");
+      const pagos = passouDe("pago");
+      const concluidos = passouDe("concluido");
+
+      setFunnelData({
+        total: totalPedidos,
+        cotados,
+        aprovados,
+        pagos,
+        concluidos,
+        taxaCotados: totalPedidos ? (cotados / totalPedidos) * 100 : 0,
+        taxaAprovados: cotados ? (aprovados / cotados) * 100 : 0,
+        taxaPagos: aprovados ? (pagos / aprovados) * 100 : 0,
+        taxaConcluidos: pagos ? (concluidos / pagos) * 100 : 0,
+      });
+
+      // Weekly Chart Data (last 8 weeks from today)
+      const weeksData = [];
+      const now = new Date();
+      for (let i = 7; i >= 0; i--) {
+        const d = subDays(now, i * 7);
+        const start = startOfWeek(d, { weekStartsOn: 1 });
+        const end = endOfWeek(d, { weekStartsOn: 1 });
+        const count = list.filter((o) => {
+          if (!["pago", "concluido"].includes(o.status)) return false;
+          const od = new Date(o.created_at);
+          return od >= start && od <= end;
+        }).length;
+        weeksData.push({
+          name: format(start, "dd/MMM", { locale: ptBR }),
+          Realizados: count,
+        });
+      }
+      setWeeklyChartData(weeksData);
+
       setRecentes(list.slice(0, 5));
       setPendentes(list.filter((o) => o.status === "customizado_pendente").length);
       setLoading(false);
@@ -263,27 +315,6 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
         </div>
 
         <div className="flex gap-2 items-center">
-          <button
-            onClick={() => setActiveTab("geral")}
-            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
-              activeTab === "geral"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            Visão Geral
-          </button>
-          <button
-            onClick={() => setActiveTab("kpis")}
-            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${
-              activeTab === "kpis"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            KPIs Operacionais
-          </button>
-
           {/* Export Dropdown */}
           <div className="relative ml-2" ref={exportRef}>
             <button
@@ -356,7 +387,7 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
       {/* Shared Date Range Filter — visible on both tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-slate-800">
-          {activeTab === "geral" ? "Métricas Principais" : "KPIs Operacionais"}
+          Métricas Principais
         </h2>
         <DateRangeFilter
           preset={preset}
@@ -365,11 +396,6 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           onCustomRangeChange={setCustomRange}
         />
       </div>
-
-      {activeTab === "kpis" ? (
-        <AdminKPIs dateRange={currentRange} />
-      ) : (
-        <>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((stat) => (
@@ -409,6 +435,60 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
             />
           </button>
         ))}
+      </div>
+
+      {/* Funil de Conversão */}
+      {funnelData && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="h-5 w-5 text-slate-400" />
+            <h3 className="font-bold text-slate-900">Funil de Conversão do Período</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col items-center text-center">
+              <p className="text-xs font-medium text-slate-500 mb-1">Total de Pedidos</p>
+              <p className="text-3xl font-black text-slate-800">{funnelData.total}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="absolute top-0 w-full h-1 bg-emerald-500" />
+              <p className="text-xs font-medium text-slate-500 mb-1">Cotados</p>
+              <p className="text-3xl font-black text-emerald-600">{funnelData.cotados}</p>
+              <p className="text-[11px] text-emerald-600/70 font-bold mt-1">{funnelData.taxaCotados.toFixed(1)}% do total</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="absolute top-0 w-full h-1 bg-blue-500" />
+              <p className="text-xs font-medium text-slate-500 mb-1">Aprovados</p>
+              <p className="text-3xl font-black text-blue-600">{funnelData.aprovados}</p>
+              <p className="text-[11px] text-blue-600/70 font-bold mt-1">{funnelData.taxaAprovados.toFixed(1)}% dos cotados</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="absolute top-0 w-full h-1 bg-indigo-500" />
+              <p className="text-xs font-medium text-slate-500 mb-1">Pagos / Concluídos</p>
+              <p className="text-3xl font-black text-indigo-600">{funnelData.pagos}</p>
+              <p className="text-[11px] text-indigo-600/70 font-bold mt-1">{funnelData.taxaPagos.toFixed(1)}% dos aprovados</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Evolução Semanal BarChart */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <h3 className="font-bold text-slate-900 mb-1">Evolução Semanal (Últimas 8 semanas)</h3>
+        <p className="text-xs text-slate-500 mb-8">Serviços realizados (pagos ou concluídos) por semana.</p>
+        <div className="h-[250px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={weeklyChartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#94A3B8" }} dy={10} />
+              <YAxis hide />
+              <Tooltip
+                cursor={{ fill: "#F8FAFC" }}
+                contentStyle={{ borderRadius: "16px", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)", fontSize: "12px" }}
+              />
+              <Bar dataKey="Realizados" fill="var(--brand)" radius={[6, 6, 6, 6]} barSize={30} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Charts Section */}
@@ -594,8 +674,6 @@ export function AdminMetrics({ onTabChange }: { onTabChange: (tab: any) => void 
           </table>
         </div>
       </section>
-        </>
-      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   DollarSign,
   Search,
   RefreshCw,
+  FileDown,
   User,
   Copy,
   Check,
@@ -253,6 +254,37 @@ export function AdminFinanceiro() {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
+  const handleExportCSV = () => {
+    if (pagamentosFiltrados.length === 0) return;
+    
+    const headers = ["Data", "Serviço", "Valor (R$)", "Comissão (R$)", "Taxa MP (R$)", "Status"];
+    const rows = pagamentosFiltrados.map((p) => {
+      const valor = Number(p.valor_total || 0);
+      const fee = getMarketplaceFee(p);
+      const taxaMP = Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
+      const efetivado = p.status === "paid" || p.status === "approved";
+      
+      return [
+        new Date(p.created_at).toLocaleString("pt-BR"),
+        p.orcamentos?.service_name || "—",
+        valor.toFixed(2).replace(".", ","),
+        efetivado ? fee.toFixed(2).replace(".", ",") : "0,00",
+        efetivado ? taxaMP.toFixed(2).replace(".", ",") : "0,00",
+        STATUS_BADGES[p.status]?.label || p.status,
+      ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(",");
+    });
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `financeiro_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="py-24 grid place-items-center">
@@ -289,6 +321,16 @@ export function AdminFinanceiro() {
               </button>
             ))}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            disabled={pagamentosFiltrados.length === 0}
+            className="gap-1.5"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+            Exportar CSV
+          </Button>
           <Button
             variant="outline"
             size="sm"

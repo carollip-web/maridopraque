@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { logAdminAction } from "@/lib/auditLog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -189,6 +190,13 @@ function AdminValidacao() {
       lida: false,
     });
 
+    await logAdminAction(supabase, {
+      acao: "profissional_aprovado",
+      detalhes: { nome: selected.nome },
+      entidadeTipo: "profissional",
+      entidadeId: selected.user_id,
+    });
+
     toast.success("Profissional aprovado! Acesso liberado.");
     setSelected(null);
     refresh();
@@ -213,6 +221,14 @@ function AdminValidacao() {
       toast.error("Erro", { description: error.message });
       return;
     }
+
+    await logAdminAction(supabase, {
+      acao: "profissional_rejeitado",
+      detalhes: { nome: selected.nome, motivo },
+      entidadeTipo: "profissional",
+      entidadeId: selected.user_id,
+    });
+
     toast.success("Cadastro rejeitado. Prestador notificado.");
     setMotivo("");
     setSelected(null);

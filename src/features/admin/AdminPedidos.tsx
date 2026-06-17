@@ -11,7 +11,10 @@ import {
   RefreshCw,
   Trash2,
   Mail,
+  Mail,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { excluirPedidoAdmin } from "@/lib/orcamentos.functions";
+import { logAdminAction } from "@/lib/auditLog";
 import { STATUS_COLORS } from "./constants";
 
 export function AdminPedidos() {
@@ -54,15 +58,47 @@ export function AdminPedidos() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(0);
+
+  // Reset page to 0 when filters change
+  const handleSearch = (val: string) => { setPage(0); setSearch(val); };
+  const handleFilter = (val: string) => { setPage(0); setFilter(val); };
+  const handleProFilter = (val: string) => { setPage(0); setProFilter(val); };
+  const handleDateRange = (val: string) => { setPage(0); setDateRange(val); };
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["admin", "orcamentos"],
+    queryKey: ["admin", "orcamentos", page, search, filter, proFilter, dateRange],
     queryFn: async () => {
-      const { data: orcs } = await supabase
+      let query = supabase
         .from("orcamentos")
-        .select("*")
-        .or("is_test.eq.false,is_test.is.null")
+        .select("*", { count: "exact" })
+        .or("is_test.eq.false,is_test.is.null");
+
+      if (filter !== "todos") query = query.eq("status", filter);
+      if (proFilter !== "todos") query = query.eq("profissional_id", proFilter);
+
+      if (dateRange !== "all") {
+        const now = new Date();
+        if (dateRange === "today") {
+          const start = new Date(now.setHours(0, 0, 0, 0)).toISOString();
+          query = query.gte("created_at", start);
+        } else if (dateRange === "week") {
+          const start = new Date(now.setDate(now.getDate() - 7)).toISOString();
+          query = query.gte("created_at", start);
+        } else if (dateRange === "month") {
+          const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          query = query.gte("created_at", start);
+        }
+      }
+
+      if (search) {
+        query = query.or(`id.ilike.%${search}%,service_name.ilike.%${search}%`);
+      }
+
+      const { data: orcs, count } = await query
         .order("created_at", { ascending: false })
-        .limit(200);
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       const list = orcs || [];
       const ids = Array.from(
@@ -100,10 +136,11 @@ export function AdminPedidos() {
 
       await Promise.all(promises);
 
-      return { orcamentos: list, profiles: profileMap, materials: materialsMap };
+      return { orcamentos: list, count: count || 0, profiles: profileMap, materials: materialsMap };
     },
   });
 
+  const totalCount = data?.count || 0;
   const orcamentos = data?.orcamentos || [];
   const profiles = data?.profiles || {};
   const materials = data?.materials || {};
@@ -187,6 +224,10 @@ export function AdminPedidos() {
       );
     });
   }, [unifiedOrders, filter, search, profiles, proFilter, dateRange]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const showingStart = totalCount === 0 ? 0 : page * PAGE_SIZE + 1;
+  const showingEnd = Math.min((page + 1) * PAGE_SIZE, totalCount);
 
   const tabs = [
     { id: "todos", label: `Todos (${unifiedOrders.length})` },
@@ -303,6 +344,13 @@ export function AdminPedidos() {
           },
         });
         if (!ok) throw new Error(serverError || "Erro ao excluir um dos itens.");
+
+        await logAdminAction(supabase, {
+          acao: "pedido_excluido",
+          detalhes: { service_name: item.service_name },
+          entidadeTipo: "orcamento",
+          entidadeId: item.id,
+        });
       }
 
       toast.success("Pedido e todas as suas dependências foram excluídos.");
@@ -341,7 +389,16 @@ export function AdminPedidos() {
             data: { orcamentoId: item.id },
             headers: { Authorization: `Bearer ${session?.access_token}` },
           });
-          if (!ok) orderSuccess = false;
+          if (!ok) {
+            orderSuccess = false;
+          } else {
+            await logAdminAction(supabase, {
+              acao: "pedido_excluido",
+              detalhes: { service_name: item.service_name },
+              entidadeTipo: "orcamento",
+              entidadeId: item.id,
+            });
+          }
         }
 
         if (orderSuccess) successCount++;
@@ -401,8 +458,8 @@ export function AdminPedidos() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cliente ou serviço..."
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="ID ou serviço..."
               className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none transition-all"
             />
           </div>
@@ -410,7 +467,7 @@ export function AdminPedidos() {
           <div className="relative min-w-[200px]">
             <select
               value={proFilter}
-              onChange={(e) => setProFilter(e.target.value)}
+              onChange={(e) => handleProFilter(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none appearance-none transition-all"
             >
               <option value="todos">Todos Profissionais</option>
@@ -426,7 +483,7 @@ export function AdminPedidos() {
           <div className="relative min-w-[140px]">
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              onChange={(e) => handleDateRange(e.target.value)}
               className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand/20 outline-none appearance-none transition-all"
             >
               <option value="all">Todo período</option>
@@ -504,7 +561,7 @@ export function AdminPedidos() {
           {tabs.map((t) => (
             <button
               key={t.id}
-              onClick={() => setFilter(t.id)}
+              onClick={() => handleFilter(t.id)}
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap rounded-lg transition-colors ${
                 filter === t.id ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-50"
               }`}
@@ -610,10 +667,17 @@ export function AdminPedidos() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-900">
+                        <div className="flex flex-col items-start">
+                          <button
+                            onClick={() => {
+                              if (cli) {
+                                navigate({ search: (old: any) => ({ ...old, tab: "clientes", cli_q: cli.email || cli.nome }) });
+                              }
+                            }}
+                            className="text-sm font-bold text-slate-900 hover:text-brand hover:underline text-left"
+                          >
                             {cli?.nome || "—"}
-                          </span>
+                          </button>
                           {cli?.whatsapp && (
                             <a
                               href={`https://wa.me/${cli.whatsapp.replace(/\D/g, "")}`}
@@ -731,6 +795,36 @@ export function AdminPedidos() {
                 })}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination Footer */}
+        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-slate-500 font-medium">
+            Mostrando {showingStart}–{showingEnd} de {totalCount} pedidos
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0 || isLoading}
+              className="gap-1 h-9 rounded-xl border-slate-200"
+            >
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </Button>
+            <span className="text-sm font-bold text-slate-700 px-2">
+              Página {page + 1} de {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => p + 1)}
+              disabled={page >= totalPages - 1 || isLoading}
+              className="gap-1 h-9 rounded-xl border-slate-200"
+            >
+              Próxima <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

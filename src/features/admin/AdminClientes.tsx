@@ -42,6 +42,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { logAdminAction } from "@/lib/auditLog";
 
 const STATUS_COLORS: Record<string, string> = {
   customizado_pendente: "bg-amber-100 text-amber-700",
@@ -520,6 +521,13 @@ export function AdminClientes() {
       });
       if (!ok) throw new Error("Erro ao excluir cliente");
 
+      await logAdminAction(supabase, {
+        acao: "cliente_excluido",
+        detalhes: { nome },
+        entidadeTipo: "cliente",
+        entidadeId: id,
+      });
+
       toast.success("Cliente removido.");
       setSelectedIds((prev) => prev.filter((sid) => sid !== id));
       qc.invalidateQueries({ queryKey: ["admin", "clientes"] });
@@ -549,8 +557,17 @@ export function AdminClientes() {
           data: { targetUserId: id },
           headers: { Authorization: `Bearer ${session?.access_token}` },
         });
-        if (ok) successCount++;
-        else failCount++;
+        if (ok) {
+          successCount++;
+          await logAdminAction(supabase, {
+            acao: "cliente_excluido",
+            detalhes: { is_bulk: true },
+            entidadeTipo: "cliente",
+            entidadeId: id,
+          });
+        } else {
+          failCount++;
+        }
       }
 
       if (successCount > 0) {

@@ -15,6 +15,99 @@ const profileSchema = z.object({
 
 type ProfileValues = z.infer<typeof profileSchema>;
 
+function AuditLogViewer() {
+  const [filter, setFilter] = useState("todos");
+
+  const { data: logs, isLoading } = useQuery({
+    queryKey: ["admin", "audit_log", filter],
+    queryFn: async () => {
+      let query = supabase
+        .from("admin_audit_log")
+        .select("*, profiles:admin_id(nome)")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      
+      if (filter !== "todos") {
+        query = query.eq("acao", filter);
+      }
+      
+      const { data, error } = await query;
+      if (error) {
+        console.error("Erro ao buscar logs:", error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  return (
+    <section className="bg-white rounded-[2rem] border border-border p-8 shadow-sm lg:col-span-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <div>
+          <h3 className="font-bold text-lg text-slate-900">Histórico de Ações (Auditoria)</h3>
+          <p className="text-sm text-slate-500">Últimas 50 ações administrativas realizadas.</p>
+        </div>
+        <select 
+          value={filter} 
+          onChange={(e) => setFilter(e.target.value)}
+          className="p-2 border border-slate-200 rounded-xl text-sm min-w-[200px]"
+        >
+          <option value="todos">Todas as ações</option>
+          <option value="profissional_aprovado">Profissional Aprovado</option>
+          <option value="profissional_rejeitado">Profissional Rejeitado</option>
+          <option value="disputa_resolvida">Disputa Resolvida</option>
+          <option value="ticket_respondido">Ticket Respondido</option>
+          <option value="ticket_resolvido">Ticket Resolvido</option>
+          <option value="apoio_feminino_atribuido">Apoio Feminino Atribuído</option>
+          <option value="pedido_excluido">Pedido Excluído</option>
+          <option value="cliente_excluido">Cliente Excluído</option>
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center py-8 text-slate-500 font-medium">Carregando logs...</div>
+      ) : logs && logs.length > 0 ? (
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left text-sm min-w-[800px]">
+            <thead className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 font-bold border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Admin</th>
+                <th className="px-4 py-3">Ação</th>
+                <th className="px-4 py-3">Detalhes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {logs.map((log: any) => (
+                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
+                    {new Date(log.created_at).toLocaleString("pt-BR")}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-700">
+                    {log.profiles?.nome || "Desconhecido"}
+                  </td>
+                  <td className="px-4 py-3 text-brand font-bold text-[10px] uppercase tracking-wider">
+                    {log.acao.replace(/_/g, " ")}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    <pre className="text-[10px] font-mono bg-slate-100 p-2 rounded-md max-w-sm overflow-x-auto text-slate-600">
+                      {JSON.stringify(log.detalhes, null, 2)}
+                    </pre>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl font-medium">
+          Nenhuma ação encontrada.
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function AdminConfig() {
   const { user, profile, profilePhoto, updatePhoto, adminLevel } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -273,6 +366,8 @@ export function AdminConfig() {
           </Button>
         </section>
       </div>
+
+      <AuditLogViewer />
 
       {showSuccess && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-8 duration-500">
