@@ -88,7 +88,7 @@ function ClienteDetailPanel({
     queryFn: async () => {
       const { data } = await supabase
         .from("orcamentos")
-        .select("id, service_name, status, valor, valor_total, created_at, profissional_id")
+        .select("id, service_name, status, valor, valor_total, created_at, profissional_id, pagamentos(id, valor_total, status, paid_at)")
         .eq("cliente_id", id)
         .order("created_at", { ascending: false });
       const list = data || [];
@@ -107,28 +107,19 @@ function ClienteDetailPanel({
     },
   });
 
-  const { data: financeiro } = useQuery({
-    queryKey: ["admin", "cliente-detail", id, "financeiro"],
-    queryFn: async () => {
-      const { data: orcs } = await supabase
-        .from("orcamentos")
-        .select("id")
-        .eq("cliente_id", id);
-      const ids = (orcs || []).map((o: any) => o.id);
-      if (ids.length === 0) return { total: 0, count: 0, ticket: 0 };
-      const { data: pags } = await supabase
-        .from("pagamentos")
-        .select("valor_total, status, orcamento_id")
-        .in("orcamento_id", ids)
-        .eq("status", "paid");
-      const total = (pags || []).reduce(
-        (sum: number, p: any) => sum + Number(p.valor_total || 0),
-        0,
-      );
-      const count = (pags || []).length;
-      return { total, count, ticket: count > 0 ? total / count : 0 };
-    },
-  });
+  // Derive all financial indicators from orcamentos (single source of truth).
+  // An orcamento counts as "paid" when it has at least one pagamento with status='paid'.
+  const financeiro = React.useMemo(() => {
+    const paidOrcs = orcamentos.filter((o: any) =>
+      (o.pagamentos || []).some((p: any) => p.status === "paid"),
+    );
+    const total = paidOrcs.reduce(
+      (sum: number, o: any) => sum + Number(o.valor_total || o.valor || 0),
+      0,
+    );
+    const count = paidOrcs.length;
+    return { total, count, ticket: count > 0 ? total / count : 0 };
+  }, [orcamentos]);
 
   const { data: avaliacoes = [] } = useQuery({
     queryKey: ["admin", "cliente-detail", id, "avaliacoes"],
@@ -954,6 +945,10 @@ export function AdminClientes() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
+                      {/* total_servicos_pagos is a static counter on profiles — it may
+                         be slightly out of sync with the real pagamentos data.
+                         A per-client orcamentos query here would be too expensive
+                         for a list view with many clients. */}
                       <p className="text-xs font-bold text-slate-900">
                         {c.total_servicos_pagos} pedidos pagos
                       </p>
