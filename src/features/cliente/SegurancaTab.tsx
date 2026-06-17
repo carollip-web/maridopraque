@@ -3,11 +3,27 @@ import { ShieldCheck, ChevronRight, Bell, Smartphone, MonitorSmartphone } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Download, Trash2, FileJson, Loader2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 
 export function SegurancaTab() {
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const navigate = useNavigate();
+  const [isExporting, setIsExporting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const prefsKey = user ? `mpq_prefs_${user.id}` : null;
   const [whatsappNotifications, setWhatsappNotifications] = useState(true);
@@ -50,6 +66,79 @@ export function SegurancaTab() {
     }
   };
 
+  const handleGlobalLogout = async () => {
+    const { error } = await supabase.auth.signOut({ scope: "global" });
+    if (error) {
+      toastError("Erro ao encerrar sessões", error.message);
+    } else {
+      import("sonner").then((m) => m.toast.success("Todas as sessões foram encerradas."));
+      navigate({ to: "/login" });
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    setIsExporting(true);
+    try {
+      const [
+        { data: profile },
+        { data: orcamentos },
+        { data: avaliacoes },
+      ] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("orcamentos").select("*").eq("cliente_id", user.id),
+        supabase.from("avaliacoes").select("*").eq("cliente_id", user.id),
+      ]);
+
+      const dataToExport = {
+        profile,
+        orcamentos,
+        avaliacoes,
+        exportadoEm: new Date().toISOString(),
+      };
+
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dados-pessoais-${user.id.slice(0, 8)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSuccessMsg("Dados exportados com sucesso!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3500);
+    } catch (e: any) {
+      toastError("Erro ao exportar dados", e.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "EXCLUIR" || !user) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from("suporte_tickets").insert({
+        user_id: user.id,
+        assunto: "Solicitação de exclusão de conta",
+        mensagem: "Solicito a exclusão permanente da minha conta e de todos os meus dados conforme a LGPD.",
+        status: "aberto",
+      });
+      if (error) throw error;
+      
+      import("sonner").then((m) => m.toast.success("Sua solicitação foi registrada. A exclusão será processada em até 5 dias úteis, conforme a LGPD."));
+      await supabase.auth.signOut();
+      navigate({ to: "/login" });
+    } catch (e: any) {
+      toastError("Erro ao solicitar exclusão", e.message);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <div className="max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
       {/* Segurança */}
@@ -81,7 +170,6 @@ export function SegurancaTab() {
             </Button>
           </div>
 
-          {/* Dispositivos Ativos (Mock para LGPD) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[1.5rem] bg-slate-50 border border-border">
             <div>
               <p className="font-bold text-sm flex items-center gap-2">
@@ -94,8 +182,65 @@ export function SegurancaTab() {
             <Button
               variant="ghost"
               className="rounded-xl font-bold text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleGlobalLogout}
             >
               Sair de todos os dispositivos
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Privacidade e LGPD */}
+      <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-2xl bg-brand/10 flex items-center justify-center">
+            <ShieldCheck className="h-5 w-5 text-brand" />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg">Privacidade e Dados</h3>
+            <p className="text-sm text-muted-foreground">Gerencie seus dados conforme a LGPD.</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[1.5rem] bg-slate-50 border border-border">
+            <div>
+              <p className="font-bold text-sm flex items-center gap-2">
+                <FileJson className="h-4 w-4 text-muted-foreground" /> Exportar meus dados
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Conforme a LGPD, você tem direito à portabilidade dos seus dados.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="rounded-xl font-bold bg-white"
+              onClick={handleExportData}
+              disabled={isExporting}
+            >
+              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              Exportar JSON
+            </Button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-[1.5rem] bg-red-50/50 border border-red-100">
+            <div>
+              <p className="font-bold text-sm text-red-900 flex items-center gap-2">
+                <Trash2 className="h-4 w-4" /> Excluir minha conta
+              </p>
+              <p className="text-xs text-red-700 mt-1 max-w-sm">
+                A exclusão é permanente. Todos os seus dados serão apagados de nossos servidores em até 5 dias úteis.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              className="rounded-xl font-bold"
+              onClick={() => {
+                setDeleteConfirmText("");
+                setDeleteDialogOpen(true);
+              }}
+            >
+              Excluir conta
             </Button>
           </div>
         </div>
@@ -146,6 +291,41 @@ export function SegurancaTab() {
           </div>
         </div>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> Confirmar Exclusão
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação não pode ser desfeita. Sua solicitação será registrada e a exclusão
+              será processada em até 5 dias úteis, conforme a LGPD.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm font-medium mb-2">Para confirmar, digite EXCLUIR abaixo:</p>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="EXCLUIR"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== "EXCLUIR" || isDeleting}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir minha conta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

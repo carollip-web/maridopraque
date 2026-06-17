@@ -44,7 +44,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Tab, WHATSAPP_LINK } from "./constants";
+import { Tab, SUPPORT_MAILTO } from "./constants";
 
 const gerarPdfOrcamento = (id: string) =>
   import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
@@ -301,7 +301,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     enabled: !!user,
   });
 
-  const filters = ["Todos", "Agendado", "Em Análise", "Aguardando sua aprovação"];
+  const filters = ["Todos", "Ativos", "Concluídos", "Cancelados"];
 
   useEffect(() => {
     if (!user) return;
@@ -490,7 +490,16 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     const matchesSearch =
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === "Todos" || p.status === activeFilter;
+    
+    let matchesFilter = true;
+    if (activeFilter === "Ativos") {
+      matchesFilter = ["Em Análise", "Aguardando sua aprovação", "Aguardando Pagamento", "Agendado", "Aprovação Automática", "enviado"].includes(p.status) || ["customizado_pendente", "aprovado", "pago", "fixo_auto", "enviado"].includes(p.rawStatus);
+    } else if (activeFilter === "Concluídos") {
+      matchesFilter = ["Concluído", "Disputa Resolvida"].includes(p.status) || ["concluido", "disputa_resolvida"].includes(p.rawStatus);
+    } else if (activeFilter === "Cancelados") {
+      matchesFilter = p.status === "cancelado" || p.rawStatus === "cancelado";
+    }
+
     return matchesSearch && matchesFilter;
   });
 

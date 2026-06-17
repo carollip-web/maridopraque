@@ -16,7 +16,7 @@ export const STATUS_META: Record<Orcamento["status"], { label: string; className
   disputa_resolvida: { label: "Disputa resolvida", className: "bg-slate-100 text-slate-700" },
 };
 
-export const WHATSAPP_LINK =
+export const SUPPORT_MAILTO =
   "mailto:contato@maridopraque.com?subject=Suporte%20para%20profissional";
 
 import type { ProfissionalTab } from "./types";

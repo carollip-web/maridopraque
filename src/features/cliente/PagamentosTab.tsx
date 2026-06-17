@@ -4,6 +4,8 @@ import { CreditCard, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 export function PagamentosTab() {
   const { user } = useAuth();
@@ -25,6 +27,31 @@ export function PagamentosTab() {
   });
 
   const total = transacoes.reduce((s, t) => s + Number(t.valor || 0), 0);
+
+  const handleExportCSV = () => {
+    if (transacoes.length === 0) return;
+    const header = "Data,Serviço,Valor (R$),Método de Pagamento,Status\n";
+    const rows = transacoes
+      .map((t) => {
+        const d = t.data_pagamento ? new Date(t.data_pagamento) : new Date(t.created_at);
+        const dataStr = d.toLocaleDateString("pt-BR");
+        const servico = `"${(t.service_name || "").replace(/"/g, '""')}"`;
+        const valor = Number(t.valor || 0).toFixed(2);
+        const metodo = "Mercado Pago";
+        const status = t.status === "pago" ? "Pago" : t.status === "concluido" ? "Concluído" : t.status;
+        return `${dataStr},${servico},${valor},${metodo},${status}`;
+      })
+      .join("\n");
+    const csv = header + rows;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `pagamentos_cliente_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -61,15 +88,26 @@ export function PagamentosTab() {
               </p>
             </div>
             <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-900">
-              Cartões salvos para pagamento em 1 clique estarão disponíveis assim que conectarmos um
-              provedor de pagamento (Stripe ou Pagar.me).
+              Pagamentos processados com segurança pelo Mercado Pago. Cartões salvos para pagamento em 1 clique estarão disponíveis em breve.
             </div>
           </div>
         </div>
       </div>
 
       <section>
-        <h3 className="text-xl font-bold mb-6">Últimas transações</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="text-xl font-bold">Últimas transações</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full font-bold w-full sm:w-auto"
+            onClick={handleExportCSV}
+            disabled={transacoes.length === 0}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+        </div>
         <div className="bg-white rounded-2xl border border-border shadow-soft divide-y divide-border">
           {isLoading && (
             <div className="p-6 space-y-6">

@@ -40,5 +40,5 @@ export const ALL_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: "seguranca", label: "Segurança e Privacidade", icon: ShieldCheck },
 ];
 
-export const WHATSAPP_LINK =
+export const SUPPORT_MAILTO =
   "mailto:contato@maridopraque.com?subject=Dúvida%20sobre%20meu%20pedido";

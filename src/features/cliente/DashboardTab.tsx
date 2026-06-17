@@ -10,6 +10,8 @@ import {
   Plus,
   X,
   FileText,
+  CalendarDays,
+  MessageCircle,
 } from "lucide-react";
 import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +42,22 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
       if (error) console.error("Error fetching stats orcamentos:", error);
 
       const list = data || [];
+
+      let proximo: any = null;
+      const proximoCand = list
+        .filter((o) => ["pago", "aprovado"].includes(o.status) && o.data_agendada && new Date(o.data_agendada) >= new Date())
+        .sort((a, b) => new Date(a.data_agendada!).getTime() - new Date(b.data_agendada!).getTime())[0];
+      
+      if (proximoCand) {
+        const { data: pData } = await supabase.from("orcamentos").select("profissional_id").eq("id", proximoCand.id).single();
+        if (pData?.profissional_id) {
+          const { data: profProfile } = await supabase.from("profiles").select("nome").eq("id", pData.profissional_id).single();
+          proximo = { ...proximoCand, profNome: profProfile?.nome || "Profissional" };
+        } else {
+          proximo = proximoCand;
+        }
+      }
+
       return {
         // "Serviços Realizados" = realmente concluídos pelo cliente
         concluidos: list.filter((o) => o.status === "concluido").length,
@@ -49,6 +67,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
         // Total investido = soma de tudo que o cliente já pagou (pago + concluído)
         total: list.filter((o) => ["pago", "concluido"].includes(o.status)).reduce((acc, o) => acc + (o.valor || 0), 0),
         recentes: list.slice(0, 3),
+        proximo,
       };
     },
     enabled: !!user,
@@ -122,8 +141,58 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        {/* Recent Activity */}
-        <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
+        <div className="space-y-8">
+          {/* Próximo Serviço */}
+          <section className="bg-brand text-brand-foreground rounded-[2rem] border border-brand/20 p-8 shadow-xl relative overflow-hidden">
+            <CalendarDays className="absolute -right-6 -bottom-6 h-32 w-32 text-white/5" />
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Clock className="h-5 w-5" /> Seu Próximo Serviço
+            </h2>
+            
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-1/2 bg-white/20" />
+                <Skeleton className="h-4 w-1/3 bg-white/20" />
+                <Skeleton className="h-10 w-full rounded-full bg-white/20 mt-4" />
+              </div>
+            ) : stats?.proximo ? (
+              <div className="relative z-10">
+                <p className="font-bold text-2xl">{stats.proximo.service_name}</p>
+                <p className="text-white/80 mt-1">
+                  {new Date(stats.proximo.data_agendada).toLocaleString("pt-BR", {
+                    dateStyle: "long",
+                    timeStyle: "short",
+                  })}
+                </p>
+                {stats.proximo.profNome && (
+                  <p className="text-sm font-medium mt-2 bg-white/10 inline-block px-3 py-1 rounded-full">
+                    Com {stats.proximo.profNome}
+                  </p>
+                )}
+                <Button
+                  onClick={() => navigate({ to: "/cliente", search: { chat: "1", pedidoId: stats.proximo.id } as any })}
+                  className="w-full sm:w-auto mt-6 bg-white text-brand hover:bg-white/90 rounded-full font-bold shadow-lg"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" /> Conversar
+                </Button>
+              </div>
+            ) : (
+              <div className="relative z-10">
+                <p className="text-white/80 font-medium text-lg">
+                  Nenhum serviço agendado — Solicite um novo!
+                </p>
+                <Button
+                  onClick={() => navigate({ to: "/servicos" })}
+                  className="mt-6 bg-white text-brand hover:bg-white/90 rounded-full font-bold shadow-lg"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Novo Orçamento
+                </Button>
+              </div>
+            )}
+          </section>
+
+          {/* Recent Activity */}
+          <section className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-bold">Atividade Recente</h2>
             <button
@@ -198,6 +267,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
             )}
           </div>
         </section>
+        </div>
 
         {/* Quick Actions */}
         <section className="space-y-6">
@@ -228,8 +298,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
           <div className="bg-white rounded-[2rem] border border-border p-8 shadow-soft">
             <h3 className="font-bold mb-4">Dica de Segurança</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Lembre-se: todos os nossos profissionais usam uniforme e crachá com QR Code de
-              verificação.
+              Todos os profissionais passam por verificação de identidade com documento e selfie antes de serem aprovados na plataforma. Em caso de qualquer problema, abra uma disputa pelo painel do pedido.
             </p>
           </div>
         </section>
