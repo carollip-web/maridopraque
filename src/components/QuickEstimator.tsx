@@ -42,15 +42,27 @@ export function QuickEstimator() {
     [servicos],
   );
 
+  useEffect(() => {
+    if (categorias.length > 0 && !categoria) {
+      setCategoria(categorias[0]);
+    }
+  }, [categorias, categoria]);
+
   const servicosFiltrados = useMemo(
     () => servicos.filter((s) => !categoria || s.categoria === categoria),
     [servicos, categoria]
   );
 
+  useEffect(() => {
+    if (servicosFiltrados.length > 0 && !serviceId) {
+      setServiceId(servicosFiltrados[0].id);
+    }
+  }, [servicosFiltrados, serviceId]);
+
   const selected = servicos.find((s) => s.id === serviceId);
 
   return (
-    <section className="border-y border-border bg-cream/40 py-20">
+    <section id="estimador" className="border-y border-border bg-cream/40 py-20">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 md:grid-cols-[1fr_1.4fr] md:items-center">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand">
@@ -79,7 +91,6 @@ export function QuickEstimator() {
                 }}
                 className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-sm"
               >
-                <option value="">Todas</option>
                 {categorias.map((c) => (
                   <option key={c} value={c}>
                     {categoriaLabel[c] ?? c}
@@ -96,7 +107,6 @@ export function QuickEstimator() {
                 onChange={(e) => setServiceId(e.target.value)}
                 className="mt-1.5 h-12 w-full rounded-xl border border-border bg-background px-3 text-sm"
               >
-                <option value="">Selecione…</option>
                 {servicosFiltrados.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.nome}

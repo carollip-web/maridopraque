@@ -170,27 +170,22 @@ const paymentMethods = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Camila R.",
-    text: "Pedi atendimento com apoio feminino e me senti super segura.",
-    role: "Copacabana",
-  },
-  {
-    name: "Rafael M.",
-    text: "Resolveu o vazamento que ninguém conseguia. Salvou meu domingo.",
-    role: "Ipanema",
-  },
-  {
-    name: "Júlia A.",
-    text: "Profissional pontual, educada e caprichosa. Virou meu contato fixo.",
-    role: "Copacabana",
-  },
-];
+
 
 function Index() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [catalog, setCatalog] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("services_catalog_publico")
+      .select("nome, preco_min")
+      .eq("ativo", true)
+      .then(({ data }) => {
+        if (data) setCatalog(data);
+      });
+  }, []);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -232,9 +227,9 @@ function Index() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild variant="brand" size="xl">
-                <Link to="/servicos">
+                <a href="#estimador">
                   Pedir orçamento agora <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
+                </a>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link to="/servicos">Ver serviços</Link>
@@ -258,11 +253,32 @@ function Index() {
               alt="Ferramentas dispostas sobre fundo bege claro"
               width={1536}
               height={1280}
-              className="aspect-[4/5] w-full rounded-3xl object-cover ring-1 ring-border"
+              className="aspect-[4/5] max-h-[400px] md:max-h-none w-full rounded-3xl object-cover ring-1 ring-border object-top"
             />
           </div>
         </div>
       </section>
+
+      {/* Hero Metrics */}
+      <div className="bg-brand text-brand-foreground border-y border-brand/20">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-center md:justify-between gap-4 text-center sm:text-left text-sm font-medium">
+          <div className="flex items-center justify-center gap-2">
+            <Wrench className="h-5 w-5 opacity-80" />
+            <span>7 categorias de serviço</span>
+          </div>
+          <div className="hidden sm:block w-px h-6 bg-brand-foreground/20"></div>
+          <div className="flex items-center justify-center gap-2">
+            <ShieldCheck className="h-5 w-5 opacity-80" />
+            <span>Profissionais verificados em Copacabana e Ipanema</span>
+          </div>
+          <div className="hidden sm:block w-px h-6 bg-brand-foreground/20"></div>
+          <div className="flex items-center justify-center gap-2">
+            <CreditCard className="h-5 w-5 opacity-80" />
+            <span>Pagamento seguro pelo Mercado Pago</span>
+          </div>
+          {/* TODO: Quando tiver dados reais, trocar por: "X profissionais ativos · Y serviços realizados · Z avaliações" */}
+        </div>
+      </div>
 
       {/* Estimador rápido */}
       <QuickEstimator />
@@ -389,21 +405,37 @@ function Index() {
         </div>
 
         <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-          {services.map(({ categoryId, q, icon: Icon, title, desc }) => (
-            <Link
-              key={title}
-              to="/servicos"
-              search={{ categoria: categoryId }}
-              className="group bg-background p-7 transition hover:bg-cream"
-            >
-              <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
-              <h3 className="mt-5 text-base font-semibold">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-              <div className="mt-4 flex items-center text-xs font-semibold text-brand opacity-0 transition group-hover:opacity-100">
-                Pedir orçamento →
-              </div>
-            </Link>
-          ))}
+          {services.map(({ categoryId, q, icon: Icon, title, desc }) => {
+            const dbMatch = catalog.find(
+              (c) =>
+                c.nome.toLowerCase() === title.toLowerCase() ||
+                c.nome.toLowerCase().includes(q.toLowerCase())
+            );
+            const preco = dbMatch?.preco_min;
+
+            return (
+              <Link
+                key={title}
+                to="/servicos"
+                search={{ categoria: categoryId }}
+                className="group bg-background p-7 transition hover:bg-cream flex flex-col"
+              >
+                <Icon className="h-6 w-6 text-brand" strokeWidth={1.5} />
+                <h3 className="mt-5 text-base font-semibold">{title}</h3>
+                {preco != null && (
+                  <p className="mt-0.5 text-xs font-semibold text-emerald-600">
+                    A partir de R$ {preco.toFixed(0).replace(".", ",")}
+                  </p>
+                )}
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground flex-1">
+                  {desc}
+                </p>
+                <div className="mt-4 flex items-center text-xs font-semibold text-brand opacity-0 transition group-hover:opacity-100">
+                  Pedir orçamento →
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="mt-12 flex justify-center">
@@ -415,33 +447,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Depoimentos */}
-      <section className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-            Depoimentos
-          </span>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
-            Quem chama, recomenda.
-          </h2>
-        </div>
-        <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <figure key={t.name} className="rounded-2xl border border-border bg-card p-7">
-              <div className="flex gap-0.5 text-brand">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                ))}
-              </div>
-              <blockquote className="mt-4 text-foreground leading-relaxed">"{t.text}"</blockquote>
-              <figcaption className="mt-6 text-sm">
-                <div className="font-medium">{t.name}</div>
-                <div className="text-muted-foreground">{t.role}</div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
+      {/* TODO: Restaurar seção de depoimentos quando houver avaliações reais */}
 
       {/* Métodos de Pagamento */}
       <section id="pagamento" className="mx-auto max-w-6xl px-4 py-24 border-t border-border">
@@ -453,7 +459,7 @@ function Index() {
             Formas de pagamento seguras.
           </h2>
           <p className="mt-4 text-muted-foreground md:text-lg">
-            O pagamento é feito apenas após a realização do serviço.
+            Você só paga quando aprovar a proposta do profissional. Sem surpresas, sem taxa de visita.
           </p>
         </div>
 
