@@ -15,9 +15,13 @@ type Servico = {
 const brl = (v: number) => `R$ ${v.toFixed(0).replace(".", ",")}`;
 
 const categoriaLabel: Record<string, string> = {
-  montagem: "Montagem & instalação",
-  reparos: "Reparos & manutenção",
-  engenharia: "Engenharia & legalização",
+  montagem: "Montagem e Instalação",
+  reparos: "Reparos e Manutenção",
+  elétrica: "Elétrica",
+  hidráulica: "Hidráulica",
+  chaveiro: "Chaveiro",
+  instalação: "Instalação",
+  engenharia: "Engenharia e Legalização",
 };
 
 export function QuickEstimator() {
@@ -39,12 +43,8 @@ export function QuickEstimator() {
   );
 
   const servicosFiltrados = useMemo(
-    () =>
-      servicos.filter(
-        (s) =>
-          (!categoria || s.categoria === categoria) && s.preco_min != null && s.preco_max != null,
-      ),
-    [servicos, categoria],
+    () => servicos.filter((s) => !categoria || s.categoria === categoria),
+    [servicos, categoria]
   );
 
   const selected = servicos.find((s) => s.id === serviceId);
@@ -107,17 +107,23 @@ export function QuickEstimator() {
           </div>
 
           <div className="mt-6 rounded-2xl bg-brand-soft/60 p-5 text-center">
-            {selected && selected.preco_min != null && selected.preco_max != null ? (
+            {selected ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-wider text-brand">
                   Faixa estimada
                 </p>
                 <p className="mt-2 text-3xl font-bold text-foreground">
-                  {brl(Number(selected.preco_min))} – {brl(Number(selected.preco_max))}
+                  {selected.preco_min != null && selected.preco_max != null
+                    ? `${brl(Number(selected.preco_min))} – ${brl(Number(selected.preco_max))}`
+                    : selected.preco_min != null
+                      ? `A partir de ${brl(Number(selected.preco_min))}`
+                      : "Sob consulta — solicite um orçamento"}
                 </p>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  Valor exato confirmado pelo profissional. Materiais à parte.
-                </p>
+                {selected.preco_min != null && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Valor exato confirmado pelo profissional. Materiais à parte.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
