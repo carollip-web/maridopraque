@@ -91,8 +91,6 @@ function ClienteDetailPanel({
         .select("id, service_name, status, valor, created_at, profissional_id, pagamentos!pagamentos_orcamento_id_fkey(id, valor_total, status)")
         .eq("cliente_id", id)
         .order("created_at", { ascending: false });
-      // Debug: remove after confirming the query works
-      console.log("[AdminClientes] orcamentos query:", { id, data, error });
       if (error) {
         toast.error("Erro ao carregar pedidos", { description: error.message });
       }
