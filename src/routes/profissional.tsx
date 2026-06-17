@@ -99,6 +99,11 @@ function ProfissionalArea() {
     profApoioFeminino: data.profApoioFeminino,
   });
 
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login", replace: true });
+  }, [user, loading, navigate]);
+
   // Redireciona para o cadastro se não estiver aprovado
   useEffect(() => {
     if (!user || loading) return;
@@ -178,6 +183,8 @@ function ProfissionalArea() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   if (!isProfissional) {
     return (

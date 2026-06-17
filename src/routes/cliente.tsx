@@ -57,9 +57,14 @@ export const Route = createFileRoute("/cliente")({
 
 function ClienteArea() {
   const { tab: activeTab, payment } = Route.useSearch();
-  const { logout, userData, isProfissional, isAdmin, user } = useAuth();
+  const { logout, userData, isProfissional, isAdmin, user, loading } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login", replace: true });
+  }, [user, loading, navigate]);
 
   const { data: userRoles } = useQuery({
     queryKey: ["user_roles", user?.id],
@@ -225,6 +230,8 @@ function ClienteArea() {
   if (userRoles?.includes("admin")) {
     return null;
   }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col md:flex-row">

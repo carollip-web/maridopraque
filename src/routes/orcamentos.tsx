@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Save, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +55,12 @@ export const Route = createFileRoute("/orcamentos")({
 function MeusOrcamentos() {
   const { user, loading } = useAuth();
   const search = Route.useSearch();
+  const navigate = useNavigate();
+
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login", replace: true });
+  }, [user, loading, navigate]);
 
   // Lista + materiais + propostas (com realtime)
   const { list, orcMats, propostas, refresh } = useOrcamentosData(user);
@@ -144,6 +150,8 @@ function MeusOrcamentos() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="max-w-[1040px] mx-auto px-4 sm:px-6 py-12">

@@ -1,11 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CreditCard, ShieldCheck, QrCode, FileText } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/pagamento")({
   component: Pagamento,
 });
 
 function Pagamento() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login", replace: true });
+  }, [user, loading, navigate]);
+
+  if (!user) return null;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-24">
       <div className="mb-16 text-center">
