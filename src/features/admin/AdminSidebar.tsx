@@ -51,7 +51,7 @@ export function AdminSidebar({
       const [disputas, suporte, leads] = await Promise.all([
         supabase.from("orcamentos").select("id", { count: "exact", head: true }).eq("status", "em_disputa"),
         supabase.from("suporte_tickets").select("id", { count: "exact", head: true }).in("status", ["aberto", "em_andamento"]),
-        supabase.from("profissional_perfil").select("id", { count: "exact", head: true }).eq("aprovacao_status", "em_analise"),
+        supabase.from("profissionais_pre_cadastro").select("id", { count: "exact", head: true }).eq("status", "Pendente"),
       ]);
       return {
         disputas: disputas.count || 0,

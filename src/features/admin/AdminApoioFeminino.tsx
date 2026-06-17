@@ -46,6 +46,13 @@ export function AdminApoioFeminino() {
       toast.error("Erro ao alterar status.");
       return;
     }
+    
+    await logAdminAction(supabase, {
+      acao: !atualAtivo ? "ativou_membro_apoio_feminino" : "desativou_membro_apoio_feminino",
+      entidadeTipo: "apoio_feminino_equipe",
+      entidadeId: id,
+    });
+
     carregar();
   };
 
@@ -68,6 +75,13 @@ export function AdminApoioFeminino() {
       toast.error("Erro ao adicionar: " + error.message);
       return;
     }
+
+    await logAdminAction(supabase, {
+      acao: "criou_membro_apoio_feminino",
+      detalhes: { nome: novoNome.trim(), telefone: novoTelefone.trim() || null, pix: novoPix.trim() || null },
+      entidadeTipo: "apoio_feminino_equipe",
+    });
+
     toast.success("Membro da equipe adicionada!");
     setNovoNome("");
     setNovoTelefone("");

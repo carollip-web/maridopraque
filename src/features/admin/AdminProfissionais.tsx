@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { logAdminAction } from "@/lib/auditLog";
 import { AdminLeads } from "./AdminLeads";
 import { AdminApoioFeminino } from "./AdminApoioFeminino";
 
@@ -288,6 +289,12 @@ export function AdminProfissionais() {
     toast.success(pro.ativo ? "Profissional desativado" : "Profissional ativado");
     qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
     if (selected?.id === pro.id) setSelected({ ...selected, ativo: !pro.ativo });
+    await logAdminAction(supabase, {
+      acao: pro.ativo ? "desativou_profissional" : "ativou_profissional",
+      detalhes: { nome: pro.nome, email: pro.email },
+      entidadeTipo: "profissional",
+      entidadeId: pro.id,
+    });
   };
 
   const handleSaveEsp = async () => {
@@ -307,6 +314,12 @@ export function AdminProfissionais() {
     setEditingEsp(false);
     qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
     setSelected({ ...selected, especialidades: espSelected });
+    await logAdminAction(supabase, {
+      acao: "editou_especialidades_profissional",
+      detalhes: { nome: selected.nome, especialidades: espSelected },
+      entidadeTipo: "profissional",
+      entidadeId: selected.id,
+    });
   };
 
   const handleCreatePro = async (e: React.FormEvent) => {
@@ -323,6 +336,11 @@ export function AdminProfissionais() {
       setShowAddModal(false);
       setNewPro({ nome: "", email: "", password: "" });
       qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+      await logAdminAction(supabase, {
+        acao: "criou_profissional",
+        detalhes: { nome: newPro.nome, email: newPro.email },
+        entidadeTipo: "profissional",
+      });
     } catch (e: any) {
       toast.error("Erro ao criar", { description: e.message });
     } finally {
@@ -348,6 +366,12 @@ export function AdminProfissionais() {
       toast.success("Profissional excluído!");
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+      await logAdminAction(supabase, {
+        acao: "excluiu_profissional",
+        detalhes: { id },
+        entidadeTipo: "profissional",
+        entidadeId: id,
+      });
     } catch (e: any) {
       toast.error("Erro ao excluir", { description: e.message });
     } finally {
