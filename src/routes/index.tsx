@@ -163,11 +163,6 @@ const paymentMethods = [
     title: "Boleto Bancário",
     desc: "Gere o boleto e pague em qualquer banco. Compensação em até 3 dias úteis.",
   },
-  {
-    icon: ShieldCheck,
-    title: "Pagamento Seguro",
-    desc: "Você só é cobrado após aceitar a proposta do profissional. Sem surpresas.",
-  },
 ];
 
 
