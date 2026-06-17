@@ -17,10 +17,13 @@ import {
   Key,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
+  SelectLabel,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -87,8 +90,8 @@ const categorias: CategoryMeta[] = [
       "Limpeza do ambiente após o serviço",
     ],
     observacoesPadrao: [
-      "Em reparos elétricos é necessário desligar o disjuntor por alguns minutos.",
-      "Vazamentos antigos podem revelar danos adicionais — diagnóstico no local.",
+      "Pintura em ambientes úmidos pode exigir tratamento prévio.",
+      "Limpamos o ambiente ao final do serviço.",
     ],
   },
   {
@@ -133,15 +136,6 @@ const categorias: CategoryMeta[] = [
     icon: Drill,
     beneficios: ["Materiais e fixação adequados a cada superfície", "Acabamento profissional"],
     observacoesPadrao: ["Verificamos as medidas no local antes de iniciar a instalação."],
-  },
-  {
-    slug: "reparos",
-    nome: "reparos",
-    titulo: "Reparos e Manutenção",
-    subtitulo: "Pintura, rejuntes e pequenos reparos com técnica e acabamento.",
-    icon: Wrench,
-    beneficios: ["Garantia de 30 dias em qualquer reparo", "Limpeza do ambiente após o serviço"],
-    observacoesPadrao: ["Pintura em ambientes úmidos pode exigir tratamento prévio."],
   },
   {
     slug: "engenharia",
@@ -196,10 +190,13 @@ function estimarTempo(min: number | null, max: number | null) {
   return `≈ ${Math.round(horas)} h`;
 }
 
-const CONTATO_EMAIL = "mailto:contato@maridopraque.com?subject=Dúvida%20sobre%20serviços";
+const CONTATO_EMAIL = "mailto:contato@maridopraque.com";
 
 function Servicos() {
   const [servicos, setServicos] = useState<Servico[] | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("");
+  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
+  const [activeCat, setActiveCat] = useState(categorias[0].slug);
 
   useEffect(() => {
     supabase
@@ -210,9 +207,150 @@ function Servicos() {
       .then(({ data }) => setServicos((data ?? []) as Servico[]));
   }, []);
 
+  useEffect(() => {
+    if (!servicos) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let maxRatio = 0;
+        let visibleCat = activeCat;
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio;
+            visibleCat = entry.target.id;
+          }
+        });
+        if (maxRatio > 0) setActiveCat(visibleCat);
+      },
+      { rootMargin: "-100px 0px -50% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+    categorias.forEach((cat) => {
+      const el = document.getElementById(cat.slug);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [servicos]);
+
+  const handleSelectService = (id: string) => {
+    setSelectedServiceId(id);
+    if (window.innerWidth < 1024) {
+      setIsMobileModalOpen(true);
+    }
+  };
+
+  const renderCTA = () => {
+    const selected = (servicos ?? []).find((s) => s.id === selectedServiceId) ?? null;
+    const catOfSelected = selected ? categorias.find(c => c.nome === selected.categoria) : null;
+    const min = selected?.preco_min != null ? Number(selected.preco_min) : null;
+    const max = selected?.preco_max != null ? Number(selected.preco_max) : null;
+    const priceLabel =
+      min != null && max != null
+        ? min === max
+          ? brl(min)
+          : `${brl(min)} – ${brl(max)}`
+        : "Sob consulta";
+
+    return (
+      <div className="rounded-2xl border border-brand/30 bg-brand-soft/40 p-5 shadow-soft">
+        <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+          Solicitar orçamento
+        </p>
+        <h3 className="mt-1 text-lg font-bold">Escolha o serviço</h3>
+
+        <div className="mt-4">
+          <Select
+            value={selectedServiceId}
+            onValueChange={setSelectedServiceId}
+            disabled={!servicos || servicos.length === 0}
+          >
+            <SelectTrigger className="h-11 rounded-xl bg-background">
+              <SelectValue placeholder="Selecione um serviço" />
+            </SelectTrigger>
+            <SelectContent>
+              {categorias.map(cat => {
+                const svcs = (servicos ?? []).filter(s => s.categoria === cat.nome);
+                if (svcs.length === 0) return null;
+                return (
+                  <SelectGroup key={cat.slug}>
+                    <SelectLabel>{cat.titulo}</SelectLabel>
+                    {svcs.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {selected && (
+          <div className="mt-4 space-y-3 rounded-xl bg-background/70 p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> Tempo médio
+                </p>
+                <p className="mt-0.5 text-sm font-bold">{estimarTempo(min, max)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Faixa estimada
+                </p>
+                <p className="mt-0.5 text-sm font-bold">{priceLabel}</p>
+              </div>
+            </div>
+            {selected.descricao && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <ListChecks className="h-3 w-3" /> O que está incluso
+                </p>
+                <p className="mt-1 text-xs text-foreground">{selected.descricao}</p>
+              </div>
+            )}
+            {catOfSelected && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                  <Info className="h-3 w-3" /> Observações
+                </p>
+                <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                  {catOfSelected.observacoesPadrao.map((o) => (
+                    <li key={o}>• {o}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Button
+          asChild
+          variant="brand"
+          size="lg"
+          className="mt-4 w-full rounded-full"
+          disabled={!selected}
+        >
+          <Link
+            to="/orcamentos"
+            search={
+              selected
+                ? {
+                    new: 1,
+                    serviceId: selected.id,
+                    categoria: selected.categoria,
+                    serviceName: selected.nome,
+                  }
+                : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
+            }
+          >
+            Solicitar Orçamento <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-20 md:py-24">
-      <div className="mb-16">
+      <div className="mb-8">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
           Catálogo Completo
         </span>
@@ -225,19 +363,48 @@ function Servicos() {
         </p>
       </div>
 
-      <div className="space-y-24">
-        {categorias.map((cat) => {
-          const lista = (servicos ?? []).filter((s) => s.categoria === cat.nome);
-          return (
-            <CategoriaSection
-              key={cat.slug}
-              cat={cat}
-              servicos={lista}
-              loading={servicos === null}
-            />
-          );
-        })}
+      <div className="sticky top-20 z-10 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:top-[70px] md:mx-0 md:px-0 border-b border-border mb-12">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x">
+          {categorias.map(cat => (
+            <a 
+              key={cat.slug} 
+              href={`#${cat.slug}`} 
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition snap-start ${
+                activeCat === cat.slug ? "bg-brand text-brand-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {cat.titulo}
+            </a>
+          ))}
+        </div>
       </div>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div className="space-y-24">
+          {categorias.map((cat) => {
+            const lista = (servicos ?? []).filter((s) => s.categoria === cat.nome);
+            return (
+              <CategoriaSection
+                key={cat.slug}
+                cat={cat}
+                servicos={lista}
+                loading={servicos === null}
+                onSelectService={handleSelectService}
+              />
+            );
+          })}
+        </div>
+
+        <aside className="hidden lg:block lg:sticky lg:top-36">
+          {renderCTA()}
+        </aside>
+      </div>
+
+      <Sheet open={isMobileModalOpen} onOpenChange={setIsMobileModalOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl p-6 sm:p-8 max-h-[85vh] overflow-y-auto">
+          {renderCTA()}
+        </SheetContent>
+      </Sheet>
 
       <div className="mt-24 rounded-3xl bg-foreground p-10 text-center text-background md:p-16">
         <h2 className="text-3xl font-bold md:text-4xl">Ficou com alguma dúvida?</h2>
@@ -252,7 +419,7 @@ function Servicos() {
             rel="noreferrer"
             className="rounded-full bg-brand px-10 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
           >
-            Chamar no WhatsApp
+            Entrar em Contato
           </a>
           <Link
             to="/ajuda"
@@ -270,31 +437,17 @@ function CategoriaSection({
   cat,
   servicos,
   loading,
+  onSelectService,
 }: {
   cat: CategoryMeta;
   servicos: Servico[];
   loading: boolean;
+  onSelectService: (id: string) => void;
 }) {
   const Icon = cat.icon;
-  const [selectedId, setSelectedId] = useState<string>("");
-
-  // Auto-seleciona o primeiro quando carregar
-  useMemo(() => {
-    if (!selectedId && servicos.length) setSelectedId(servicos[0].id);
-  }, [servicos, selectedId]);
-
-  const selected = servicos.find((s) => s.id === selectedId) ?? null;
-  const min = selected?.preco_min != null ? Number(selected.preco_min) : null;
-  const max = selected?.preco_max != null ? Number(selected.preco_max) : null;
-  const priceLabel =
-    min != null && max != null
-      ? min === max
-        ? brl(min)
-        : `${brl(min)} – ${brl(max)}`
-      : "Sob consulta";
 
   return (
-    <section className="scroll-mt-24" id={cat.slug}>
+    <section className="scroll-mt-32" id={cat.slug}>
       {/* Cabeçalho da categoria */}
       <div className="grid gap-8 md:grid-cols-[auto_1fr] md:items-start">
         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-brand-foreground shadow-brand">
@@ -320,153 +473,54 @@ function CategoriaSection({
         </div>
       </div>
 
-      {/* Layout: cards + CTA sticky */}
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
-        {/* Cards de serviços (sem botão individual) */}
-        <div>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Carregando serviços…</p>
-          ) : servicos.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum serviço cadastrado nesta categoria.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {servicos.map((s) => {
-                const SIcon = iconFor(s.nome);
-                const sMin = s.preco_min != null ? Number(s.preco_min) : null;
-                const sMax = s.preco_max != null ? Number(s.preco_max) : null;
-                const label =
-                  sMin != null && sMax != null
-                    ? sMin === sMax
-                      ? brl(sMin)
-                      : `${brl(sMin)} – ${brl(sMax)}`
-                    : "Sob consulta";
-                const active = s.id === selectedId;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setSelectedId(s.id)}
-                    className={`flex items-start gap-3 rounded-2xl border bg-card p-4 text-left transition ${
-                      active
-                        ? "border-brand shadow-soft"
-                        : "border-border hover:border-brand/40 hover:shadow-soft"
-                    }`}
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                      <SIcon className="h-5 w-5" />
+      <div className="mt-10">
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Carregando serviços…</p>
+        ) : servicos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhum serviço cadastrado nesta categoria.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+            {servicos.map((s) => {
+              const SIcon = iconFor(s.nome);
+              const sMin = s.preco_min != null ? Number(s.preco_min) : null;
+              const sMax = s.preco_max != null ? Number(s.preco_max) : null;
+              const label =
+                sMin != null && sMax != null
+                  ? sMin === sMax
+                    ? brl(sMin)
+                    : `${brl(sMin)} – ${brl(sMax)}`
+                  : "Sob consulta";
+              
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => onSelectService(s.id)}
+                  className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left transition hover:border-brand/40 hover:shadow-soft"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                    <SIcon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-2">
+                      <h3 className="text-sm font-semibold text-wrap line-clamp-2">{s.nome}</h3>
+                      <span className="text-xs font-bold text-brand whitespace-nowrap mt-1 sm:mt-0">
+                        {label}
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-sm font-semibold truncate">{s.nome}</h3>
-                        <span className="text-xs font-bold text-brand whitespace-nowrap">
-                          {label}
-                        </span>
-                      </div>
-                      {s.descricao && (
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                          {s.descricao}
-                        </p>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* CTA sticky com dropdown + estimativa */}
-        <aside className="lg:sticky lg:top-24">
-          <div className="rounded-2xl border border-brand/30 bg-brand-soft/40 p-5 shadow-soft">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand">
-              Solicitar orçamento
-            </p>
-            <h3 className="mt-1 text-lg font-bold">Escolha o serviço</h3>
-
-            <div className="mt-4">
-              <Select
-                value={selectedId}
-                onValueChange={setSelectedId}
-                disabled={loading || servicos.length === 0}
-              >
-                <SelectTrigger className="h-11 rounded-xl bg-background">
-                  <SelectValue placeholder="Selecione um serviço" />
-                </SelectTrigger>
-                <SelectContent>
-                  {servicos.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Estimativa */}
-            {selected && (
-              <div className="mt-4 space-y-3 rounded-xl bg-background/70 p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Tempo médio
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold">{estimarTempo(min, max)}</p>
+                    {s.descricao && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                        {s.descricao}
+                      </p>
+                    )}
                   </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Faixa estimada
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold">{priceLabel}</p>
-                  </div>
-                </div>
-                {selected.descricao && (
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                      <ListChecks className="h-3 w-3" /> O que está incluso
-                    </p>
-                    <p className="mt-1 text-xs text-foreground">{selected.descricao}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" /> Observações
-                  </p>
-                  <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                    {cat.observacoesPadrao.map((o) => (
-                      <li key={o}>• {o}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            <Button
-              asChild
-              variant="brand"
-              size="lg"
-              className="mt-4 w-full rounded-full"
-              disabled={!selected}
-            >
-              <Link
-                to="/orcamentos"
-                search={
-                  selected
-                    ? {
-                        new: 1,
-                        serviceId: selected.id,
-                        categoria: cat.nome,
-                        serviceName: selected.nome,
-                      }
-                    : { new: 1, serviceId: undefined, categoria: undefined, serviceName: undefined }
-                }
-              >
-                Solicitar Orçamento <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
+                </button>
+              );
+            })}
           </div>
-        </aside>
+        )}
       </div>
     </section>
   );
