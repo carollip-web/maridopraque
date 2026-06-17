@@ -44,7 +44,8 @@ export function QuickEstimator() {
 
   useEffect(() => {
     if (categorias.length > 0 && !categoria) {
-      setCategoria(categorias[0]);
+      const defaultCat = categorias.find((c) => c === "reparos") || categorias[0];
+      setCategoria(defaultCat);
     }
   }, [categorias, categoria]);
 
@@ -55,7 +56,8 @@ export function QuickEstimator() {
 
   useEffect(() => {
     if (servicosFiltrados.length > 0 && !serviceId) {
-      setServiceId(servicosFiltrados[0].id);
+      const defaultSvc = servicosFiltrados.find((s) => s.nome.toLowerCase().includes("pintura"));
+      setServiceId(defaultSvc ? defaultSvc.id : servicosFiltrados[0].id);
     }
   }, [servicosFiltrados, serviceId]);
 
