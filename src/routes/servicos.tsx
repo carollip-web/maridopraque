@@ -211,17 +211,13 @@ function Servicos() {
     if (!servicos) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        let maxRatio = 0;
-        let visibleCat = activeCat;
         entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
-            maxRatio = entry.intersectionRatio;
-            visibleCat = entry.target.id;
+          if (entry.isIntersecting) {
+            setActiveCat(entry.target.id);
           }
         });
-        if (maxRatio > 0) setActiveCat(visibleCat);
       },
-      { rootMargin: "-100px 0px -50% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
+      { threshold: 0.3 }
     );
     categorias.forEach((cat) => {
       const el = document.getElementById(cat.slug);
@@ -229,6 +225,13 @@ function Servicos() {
     });
     return () => observer.disconnect();
   }, [servicos]);
+
+  useEffect(() => {
+    const pill = document.getElementById(`pill-${activeCat}`);
+    if (pill) {
+      pill.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [activeCat]);
 
   const handleSelectService = (id: string) => {
     setSelectedServiceId(id);
@@ -368,17 +371,25 @@ function Servicos() {
         </p>
       </div>
 
-      <div className="sticky top-20 z-10 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:top-[70px] md:mx-0 md:px-0 border-b border-border mb-12">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none snap-x">
+      <div className="sticky top-[70px] z-10 -mx-4 bg-background/95 px-4 py-3 backdrop-blur-sm border-b border-border mb-12 md:mx-0 md:px-0">
+        <div className="flex gap-2 overflow-x-auto pb-1 snap-x [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
           {categorias.map(cat => (
             <a 
+              id={`pill-${cat.slug}`}
               key={cat.slug} 
               href={`#${cat.slug}`} 
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition snap-start ${
-                activeCat === cat.slug ? "bg-brand text-brand-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              onClick={(e) => {
+                e.preventDefault();
+                const el = document.getElementById(cat.slug);
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm transition-colors whitespace-nowrap cursor-pointer snap-start ${
+                activeCat === cat.slug 
+                  ? "bg-brand text-white font-bold" 
+                  : "bg-cream text-brand border border-brand/20 hover:bg-brand/10"
               }`}
             >
-              {cat.titulo}
+              {cat.slug.charAt(0).toUpperCase() + cat.slug.slice(1)}
             </a>
           ))}
         </div>
