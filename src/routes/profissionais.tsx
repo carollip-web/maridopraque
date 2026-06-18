@@ -3,7 +3,6 @@ import { UserRound, Wrench, HeartHandshake, ShieldCheck, Star } from "lucide-rea
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { NivelBadge } from "@/components/NivelBadge";
 
 export const Route = createFileRoute("/profissionais")({
   head: () => ({
@@ -85,40 +84,13 @@ function Profissionais() {
 
       if (!pubs || pubs.length === 0) return;
 
-      const ids = pubs.map((p) => p.user_id);
-
-      const [{ data: profs }, { data: orcs }, { data: avs }] = await Promise.all([
-        supabase.from("profiles").select("id, nome").in("id", ids),
-        supabase.from("orcamentos").select("profissional_id").in("profissional_id", ids).eq("status", "pago"),
-        supabase.from("avaliacoes_publicas").select("profissional_id, nota").in("profissional_id", ids),
-      ]);
-
-      const profsMap = Object.fromEntries((profs || []).map((p) => [p.id, p.nome]));
-      
-      const stats: Record<string, { concluidos: number; notaTotal: number; avaliacoes: number }> = {};
-      ids.forEach((id) => {
-        if (id) stats[id] = { concluidos: 0, notaTotal: 0, avaliacoes: 0 };
-      });
-
-      (orcs || []).forEach((o) => {
-        if (o.profissional_id) stats[o.profissional_id].concluidos += 1;
-      });
-
-      (avs || []).forEach((a) => {
-        if (a.profissional_id) {
-          stats[a.profissional_id].notaTotal += a.nota;
-          stats[a.profissional_id].avaliacoes += 1;
-        }
-      });
-
       const processed = pubs.map((p) => {
-        const s = stats[p.user_id!] || { concluidos: 0, notaTotal: 0, avaliacoes: 0 };
-        const notaMedia = s.avaliacoes > 0 ? s.notaTotal / s.avaliacoes : 0;
+        const fallbackName = p.slug
+          ? p.slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          : "Profissional";
         return {
           ...p,
-          nome: profsMap[p.user_id!] || "Profissional",
-          concluidos: s.concluidos,
-          notaMedia,
+          nome: fallbackName,
         };
       });
 
@@ -221,16 +193,10 @@ function Profissionais() {
                     </div>
                     <div>
                       <h3 className="font-bold text-lg group-hover:text-brand transition-colors">{p.nome}</h3>
-                      {p.notaMedia > 0 && (
-                        <div className="flex items-center gap-1 text-sm font-medium mt-1">
-                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                          {p.notaMedia.toFixed(1)}
-                        </div>
-                      )}
                     </div>
                   </div>
                   {p.especialidades && p.especialidades.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
+                    <div className="flex flex-wrap gap-2">
                       {p.especialidades.slice(0, 3).map((e: string) => (
                         <span key={e} className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                           {e}
@@ -238,7 +204,6 @@ function Profissionais() {
                       ))}
                     </div>
                   )}
-                  <NivelBadge concluidos={p.concluidos} notaMedia={p.notaMedia} compact={false} />
                 </div>
               </Link>
             ))}
