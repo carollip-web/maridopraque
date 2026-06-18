@@ -65,33 +65,42 @@ function PorqueNos() {
               </div>
             </div>
           ))}
+          <div className="pt-4 flex justify-center md:justify-start">
+            <Link
+              to="/servicos"
+              className="rounded-full bg-brand px-8 py-3 font-bold text-brand-foreground transition hover:scale-105"
+            >
+              Ver nossos serviços →
+            </Link>
+          </div>
         </div>
         <div className="relative rounded-3xl bg-cream p-12 flex flex-col justify-center overflow-hidden">
           <Sparkles className="absolute -right-8 -top-8 h-32 w-32 text-brand/10" />
-          <h2 className="text-3xl font-bold tracking-tight mb-8">Nossos números em 2024</h2>
+          <h2 className="text-3xl font-bold tracking-tight mb-8">O que oferecemos</h2>
+          {/* TODO: Substituir por métricas reais do banco quando houver volume (query em orcamentos + avaliacoes) */}
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <div className="text-4xl font-bold text-brand">+500</div>
+              <div className="text-4xl font-bold text-brand">7</div>
               <div className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">
-                Serviços realizados
+                Categorias de serviço
               </div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-brand">4.9/5</div>
+              <div className="text-xl font-bold text-brand md:text-2xl mt-1">Copacabana<br />e Ipanema</div>
               <div className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">
-                Avaliação média
+                Área de atuação
               </div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-brand">98%</div>
+              <div className="text-4xl font-bold text-brand">30</div>
               <div className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">
-                Taxa de pontualidade
+                Dias de garantia
               </div>
             </div>
             <div>
-              <div className="text-4xl font-bold text-brand">100%</div>
+              <div className="text-xl font-bold text-brand md:text-2xl mt-1">Seguro</div>
               <div className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">
-                Segurança garantida
+                Pagamento via Mercado Pago
               </div>
             </div>
           </div>
@@ -102,47 +111,25 @@ function PorqueNos() {
         </div>
       </div>
 
-      <div className="mt-32">
-        <h2 className="text-3xl font-bold tracking-tight text-center mb-16">
-          O que dizem nossas clientes
-        </h2>
-        <div className="grid gap-8 md:grid-cols-3">
-          {[
-            {
-              name: "Juliana Silva",
-              role: "Arquiteta",
-              content:
-                "Contratei para a regularização de uma obra complexa no Rio. Foram extremamente profissionais e resolveram toda a burocracia na prefeitura.",
-            },
-            {
-              name: "Beatriz Santos",
-              role: "Mora sozinha",
-              content:
-                "A opção de vir com apoio feminino me deu muita paz de espírito. O serviço foi rápido e deixaram tudo limpinho.",
-            },
-            {
-              name: "Carla Ferreira",
-              role: "Empresária",
-              content:
-                "Montaram toda a mobília do meu novo escritório em um único dia. Preço justo e equipe muito educada. Recomendo de olhos fechados.",
-            },
-          ].map((testi, i) => (
-            <div key={i} className="rounded-3xl border border-border bg-card p-8 shadow-sm">
-              <div className="flex gap-1 text-brand mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-current" />
-                ))}
-              </div>
-              <p className="text-muted-foreground leading-relaxed italic mb-6">"{testi.content}"</p>
-              <div className="font-bold">{testi.name}</div>
-              <div className="text-sm text-muted-foreground">{testi.role}</div>
-            </div>
-          ))}
+      <div className="mt-32 rounded-[3rem] border-2 border-brand bg-cream p-12 text-center shadow-sm md:p-20">
+        <h2 className="text-3xl font-bold text-brand md:text-4xl">Segurança que só a Marido pra Quê? oferece</h2>
+        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-brand/80">
+          Somos a única plataforma de serviços domésticos com a opção de apoio feminino durante a visita. Uma mulher acompanha todo o atendimento para que você se sinta 100% segura dentro da sua casa.
+        </p>
+        <div className="mt-10 flex justify-center">
+          <Link
+            to="/profissionais"
+            className="rounded-full bg-brand px-8 py-4 font-bold text-brand-foreground shadow-brand transition hover:scale-105"
+          >
+            Saiba mais sobre o apoio feminino →
+          </Link>
         </div>
       </div>
 
+      {/* TODO: Restaurar seção de depoimentos quando houver avaliações reais de clientes */}
+
       <div className="mt-32 rounded-[3rem] bg-brand p-12 text-center text-brand-foreground md:p-24">
-        <h2 className="text-4xl font-bold md:text-5xl">Pronto para ter sua casa em ordem?</h2>
+        <h2 className="text-4xl font-bold md:text-5xl">Sua casa merece esse cuidado.</h2>
         <p className="mt-6 text-lg opacity-90 max-w-xl mx-auto">
           Atendendo Copacabana e Ipanema com agilidade e profissionais verificados. Solicite seu orçamento
           direto na plataforma.
