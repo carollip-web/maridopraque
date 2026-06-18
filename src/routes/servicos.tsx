@@ -234,6 +234,11 @@ function Servicos() {
     setSelectedServiceId(id);
     if (window.innerWidth < 1024) {
       setIsMobileModalOpen(true);
+    } else {
+      const formEl = document.getElementById("form-orcamento");
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
   };
 
@@ -395,7 +400,7 @@ function Servicos() {
           })}
         </div>
 
-        <aside className="hidden lg:block lg:sticky lg:top-36">
+        <aside id="form-orcamento" className="hidden lg:block lg:sticky lg:top-36">
           {renderCTA()}
         </aside>
       </div>
