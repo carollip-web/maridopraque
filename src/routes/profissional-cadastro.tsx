@@ -248,11 +248,7 @@ function ProfissionalCadastro() {
         const { data: perfil } = await supabase
           .from("profissional_perfil")
           .select(
-            "aprovacao_status, cadastro_completo, especialidades, cidade, bio, genero, " +
-            "cpf, cnpj, data_nascimento, telefone, cep, bairro, endereco, numero, complemento, estado, " +
-            "anos_experiencia, experiencia_anos, atende_emergencias, veiculo_proprio, " +
-            "como_conheceu, observacoes_cadastro, oferece_apoio_feminino, " +
-            "foto_documento_frente, foto_documento_verso, foto_selfie"
+            "aprovacao_status, cadastro_completo, especialidades, cidade, bio, genero, cpf, cnpj, data_nascimento, telefone, cep, bairro, endereco, numero, complemento, estado, anos_experiencia, experiencia_anos, atende_emergencias, veiculo_proprio, como_conheceu, observacoes_cadastro, oferece_apoio_feminino, foto_documento_frente, foto_documento_verso, foto_selfie"
           )
           .eq("user_id", user.id)
           .maybeSingle();
