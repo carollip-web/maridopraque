@@ -124,7 +124,7 @@ function PrimeirosPassosCard({ userId, setTab, metrics }: { userId?: string, set
       const { data: agendas } = await supabase
         .from("profissional_disponibilidade")
         .select("id")
-        .eq("profissional_id", userId!)
+        .eq("user_id", userId!)
         .limit(1);
 
       return {
