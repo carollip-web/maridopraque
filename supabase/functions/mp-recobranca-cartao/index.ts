@@ -60,7 +60,22 @@ serve(async (req) => {
       ultima_tentativa_em: now
     } as any).eq("id", pagamento.id);
 
-    // 3. Criar novo pagamento (capture: true)
+    // 3. Gerar token de uso único a partir do cartão salvo
+    const cardTokenRes = await fetch(`https://api.mercadopago.com/v1/customers/${mp_customer_id}/cards/${mp_card_id}/tokens`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+    });
+    const cardTokenData = await cardTokenRes.json().catch(() => ({}));
+    if (!cardTokenRes.ok || !cardTokenData.id) {
+      console.error("Erro gerando token do cartão salvo (recobrança)", cardTokenData);
+      await admin.from("pagamentos").update({
+        metadata: { ...pagamento.metadata, last_retry_error: cardTokenData }
+      } as any).eq("id", pagamento.id);
+      return json({ error: "MP_CARD_TOKEN_ERROR", message: "Erro ao gerar token do cartão salvo.", detail: cardTokenData }, 500);
+    }
+    const singleUseToken = cardTokenData.id;
+
+    // 4. Criar novo pagamento (capture: true) usando token de uso único
     const paymentPayload = {
       transaction_amount: Number(valor_total),
       capture: true,
@@ -70,7 +85,7 @@ serve(async (req) => {
         type: "customer",
         id: mp_customer_id
       },
-      token: mp_card_id, // Usar o card_id
+      token: singleUseToken,
       payment_method_id: paymentMethodId,
       issuer_id: issuerId,
       external_reference: orcamento_id,
