@@ -74,10 +74,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [selectedProposta, setSelectedProposta] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState<string | null>(null);
   const [disputaOpen, setDisputaOpen] = useState(false);
   const [disputaMotivo, setDisputaMotivo] = useState("");
   const [jaAvaliou, setJaAvaliou] = useState(false);
   const [disputaLoading, setDisputaLoading] = useState(false);
+
+  // Brick State
+  const [brickConfig, setBrickConfig] = useState<{ publicKey: string; amount: number; payerEmail: string } | null>(null);
+  const [brickError, setBrickError] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const brickControllerRef = React.useRef<any>(null);
+  const brickMountedRef = React.useRef(false);
 
   const handleAbrirDisputa = async (orcamentoId: string) => {
     const motivo = disputaMotivo.trim();
@@ -176,7 +184,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data, error } = await supabase
         .from("orcamentos")
         .select(
-          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido",
+          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, pagamentos(status_autorizacao, confirmacao_profissional_em, confirmacao_cliente_em, metadata, mp_card_id, valor_total)",
         )
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
@@ -275,8 +283,13 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                         : o.status === "disputa_resolvida"
                           ? "Disputa Resolvida"
                           : o.status;
+
+        const pagamentosArray = (o as any).pagamentos || [];
+        const lastPagamento = pagamentosArray.length > 0 ? pagamentosArray[pagamentosArray.length - 1] : null;
+
         return {
           propostas: propsForOrc,
+          lastPagamento,
           ...o,
           rawStatus: o.status,
           title: o.service_name,
@@ -417,7 +430,161 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
     await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
-    setApprovalStep("success");
+  };
+
+  const initBrick = async () => {
+    if (!selectedPedido) return;
+    setBrickError(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      // Buscar chave pública do sistema
+      const { data, error } = await supabase.functions.invoke("mp-get-public-key", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (error || !data?.publicKey) {
+        setBrickError("Não foi possível carregar o formulário de pagamento.");
+        return;
+      }
+
+      // Calcula o valor a exibir no Brick
+      const baseValue = Number(selectedProposta?.valor_servico || selectedPedido.price.replace("R$ ", "").replace(",", "."));
+      const requiresApoio = selectedPedido.tipo_atendimento === "homem_com_apoio_feminino";
+      const totalAmount = requiresApoio ? Math.round(baseValue * 1.3 * 100) / 100 : baseValue;
+
+      setBrickConfig({
+        publicKey: data.publicKey,
+        amount: totalAmount,
+        payerEmail: user?.email || "",
+      });
+      setApprovalStep("processing");
+    } catch (e: any) {
+      setBrickError("Falha ao inicializar pagamento.");
+    }
+  };
+
+  useEffect(() => {
+    if (approvalStep !== "processing" || !brickConfig || brickMountedRef.current) return;
+
+    let cancelled = false;
+
+    async function ensureSdk() {
+      if ((window as any).MercadoPago) return (window as any).MercadoPago;
+      await new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector('script[data-mp-sdk="v2"]');
+        if (existing) {
+          existing.addEventListener("load", () => resolve());
+          existing.addEventListener("error", () => reject(new Error("Falha ao carregar SDK MP")));
+          return;
+        }
+        const s = document.createElement("script");
+        s.src = "https://sdk.mercadopago.com/js/v2";
+        s.async = true;
+        s.dataset.mpSdk = "v2";
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Falha ao carregar SDK MP"));
+        document.head.appendChild(s);
+      });
+      return (window as any).MercadoPago;
+    }
+
+    (async () => {
+      try {
+        const MP = await ensureSdk();
+        if (cancelled) return;
+        const mp = new MP(brickConfig.publicKey, { locale: "pt-BR" });
+        const bricksBuilder = mp.bricks();
+        brickMountedRef.current = true;
+        brickControllerRef.current = await bricksBuilder.create(
+          "payment",
+          "payment-brick-container",
+          {
+            initialization: {
+              amount: brickConfig.amount,
+              payer: { email: brickConfig.payerEmail },
+            },
+            customization: {
+              paymentMethods: { creditCard: "all", debitCard: "all", maxInstallments: 1 },
+              visual: { style: { theme: "default" } },
+            },
+            callbacks: {
+              onReady: () => {},
+              onError: (err: any) => {
+                setBrickError("Erro no formulário.");
+              },
+              onSubmit: async ({ formData }: any) => {
+                try {
+                  setIsProcessingPayment(true);
+                  const { data: sessionData } = await supabase.auth.getSession();
+                  const token = sessionData.session?.access_token;
+                  if (!token) throw new Error("Sessão expirada");
+
+                  const { data, error } = await supabase.functions.invoke("mp-autorizar-pagamento", {
+                    body: { orcamento_id: selectedPedido.id, card_token: formData.token },
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+
+                  if (error || !data?.ok) {
+                    throw new Error(data?.message || "Falha na autorização do cartão.");
+                  }
+
+                  // Se autorizou com sucesso, chamamos handleApprove para aceitar efetivamente a proposta!
+                  await handleApprove();
+                  setApprovalStep("success");
+                } catch (e: any) {
+                  toast.error(e?.message || "Falha ao processar autorização");
+                } finally {
+                  setIsProcessingPayment(false);
+                }
+              },
+            },
+          }
+        );
+      } catch (e) {
+        if (!cancelled) {
+          setBrickError("Falha ao iniciar o formulário.");
+          brickMountedRef.current = false;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        brickControllerRef.current?.unmount?.();
+      } catch {}
+      brickControllerRef.current = null;
+      brickMountedRef.current = false;
+    };
+  }, [approvalStep, brickConfig, selectedPedido]);
+
+  const handleCapture = async (orcamentoId: string) => {
+    setIsCapturing(orcamentoId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão expirada.");
+
+      const { data, error } = await supabase.functions.invoke("mp-capturar-pagamento", {
+        body: { orcamento_id: orcamentoId, ator: "cliente" },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (error || !data?.ok) {
+        throw new Error(data?.message || "Erro ao capturar pagamento.");
+      }
+
+      toast.success(`Serviço finalizado com sucesso! O valor de R$ ${data.captured_amount?.toFixed(2) || "..."} foi debitado do seu cartão.`);
+      queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+      await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao capturar pagamento.");
+    } finally {
+      setIsCapturing(null);
+    }
   };
 
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
@@ -939,23 +1106,33 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 <p className="text-[10px] uppercase tracking-widest text-blue-700 font-bold mb-2">
                   Serviço Agendado
                 </p>
-                <h3 className="text-xl font-bold mb-2">Serviço em andamento</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Combine os detalhes finais com o profissional pelo chat. Após a execução, marque
-                  como concluído para liberar o repasse.
-                </p>
-                <Button
-                  className="w-full rounded-full h-13 bg-brand hover:bg-brand/90 text-white font-bold shadow-lg"
-                  disabled={isCompleting === sp.id}
-                  onClick={() => handleCompleteOrder(sp.id)}
-                >
-                  {isCompleting === sp.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <CheckCircle2 className="h-5 w-5 mr-2" />
-                  )}
-                  Marcar como Concluído
-                </Button>
+                {pagoOuAgendado && sp.lastPagamento?.confirmacao_profissional_em && !sp.lastPagamento?.confirmacao_cliente_em && (
+                  <div className="mb-4 p-4 rounded-xl border border-blue-200 bg-blue-50 animate-pulse">
+                    <p className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Profissional marcou o serviço como concluído
+                    </p>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Confirme a conclusão para liberar o repasse ao profissional. O débito será efetuado no seu cartão.
+                    </p>
+                    <Button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-md"
+                      disabled={isCapturing === sp.id}
+                      onClick={() => handleCapture(sp.id)}
+                    >
+                      {isCapturing === sp.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                      Confirmar conclusão do serviço
+                    </Button>
+                  </div>
+                )}
+                {pagoOuAgendado && (
+                  <>
+                    <h3 className="text-xl font-bold mb-2">Serviço em andamento</h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Combine os detalhes finais com o profissional pelo chat.
+                    </p>
+                  </>
+                )}
               </section>
             )}
 
@@ -1198,7 +1375,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       Cancelar
                     </Button>
                     <Button
-                      onClick={handleApprove}
+                      onClick={initBrick}
                       className="flex-1 bg-brand text-white rounded-full h-13 font-bold shadow-lg hover:scale-[1.02] transition-transform"
                     >
                       Aceitar proposta
@@ -1208,12 +1385,39 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
               )}
 
               {approvalStep === "processing" && (
-                <div className="p-12 text-center">
-                  <Loader2 className="h-12 w-12 animate-spin text-brand mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold mb-3">Processando...</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Confirmando sua aprovação e notificando o profissional.
+                <div className="p-8 md:p-10">
+                  <h3 className="text-2xl font-bold mb-4 text-center">Reserva do Cartão</h3>
+                  <p className="text-muted-foreground text-sm text-center mb-6">
+                    Seu cartão será reservado agora, mas o débito só acontece após você confirmar a conclusão do serviço.
                   </p>
+                  
+                  {brickError && (
+                    <div className="p-4 mb-4 text-sm text-red-600 bg-red-50 rounded-lg text-center font-medium">
+                      {brickError}
+                    </div>
+                  )}
+
+                  {!brickConfig && !brickError && (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
+                      <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                      <p className="text-sm font-bold">Carregando ambiente seguro...</p>
+                    </div>
+                  )}
+
+                  <div className="min-h-[200px]" id="payment-brick-container" />
+
+                  {isProcessingPayment && (
+                    <div className="flex items-center justify-center gap-2 mt-4 text-brand font-bold text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processando autorização...
+                    </div>
+                  )}
+
+                  <div className="mt-6 text-center">
+                    <Button variant="ghost" onClick={() => setApprovalStep(null)} disabled={isProcessingPayment} className="rounded-full">
+                      Cancelar
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -1228,17 +1432,14 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   </p>
                   <div className="flex flex-col gap-3">
                     <Button
-                      onClick={() => navigate({ to: `/checkout?orcamentoId=${selectedPedido.id}` })}
+                      onClick={() => {
+                        setApprovalStep(null);
+                        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+                        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+                      }}
                       className="w-full bg-brand text-white rounded-full h-14 font-bold shadow-lg"
                     >
-                      Ir para pagamento seguro
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setApprovalStep(null)}
-                      className="w-full rounded-full h-12 font-bold text-muted-foreground"
-                    >
-                      Depois
+                      Avançar
                     </Button>
                   </div>
                 </div>
@@ -1289,6 +1490,32 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {filteredPedidos.some((p) => p.lastPagamento?.status_autorizacao === "falhou") && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-4">
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-bold text-red-800">Pagamento Pendente</h4>
+            <p className="text-sm text-red-700 mt-1">
+              Houve uma falha na cobrança do seu cartão para um serviço já realizado.
+              Regularize o pagamento para evitar o bloqueio da sua conta.
+            </p>
+            {filteredPedidos.filter(p => p.lastPagamento?.status_autorizacao === "falhou").map(p => (
+              p.lastPagamento?.metadata?.link_pagamento_avulso && (
+                <a
+                  key={p.id}
+                  href={p.lastPagamento.metadata.link_pagamento_avulso}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-full transition-colors shadow-sm"
+                >
+                  Pagar Recobrança ({p.title})
+                </a>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

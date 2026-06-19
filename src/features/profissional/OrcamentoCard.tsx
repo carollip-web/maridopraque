@@ -290,19 +290,43 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("orcamentos")
-      .update({ fotos_concluido: fotosConcluido })
-      .eq("id", o.id);
-    if (error) {
-      toast.error("Erro ao salvar fotos", { description: error.message });
-    } else {
-      toast.success(
-        "Fotos salvas! Peça para o cliente marcar como concluído no app dele para liberar seu repasse.",
-      );
+    try {
+      // 1. Salvar as fotos primeiro
+      const { error: photoErr } = await supabase
+        .from("orcamentos")
+        .update({ fotos_concluido: fotosConcluido })
+        .eq("id", o.id);
+
+      if (photoErr) throw photoErr;
+
+      // 2. Chamar mp-capturar-pagamento com ator: 'profissional'
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Por favor, faça login novamente.");
+
+      const { data, error } = await supabase.functions.invoke("mp-capturar-pagamento", {
+        body: { orcamento_id: o.id, ator: "profissional" },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (error || !data?.ok) {
+        if (data?.message?.includes("parcial")) {
+          // It's expected to be partial since the client hasn't confirmed yet
+          toast.success("Aguardando confirmação do cliente para liberar o débito e o repasse");
+        } else {
+          throw new Error(data?.message || "Erro ao registrar confirmação do serviço.");
+        }
+      } else {
+        // Se por algum motivo capturar de vez (ex: cliente confirmou antes)
+        toast.success("Aguardando confirmação do cliente para liberar o débito e o repasse");
+      }
+
       refresh?.();
+    } catch (e: any) {
+      toast.error("Falha ao marcar como concluído", { description: e.message });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const slaHoras = o.status === "customizado_pendente" ? 4 : o.status === "enviado" ? 24 : null;
@@ -698,7 +722,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     disabled={saving}
                     className="w-full rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
                   >
-                    Salvar Evidências
+                    {saving ? "Processando..." : "Marcar como concluído"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-2">
                     Para o repasse ser liberado, o cliente precisa confirmar a conclusão do serviço
