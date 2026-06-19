@@ -135,7 +135,7 @@ export function AdminEquipe() {
         const { error: profileError } = await supabase
           .from("profiles")
           .update({ email: newEmail })
-          .eq("id", user?.id);
+          .eq("id", user?.id ?? "");
         if (profileError) throw profileError;
       } else {
         // Usa a server function (que tem bypass e forceReplace)
