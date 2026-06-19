@@ -13,7 +13,6 @@ type AvaliacaoRow = {
   nota: number;
   comentario: string | null;
   created_at: string;
-  orcamento_id: string;
   resposta_profissional: string | null;
   resposta_em: string | null;
   cliente_nome: string | null;
@@ -25,7 +24,6 @@ type Avaliacao = {
   nota: number;
   comentario: string | null;
   created_at: string;
-  orcamento_id: string;
   resposta_profissional: string | null;
   resposta_em: string | null;
   cliente_nome: string;
@@ -50,11 +48,11 @@ export function ProfissionalAvaliacoes() {
       const { data: avals } = await supabase
         .from("avaliacoes_publicas")
         .select(
-          "id, nota, comentario, created_at, orcamento_id, resposta_profissional, resposta_em, cliente_nome, service_name",
+          "id, nota, comentario, created_at, resposta_profissional, resposta_em, cliente_nome, service_name",
         )
         .eq("profissional_id", userId!)
         .order("created_at", { ascending: false });
-      const list = (avals ?? []) as AvaliacaoRow[];
+      const list = (avals ?? []) as unknown as AvaliacaoRow[];
       return list.map((a) => ({
         ...a,
         cliente_nome: a.cliente_nome ?? "Cliente",
