@@ -54,7 +54,7 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
       const { data } = await supabase
         .from("orcamentos")
         .select(`
-          id, service_name, data_agendada, apoio_feminino,
+          id, service_name, data_agendada, tipo_atendimento,
           profiles!orcamentos_cliente_id_fkey(nome)
         `)
         .eq("profissional_id", userId!)
@@ -84,7 +84,7 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
               <span>👤 {(prox.profiles as any)?.nome || "Cliente"}</span>
             </div>
           </div>
-          {prox.apoio_feminino && (
+          {prox.tipo_atendimento === "homem_com_apoio_feminino" && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200">
               <HeartHandshake className="h-3.5 w-3.5" />
               Apoio Feminino
@@ -124,7 +124,7 @@ function PrimeirosPassosCard({ userId, setTab, metrics }: { userId?: string, set
       const { data: agendas } = await supabase
         .from("profissional_disponibilidade")
         .select("id")
-        .eq("profissional_id", userId!)
+        .eq("user_id", userId!)
         .limit(1);
 
       return {

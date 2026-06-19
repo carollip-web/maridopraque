@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Trash2,
   Mail,
-  Mail,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -75,7 +74,7 @@ export function AdminPedidos() {
         .select("*", { count: "exact" })
         .or("is_test.eq.false,is_test.is.null");
 
-      if (filter !== "todos") query = query.eq("status", filter);
+      if (filter !== "todos") query = query.eq("status", filter as any);
       if (proFilter !== "todos") query = query.eq("profissional_id", proFilter);
 
       if (dateRange !== "all") {
@@ -671,7 +670,7 @@ export function AdminPedidos() {
                           <button
                             onClick={() => {
                               if (cli) {
-                                navigate({ search: (old: any) => ({ ...old, tab: "clientes", cli_q: cli.email || cli.nome }) });
+                                navigate({ search: ((old: any) => ({ ...old, tab: "clientes", cli_q: cli.email || cli.nome })) as never });
                               }
                             }}
                             className="text-sm font-bold text-slate-900 hover:text-brand hover:underline text-left"

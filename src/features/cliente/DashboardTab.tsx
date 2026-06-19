@@ -35,7 +35,7 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
       if (!user) return { concluidos: 0, ativos: 0, pendentes: 0, total: 0, recentes: [] as Tables<"orcamentos">[] };
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("status, valor, service_name, created_at")
+        .select("id, status, valor, service_name, created_at, data_agendada")
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
 
