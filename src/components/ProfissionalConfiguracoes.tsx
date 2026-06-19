@@ -67,6 +67,7 @@ type ProfissionalPerfilData = {
   mp_connected_at?: string | null;
   chave_pix?: string | null;
   pix_key_type?: string | null;
+  slug?: string | null;
 };
 
 function fmtCnpj(v: string) {
