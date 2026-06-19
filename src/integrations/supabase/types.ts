@@ -16,45 +16,33 @@ export type Database = {
     Tables: {
       admin_audit_log: {
         Row: {
-          action: string
-          actor_user_id: string
+          acao: string
+          admin_id: string
           created_at: string
-          details: Json
+          detalhes: Json | null
+          entidade_id: string | null
+          entidade_tipo: string | null
           id: string
-          target_user_id: string | null
         }
         Insert: {
-          action: string
-          actor_user_id: string
+          acao: string
+          admin_id: string
           created_at?: string
-          details?: Json
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string | null
           id?: string
-          target_user_id?: string | null
         }
         Update: {
-          action?: string
-          actor_user_id?: string
+          acao?: string
+          admin_id?: string
           created_at?: string
-          details?: Json
+          detalhes?: Json | null
+          entidade_id?: string | null
+          entidade_tipo?: string | null
           id?: string
-          target_user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_aud_actor"
-            columns: ["actor_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_aud_target"
-            columns: ["target_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       apoio_feminino_equipe: {
         Row: {
