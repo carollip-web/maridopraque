@@ -670,7 +670,7 @@ export function AdminPedidos() {
                           <button
                             onClick={() => {
                               if (cli) {
-                                navigate({ search: (old: any) => ({ ...old, tab: "clientes", cli_q: cli.email || cli.nome }) });
+                                navigate({ search: ((old: any) => ({ ...old, tab: "clientes", cli_q: cli.email || cli.nome })) as never });
                               }
                             }}
                             className="text-sm font-bold text-slate-900 hover:text-brand hover:underline text-left"
