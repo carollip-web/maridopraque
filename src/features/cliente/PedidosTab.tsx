@@ -559,7 +559,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       brickControllerRef.current = null;
       brickMountedRef.current = false;
     };
-  }, [approvalStep, brickConfig, selectedPedido]);
+  }, [approvalStep, brickConfig, pedidoId]);
 
   const handleCapture = async (orcamentoId: string) => {
     setIsCapturing(orcamentoId);
