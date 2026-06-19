@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Trash2,
   Mail,
-  Mail,
   Loader2,
   ChevronLeft,
   ChevronRight,
