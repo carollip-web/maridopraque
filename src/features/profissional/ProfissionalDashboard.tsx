@@ -54,7 +54,7 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
       const { data } = await supabase
         .from("orcamentos")
         .select(`
-          id, service_name, data_agendada, apoio_feminino,
+          id, service_name, data_agendada, tipo_atendimento,
           profiles!orcamentos_cliente_id_fkey(nome)
         `)
         .eq("profissional_id", userId!)
