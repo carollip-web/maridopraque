@@ -13,10 +13,10 @@ type AvaliacaoRow = {
   nota: number;
   comentario: string | null;
   created_at: string;
-  cliente_id: string;
-  orcamento_id: string;
   resposta_profissional: string | null;
   resposta_em: string | null;
+  cliente_nome: string | null;
+  service_name: string | null;
 };
 
 type Avaliacao = {
@@ -24,8 +24,6 @@ type Avaliacao = {
   nota: number;
   comentario: string | null;
   created_at: string;
-  cliente_id: string;
-  orcamento_id: string;
   resposta_profissional: string | null;
   resposta_em: string | null;
   cliente_nome: string;
@@ -48,36 +46,17 @@ export function ProfissionalAvaliacoes() {
     enabled: !!userId,
     queryFn: async (): Promise<Avaliacao[]> => {
       const { data: avals } = await supabase
-        .from("avaliacoes")
+        .from("avaliacoes_publicas")
         .select(
-          "id, nota, comentario, created_at, cliente_id, orcamento_id, resposta_profissional, resposta_em",
+          "id, nota, comentario, created_at, resposta_profissional, resposta_em, cliente_nome, service_name",
         )
         .eq("profissional_id", userId!)
         .order("created_at", { ascending: false });
-      const list = avals ?? [];
-      const typedList = list as AvaliacaoRow[];
-      const cliIds = Array.from(new Set(typedList.map((a) => a.cliente_id)));
-      const orcIds = Array.from(new Set(typedList.map((a) => a.orcamento_id)));
-      const [{ data: profs }, { data: orcs }] = await Promise.all([
-        cliIds.length
-          ? supabase.from("profiles").select("id, nome").in("id", cliIds)
-          : Promise.resolve({ data: [] as { id: string; nome: string | null }[] }),
-        orcIds.length
-          ? supabase.from("orcamentos").select("id, service_name").in("id", orcIds)
-          : Promise.resolve({ data: [] as { id: string; service_name: string | null }[] }),
-      ]);
-      const nomeMap: Record<string, string> = {};
-      (profs ?? []).forEach((p: { id: string; nome: string | null }) => {
-        nomeMap[p.id] = p.nome ?? "Cliente";
-      });
-      const servMap: Record<string, string> = {};
-      (orcs ?? []).forEach((o: { id: string; service_name: string | null }) => {
-        servMap[o.id] = o.service_name ?? "Serviço";
-      });
-      return typedList.map((a) => ({
+      const list = (avals ?? []) as unknown as AvaliacaoRow[];
+      return list.map((a) => ({
         ...a,
-        cliente_nome: nomeMap[a.cliente_id] ?? "Cliente",
-        service_name: servMap[a.orcamento_id] ?? "Serviço",
+        cliente_nome: a.cliente_nome ?? "Cliente",
+        service_name: a.service_name ?? "Serviço",
       }));
     },
   });
