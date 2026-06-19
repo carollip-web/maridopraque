@@ -523,7 +523,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   if (!token) throw new Error("Sessão expirada");
 
                   const { data, error } = await supabase.functions.invoke("mp-autorizar-pagamento", {
-                    body: { orcamento_id: selectedPedido.id, card_token: formData.token },
+                    body: { orcamento_id: selectedPedido?.id, card_token: formData.token },
                     headers: { Authorization: `Bearer ${token}` },
                   });
 
@@ -559,7 +559,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       brickControllerRef.current = null;
       brickMountedRef.current = false;
     };
-  }, [approvalStep, brickConfig, selectedPedido]);
+  }, [approvalStep, brickConfig, pedidoId]);
 
   const handleCapture = async (orcamentoId: string) => {
     setIsCapturing(orcamentoId);

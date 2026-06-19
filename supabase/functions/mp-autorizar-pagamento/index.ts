@@ -106,7 +106,19 @@ serve(async (req) => {
     // Cancela pagamentos pendentes
     await admin.from("pagamentos").update({ status: "canceled" } as any).eq("orcamento_id", orcamento.id).eq("status", "pending");
 
-    // 4. Criar pagamento com capture: false e o card_id
+    // 4. Gerar token de uso único a partir do cartão salvo
+    const cardTokenRes = await fetch(`https://api.mercadopago.com/v1/customers/${customerId}/cards/${cardId}/tokens`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+    });
+    const cardTokenData = await cardTokenRes.json().catch(() => ({}));
+    if (!cardTokenRes.ok || !cardTokenData.id) {
+      console.error("Erro gerando token do cartão salvo", cardTokenData);
+      return json({ error: "MP_CARD_TOKEN_ERROR", message: "Erro ao gerar token do cartão salvo.", detail: cardTokenData }, 500);
+    }
+    const singleUseToken = cardTokenData.id;
+
+    // 5. Criar pagamento com capture: false usando o token de uso único
     const paymentPayload = {
       transaction_amount: valorTotal,
       capture: false, // APENAS AUTORIZAÇÃO
@@ -118,7 +130,7 @@ serve(async (req) => {
         type: "customer",
         id: customerId
       },
-      token: cardId, // Conforme solicitado (usar o card_id no lugar do token único)
+      token: singleUseToken,
       external_reference: orcamento.id,
       statement_descriptor: "MARIDO PRA QUE"
     };
