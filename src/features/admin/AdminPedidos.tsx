@@ -74,7 +74,7 @@ export function AdminPedidos() {
         .select("*", { count: "exact" })
         .or("is_test.eq.false,is_test.is.null");
 
-      if (filter !== "todos") query = query.eq("status", filter);
+      if (filter !== "todos") query = query.eq("status", filter as any);
       if (proFilter !== "todos") query = query.eq("profissional_id", proFilter);
 
       if (dateRange !== "all") {
