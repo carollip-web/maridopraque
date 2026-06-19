@@ -207,7 +207,12 @@ export function AdminProfissionais() {
 
       const [{ data: profs }, { data: perfis }, { data: orcs }, { data: avs }] = await Promise.all([
         supabase.from("profiles").select("id, nome, email, whatsapp").in("id", ids),
-        supabase.from("profissional_perfil").select("*").in("user_id", ids),
+        supabase
+          .from("profissional_perfil")
+          .select(
+            "user_id, slug, bio, especialidades, foto_url, cidade, ativo, created_at, updated_at, lat, lng, raio_atendimento_km, termo_aceito_em, termo_versao, onboarding_completo, duracao_padrao_min, genero, oferece_apoio_feminino, anos_experiencia, chave_pix, atende_emergencias, veiculo_proprio, mp_user_id, mp_connected_at, mp_token_expires_at, pix_key_type, pix_key, pix_holder_name, pix_holder_document, pix_dados_confirmados, repasse_automatico, aprovacao_status, cpf, data_nascimento, telefone, cep, endereco, numero, complemento, bairro, estado, foto_documento_frente, foto_documento_verso, foto_selfie, experiencia_anos, como_conheceu, observacoes_cadastro, aprovado_por, aprovado_em, motivo_rejeicao, cadastro_completo, cadastro_submetido_em, cnpj, mp_public_key, mp_expires_at, mp_scope, mp_oauth_state_expires_at"
+          )
+          .in("user_id", ids),
         supabase
           .from("orcamentos")
           .select("profissional_id, status, valor")
