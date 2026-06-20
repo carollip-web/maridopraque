@@ -99,7 +99,7 @@ serve(async (req) => {
     }
 
     // 3. Salvar Cartão no Customer
-    const cardRes = await fetch(`https://api.mercadopago.com/v1/customers/${customerId}/cards`, {
+    const cardRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${customerId}/cards`, {
       method: "POST",
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({ token: card_token })
