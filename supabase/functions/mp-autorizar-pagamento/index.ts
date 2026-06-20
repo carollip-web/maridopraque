@@ -38,10 +38,10 @@ serve(async (req) => {
     const user = userData.user;
 
     const body = await req.json().catch(() => ({}));
-    const { orcamento_id, card_token, security_code } = body;
+    const { orcamento_id, card_token } = body;
 
-    if (!orcamento_id || !card_token || !security_code) {
-      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id, card_token ou security_code." }, 400);
+    if (!orcamento_id || !card_token) {
+      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id ou card_token." }, 400);
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
