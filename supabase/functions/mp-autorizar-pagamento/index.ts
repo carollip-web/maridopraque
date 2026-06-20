@@ -123,8 +123,6 @@ serve(async (req) => {
         gateway: "mercado_pago",
         status: "pending",
         gateway_payment_id: mpPaymentId,
-        mp_customer_id: customerId,
-        mp_card_id: cardId,
         status_autorizacao: "autorizado",
         autorizacao_expira_em: expDate.toISOString(),
         metadata: {
