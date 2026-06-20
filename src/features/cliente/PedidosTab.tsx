@@ -450,10 +450,19 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
         return;
       }
 
-      // Calcula o valor a exibir no Brick
-      const baseValue = Number(selectedProposta?.valor_servico || selectedPedido.price.replace("R$ ", "").replace(",", "."));
+      // Calcula o valor a exibir no Brick (deve bater com mp-autorizar-pagamento)
+      const { data: materiaisData } = await supabase
+        .from("orcamento_materiais")
+        .select("preco_unitario, quantidade")
+        .eq("orcamento_id", selectedPedido.id);
+      const valorMateriais = (materiaisData || []).reduce(
+        (acc, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
+        0,
+      );
+      const valorServico = Number(selectedProposta?.valor_servico || selectedPedido.price.replace("R$ ", "").replace(",", "."));
+      const baseValue = valorServico + valorMateriais;
       const requiresApoio = selectedPedido.tipo_atendimento === "homem_com_apoio_feminino";
-      const totalAmount = requiresApoio ? Math.round(baseValue * 1.3 * 100) / 100 : baseValue;
+      const totalAmount = requiresApoio ? Math.round(baseValue * 1.3 * 100) / 100 : Math.round(baseValue * 100) / 100;
 
       setBrickConfig({
         publicKey: data.publicKey,
