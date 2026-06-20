@@ -83,13 +83,31 @@ serve(async (req) => {
 
         if (!ocorreu) {
           // Serviço AINDA NÃO OCORREU: Criar nova autorização
+          // Gerar token de uso único a partir do cartão salvo
+          const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${pag.mp_customer_id}/cards/${pag.mp_card_id}/tokens`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+          });
+          const cardTokenData = await cardTokenRes.json().catch(() => ({}));
+          if (!cardTokenRes.ok || !cardTokenData.id) {
+            console.error("Erro gerando token cartão (renovação cron)", cardTokenData);
+            await logAudit("CRON_RENOVAR_AUTORIZACAO_FALHOU", pag.cliente_id, {
+              orcamento_id: pag.orcamento_id,
+              erro: cardTokenData,
+              etapa: "token_geracao"
+            });
+            actionsTaken.push(`Falha ao gerar token do cartão para orçamento ${pag.orcamento_id}`);
+            continue;
+          }
+          const singleUseToken = cardTokenData.id;
+
           const paymentPayload = {
             transaction_amount: Number(pag.valor_total),
             capture: false,
             description: "Renovação de Autorização - Marido pra Que",
             installments: 1,
             payer: { type: "customer", id: pag.mp_customer_id },
-            token: pag.mp_card_id,
+            token: singleUseToken,
             payment_method_id: pag.metadata?.mp_auth_response?.payment_method_id,
             issuer_id: pag.metadata?.mp_auth_response?.issuer_id,
             external_reference: pag.orcamento_id,
