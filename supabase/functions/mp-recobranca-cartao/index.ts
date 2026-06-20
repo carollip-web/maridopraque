@@ -59,9 +59,7 @@ serve(async (req) => {
       return json({ error: "ALREADY_CAPTURED", message: "Pagamento já foi capturado." }, 400);
     }
 
-    const { mp_card_id, mp_customer_id, valor_total, cliente_id } = pagamento;
-    const paymentMethodId = pagamento.metadata?.mp_auth_response?.payment_method_id;
-    const issuerId = pagamento.metadata?.mp_auth_response?.issuer_id;
+    const { valor_total, cliente_id } = pagamento;
     
     // 2. Incrementar tentativas_cobranca e atualizar ultima_tentativa_em
     const novasTentativas = (pagamento.tentativas_cobranca || 0) + 1;
