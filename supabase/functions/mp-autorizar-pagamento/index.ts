@@ -16,17 +16,6 @@ const json = (b: unknown, s = 200) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const fetchWithRetry = async (url: string, init: RequestInit): Promise<Response> => {
-    const delays = [800, 1600, 2400];
-    let lastRes: Response | null = null;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const res = await fetch(url, init);
-      if (res.status < 500) return res;
-      lastRes = res;
-      if (attempt < 3) await new Promise((r) => setTimeout(r, delays[attempt]));
-    }
-    return lastRes!;
-  };
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -49,10 +38,10 @@ serve(async (req) => {
     const user = userData.user;
 
     const body = await req.json().catch(() => ({}));
-    const { orcamento_id, card_token, security_code } = body;
+    const { orcamento_id, card_token } = body;
 
-    if (!orcamento_id || !card_token || !security_code) {
-      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id, card_token ou security_code." }, 400);
+    if (!orcamento_id || !card_token) {
+      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id ou card_token." }, 400);
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -75,75 +64,17 @@ serve(async (req) => {
     const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
     const valorTotal = Math.round((valorBase + valorApoio) * 100) / 100;
 
-    // 2. Criar ou buscar Customer no MP
-    let customerId = "";
-    const searchCustomerRes = await fetch(`https://api.mercadopago.com/v1/customers/search?email=${user.email}`, {
-      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` }
-    });
-    const searchData = await searchCustomerRes.json();
-    
-    if (searchData.results && searchData.results.length > 0) {
-      customerId = searchData.results[0].id;
-    } else {
-      const createCustomerRes = await fetch(`https://api.mercadopago.com/v1/customers`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email })
-      });
-      const createData = await createCustomerRes.json();
-      if (!createData.id) {
-         console.error("Erro criando customer", createData);
-         return json({ error: "MP_CUSTOMER_ERROR", message: "Erro ao criar Customer no MP." }, 500);
-      }
-      customerId = createData.id;
-    }
-
-    // 3. Salvar Cartão no Customer
-    const cardRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${customerId}/cards`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ token: card_token })
-    });
-    const cardData = await cardRes.json();
-    
-    if (!cardRes.ok || !cardData.id) {
-      console.error("Erro salvando cartão", cardData);
-      return json({ error: "MP_CARD_ERROR", message: "Erro ao salvar cartão no MP.", detail: cardData }, 500);
-    }
-    
-    const cardId = cardData.id;
-    const paymentMethodId = cardData.payment_method?.id;
-    const issuerId = cardData.issuer?.id;
-
     // Cancela pagamentos pendentes
     await admin.from("pagamentos").update({ status: "canceled" } as any).eq("orcamento_id", orcamento.id).eq("status", "pending");
 
-    // 4. Gerar token de uso único a partir do cartão salvo (endpoint /v1/card_tokens com CVV)
-    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/card_tokens`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ card_id: cardId, security_code }),
-    });
-    const cardTokenData = await cardTokenRes.json().catch(() => ({}));
-    if (!cardTokenRes.ok || !cardTokenData.id) {
-      console.error("Erro gerando token do cartão salvo", cardTokenData);
-      return json({ error: "MP_CARD_TOKEN_ERROR", message: "Erro ao gerar token do cartão salvo.", detail: cardTokenData }, 500);
-    }
-    const singleUseToken = cardTokenData.id;
-
-    // 5. Criar pagamento com capture: false usando o token de uso único
+    // 2. Criar pagamento com capture: false usando o card_token fresco do Brick
     const paymentPayload = {
       transaction_amount: valorTotal,
       capture: false, // APENAS AUTORIZAÇÃO
       description: orcamento.service_name || "Serviço Marido pra Que",
       installments: 1,
-      payment_method_id: paymentMethodId,
-      issuer_id: issuerId,
-      payer: {
-        type: "customer",
-        id: customerId
-      },
-      token: singleUseToken,
+      payer: { email: user.email },
+      token: card_token,
       external_reference: orcamento.id,
       statement_descriptor: "MARIDO PRA QUE"
     };
@@ -181,8 +112,6 @@ serve(async (req) => {
         gateway: "mercado_pago",
         status: "pending",
         gateway_payment_id: mpPaymentId,
-        mp_customer_id: customerId,
-        mp_card_id: cardId,
         status_autorizacao: "autorizado",
         autorizacao_expira_em: expDate.toISOString(),
         metadata: {
@@ -204,8 +133,6 @@ serve(async (req) => {
       pagamento_id: pagamento.id,
       payment_id: mpPaymentId,
       status: mpBody.status,
-      customer_id: customerId,
-      card_id: cardId
     });
 
   } catch (err: any) {
