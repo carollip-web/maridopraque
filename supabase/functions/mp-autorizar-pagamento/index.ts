@@ -16,6 +16,18 @@ const json = (b: unknown, s = 200) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const fetchWithRetry = async (url: string, init: RequestInit): Promise<Response> => {
+    const delays = [800, 1600, 2400];
+    let lastRes: Response | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await fetch(url, init);
+      if (res.status < 500) return res;
+      lastRes = res;
+      if (attempt < 3) await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+    return lastRes!;
+  };
+
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -87,7 +99,7 @@ serve(async (req) => {
     }
 
     // 3. Salvar Cartão no Customer
-    const cardRes = await fetch(`https://api.mercadopago.com/v1/customers/${customerId}/cards`, {
+    const cardRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${customerId}/cards`, {
       method: "POST",
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({ token: card_token })
@@ -107,7 +119,7 @@ serve(async (req) => {
     await admin.from("pagamentos").update({ status: "canceled" } as any).eq("orcamento_id", orcamento.id).eq("status", "pending");
 
     // 4. Gerar token de uso único a partir do cartão salvo
-    const cardTokenRes = await fetch(`https://api.mercadopago.com/v1/customers/${customerId}/cards/${cardId}/tokens`, {
+    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${customerId}/cards/${cardId}/tokens`, {
       method: "POST",
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
     });

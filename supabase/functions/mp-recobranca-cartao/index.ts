@@ -16,6 +16,18 @@ const json = (b: unknown, s = 200) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const fetchWithRetry = async (url: string, init: RequestInit): Promise<Response> => {
+    const delays = [800, 1600, 2400];
+    let lastRes: Response | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await fetch(url, init);
+      if (res.status < 500) return res;
+      lastRes = res;
+      if (attempt < 3) await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+    return lastRes!;
+  };
+
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -61,7 +73,7 @@ serve(async (req) => {
     } as any).eq("id", pagamento.id);
 
     // 3. Gerar token de uso único a partir do cartão salvo
-    const cardTokenRes = await fetch(`https://api.mercadopago.com/v1/customers/${mp_customer_id}/cards/${mp_card_id}/tokens`, {
+    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${mp_customer_id}/cards/${mp_card_id}/tokens`, {
       method: "POST",
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
     });

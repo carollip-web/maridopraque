@@ -16,6 +16,18 @@ const json = (b: unknown, s = 200) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const fetchWithRetry = async (url: string, init: RequestInit): Promise<Response> => {
+    const delays = [800, 1600, 2400];
+    let lastRes: Response | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await fetch(url, init);
+      if (res.status < 500) return res;
+      lastRes = res;
+      if (attempt < 3) await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+    return lastRes!;
+  };
+
   try {
     const cronSecret = Deno.env.get("CRON_SECRET");
     const providedSecret = req.headers.get("x-cron-secret");
@@ -71,13 +83,31 @@ serve(async (req) => {
 
         if (!ocorreu) {
           // Serviço AINDA NÃO OCORREU: Criar nova autorização
+          // Gerar token de uso único a partir do cartão salvo
+          const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${pag.mp_customer_id}/cards/${pag.mp_card_id}/tokens`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+          });
+          const cardTokenData = await cardTokenRes.json().catch(() => ({}));
+          if (!cardTokenRes.ok || !cardTokenData.id) {
+            console.error("Erro gerando token cartão (renovação cron)", cardTokenData);
+            await logAudit("CRON_RENOVAR_AUTORIZACAO_FALHOU", pag.cliente_id, {
+              orcamento_id: pag.orcamento_id,
+              erro: cardTokenData,
+              etapa: "token_geracao"
+            });
+            actionsTaken.push(`Falha ao gerar token do cartão para orçamento ${pag.orcamento_id}`);
+            continue;
+          }
+          const singleUseToken = cardTokenData.id;
+
           const paymentPayload = {
             transaction_amount: Number(pag.valor_total),
             capture: false,
             description: "Renovação de Autorização - Marido pra Que",
             installments: 1,
             payer: { type: "customer", id: pag.mp_customer_id },
-            token: pag.mp_card_id,
+            token: singleUseToken,
             payment_method_id: pag.metadata?.mp_auth_response?.payment_method_id,
             issuer_id: pag.metadata?.mp_auth_response?.issuer_id,
             external_reference: pag.orcamento_id,
