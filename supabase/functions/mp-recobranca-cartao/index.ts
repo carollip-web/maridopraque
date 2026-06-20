@@ -73,7 +73,7 @@ serve(async (req) => {
     } as any).eq("id", pagamento.id);
 
     // 3. Gerar token de uso único a partir do cartão salvo
-    const cardTokenRes = await fetch(`https://api.mercadopago.com/v1/customers/${mp_customer_id}/cards/${mp_card_id}/tokens`, {
+    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${mp_customer_id}/cards/${mp_card_id}/tokens`, {
       method: "POST",
       headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
     });
