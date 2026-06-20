@@ -144,8 +144,6 @@ serve(async (req) => {
       pagamento_id: pagamento.id,
       payment_id: mpPaymentId,
       status: mpBody.status,
-      customer_id: customerId,
-      card_id: cardId
     });
 
   } catch (err: any) {
