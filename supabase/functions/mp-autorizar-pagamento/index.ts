@@ -49,10 +49,10 @@ serve(async (req) => {
     const user = userData.user;
 
     const body = await req.json().catch(() => ({}));
-    const { orcamento_id, card_token } = body;
+    const { orcamento_id, card_token, security_code } = body;
 
-    if (!orcamento_id || !card_token) {
-      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id ou card_token." }, 400);
+    if (!orcamento_id || !card_token || !security_code) {
+      return json({ error: "BAD_REQUEST", message: "Faltando orcamento_id, card_token ou security_code." }, 400);
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -118,10 +118,11 @@ serve(async (req) => {
     // Cancela pagamentos pendentes
     await admin.from("pagamentos").update({ status: "canceled" } as any).eq("orcamento_id", orcamento.id).eq("status", "pending");
 
-    // 4. Gerar token de uso único a partir do cartão salvo
-    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${customerId}/cards/${cardId}/tokens`, {
+    // 4. Gerar token de uso único a partir do cartão salvo (endpoint /v1/card_tokens com CVV)
+    const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/card_tokens`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ card_id: cardId, security_code }),
     });
     const cardTokenData = await cardTokenRes.json().catch(() => ({}));
     if (!cardTokenRes.ok || !cardTokenData.id) {
