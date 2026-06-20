@@ -532,11 +532,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   if (!token) throw new Error("Sessão expirada");
 
                   const { data, error } = await supabase.functions.invoke("mp-autorizar-pagamento", {
-                    body: {
-                      orcamento_id: selectedPedido?.id,
-                      card_token: formData.token,
-                      security_code: formData.securityCode ?? formData.security_code,
-                    },
+                    body: { orcamento_id: selectedPedido?.id, card_token: formData.token },
                     headers: { Authorization: `Bearer ${token}` },
                   });
 
