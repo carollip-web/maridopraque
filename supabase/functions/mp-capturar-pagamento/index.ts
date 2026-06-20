@@ -61,6 +61,15 @@ serve(async (req) => {
       return json({ error: "ALREADY_CAPTURED", message: "Pagamento já foi capturado." }, 400);
     }
 
+    // Cruzar identidade do usuário autenticado com o ator declarado
+    const userId = userData.user.id;
+    if (ator === "cliente" && userId !== pagamento.cliente_id) {
+      return json({ error: "FORBIDDEN", message: "Usuário não é o cliente deste pagamento." }, 403);
+    }
+    if (ator === "profissional" && userId !== pagamento.profissional_id) {
+      return json({ error: "FORBIDDEN", message: "Usuário não é o profissional deste pagamento." }, 403);
+    }
+
     const now = new Date().toISOString();
     const isProfissional = ator === "profissional";
 
