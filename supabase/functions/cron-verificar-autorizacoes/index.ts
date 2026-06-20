@@ -71,71 +71,28 @@ serve(async (req) => {
         }
 
         if (!ocorreu) {
-          // Serviço AINDA NÃO OCORREU: Criar nova autorização
-          // Gerar token de uso único a partir do cartão salvo
-          const cardTokenRes = await fetchWithRetry(`https://api.mercadopago.com/v1/customers/${pag.mp_customer_id}/cards/${pag.mp_card_id}/tokens`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+          // Serviço AINDA NÃO OCORREU e autorização prestes a expirar.
+          // Sem CVV disponível no servidor, NÃO é possível gerar um novo token
+          // de uso único (POST /v1/card_tokens exige security_code). Marcamos
+          // a autorização como expirando e notificamos o cliente para que ele
+          // refaça a autorização presencialmente (fornecendo o CVV).
+          await admin.from("pagamentos").update({
+            status_autorizacao: "autorizacao_expirando",
+            metadata: {
+              ...pag.metadata,
+              renovacao_motivo: "CVV indisponível no servidor - cliente precisa reautorizar"
+            }
+          } as any).eq("id", pag.id);
+
+          const { data: userData } = await admin.auth.admin.getUserById(pag.cliente_id);
+          const emailDestinatario = userData?.user?.email;
+          console.log(`[EMAIL] Assunto: Reautorização de pagamento necessária. Orçamento: ${pag.orcamento_id}. Enviado para: ${emailDestinatario || pag.cliente_id}`);
+
+          await logAudit("CRON_NOTIFICAR_REAUTORIZACAO", pag.cliente_id, {
+            orcamento_id: pag.orcamento_id,
+            motivo: "Autorização prestes a expirar - CVV indisponível para renovação automática"
           });
-          const cardTokenData = await cardTokenRes.json().catch(() => ({}));
-          if (!cardTokenRes.ok || !cardTokenData.id) {
-            console.error("Erro gerando token cartão (renovação cron)", cardTokenData);
-            await logAudit("CRON_RENOVAR_AUTORIZACAO_FALHOU", pag.cliente_id, {
-              orcamento_id: pag.orcamento_id,
-              erro: cardTokenData,
-              etapa: "token_geracao"
-            });
-            actionsTaken.push(`Falha ao gerar token do cartão para orçamento ${pag.orcamento_id}`);
-            continue;
-          }
-          const singleUseToken = cardTokenData.id;
-
-          const paymentPayload = {
-            transaction_amount: Number(pag.valor_total),
-            capture: false,
-            description: "Renovação de Autorização - Marido pra Que",
-            installments: 1,
-            payer: { type: "customer", id: pag.mp_customer_id },
-            token: singleUseToken,
-            payment_method_id: pag.metadata?.mp_auth_response?.payment_method_id,
-            issuer_id: pag.metadata?.mp_auth_response?.issuer_id,
-            external_reference: pag.orcamento_id,
-            statement_descriptor: "MARIDO PRA QUE"
-          };
-
-          const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
-              "Content-Type": "application/json",
-              "X-Idempotency-Key": `${pag.id}-renew-auth-${now.getTime()}`
-            },
-            body: JSON.stringify(paymentPayload),
-          });
-          const mpBody = await mpRes.json().catch(() => ({}));
-
-          if (mpRes.ok && (mpBody.status === "authorized" || mpBody.status === "pending" || mpBody.status === "approved" || mpBody.status === "in_process")) {
-            const expDate = new Date();
-            expDate.setDate(expDate.getDate() + 7);
-
-            await admin.from("pagamentos").update({
-              gateway_payment_id: String(mpBody.id),
-              autorizacao_expira_em: expDate.toISOString(),
-              metadata: { ...pag.metadata, mp_auth_response: mpBody }
-            } as any).eq("id", pag.id);
-
-            await logAudit("CRON_RENOVAR_AUTORIZACAO", pag.cliente_id, {
-              orcamento_id: pag.orcamento_id,
-              novo_payment_id: mpBody.id
-            });
-            actionsTaken.push(`Renovação de autorização para orçamento ${pag.orcamento_id}`);
-          } else {
-             await logAudit("CRON_RENOVAR_AUTORIZACAO_FALHOU", pag.cliente_id, {
-               orcamento_id: pag.orcamento_id,
-               erro: mpBody
-             });
-             actionsTaken.push(`Falha ao renovar autorização do orçamento ${pag.orcamento_id}`);
-          }
+          actionsTaken.push(`Cliente notificado para reautorizar orçamento ${pag.orcamento_id}`);
         } else {
           // Serviço JÁ OCORREU e não foi capturado
           try {
