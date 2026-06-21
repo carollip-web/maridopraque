@@ -16,22 +16,22 @@ const json = (b: unknown, s = 200) =>
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const MP_ACCESS_TOKEN = Deno.env.get("MP_ACCESS_TOKEN");
 
-    if (!MP_ACCESS_TOKEN) return json({ error: "CONFIG_ERROR", message: "Token do MP ausente." }, 500);
+    if (!MP_ACCESS_TOKEN) {
+      return json({ error: "CONFIG_ERROR", message: "Token do MP ausente." }, 500);
+    }
 
     const body = await req.json().catch(() => ({}));
     const { orcamento_id } = body;
-
     if (!orcamento_id) return json({ error: "BAD_REQUEST" }, 400);
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // 1. Buscar pagamento
+    // 1. Buscar pagamento mais recente do orçamento
     const { data: pagamento, error: pagErr } = await admin
       .from("pagamentos")
       .select("*")
@@ -49,29 +49,18 @@ serve(async (req) => {
     }
 
     const { valor_total, cliente_id } = pagamento;
-    
-    // 2. Incrementar tentativas_cobranca e atualizar ultima_tentativa_em
-    const novasTentativas = (pagamento.tentativas_cobranca || 0) + 1;
-    const now = new Date().toISOString();
 
-    await admin.from("pagamentos").update({
-      tentativas_cobranca: novasTentativas,
-      ultima_tentativa_em: now
-    } as any).eq("id", pagamento.id);
-
-    // 3. Sem CVV disponível (cliente não presente), não é possível gerar token
-    //    de uso único via /v1/card_tokens. Vamos direto ao fallback: gerar
-    //    link de pagamento avulso (Checkout Pro) e notificar o cliente.
+    // 2. Gerar preference do Checkout Pro
     const prefPayload = {
       items: [
         {
-          title: "Serviço Marido pra Que - Recobrança Pendente",
+          title: "Serviço Marido pra Que - Pagamento Pendente",
           quantity: 1,
           currency_id: "BRL",
-          unit_price: Number(valor_total)
-        }
+          unit_price: Number(valor_total),
+        },
       ],
-      external_reference: orcamento_id
+      external_reference: orcamento_id,
     };
 
     const prefRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -80,40 +69,55 @@ serve(async (req) => {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(prefPayload)
+      body: JSON.stringify(prefPayload),
     });
     const prefBody = await prefRes.json().catch(() => ({}));
-    const linkAvulso = prefBody.init_point || prefBody.sandbox_init_point;
 
-    const newMetadata = {
-      ...pagamento.metadata,
-      link_pagamento_avulso: linkAvulso,
-      recobranca_motivo: "CVV indisponível no servidor - fallback automático para link avulso",
-    };
-
-    await admin.from("pagamentos").update({
-      status_autorizacao: "falhou",
-      metadata: newMetadata
-    } as any).eq("id", pagamento.id);
-
-    // Marcar conta do cliente com pagamento_pendente = true
-    const { error: profErr } = await admin.from("profiles").update({ pagamento_pendente: true } as any).eq("id", cliente_id);
-    if (profErr) {
-      console.error("Erro ao marcar pagamento_pendente no profile", profErr);
+    if (!prefRes.ok) {
+      console.error("Erro ao criar preference MP", prefBody);
+      return json(
+        { error: "MP_PREFERENCE_ERROR", message: "Falha ao gerar link de pagamento.", details: prefBody },
+        502,
+      );
     }
 
-    // Simular envio de email ao cliente
+    const linkAvulso = prefBody.init_point || prefBody.sandbox_init_point;
+
+    // 3. Salvar link no metadata + status_autorizacao = 'falhou'
+    const newMetadata = {
+      ...(pagamento.metadata || {}),
+      link_pagamento_avulso: linkAvulso,
+      recobranca_motivo: "Link de pagamento avulso gerado para cobrança pendente",
+    };
+
+    await admin
+      .from("pagamentos")
+      .update({
+        status_autorizacao: "falhou",
+        metadata: newMetadata,
+      } as any)
+      .eq("id", pagamento.id);
+
+    // 4. Marcar conta do cliente como pagamento_pendente
+    const { error: profErr } = await admin
+      .from("profiles")
+      .update({ pagamento_pendente: true } as any)
+      .eq("id", cliente_id);
+    if (profErr) console.error("Erro ao marcar pagamento_pendente", profErr);
+
+    // 5. Notificar cliente por email (simulado)
     const { data: userData } = await admin.auth.admin.getUserById(cliente_id);
     const emailDestinatario = userData?.user?.email;
-    console.log(`[EMAIL] Assunto: Cobrança requer ação. Link de pagamento: ${linkAvulso}. Enviado para: ${emailDestinatario || cliente_id}`);
+    console.log(
+      `[EMAIL] Assunto: Pagamento pendente. Link: ${linkAvulso}. Destinatário: ${emailDestinatario || cliente_id}`,
+    );
 
     return json({
-      ok: false,
-      status: "failed",
-      message: "CVV indisponível para cobrança silenciosa. Link de cobrança gerado e e-mail enviado (simulado).",
-      link: linkAvulso
+      ok: true,
+      status: "link_gerado",
+      message: "Link de pagamento avulso gerado e e-mail enviado (simulado).",
+      link: linkAvulso,
     });
-
   } catch (err: any) {
     console.error("Erro fatal", err);
     return json({ error: "INTERNAL", message: err?.message || "Erro interno." }, 500);
