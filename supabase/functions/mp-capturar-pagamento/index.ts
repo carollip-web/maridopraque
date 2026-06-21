@@ -145,16 +145,16 @@ serve(async (req) => {
         } as any)
         .eq("id", pagamento.id);
 
-      // Chamar internamente mp-recobranca-cartao
+      // Chamar internamente função de gerar link de pagamento
       try {
         const { error: invokeErr } = await admin.functions.invoke('mp-recobranca-cartao', {
           body: { orcamento_id: orcamento_id }
         });
         if (invokeErr) {
-          console.error("Erro ao invocar mp-recobranca-cartao", invokeErr);
+          console.error("Erro ao invocar geração de link de pagamento", invokeErr);
         }
       } catch (err) {
-        console.error("Exceção ao invocar mp-recobranca-cartao", err);
+        console.error("Exceção ao invocar geração de link de pagamento", err);
       }
 
       return json({
