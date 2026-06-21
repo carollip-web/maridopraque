@@ -15,7 +15,7 @@ export function getMpAmbiente(): MpAmbiente {
   }
   if (raw !== "teste" && raw !== "producao") {
     throw new Error(
-      `MP_AMBIENTE inválido: '${raw}'. Use apenas 'teste' ou 'producao'.
+      `MP_AMBIENTE inválido: '${raw}'. Use apenas 'teste' ou 'producao'.`,
     );
   }
   return raw;
