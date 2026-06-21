@@ -640,6 +640,54 @@ export type Database = {
           },
         ]
       }
+      mp_smoke_test_logs: {
+        Row: {
+          ambiente: string
+          amount: number
+          created_at: string
+          error: string | null
+          executed_by: string | null
+          id: string
+          last_mp_response: Json | null
+          message: string | null
+          ok: boolean
+          payment_id: string | null
+          request_summary: Json
+          status_final: string | null
+          steps: Json
+        }
+        Insert: {
+          ambiente: string
+          amount: number
+          created_at?: string
+          error?: string | null
+          executed_by?: string | null
+          id?: string
+          last_mp_response?: Json | null
+          message?: string | null
+          ok?: boolean
+          payment_id?: string | null
+          request_summary?: Json
+          status_final?: string | null
+          steps?: Json
+        }
+        Update: {
+          ambiente?: string
+          amount?: number
+          created_at?: string
+          error?: string | null
+          executed_by?: string | null
+          id?: string
+          last_mp_response?: Json | null
+          message?: string | null
+          ok?: boolean
+          payment_id?: string | null
+          request_summary?: Json
+          status_final?: string | null
+          steps?: Json
+        }
+        Relationships: []
+      }
       notas_fiscais: {
         Row: {
           arquivo_nome: string | null
