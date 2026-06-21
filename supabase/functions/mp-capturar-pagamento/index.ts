@@ -20,10 +20,10 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const MP_ACCESS_TOKEN = Deno.env.get("MP_ACCESS_TOKEN");
+    const MP_ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ?? Deno.env.get("MP_ACCESS_TOKEN");
 
     if (!MP_ACCESS_TOKEN) {
-      return json({ error: "CONFIG_ERROR", message: "MP_ACCESS_TOKEN não configurado." }, 500);
+      return json({ error: "CONFIG_ERROR", message: "Token do Mercado Pago não configurado." }, 500);
     }
 
     const authHeader = req.headers.get("Authorization");
