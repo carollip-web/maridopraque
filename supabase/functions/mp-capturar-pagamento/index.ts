@@ -73,27 +73,38 @@ serve(async (req) => {
     const now = new Date().toISOString();
     const isProfissional = ator === "profissional";
 
-    const confProfissional = isProfissional ? now : pagamento.confirmacao_profissional_em;
-    const confCliente = !isProfissional ? now : pagamento.confirmacao_cliente_em;
-
-    // 2. Atualizar a data de confirmação do ator
+    // 2. Atualizar a data de confirmação do ator e RELER a linha já atualizada
     const updatePayload: any = {};
     if (isProfissional) updatePayload.confirmacao_profissional_em = now;
     else updatePayload.confirmacao_cliente_em = now;
 
-    await admin.from("pagamentos").update(updatePayload).eq("id", pagamento.id);
+    const { data: pagAtualizado, error: updErr } = await admin
+      .from("pagamentos")
+      .update(updatePayload)
+      .eq("id", pagamento.id)
+      .select()
+      .single();
 
-    // 3. Verificar se AMBAS as confirmações existem
-    const ambasConfirmadas = confProfissional && confCliente;
+    if (updErr || !pagAtualizado) {
+      console.error("Erro ao registrar confirmação", updErr);
+      return json(
+        { error: "UPDATE_FAILED", message: updErr?.message || "Falha ao registrar confirmação." },
+        500,
+      );
+    }
+
+    // 3. Verificar se AMBAS as confirmações existem (lendo da linha atualizada)
+    const confProfissional = pagAtualizado.confirmacao_profissional_em;
+    const confCliente = pagAtualizado.confirmacao_cliente_em;
+    const ambasConfirmadas = !!confProfissional && !!confCliente;
 
     if (!ambasConfirmadas) {
-      // 5. Se não: retornar status parcial
       return json({
         ok: true,
         status: "partial",
         message: `Confirmação de ${ator} registrada. Aguardando a outra parte.`,
         confirmacao_profissional_em: confProfissional,
-        confirmacao_cliente_em: confCliente
+        confirmacao_cliente_em: confCliente,
       });
     }
 
