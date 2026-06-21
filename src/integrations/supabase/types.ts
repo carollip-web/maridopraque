@@ -1266,6 +1266,7 @@ export type Database = {
           id: string
           is_test: boolean
           nome: string
+          pagamento_pendente: boolean
           total_servicos_pagos: number
           updated_at: string
           whatsapp: string | null
@@ -1277,6 +1278,7 @@ export type Database = {
           id: string
           is_test?: boolean
           nome?: string
+          pagamento_pendente?: boolean
           total_servicos_pagos?: number
           updated_at?: string
           whatsapp?: string | null
@@ -1288,6 +1290,7 @@ export type Database = {
           id?: string
           is_test?: boolean
           nome?: string
+          pagamento_pendente?: boolean
           total_servicos_pagos?: number
           updated_at?: string
           whatsapp?: string | null
