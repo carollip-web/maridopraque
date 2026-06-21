@@ -1096,8 +1096,12 @@ export type Database = {
       }
       pagamentos: {
         Row: {
+          autorizacao_expira_em: string | null
+          capturado_em: string | null
           checkout_url: string | null
           cliente_id: string
+          confirmacao_cliente_em: string | null
+          confirmacao_profissional_em: string | null
           created_at: string | null
           gateway: string | null
           gateway_payment_id: string | null
@@ -1112,6 +1116,7 @@ export type Database = {
           payment_method_id: string | null
           profissional_id: string | null
           status: string
+          status_autorizacao: string | null
           updated_at: string | null
           valor_restante: number | null
           valor_sinal: number | null
@@ -1119,8 +1124,12 @@ export type Database = {
           webhook_last_received_at: string | null
         }
         Insert: {
+          autorizacao_expira_em?: string | null
+          capturado_em?: string | null
           checkout_url?: string | null
           cliente_id: string
+          confirmacao_cliente_em?: string | null
+          confirmacao_profissional_em?: string | null
           created_at?: string | null
           gateway?: string | null
           gateway_payment_id?: string | null
@@ -1135,6 +1144,7 @@ export type Database = {
           payment_method_id?: string | null
           profissional_id?: string | null
           status?: string
+          status_autorizacao?: string | null
           updated_at?: string | null
           valor_restante?: number | null
           valor_sinal?: number | null
@@ -1142,8 +1152,12 @@ export type Database = {
           webhook_last_received_at?: string | null
         }
         Update: {
+          autorizacao_expira_em?: string | null
+          capturado_em?: string | null
           checkout_url?: string | null
           cliente_id?: string
+          confirmacao_cliente_em?: string | null
+          confirmacao_profissional_em?: string | null
           created_at?: string | null
           gateway?: string | null
           gateway_payment_id?: string | null
@@ -1158,6 +1172,7 @@ export type Database = {
           payment_method_id?: string | null
           profissional_id?: string | null
           status?: string
+          status_autorizacao?: string | null
           updated_at?: string | null
           valor_restante?: number | null
           valor_sinal?: number | null

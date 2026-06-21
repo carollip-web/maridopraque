@@ -1,8 +1,4 @@
 // supabase/functions/test-tipo-a-harness/index.ts
-// ------------------------------------------------------------------
-// HARNESS TEMPORÁRIO de teste (Tipo A) — roda como Edge Function.
-// ------------------------------------------------------------------
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const cors = {
@@ -100,7 +96,6 @@ serve(async (req) => {
     const mockPaymentId = `MOCK-${stamp}`;
     check("Modo mock ativo (lógica das funções, sem MP real)", true, {
       gateway_payment_id: mockPaymentId,
-      nota: "Captura real no MP é validada pelo test-mp-sandbox.ts (Tipo B)",
     });
 
     const orc = await rest("POST", "orcamentos", {
@@ -121,10 +116,8 @@ serve(async (req) => {
       gateway: "mercado_pago",
       gateway_payment_id: mockPaymentId,
       status: "pending",
-      metadata: {
-        autorizacao: "autorizado",
-        autorizacao_expira_em: new Date(Date.now() + 7 * 864e5).toISOString(),
-      },
+      status_autorizacao: "autorizado",
+      autorizacao_expira_em: new Date(Date.now() + 7 * 864e5).toISOString(),
     });
     pagamentoId = pag?.[0]?.id;
     check("Criou pagamento autorizado", !!pagamentoId, pag);
@@ -137,21 +130,36 @@ serve(async (req) => {
 
     const t3 = await chamarCaptura(jwtCliente, orcamentoId, "cliente");
     check("T3: um lado só → parcial", t3.data?.status === "partial", t3.data);
+    const p1 = await rest(
+      "GET",
+      `pagamentos?id=eq.${pagamentoId}&select=status_autorizacao,confirmacao_cliente_em,confirmacao_profissional_em`,
+    );
+    check("T3b: banco ainda 'autorizado'", p1?.[0]?.status_autorizacao === "autorizado", p1?.[0]);
+    check(
+      "T3c: confirmação do cliente PERSISTIU no banco",
+      !!p1?.[0]?.confirmacao_cliente_em,
+      p1?.[0],
+    );
 
     const t4 = await chamarCaptura(jwtProf, orcamentoId, "profissional");
     check(
       "T4: ambos confirmaram → gate liberou e tentou capturar",
-      t4.data?.error === "CAPTURE_FAILED" || t4.data?.status === "captured",
+      t4.data?.error === "CAPTURE_FAILED",
       t4.data,
     );
     const p2 = await rest(
       "GET",
-      `pagamentos?id=eq.${pagamentoId}&select=status,metadata`,
+      `pagamentos?id=eq.${pagamentoId}&select=status_autorizacao,metadata`,
     );
     check(
-      "T4b: pagamento atualizado após captura",
-      !!p2?.[0],
-      p2?.[0],
+      "T4b: fallback acionado (status 'falhou')",
+      p2?.[0]?.status_autorizacao === "falhou",
+      p2?.[0]?.status_autorizacao,
+    );
+    check(
+      "T4c: link de pagamento gerado no fallback",
+      !!p2?.[0]?.metadata?.link_pagamento_avulso,
+      p2?.[0]?.metadata,
     );
   } catch (e) {
     check("ERRO inesperado", false, (e as Error).message);
