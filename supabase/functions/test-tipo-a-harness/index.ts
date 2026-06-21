@@ -124,7 +124,7 @@ serve(async (req) => {
       cliente_id: clienteId,
       profissional_id: profId,
       service_name: "Teste Tipo A",
-      valor: 200,
+      valor: 10,
       status: "aprovado",
     });
     orcamentoId = orc?.[0]?.id;
@@ -134,7 +134,7 @@ serve(async (req) => {
       orcamento_id: orcamentoId,
       cliente_id: clienteId,
       profissional_id: profId,
-      valor_total: 200,
+      valor_total: 10,
       gateway: "mercado_pago",
       gateway_payment_id: String(auth.id),
       status: "pending",
