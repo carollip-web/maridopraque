@@ -24,7 +24,8 @@ serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const MP_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ??
+  const MP_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN_TEST") ??
+    Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ??
     Deno.env.get("MP_ACCESS_TOKEN")!;
 
   const resultados: { nome: string; ok: boolean; detalhe?: unknown }[] = [];
@@ -113,12 +114,22 @@ serve(async (req) => {
     const jwtProf = await loginJWT(`tipoa.prof.${stamp}@gmail.com`, senha);
     check("Obteve JWT dos dois", !!jwtCliente && !!jwtProf);
 
-    const auth = await criarAutorizacao();
-    check("Autorização real no MP (capture:false)", auth.status === "authorized", {
-      status: auth.status,
-      status_detail: auth.status_detail,
-      message: auth.message,
+    let auth = await criarAutorizacao();
+    // Poll: sandbox MP às vezes devolve in_process/pending_contingency e resolve em segundos
+    for (let i = 0; i < 5 && auth?.id && auth.status !== "authorized" && auth.status !== "rejected"; i++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      const r = await fetch(`https://api.mercadopago.com/v1/payments/${auth.id}`, { headers: mpH });
+      auth = await r.json();
+    }
+    check("Autorização real no MP (capture:false)", auth?.status === "authorized", {
+      id: auth?.id,
+      status: auth?.status,
+      status_detail: auth?.status_detail,
+      message: auth?.message,
     });
+    if (!auth?.id || auth.status !== "authorized") {
+      throw new Error(`MP não autorizou: ${auth?.status} / ${auth?.status_detail}`);
+    }
 
     const orc = await rest("POST", "orcamentos", {
       cliente_id: clienteId,
@@ -128,7 +139,7 @@ serve(async (req) => {
       status: "aprovado",
     });
     orcamentoId = orc?.[0]?.id;
-    check("Criou orçamento", !!orcamentoId);
+    check("Criou orçamento", !!orcamentoId, orc);
 
     const pag = await rest("POST", "pagamentos", {
       orcamento_id: orcamentoId,
@@ -142,7 +153,7 @@ serve(async (req) => {
       autorizacao_expira_em: new Date(Date.now() + 7 * 864e5).toISOString(),
     });
     pagamentoId = pag?.[0]?.id;
-    check("Criou pagamento autorizado", !!pagamentoId);
+    check("Criou pagamento autorizado", !!pagamentoId, pag);
 
     const t1 = await chamarCaptura(jwtCliente, orcamentoId, "profissional");
     check("T1: cliente como profissional → 403", t1.http === 403, t1.data);
