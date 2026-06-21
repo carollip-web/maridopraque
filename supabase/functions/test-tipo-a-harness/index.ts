@@ -1,9 +1,5 @@
 // supabase/functions/test-tipo-a-harness/index.ts
-// ------------------------------------------------------------------
-// HARNESS TEMPORÁRIO de teste (Tipo A) — roda como Edge Function.
-// APAGUE depois de usar — não deve ficar em produção.
-// ------------------------------------------------------------------
-
+// HARNESS TEMPORÁRIO de teste (Tipo A)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const cors = {
@@ -120,6 +116,8 @@ serve(async (req) => {
     const auth = await criarAutorizacao();
     check("Autorização real no MP (capture:false)", auth.status === "authorized", {
       status: auth.status,
+      status_detail: auth.status_detail,
+      message: auth.message,
     });
 
     const orc = await rest("POST", "orcamentos", {
