@@ -24,7 +24,8 @@ serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const MP_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ??
+  const MP_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN_TEST") ??
+    Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN") ??
     Deno.env.get("MP_ACCESS_TOKEN")!;
 
   const resultados: { nome: string; ok: boolean; detalhe?: unknown }[] = [];
