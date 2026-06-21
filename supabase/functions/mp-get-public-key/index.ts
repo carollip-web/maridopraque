@@ -11,10 +11,10 @@ serve(async (req) => {
   }
 
   try {
-    const publicKey = Deno.env.get("MP_PUBLIC_KEY");
+    const publicKey = Deno.env.get("MERCADO_PAGO_PUBLIC_KEY") ?? Deno.env.get("MP_PUBLIC_KEY");
     
     if (!publicKey) {
-      return new Response(JSON.stringify({ error: "Chave pública não configurada" }), {
+      return new Response(JSON.stringify({ error: "Chave pública do Mercado Pago não configurada" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
