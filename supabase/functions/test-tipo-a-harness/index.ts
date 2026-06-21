@@ -81,12 +81,12 @@ serve(async (req) => {
       method: "POST",
       headers: { ...mpH, "X-Idempotency-Key": crypto.randomUUID() },
       body: JSON.stringify({
-        transaction_amount: 200,
+        transaction_amount: 10,
         capture: false,
         installments: 1,
         payment_method_id: "visa",
         token: tok.id,
-        payer: { email: "comprador.teste@gmail.com" },
+        payer: { email: `test_user_${Date.now()}@testuser.com` },
       }),
     })).json();
     return pay;
