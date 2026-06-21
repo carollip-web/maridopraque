@@ -7,8 +7,18 @@
 export type MpAmbiente = "teste" | "producao";
 
 export function getMpAmbiente(): MpAmbiente {
-  const raw = (Deno.env.get("MP_AMBIENTE") ?? "producao").trim().toLowerCase();
-  return raw === "teste" ? "teste" : "producao";
+  const raw = Deno.env.get("MP_AMBIENTE")?.trim().toLowerCase();
+  if (!raw) {
+    throw new Error(
+      "MP_AMBIENTE não configurado — defina como 'teste' ou 'producao'.",
+    );
+  }
+  if (raw !== "teste" && raw !== "producao") {
+    throw new Error(
+      `MP_AMBIENTE inválido: '${raw}'. Use apenas 'teste' ou 'producao'.`,
+    );
+  }
+  return raw;
 }
 
 /**
