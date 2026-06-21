@@ -292,7 +292,7 @@ function Info({
     <div>
       <div className="text-xs uppercase text-muted-foreground">{label}</div>
       <div className={mono ? "font-mono text-xs" : "text-sm font-medium"}>
-        {value === undefined || value === null || value === "" ? "—" : String(value)}
+        {display}
       </div>
     </div>
   );
