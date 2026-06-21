@@ -160,7 +160,7 @@ serve(async (req) => {
       return json({
         ok: false,
         error: "CAPTURE_FAILED",
-        message: "A captura falhou e a recobranca foi acionada.",
+        message: "A captura falhou e um link de pagamento foi gerado.",
         detail: mpBody
       }, 400);
     }
