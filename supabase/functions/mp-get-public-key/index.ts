@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getMpPublicKey } from "../_shared/mp-credentials.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,10 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const publicKey = Deno.env.get("MERCADO_PAGO_PUBLIC_KEY") ?? Deno.env.get("MP_PUBLIC_KEY");
-    
-    if (!publicKey) {
-      return new Response(JSON.stringify({ error: "Chave pública do Mercado Pago não configurada" }), {
+    let publicKey: string;
+    try {
+      publicKey = getMpPublicKey().publicKey;
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e?.message ?? "Chave pública do Mercado Pago não configurada" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
