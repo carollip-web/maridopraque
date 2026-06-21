@@ -40,6 +40,7 @@ import { Route as ServicosCategoriaRouteImport } from './routes/servicos.$catego
 import { Route as MpCallbackRouteImport } from './routes/mp.callback'
 import { Route as LoginProfissionalRouteImport } from './routes/login_.profissional'
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
+import { Route as AdminMpTesteRouteImport } from './routes/admin.mp-teste'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 
 const TermosRoute = TermosRouteImport.update({
@@ -197,6 +198,11 @@ const AuthRedirectRoute = AuthRedirectRouteImport.update({
   path: '/auth/redirect',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMpTesteRoute = AdminMpTesteRouteImport.update({
+  id: '/mp-teste',
+  path: '/mp-teste',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
   id: '/perfil/$slug',
   path: '/perfil/$slug',
@@ -205,7 +211,7 @@ const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/servicos-admin': typeof ServicosAdminRoute
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
+  '/admin/mp-teste': typeof AdminMpTesteRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -239,7 +246,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/servicos-admin': typeof ServicosAdminRoute
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
+  '/admin/mp-teste': typeof AdminMpTesteRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/login/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -274,7 +282,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/admin-repasses': typeof AdminRepassesRoute
   '/admin-validacao': typeof AdminValidacaoRoute
   '/ajuda': typeof AjudaRoute
@@ -300,6 +308,7 @@ export interface FileRoutesById {
   '/servicos-admin': typeof ServicosAdminRoute
   '/termo-adesao': typeof TermoAdesaoRoute
   '/termos': typeof TermosRoute
+  '/admin/mp-teste': typeof AdminMpTesteRoute
   '/auth/redirect': typeof AuthRedirectRoute
   '/login_/profissional': typeof LoginProfissionalRoute
   '/mp/callback': typeof MpCallbackRoute
@@ -336,6 +345,7 @@ export interface FileRouteTypes {
     | '/servicos-admin'
     | '/termo-adesao'
     | '/termos'
+    | '/admin/mp-teste'
     | '/auth/redirect'
     | '/login/profissional'
     | '/mp/callback'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/servicos-admin'
     | '/termo-adesao'
     | '/termos'
+    | '/admin/mp-teste'
     | '/auth/redirect'
     | '/login/profissional'
     | '/mp/callback'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/servicos-admin'
     | '/termo-adesao'
     | '/termos'
+    | '/admin/mp-teste'
     | '/auth/redirect'
     | '/login_/profissional'
     | '/mp/callback'
@@ -413,7 +425,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AdminRepassesRoute: typeof AdminRepassesRoute
   AdminValidacaoRoute: typeof AdminValidacaoRoute
   AjudaRoute: typeof AjudaRoute
@@ -663,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRedirectRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/mp-teste': {
+      id: '/admin/mp-teste'
+      path: '/mp-teste'
+      fullPath: '/admin/mp-teste'
+      preLoaderRoute: typeof AdminMpTesteRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/profissionais/perfil/$slug': {
       id: '/profissionais/perfil/$slug'
       path: '/perfil/$slug'
@@ -672,6 +691,16 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminRouteChildren {
+  AdminMpTesteRoute: typeof AdminMpTesteRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminMpTesteRoute: AdminMpTesteRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ProfissionaisRouteChildren {
   ProfissionaisPerfilSlugRoute: typeof ProfissionaisPerfilSlugRoute
@@ -699,7 +728,7 @@ const ServicosRouteWithChildren = ServicosRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AdminRepassesRoute: AdminRepassesRoute,
   AdminValidacaoRoute: AdminValidacaoRoute,
   AjudaRoute: AjudaRoute,

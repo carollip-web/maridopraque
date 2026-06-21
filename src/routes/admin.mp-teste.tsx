@@ -286,6 +286,8 @@ function Info({
   value?: unknown;
   mono?: boolean;
 }) {
+  const display =
+    value === undefined || value === null || value === "" ? "—" : String(value);
   return (
     <div>
       <div className="text-xs uppercase text-muted-foreground">{label}</div>
