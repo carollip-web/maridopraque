@@ -256,7 +256,7 @@ function MpTestePage() {
               </pre>
             </details>
 
-            {result.mp_response && (
+            {result.mp_response ? (
               <details className="text-xs">
                 <summary className="cursor-pointer text-muted-foreground">
                   Última resposta do MP
@@ -265,7 +265,7 @@ function MpTestePage() {
 {JSON.stringify(result.mp_response, null, 2)}
                 </pre>
               </details>
-            )}
+            ) : null}
 
             <Button variant="outline" onClick={reset}>
               Rodar de novo
