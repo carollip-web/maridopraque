@@ -86,7 +86,7 @@ serve(async (req) => {
         installments: 1,
         payment_method_id: "visa",
         token: tok.id,
-        payer: { email: `test_user_${Date.now()}@testuser.com` },
+        payer: { email: "test@test.com" },
       }),
     })).json();
     return pay;
