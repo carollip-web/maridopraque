@@ -416,6 +416,20 @@ export function useProfissionalData(user: User | null) {
     queryFn: () => carregarAgendaProfissional(userId!),
   });
 
+  // Splits (fonte real de ganhos — alinhado com Financeiro)
+  const splitsQuery = useQuery({
+    queryKey: ["profissional", "splits", userId],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pagamento_splits")
+        .select("orcamento_id, valor_profissional, valor_total, status, created_at")
+        .eq("profissional_id", userId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // ---- Realtime: invalida queries ao receber eventos ----
   useEffect(() => {
     if (!userId) return;
