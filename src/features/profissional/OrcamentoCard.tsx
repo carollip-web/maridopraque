@@ -851,6 +851,68 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           />
         </div>
       )}
+
+      <Dialog open={recusarOpen} onOpenChange={(open) => !recusarLoading && setRecusarOpen(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recusar este pedido?</DialogTitle>
+            <DialogDescription>
+              Ele sairá do seu radar. Conte por que recusou — nos ajuda a melhorar o que chega até você (opcional).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-2">
+            {MOTIVOS_RECUSA.map((m) => (
+              <label
+                key={m}
+                className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                  recusarMotivo === m
+                    ? "border-brand bg-brand-soft"
+                    : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="motivo-recusa"
+                  value={m}
+                  checked={recusarMotivo === m}
+                  onChange={() => setRecusarMotivo(m)}
+                  className="accent-brand"
+                />
+                <span className="text-sm font-medium">{m}</span>
+              </label>
+            ))}
+            {recusarMotivo === "Outro" && (
+              <Textarea
+                placeholder="Descreva o motivo..."
+                value={recusarMotivoOutro}
+                onChange={(e) => setRecusarMotivoOutro(e.target.value)}
+                rows={3}
+                className="resize-none mt-2"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRecusarOpen(false)}
+              disabled={recusarLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRecusar}
+              disabled={
+                recusarLoading ||
+                (recusarMotivo === "Outro" && !recusarMotivoOutro.trim())
+              }
+            >
+              {recusarLoading ? "Recusando..." : "Confirmar recusa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
