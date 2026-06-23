@@ -421,16 +421,16 @@ export function ProfissionalFinanceiro() {
                       </td>
 
                       <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
-                        {brl(Number(sp.valor_total))}
+                        {brl(Number(sp.valor_total ?? 0))}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(Number(sp.taxa_plataforma))}
+                        − {brl(Number(sp.taxa_plataforma ?? 0))}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(Number(sp.taxa_gateway))}
+                        − {brl(Number(sp.taxa_gateway ?? 0))}
                       </td>
                       <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
-                        {brl(Number(sp.valor_profissional))}
+                        {brl(Number(sp.valor_profissional ?? 0))}
                       </td>
                     </tr>
 
