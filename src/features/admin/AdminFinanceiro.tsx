@@ -563,9 +563,17 @@ export function AdminFinanceiro() {
                     const prof = p.profissional_id ? profiles[p.profissional_id] : null;
                     const cli = p.cliente_id ? profiles[p.cliente_id] : null;
                     const valor = Number(p.valor_total || 0);
-                    const fee = getMarketplaceFee(p);
-                    const taxaMP = Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
-                    const liquido = Math.round((valor - fee - taxaMP) * 100) / 100;
+                    const split = p.orcamento_id ? splitsByOrc[p.orcamento_id] : null;
+                    const fee = split
+                      ? Number(split.taxa_plataforma || 0)
+                      : getMarketplaceFee(p);
+                    const taxaMP = split
+                      ? Number(split.taxa_gateway || 0)
+                      : Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
+                    const liquido = split
+                      ? Number(split.valor_profissional || 0)
+                      : Math.round((valor - fee - taxaMP) * 100) / 100;
+                    const isEstimado = !split;
                     const badge =
                       STATUS_BADGES[p.status] || {
                         bg: "bg-slate-100 text-slate-700 border-slate-200",
