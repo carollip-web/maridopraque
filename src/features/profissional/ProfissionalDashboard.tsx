@@ -484,7 +484,6 @@ export function ProfissionalDashboard({
         )}
       </section>
 
-      <ProfissionalEarningsChart userId={user?.id} />
 
       <PrimeirosPassosCard userId={user?.id} setTab={setTab} metrics={metrics} counts={counts} />
       
