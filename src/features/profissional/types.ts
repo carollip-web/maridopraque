@@ -24,6 +24,7 @@ export interface Orcamento {
   updated_at: string;
   data_aprovacao: string | null;
   data_pagamento: string | null;
+  data_agendada?: string | null;
   auto_aprovado: boolean;
   fotos_problema: string[] | null;
   fotos_concluido: string[] | null;

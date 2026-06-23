@@ -64,10 +64,45 @@ async function carregarNomeCliente(clienteId?: string | null) {
   return data?.nome ?? null;
 }
 
-function ProximoServicoCard({ userId }: { userId?: string }) {
-  const { data: prox, isLoading } = useQuery({
+function ProximoServicoCard({
+  userId,
+  orcamentos,
+}: {
+  userId?: string;
+  orcamentos: Orcamento[];
+}) {
+  const proxLocal = React.useMemo<ProximoServico | null>(() => {
+    const now = Date.now();
+    const proximo = orcamentos
+      .filter(
+        (o) =>
+          (o.profissional_id === userId ||
+            (o as Orcamento & { apoio_profissional_id?: string | null })
+              .apoio_profissional_id === userId) &&
+          ["aprovado", "pago"].includes(o.status) &&
+          !!o.data_agendada &&
+          new Date(o.data_agendada).getTime() >= now,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.data_agendada!).getTime() -
+          new Date(b.data_agendada!).getTime(),
+      )[0];
+
+    if (!proximo) return null;
+    return {
+      id: proximo.id,
+      service_name: proximo.service_name,
+      data_agendada: proximo.data_agendada ?? null,
+      tipo_atendimento: proximo.tipo_atendimento ?? null,
+      cliente_id: proximo.cliente_id,
+      status: proximo.status,
+    };
+  }, [orcamentos, userId]);
+
+  const { data: proxRemoto, isLoading } = useQuery({
     queryKey: ["profissional", "proximo-servico", userId],
-    enabled: !!userId,
+    enabled: !!userId && !proxLocal,
     queryFn: async (): Promise<ProximoServico | null> => {
       const now = new Date().toISOString();
       const { data, error } = await supabase
@@ -123,7 +158,11 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
     },
   });
 
-  if (isLoading) return <Skeleton className="h-24 w-full rounded-2xl" />;
+  const prox = proxLocal ?? proxRemoto;
+
+  if (!proxLocal && isLoading) {
+    return <Skeleton className="h-24 w-full rounded-2xl" />;
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-gradient-to-br from-indigo-50 to-blue-50 p-5 shadow-sm">
@@ -374,7 +413,7 @@ export function ProfissionalDashboard({
         onVerPedidos={() => setTab("orcamentos")}
       />
 
-      <ProximoServicoCard userId={user?.id} />
+      <ProximoServicoCard userId={user?.id} orcamentos={orcamentos} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
