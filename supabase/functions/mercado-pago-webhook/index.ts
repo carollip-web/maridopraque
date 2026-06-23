@@ -6,6 +6,7 @@ const MP_ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const MP_WEBHOOK_SECRET = Deno.env.get("MERCADO_PAGO_WEBHOOK_SECRET");
+const MARKETPLACE_FEE_PERCENT = 0.15;
 
 async function verificarAssinaturaMP(req: Request, requestId: string): Promise<boolean> {
   if (!MP_WEBHOOK_SECRET) {
@@ -312,6 +313,8 @@ serve(async (req) => {
         return Math.round(amount * 0.0498 * 100) / 100; // à vista padrão
       };
 
+      const valorTotal = Math.round(Number(mpPayment.transaction_amount || (pagamento as any)?.valor_total || 0) * 100) / 100;
+      const taxaGateway = calcularTaxaMP(mpPayment);
       const valorApoioFeminino = Number(currentMetadata?.valor_apoio_feminino || 0);
       const valorBase = Math.round((valorTotal - valorApoioFeminino) * 100) / 100;
       const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT + valorApoioFeminino) * 100) / 100;
@@ -329,7 +332,7 @@ serve(async (req) => {
         valor_profissional: valorProfissional,
         status: "aguardando_conclusao",
         disponivel_em: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      }, { onConflict: "orcamento_id" });
+      }, { onConflict: "pagamento_id" });
 
       if (splitErr) {
         console.error(`[Webhook ${requestId}] Erro ao criar split:`, splitErr);
