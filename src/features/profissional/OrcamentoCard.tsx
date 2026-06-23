@@ -831,12 +831,22 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
               >
                 {saving ? "Enviando…" : "Enviar Orçamento"}
               </Button>
+              {mode === "pegar" && onRecusar && (
+                <Button
+                  variant="outline"
+                  onClick={() => setRecusarOpen(true)}
+                  className="rounded-full h-11 px-5 font-bold text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                >
+                  Recusar
+                </Button>
+              )}
               {mode === "revisar" && (
                 <Button variant="ghost" onClick={() => setEditing(false)} className="rounded-full">
                   Cancelar
                 </Button>
               )}
             </div>
+
           </div>
         )}
       </div>
