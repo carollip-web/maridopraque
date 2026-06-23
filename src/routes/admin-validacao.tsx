@@ -310,8 +310,8 @@ function AdminValidacao() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {(["em_analise", "pendente", "aprovado", "rejeitado"] as const).map((s) => {
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+          {(["em_analise", "incompleto", "aprovado", "rejeitado", "pendente"] as const).map((s) => {
             const cfg = STATUS_CFG[s];
             const Icon = cfg.icon;
             return (
