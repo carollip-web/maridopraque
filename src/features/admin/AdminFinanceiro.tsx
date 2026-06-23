@@ -193,18 +193,31 @@ export function AdminFinanceiro() {
     return pagamentos.filter((p) => new Date(p.created_at).getTime() >= limite);
   }, [pagamentos, periodo]);
 
-  // Métricas
+  // Métricas — usa pagamento_splits (real) quando existe; senão estima.
   const metrics = useMemo(() => {
     const aprovados = pagamentosPeriodo.filter(
       (r) => r.status === "approved" || r.status === "paid",
     );
-    const bruto = aprovados.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const comissao = aprovados.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
-    const taxaMP = aprovados.reduce(
-      (acc, r) => acc + Number(r.valor_total || 0) * TAXA_MP_CREDITO,
-      0,
-    );
-    const liquidoPro = bruto - comissao - taxaMP;
+    let bruto = 0;
+    let comissao = 0;
+    let taxaMP = 0;
+    let liquidoPro = 0;
+    aprovados.forEach((r) => {
+      const valor = Number(r.valor_total || 0);
+      const split = r.orcamento_id ? splitsByOrc[r.orcamento_id] : null;
+      bruto += valor;
+      if (split) {
+        comissao += Number(split.taxa_plataforma || 0);
+        taxaMP += Number(split.taxa_gateway || 0);
+        liquidoPro += Number(split.valor_profissional || 0);
+      } else {
+        const fee = getMarketplaceFee(r);
+        const tmp = valor * TAXA_MP_CREDITO;
+        comissao += fee;
+        taxaMP += tmp;
+        liquidoPro += valor - fee - tmp;
+      }
+    });
     const pendente = pagamentosPeriodo
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
@@ -222,7 +235,7 @@ export function AdminFinanceiro() {
       qtdAprovados: aprovados.length,
       qtdPendentes: pagamentosPeriodo.filter((r) => r.status === "pending").length,
     };
-  }, [pagamentosPeriodo]);
+  }, [pagamentosPeriodo, splitsByOrc]);
 
 
 
