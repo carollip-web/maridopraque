@@ -18,6 +18,15 @@ import { SLABadge } from "@/components/SLABadge";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { SignedImage, getOrcamentoFotoSignedUrl } from "@/components/SignedMedia";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Chat } from "@/components/Chat";
 import { Orcamento, Profile, ServicoCat, OrcMat } from "./types";
 import { STATUS_META } from "./constants";
