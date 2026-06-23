@@ -18,6 +18,15 @@ import { SLABadge } from "@/components/SLABadge";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { SignedImage, getOrcamentoFotoSignedUrl } from "@/components/SignedMedia";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Chat } from "@/components/Chat";
 import { Orcamento, Profile, ServicoCat, OrcMat } from "./types";
 import { STATUS_META } from "./constants";
@@ -38,7 +47,7 @@ interface OrcamentoCardProps {
   enviar: any;
   refresh?: () => void;
   userId: string;
-  onRecusar?: (id: string) => Promise<void>;
+  onRecusar?: (id: string, motivo?: string | null) => Promise<void>;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
   disableChat?: boolean;
   minhaProposta?: any;
@@ -104,6 +113,33 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   });
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
   const [showDetails, setShowDetails] = useState(false);
+  const [recusarOpen, setRecusarOpen] = useState(false);
+  const [recusarMotivo, setRecusarMotivo] = useState<string>("");
+  const [recusarMotivoOutro, setRecusarMotivoOutro] = useState<string>("");
+  const [recusarLoading, setRecusarLoading] = useState(false);
+
+  const MOTIVOS_RECUSA = [
+    "Fora da minha área de atendimento",
+    "Agenda incompatível",
+    "Não é minha especialidade",
+    "Valor abaixo do que aceito",
+    "Outro",
+  ];
+
+  const handleConfirmRecusar = async () => {
+    if (!onRecusar) return;
+    const motivoFinal =
+      recusarMotivo === "Outro" ? recusarMotivoOutro.trim() : recusarMotivo;
+    setRecusarLoading(true);
+    try {
+      await onRecusar(o.id, motivoFinal || null);
+      setRecusarOpen(false);
+      setRecusarMotivo("");
+      setRecusarMotivoOutro("");
+    } finally {
+      setRecusarLoading(false);
+    }
+  };
 
   const isAguardandoPagamento = o.status === "aprovado";
   const isPagamentoConfirmado = o.status === "pago";
@@ -695,7 +731,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     variant="ghost"
                     size="sm"
                     className="text-red-500 font-bold text-xs"
-                    onClick={() => onRecusar?.(o.id)}
+                    onClick={() => setRecusarOpen(true)}
                   >
                     Recusar
                   </Button>
@@ -815,6 +851,68 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           />
         </div>
       )}
+
+      <Dialog open={recusarOpen} onOpenChange={(open) => !recusarLoading && setRecusarOpen(open)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recusar este pedido?</DialogTitle>
+            <DialogDescription>
+              Ele sairá do seu radar. Conte por que recusou — nos ajuda a melhorar o que chega até você (opcional).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-2">
+            {MOTIVOS_RECUSA.map((m) => (
+              <label
+                key={m}
+                className={`flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                  recusarMotivo === m
+                    ? "border-brand bg-brand-soft"
+                    : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="motivo-recusa"
+                  value={m}
+                  checked={recusarMotivo === m}
+                  onChange={() => setRecusarMotivo(m)}
+                  className="accent-brand"
+                />
+                <span className="text-sm font-medium">{m}</span>
+              </label>
+            ))}
+            {recusarMotivo === "Outro" && (
+              <Textarea
+                placeholder="Descreva o motivo..."
+                value={recusarMotivoOutro}
+                onChange={(e) => setRecusarMotivoOutro(e.target.value)}
+                rows={3}
+                className="resize-none mt-2"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRecusarOpen(false)}
+              disabled={recusarLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmRecusar}
+              disabled={
+                recusarLoading ||
+                (recusarMotivo === "Outro" && !recusarMotivoOutro.trim())
+              }
+            >
+              {recusarLoading ? "Recusando..." : "Confirmar recusa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

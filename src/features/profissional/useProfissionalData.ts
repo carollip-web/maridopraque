@@ -643,22 +643,22 @@ export function useProfissionalData(user: User | null) {
   }, [queryClient]);
 
   const recusarMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, motivo }: { id: string; motivo?: string | null }) => {
       if (!userId) throw new Error("Sem usuário");
       const { error } = await supabase
         .from("orcamento_recusas")
-        .insert({ orcamento_id: id, profissional_id: userId });
+        .insert({ orcamento_id: id, profissional_id: userId, motivo: motivo ?? null });
       if (error) throw error;
       return id;
     },
-    onMutate: async (id: string) => {
+    onMutate: async ({ id }) => {
       const key = ["profissional", "recusas", userId] as const;
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<string[]>(key) ?? [];
       queryClient.setQueryData<string[]>(key, [...previous, id]);
       return { previous };
     },
-    onError: (err, _id, ctx) => {
+    onError: (err, _vars, ctx) => {
       if (ctx?.previous) {
         queryClient.setQueryData(
           ["profissional", "recusas", userId],
@@ -673,12 +673,13 @@ export function useProfissionalData(user: User | null) {
   });
 
   const recusarOrcamento = useCallback(
-    async (id: string) => {
+    async (id: string, motivo?: string | null) => {
       if (!userId) return;
-      await recusarMutation.mutateAsync(id).catch(() => {});
+      await recusarMutation.mutateAsync({ id, motivo }).catch(() => {});
     },
     [userId, recusarMutation],
   );
+
 
   const toggleAtivoMutation = useMutation({
     mutationFn: async (checked: boolean) => {
