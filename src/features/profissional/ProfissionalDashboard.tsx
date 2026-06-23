@@ -45,25 +45,78 @@ function fmtLabel(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
+type ProximoServico = {
+  id: string;
+  service_name: string;
+  data_agendada: string | null;
+  tipo_atendimento: string | null;
+  cliente_id: string | null;
+  status: string;
+  clienteNome?: string | null;
+};
+
+async function carregarNomeCliente(clienteId?: string | null) {
+  if (!clienteId) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("nome")
+    .eq("id", clienteId)
+    .maybeSingle();
+  return data?.nome ?? null;
+}
+
 function ProximoServicoCard({ userId }: { userId?: string }) {
   const { data: prox, isLoading } = useQuery({
     queryKey: ["profissional", "proximo-servico", userId],
     enabled: !!userId,
-    queryFn: async () => {
+    queryFn: async (): Promise<ProximoServico | null> => {
       const now = new Date().toISOString();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
-        .select(`
-          id, service_name, data_agendada, tipo_atendimento,
-          profiles!orcamentos_cliente_id_fkey(nome)
-        `)
-        .eq("profissional_id", userId!)
+        .select("id, service_name, data_agendada, tipo_atendimento, cliente_id, status")
+        .or(`profissional_id.eq.${userId},apoio_profissional_id.eq.${userId}`)
         .in("status", ["aprovado", "pago"])
+        .not("data_agendada", "is", null)
         .gte("data_agendada", now)
         .order("data_agendada", { ascending: true })
         .limit(1)
         .maybeSingle();
-      return data;
+
+      if (error) throw error;
+      if (data) {
+        return {
+          ...data,
+          clienteNome: await carregarNomeCliente(data.cliente_id),
+        };
+      }
+
+      const { data: reserva, error: reservaError } = await supabase
+        .from("profissional_bloqueios_agenda")
+        .select("orcamento_id, inicio, status")
+        .eq("profissional_id", userId!)
+        .eq("status", "confirmado")
+        .gte("inicio", now)
+        .order("inicio", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (reservaError) throw reservaError;
+      if (!reserva?.orcamento_id) return null;
+
+      const { data: orcamento, error: orcamentoError } = await supabase
+        .from("orcamentos")
+        .select("id, service_name, data_agendada, tipo_atendimento, cliente_id, status")
+        .eq("id", reserva.orcamento_id)
+        .maybeSingle();
+
+      if (orcamentoError) throw orcamentoError;
+      if (!orcamento) return null;
+
+      return {
+        ...orcamento,
+        data_agendada: orcamento.data_agendada ?? reserva.inicio,
+        clienteNome: await carregarNomeCliente(orcamento.cliente_id),
+      };
     }
   });
 
@@ -81,7 +134,7 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
             <p className="font-bold text-slate-900">{prox.service_name}</p>
             <div className="flex items-center gap-4 mt-1.5 text-sm text-slate-600">
               <span className="font-medium text-brand">📅 {new Date(prox.data_agendada!).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
-              <span>👤 {(prox.profiles as any)?.nome || "Cliente"}</span>
+              <span>👤 {prox.clienteNome || "Cliente"}</span>
             </div>
           </div>
           {prox.tipo_atendimento === "homem_com_apoio_feminino" && (
