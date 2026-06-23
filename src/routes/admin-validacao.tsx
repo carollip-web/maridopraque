@@ -264,9 +264,10 @@ function AdminValidacao() {
 
   const counts = {
     em_analise: prestadores.filter((p) => p.aprovacao_status === "em_analise").length,
-    pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
+    incompleto: prestadores.filter((p) => p.aprovacao_status === "incompleto").length,
     aprovado: prestadores.filter((p) => p.aprovacao_status === "aprovado").length,
     rejeitado: prestadores.filter((p) => p.aprovacao_status === "rejeitado").length,
+    pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
   };
 
   if (loading)
