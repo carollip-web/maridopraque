@@ -20,6 +20,9 @@ import {
   Search,
   AlertTriangle,
   Shield,
+  UserX,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin-validacao")({
