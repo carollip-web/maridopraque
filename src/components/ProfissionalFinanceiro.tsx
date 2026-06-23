@@ -70,10 +70,44 @@ const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null
     ["cancelled", "canceled", "rejected", "failed", "refunded"].includes(pagStatus)
   )
     return "cancelado";
-  if (["disponivel", "solicitado", "pago", "paid", "approved"].includes(splitStatus)) return "recebido";
+  if (["aguardando_conclusao", "disponivel", "solicitado", "pago", "paid", "approved"].includes(splitStatus)) return "recebido";
   if (pagPaid || ["paid", "pago", "approved"].includes(pagStatus)) return "recebido";
   return "pendente";
 };
+
+const roundMoney = (value: number) => Math.round(Number(value || 0) * 100) / 100;
+
+const getPlatformFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_plataforma">) => {
+  const taxa = roundMoney(Number(sp.taxa_plataforma || 0));
+  if (taxa > 0) return taxa;
+
+  const total = roundMoney(Number(sp.valor_total || 0));
+  const liquido = roundMoney(Number(sp.valor_profissional || 0));
+  const totalTaxas = Math.max(roundMoney(total - liquido), 0);
+  if (total <= 0 || totalTaxas <= 0) return 0;
+
+  return Math.min(roundMoney(total * 0.15), totalTaxas);
+};
+
+const getGatewayFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
+  const taxa = roundMoney(Number(sp.taxa_gateway || 0));
+  if (taxa > 0) return taxa;
+
+  const total = roundMoney(Number(sp.valor_total || 0));
+  const liquido = roundMoney(Number(sp.valor_profissional || 0));
+  return Math.max(roundMoney(total - liquido - getPlatformFee(sp)), 0);
+};
+
+const getProfessionalAmount = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
+  const liquido = roundMoney(Number(sp.valor_profissional || 0));
+  if (liquido > 0) return liquido;
+
+  const total = roundMoney(Number(sp.valor_total || 0));
+  return Math.max(roundMoney(total - getPlatformFee(sp) - getGatewayFee(sp)), 0);
+};
+
+const getTotalFees = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) =>
+  roundMoney(getPlatformFee(sp) + getGatewayFee(sp));
 
 
 const brl = (n: number) =>
@@ -114,7 +148,7 @@ export function ProfissionalFinanceiro() {
       const { data, error } = await supabase
         .from("pagamento_splits")
         .select(
-          "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos(service_name,status),pagamentos(payment_method_id,installments,metodo,paid_at,status)",
+          "id,valor_total,valor_profissional,taxa_plataforma,taxa_gateway,status,disponivel_em,pago_em,created_at,orcamento_id,pagamento_id,orcamentos!pagamento_splits_orcamento_id_fkey(service_name,status),pagamentos!pagamento_splits_pagamento_id_fkey(payment_method_id,installments,metodo,paid_at,status)",
         )
         .eq("profissional_id", userId!)
         .order("created_at", { ascending: false })
@@ -144,16 +178,15 @@ export function ProfissionalFinanceiro() {
       0,
     );
     const taxasPeriodo = splitsPeriodo.reduce(
-      (acc, s) =>
-        acc + Number(s.taxa_plataforma || 0) + Number(s.taxa_gateway || 0),
+      (acc, s) => acc + getTotalFees(s),
       0,
     );
     const liquidoRecebido = recebidos.reduce(
-      (acc, s) => acc + Number(s.valor_profissional || 0),
+      (acc, s) => acc + getProfessionalAmount(s),
       0,
     );
     const totalPendente = pendentes.reduce(
-      (acc, s) => acc + Number(s.valor_profissional || 0),
+      (acc, s) => acc + getProfessionalAmount(s),
       0,
     );
     const ticket = recebidos.length ? liquidoRecebido / recebidos.length : 0;
@@ -164,7 +197,7 @@ export function ProfissionalFinanceiro() {
     inicioMes.setHours(0, 0, 0, 0);
     const noMes = splits
       .filter((s) => deriveStatus(s) === "recebido" && new Date(s.created_at) >= inicioMes)
-      .reduce((acc, s) => acc + Number(s.valor_profissional || 0), 0);
+      .reduce((acc, s) => acc + getProfessionalAmount(s), 0);
 
     return {
       liquidoRecebido,
@@ -218,9 +251,9 @@ export function ProfissionalFinanceiro() {
         new Date(sp.created_at).toLocaleDateString("pt-BR"),
         sp.orcamentos?.service_name || "Serviço",
         Number(sp.valor_total || 0).toFixed(2).replace(".", ","),
-        Number(sp.valor_profissional || 0).toFixed(2).replace(".", ","),
-        Number(sp.taxa_plataforma || 0).toFixed(2).replace(".", ","),
-        Number(sp.taxa_gateway || 0).toFixed(2).replace(".", ","),
+        getProfessionalAmount(sp).toFixed(2).replace(".", ","),
+        getPlatformFee(sp).toFixed(2).replace(".", ","),
+        getGatewayFee(sp).toFixed(2).replace(".", ","),
         meta.label,
       ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
     });
@@ -425,13 +458,13 @@ export function ProfissionalFinanceiro() {
                         {brl(Number(sp.valor_total ?? 0))}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(Number(sp.taxa_plataforma ?? 0))}
+                        − {brl(getPlatformFee(sp))}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(Number(sp.taxa_gateway ?? 0))}
+                        − {brl(getGatewayFee(sp))}
                       </td>
                       <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
-                        {brl(Number(sp.valor_profissional ?? 0))}
+                        {brl(getProfessionalAmount(sp))}
                       </td>
                     </tr>
 
