@@ -193,15 +193,17 @@ export function AgendaCalendar() {
       setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
-      setAgendamentos(agRows.map((a) => ({
-        id: a.id,
-        service_name: a.service_name,
-        data_agendada: a.data_agendada ?? "",
-        status: a.status,
-        valor: a.valor ?? undefined,
-        cliente: a.cliente_id ? nomesClientes[a.cliente_id] : undefined,
-        duracao_min: dur,
-      })));
+      setAgendamentos(
+        agRows.map((a) => ({
+          id: a.id,
+          service_name: a.service_name,
+          data_agendada: a.data_agendada ?? "",
+          status: a.status,
+          valor: a.valor ?? undefined,
+          cliente: a.cliente_id ? nomesClientes[a.cliente_id] : undefined,
+          duracao_min: dur,
+        })),
+      );
       setLoading(false);
     };
 
