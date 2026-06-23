@@ -322,7 +322,7 @@ function ProfissionalEarningsChart({ userId }: { userId?: string }) {
 
       if (splits) {
         splits.forEach(s => {
-          if (s.status === "disponivel" || s.status === "pago" || s.status === "approved" || s.status === "paid") {
+          if (["aguardando_conclusao", "disponivel", "solicitado", "pago", "approved", "paid"].includes(String(s.status))) {
             const t = new Date(s.created_at).getTime();
             const w = weeks.find(wk => t >= wk.start.getTime() && t < wk.end.getTime());
             if (w) {
