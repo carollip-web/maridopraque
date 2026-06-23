@@ -535,23 +535,54 @@ function AdminValidacao() {
                     </div>
                   )}
 
+                  {/* Incompleto: contato para cobrança */}
+                  {selected.aprovacao_status === "incompleto" && (
+                    <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 space-y-3">
+                      <p className="text-sm font-bold text-orange-800">
+                        Cadastro não finalizado
+                      </p>
+                      <p className="text-xs text-orange-700">
+                        Este profissional criou a conta mas não enviou o cadastro para análise. Entre em contato para finalizar.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {selected.telefone && (
+                          <a
+                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline"
+                          >
+                            <Phone className="h-4 w-4" /> {selected.telefone} (WhatsApp)
+                          </a>
+                        )}
+                        {selected.email && selected.email !== "—" && (
+                          <a
+                            href={`mailto:${selected.email}`}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline"
+                          >
+                            <Mail className="h-4 w-4" /> {selected.email}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
-                  {(selected.aprovacao_status as string) !== "aprovado" && (
+                  {selected.aprovacao_status !== "aprovado" &&
+                    selected.aprovacao_status !== "incompleto" && (
                     <div className="space-y-3 pt-2 border-t border-border">
-                      {selected.aprovacao_status !== "aprovado" && (
-                        <Button
-                          onClick={handleAprovar}
-                          disabled={saving}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
-                        >
-                          {saving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-4 w-4" />
-                          )}{" "}
-                          Aprovar prestador
-                        </Button>
-                      )}
+                      <Button
+                        onClick={handleAprovar}
+                        disabled={saving}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
+                      >
+                        {saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}{" "}
+                        Aprovar prestador
+                      </Button>
                       <div className="space-y-2">
                         <textarea
                           value={motivo}
