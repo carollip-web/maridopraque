@@ -438,7 +438,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     } catch (e: any) {
       toast.error("Erro ao aprovar", { description: e.message });
       setApprovalStep("confirm");
-      return;
+      throw e;
     }
 
     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
