@@ -17,7 +17,6 @@ import { ProfissionalHeader } from "./ProfissionalHeader";
 import { type Tables } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
-
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -45,43 +44,147 @@ function fmtLabel(d: Date) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-function ProximoServicoCard({ userId }: { userId?: string }) {
-  const { data: prox, isLoading } = useQuery({
+type ProximoServico = {
+  id: string;
+  service_name: string;
+  data_agendada: string | null;
+  tipo_atendimento: string | null;
+  cliente_id: string | null;
+  status: string;
+  clienteNome?: string | null;
+};
+
+async function carregarNomeCliente(clienteId?: string | null) {
+  if (!clienteId) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("nome")
+    .eq("id", clienteId)
+    .maybeSingle();
+  return data?.nome ?? null;
+}
+
+function ProximoServicoCard({
+  userId,
+  orcamentos,
+}: {
+  userId?: string;
+  orcamentos: Orcamento[];
+}) {
+  const proxLocal = React.useMemo<ProximoServico | null>(() => {
+    const now = Date.now();
+    const proximo = orcamentos
+      .filter(
+        (o) =>
+          (o.profissional_id === userId ||
+            (o as Orcamento & { apoio_profissional_id?: string | null })
+              .apoio_profissional_id === userId) &&
+          ["aprovado", "pago"].includes(o.status) &&
+          !!o.data_agendada &&
+          new Date(o.data_agendada).getTime() >= now,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.data_agendada!).getTime() -
+          new Date(b.data_agendada!).getTime(),
+      )[0];
+
+    if (!proximo) return null;
+    return {
+      id: proximo.id,
+      service_name: proximo.service_name,
+      data_agendada: proximo.data_agendada ?? null,
+      tipo_atendimento: proximo.tipo_atendimento ?? null,
+      cliente_id: proximo.cliente_id,
+      status: proximo.status,
+    };
+  }, [orcamentos, userId]);
+
+  const { data: proxRemoto, isLoading } = useQuery({
     queryKey: ["profissional", "proximo-servico", userId],
-    enabled: !!userId,
-    queryFn: async () => {
+    enabled: !!userId && !proxLocal,
+    queryFn: async (): Promise<ProximoServico | null> => {
       const now = new Date().toISOString();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orcamentos")
-        .select(`
-          id, service_name, data_agendada, tipo_atendimento,
-          profiles!orcamentos_cliente_id_fkey(nome)
-        `)
-        .eq("profissional_id", userId!)
+        .select(
+          "id, service_name, data_agendada, tipo_atendimento, cliente_id, status",
+        )
+        .or(`profissional_id.eq.${userId},apoio_profissional_id.eq.${userId}`)
         .in("status", ["aprovado", "pago"])
+        .not("data_agendada", "is", null)
         .gte("data_agendada", now)
         .order("data_agendada", { ascending: true })
         .limit(1)
         .maybeSingle();
-      return data;
-    }
+
+      if (error) throw error;
+      if (data) {
+        return {
+          ...data,
+          clienteNome: await carregarNomeCliente(data.cliente_id),
+        };
+      }
+
+      const { data: reserva, error: reservaError } = await supabase
+        .from("profissional_bloqueios_agenda")
+        .select("orcamento_id, inicio, status")
+        .eq("profissional_id", userId!)
+        .eq("status", "confirmado")
+        .gte("inicio", now)
+        .order("inicio", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (reservaError) throw reservaError;
+      if (!reserva?.orcamento_id) return null;
+
+      const { data: orcamento, error: orcamentoError } = await supabase
+        .from("orcamentos")
+        .select(
+          "id, service_name, data_agendada, tipo_atendimento, cliente_id, status",
+        )
+        .eq("id", reserva.orcamento_id)
+        .maybeSingle();
+
+      if (orcamentoError) throw orcamentoError;
+      if (!orcamento) return null;
+
+      return {
+        ...orcamento,
+        data_agendada: orcamento.data_agendada ?? reserva.inicio,
+        clienteNome: await carregarNomeCliente(orcamento.cliente_id),
+      };
+    },
   });
 
-  if (isLoading) return <Skeleton className="h-24 w-full rounded-2xl" />;
+  const prox = proxLocal ?? proxRemoto;
+
+  if (!proxLocal && isLoading) {
+    return <Skeleton className="h-24 w-full rounded-2xl" />;
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-gradient-to-br from-indigo-50 to-blue-50 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <CalendarClock className="h-5 w-5 text-indigo-600" />
-        <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-widest">Próximo Serviço</h3>
+        <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-widest">
+          Próximo Serviço
+        </h3>
       </div>
       {prox ? (
         <div className="bg-white rounded-xl p-4 shadow-sm border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="font-bold text-slate-900">{prox.service_name}</p>
             <div className="flex items-center gap-4 mt-1.5 text-sm text-slate-600">
-              <span className="font-medium text-brand">📅 {new Date(prox.data_agendada!).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
-              <span>👤 {(prox.profiles as any)?.nome || "Cliente"}</span>
+              <span className="font-medium text-brand">
+                📅{" "}
+                {new Date(prox.data_agendada!).toLocaleString("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
+              </span>
+              <span>👤 {prox.clienteNome || "Cliente"}</span>
             </div>
           </div>
           {prox.tipo_atendimento === "homem_com_apoio_feminino" && (
@@ -310,7 +413,7 @@ export function ProfissionalDashboard({
         onVerPedidos={() => setTab("orcamentos")}
       />
 
-      <ProximoServicoCard userId={user?.id} />
+      <ProximoServicoCard userId={user?.id} orcamentos={orcamentos} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {loading ? (
