@@ -532,22 +532,39 @@ export function useProfissionalData(user: User | null) {
     );
     const aReceberOrcsApoio = meusApoio.filter((o) => o.status === "pago");
 
+    // Indexa splits reais por orcamento_id para usar valores efetivamente repassados
+    const splits = splitsQuery.data ?? [];
+    const splitsPorOrc = new Map<string, number>();
+    for (const s of splits) {
+      if (!s.orcamento_id) continue;
+      splitsPorOrc.set(
+        s.orcamento_id,
+        (splitsPorOrc.get(s.orcamento_id) ?? 0) + Number(s.valor_profissional || 0),
+      );
+    }
+
+    // Fallback estimado quando ainda não existe split (ex.: pago via outro fluxo)
+    const valorReal = (o: Orcamento, bruto: number) =>
+      splitsPorOrc.get(o.id) ?? liquido(bruto);
+
     const ganhosNormais = pagos.reduce(
-      (acc, o) => acc + liquido(Number(o.valor || 0)),
+      (acc, o) => acc + valorReal(o, Number(o.valor || 0)),
       0,
     );
     const ganhosApoio = pagosApoio.reduce(
-      (acc, o) => acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
+      (acc, o) =>
+        acc + valorReal(o, Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
       0,
     );
     const ganhos = ganhosNormais + ganhosApoio;
 
     const receberNormais = aReceberOrcs.reduce(
-      (acc, o) => acc + liquido(Number(o.valor || 0)),
+      (acc, o) => acc + valorReal(o, Number(o.valor || 0)),
       0,
     );
     const receberApoio = aReceberOrcsApoio.reduce(
-      (acc, o) => acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
+      (acc, o) =>
+        acc + valorReal(o, Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
       0,
     );
     const receber = receberNormais + receberApoio;
@@ -561,12 +578,13 @@ export function useProfissionalData(user: User | null) {
     const ganhosM =
       pagos
         .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
-        .reduce((acc, o) => acc + liquido(Number(o.valor || 0)), 0) +
+        .reduce((acc, o) => acc + valorReal(o, Number(o.valor || 0)), 0) +
       pagosApoio
         .filter((o) => new Date(o.data_pagamento ?? o.updated_at) >= inicioMes)
         .reduce(
           (acc, o) =>
-            acc + liquido(Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
+            acc +
+            valorReal(o, Number((o as OrcamentoWithApoio).valor_apoio_feminino || 0)),
           0,
         );
 
@@ -613,7 +631,7 @@ export function useProfissionalData(user: User | null) {
       slaMedioH,
       totalConcluidos,
     };
-  }, [orcamentos, userId]);
+  }, [orcamentos, userId, splitsQuery.data]);
 
   const loadingList =
     orcamentosQuery.isLoading || (enabled && orcamentosQuery.isPending);
