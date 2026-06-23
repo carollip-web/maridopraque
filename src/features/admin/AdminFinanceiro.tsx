@@ -157,6 +157,11 @@ export function AdminFinanceiro() {
 
     // Ledger (pagamento_splits) — splits MP são liquidados automaticamente
     const sp = splits || [];
+    const splitMap: Record<string, any> = {};
+    sp.forEach((s: any) => {
+      if (s.orcamento_id) splitMap[s.orcamento_id] = s;
+    });
+    setSplitsByOrc(splitMap);
     const totalRecebido = sp.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
     const totalTaxaPlat = sp.reduce(
       (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
