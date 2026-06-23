@@ -29,7 +29,7 @@ export const Route = createFileRoute("/admin-validacao")({
   component: AdminValidacao,
 });
 
-type Status = "pendente" | "em_analise" | "aprovado" | "rejeitado";
+type Status = "pendente" | "em_analise" | "aprovado" | "rejeitado" | "incompleto";
 
 type Prestador = {
   user_id: string;
@@ -55,6 +55,8 @@ type Prestador = {
   cadastro_submetido_em: string | null;
   aprovado_em: string | null;
   motivo_rejeicao: string | null;
+  cadastro_completo?: boolean;
+  created_at?: string | null;
 };
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any }> = {
@@ -62,6 +64,7 @@ const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon
   em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye },
   aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2 },
   rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle },
+  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX },
 };
 
 async function getSignedUrl(publicUrl: string | null) {
