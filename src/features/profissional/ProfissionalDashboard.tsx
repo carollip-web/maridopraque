@@ -17,7 +17,6 @@ import { ProfissionalHeader } from "./ProfissionalHeader";
 import { type Tables } from "@/integrations/supabase/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
-
 import { ActionStat, QuickLink } from "./ProfissionalStats";
 import { Orcamento, ProfissionalTab } from "./types";
 import { useQuery } from "@tanstack/react-query";
@@ -57,11 +56,7 @@ type ProximoServico = {
 
 async function carregarNomeCliente(clienteId?: string | null) {
   if (!clienteId) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("nome")
-    .eq("id", clienteId)
-    .maybeSingle();
+  const { data } = await supabase.from("profiles").select("nome").eq("id", clienteId).maybeSingle();
   return data?.nome ?? null;
 }
 
@@ -73,7 +68,9 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, service_name, data_agendada, tipo_atendimento, cliente_id, status")
+        .select(
+          "id, service_name, data_agendada, tipo_atendimento, cliente_id, status",
+        )
         .or(`profissional_id.eq.${userId},apoio_profissional_id.eq.${userId}`)
         .in("status", ["aprovado", "pago"])
         .not("data_agendada", "is", null)
@@ -105,7 +102,9 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
 
       const { data: orcamento, error: orcamentoError } = await supabase
         .from("orcamentos")
-        .select("id, service_name, data_agendada, tipo_atendimento, cliente_id, status")
+        .select(
+          "id, service_name, data_agendada, tipo_atendimento, cliente_id, status",
+        )
         .eq("id", reserva.orcamento_id)
         .maybeSingle();
 
@@ -117,7 +116,7 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
         data_agendada: orcamento.data_agendada ?? reserva.inicio,
         clienteNome: await carregarNomeCliente(orcamento.cliente_id),
       };
-    }
+    },
   });
 
   if (isLoading) return <Skeleton className="h-24 w-full rounded-2xl" />;
@@ -126,14 +125,22 @@ function ProximoServicoCard({ userId }: { userId?: string }) {
     <div className="rounded-2xl border border-border bg-gradient-to-br from-indigo-50 to-blue-50 p-5 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <CalendarClock className="h-5 w-5 text-indigo-600" />
-        <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-widest">Próximo Serviço</h3>
+        <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-widest">
+          Próximo Serviço
+        </h3>
       </div>
       {prox ? (
         <div className="bg-white rounded-xl p-4 shadow-sm border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="font-bold text-slate-900">{prox.service_name}</p>
             <div className="flex items-center gap-4 mt-1.5 text-sm text-slate-600">
-              <span className="font-medium text-brand">📅 {new Date(prox.data_agendada!).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+              <span className="font-medium text-brand">
+                📅{" "}
+                {new Date(prox.data_agendada!).toLocaleString("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
+              </span>
               <span>👤 {prox.clienteNome || "Cliente"}</span>
             </div>
           </div>
