@@ -44,6 +44,7 @@ type PagamentoRow = {
   metadata: any;
   profissional_id: string | null;
   cliente_id: string | null;
+  orcamento_id: string | null;
   orcamentos?: { service_name: string | null; data_pagamento?: string | null } | null;
 };
 
