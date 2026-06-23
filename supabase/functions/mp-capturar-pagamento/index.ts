@@ -137,7 +137,30 @@ serve(async (req) => {
       });
     }
 
-    // 4. Se sim:
+    // 4. Se ambas as confirmações existem:
+    // Caso A: pagamento foi pré-autorizado (precisa de captura no MP)
+    // Caso B: pagamento já foi cobrado integralmente (Checkout Pro) — nada a capturar
+    const precisaCapturar = pagamento.status_autorizacao === "autorizado";
+
+    if (!precisaCapturar) {
+      // Pagamento já está pago. Apenas marca o orçamento como concluído.
+      await admin
+        .from("pagamentos")
+        .update({ status_autorizacao: "capturado", capturado_em: now } as any)
+        .eq("id", pagamento.id);
+
+      await admin
+        .from("orcamentos")
+        .update({ status: "concluido", updated_at: now } as any)
+        .eq("id", orcamento_id);
+
+      return json({
+        ok: true,
+        status: "captured",
+        message: "Conclusão confirmada. Repasse liberado.",
+      });
+    }
+
     // a. Chamar PUT https://api.mercadopago.com/v1/payments/{payment_id}
     const mpPaymentId = pagamento.gateway_payment_id;
     if (!mpPaymentId) {
