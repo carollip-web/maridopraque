@@ -478,7 +478,21 @@ export function AdminClientes() {
         .select("id, nome, email, whatsapp, total_servicos_pagos, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
-      return (profs || []).filter((p: any) => !proIds.has(p.id));
+      const lista = (profs || []).filter((p: any) => !proIds.has(p.id));
+      const ids = lista.map((p: any) => p.id);
+      // Conta real de pedidos pagos por cliente (orcamentos com pagamento status='paid')
+      const realCount: Record<string, number> = {};
+      if (ids.length > 0) {
+        const { data: pagos } = await supabase
+          .from("orcamentos")
+          .select("cliente_id, pagamentos!pagamentos_orcamento_id_fkey!inner(id, status)")
+          .in("cliente_id", ids)
+          .eq("pagamentos.status", "paid");
+        (pagos || []).forEach((o: any) => {
+          realCount[o.cliente_id] = (realCount[o.cliente_id] || 0) + 1;
+        });
+      }
+      return lista.map((p: any) => ({ ...p, pedidos_pagos_real: realCount[p.id] || 0 }));
     },
   });
 
