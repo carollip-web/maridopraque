@@ -478,7 +478,21 @@ export function AdminClientes() {
         .select("id, nome, email, whatsapp, total_servicos_pagos, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
-      return (profs || []).filter((p: any) => !proIds.has(p.id));
+      const lista = (profs || []).filter((p: any) => !proIds.has(p.id));
+      const ids = lista.map((p: any) => p.id);
+      // Conta real de pedidos pagos por cliente (orcamentos com pagamento status='paid')
+      const realCount: Record<string, number> = {};
+      if (ids.length > 0) {
+        const { data: pagos } = await supabase
+          .from("orcamentos")
+          .select("cliente_id, pagamentos!pagamentos_orcamento_id_fkey!inner(id, status)")
+          .in("cliente_id", ids)
+          .eq("pagamentos.status", "paid");
+        (pagos || []).forEach((o: any) => {
+          realCount[o.cliente_id] = (realCount[o.cliente_id] || 0) + 1;
+        });
+      }
+      return lista.map((p: any) => ({ ...p, pedidos_pagos_real: realCount[p.id] || 0 }));
     },
   });
 
@@ -968,23 +982,9 @@ export function AdminClientes() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
-                      {/* total_servicos_pagos is a static counter on profiles — it may
-                         be slightly out of sync with the real pagamentos data.
-                         A per-client orcamentos query here would be too expensive
-                         for a list view with many clients. */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className="text-xs font-bold text-slate-900 cursor-default">
-                              {c.total_servicos_pagos} pedidos pagos{" "}
-                              <span className="text-[10px] font-normal text-slate-400">(aprox.)</span>
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            <p className="text-xs">Valor aproximado — abra o detalhe do cliente para dados exatos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <p className="text-xs font-bold text-slate-900">
+                        {c.pedidos_pagos_real} pedidos pagos
+                      </p>
                       <p className="text-[10px] text-slate-400">
                         Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}
                       </p>
