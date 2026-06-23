@@ -27,7 +27,7 @@ import { OrcamentoDetailsSheet, type SheetMode } from "@/features/profissional/O
 // UI Components
 import { ProfissionalConfiguracoes } from "@/components/ProfissionalConfiguracoes";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
-import { PanicButton } from "@/components/PanicButton";
+
 import { ProfissionalFinanceiro } from "@/components/ProfissionalFinanceiro";
 import { ProfissionalAvaliacoes } from "@/components/ProfissionalAvaliacoes";
 import { ProfissionalAgenda } from "@/components/ProfissionalAgenda";
@@ -343,7 +343,6 @@ function ProfissionalArea() {
   return (
     <div className="min-h-screen bg-slate-50">
       <OnboardingWizard />
-      <PanicButton />
 
       <OrcamentoDetailsSheet
         orcamento={sheetOrc}
