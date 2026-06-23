@@ -55,7 +55,7 @@ type DerivedStatus = "recebido" | "pendente" | "estornado" | "cancelado";
 
 const DERIVED_LABEL: Record<DerivedStatus, { label: string; color: string }> = {
   recebido: { label: "Recebido na MP", color: "bg-emerald-100 text-emerald-700" },
-  pendente: { label: "Aguardando pagamento", color: "bg-amber-100 text-amber-700" },
+  pendente: { label: "Aguardando liberação", color: "bg-amber-100 text-amber-700" },
   estornado: { label: "Estornado", color: "bg-rose-100 text-rose-700" },
   cancelado: { label: "Cancelado", color: "bg-slate-100 text-slate-600" },
 };
@@ -70,6 +70,7 @@ const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null
     ["cancelled", "canceled", "rejected", "failed", "refunded"].includes(pagStatus)
   )
     return "cancelado";
+  if (["disponivel", "solicitado", "pago", "paid", "approved"].includes(splitStatus)) return "recebido";
   if (pagPaid || ["paid", "pago", "approved"].includes(pagStatus)) return "recebido";
   return "pendente";
 };
@@ -138,17 +139,17 @@ export function ProfissionalFinanceiro() {
     const recebidos = splitsPeriodo.filter((s) => deriveStatus(s) === "recebido");
     const pendentes = splitsPeriodo.filter((s) => deriveStatus(s) === "pendente");
 
-    const liquidoRecebido = recebidos.reduce(
-      (acc, s) => acc + Number(s.valor_profissional || 0),
-      0,
-    );
-    const brutoRecebido = recebidos.reduce(
+    const brutoPeriodo = splitsPeriodo.reduce(
       (acc, s) => acc + Number(s.valor_total || 0),
       0,
     );
-    const taxasTotal = recebidos.reduce(
+    const taxasPeriodo = splitsPeriodo.reduce(
       (acc, s) =>
         acc + Number(s.taxa_plataforma || 0) + Number(s.taxa_gateway || 0),
+      0,
+    );
+    const liquidoRecebido = recebidos.reduce(
+      (acc, s) => acc + Number(s.valor_profissional || 0),
       0,
     );
     const totalPendente = pendentes.reduce(
@@ -167,8 +168,8 @@ export function ProfissionalFinanceiro() {
 
     return {
       liquidoRecebido,
-      brutoRecebido,
-      taxasTotal,
+      brutoPeriodo,
+      taxasPeriodo,
       totalPendente,
       ticket,
       noMes,
@@ -311,7 +312,7 @@ export function ProfissionalFinanceiro() {
         />
         <StatBox
           icon={Clock}
-          label="Aguardando pagamento"
+          label="A liberar"
           value={brl(metricas.totalPendente)}
           sub={`${metricas.qtdPendentes} pendente(s)`}
           accent="bg-amber-50 text-amber-700 border-amber-200"
@@ -333,8 +334,8 @@ export function ProfissionalFinanceiro() {
             <DollarSign className="h-4 w-4 text-brand" /> Pagamentos
           </h3>
           <div className="text-xs text-muted-foreground">
-            Bruto: <span className="font-bold tabular-nums">{brl(metricas.brutoRecebido)}</span>{" "}
-            · Taxas: <span className="font-bold tabular-nums text-rose-600">− {brl(metricas.taxasTotal)}</span>
+            Bruto: <span className="font-bold tabular-nums">{brl(metricas.brutoPeriodo)}</span>{" "}
+            · Taxas: <span className="font-bold tabular-nums text-rose-600">− {brl(metricas.taxasPeriodo)}</span>
           </div>
         </div>
 
