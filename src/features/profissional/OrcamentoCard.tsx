@@ -113,6 +113,33 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   });
   const [fotosConcluido, setFotosConcluido] = useState<string[]>(o.fotos_concluido ?? []);
   const [showDetails, setShowDetails] = useState(false);
+  const [recusarOpen, setRecusarOpen] = useState(false);
+  const [recusarMotivo, setRecusarMotivo] = useState<string>("");
+  const [recusarMotivoOutro, setRecusarMotivoOutro] = useState<string>("");
+  const [recusarLoading, setRecusarLoading] = useState(false);
+
+  const MOTIVOS_RECUSA = [
+    "Fora da minha área de atendimento",
+    "Agenda incompatível",
+    "Não é minha especialidade",
+    "Valor abaixo do que aceito",
+    "Outro",
+  ];
+
+  const handleConfirmRecusar = async () => {
+    if (!onRecusar) return;
+    const motivoFinal =
+      recusarMotivo === "Outro" ? recusarMotivoOutro.trim() : recusarMotivo;
+    setRecusarLoading(true);
+    try {
+      await onRecusar(o.id, motivoFinal || null);
+      setRecusarOpen(false);
+      setRecusarMotivo("");
+      setRecusarMotivoOutro("");
+    } finally {
+      setRecusarLoading(false);
+    }
+  };
 
   const isAguardandoPagamento = o.status === "aprovado";
   const isPagamentoConfirmado = o.status === "pago";
