@@ -427,6 +427,22 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             </span>
           )}
         </div>
+        {!(isPagamentoConfirmado || isServicoConcluido) && (() => {
+          const end = (o as unknown as Record<string, any>).endereco_snapshot || clienteEndereco;
+          if (!end || (!end.bairro && !end.logradouro)) return null;
+          return (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+              <span>
+                {end.logradouro}
+                {end.bairro && (end.logradouro ? ` · ${end.bairro}` : end.bairro)}
+                <span className="ml-1 italic text-[10px] opacity-70">
+                  (endereço completo após o pagamento)
+                </span>
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Resumo compacto Atendimento/Agenda (Sempre visível) */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2 rounded-2xl bg-slate-50 p-4 border border-slate-100/50">
