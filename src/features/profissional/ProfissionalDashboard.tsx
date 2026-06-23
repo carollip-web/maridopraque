@@ -56,7 +56,11 @@ type ProximoServico = {
 
 async function carregarNomeCliente(clienteId?: string | null) {
   if (!clienteId) return null;
-  const { data } = await supabase.from("profiles").select("nome").eq("id", clienteId).maybeSingle();
+  const { data } = await supabase
+    .from("profiles")
+    .select("nome")
+    .eq("id", clienteId)
+    .maybeSingle();
   return data?.nome ?? null;
 }
 
