@@ -20,13 +20,16 @@ import {
   Search,
   AlertTriangle,
   Shield,
+  UserX,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin-validacao")({
   component: AdminValidacao,
 });
 
-type Status = "pendente" | "em_analise" | "aprovado" | "rejeitado";
+type Status = "pendente" | "em_analise" | "aprovado" | "rejeitado" | "incompleto";
 
 type Prestador = {
   user_id: string;
@@ -52,6 +55,8 @@ type Prestador = {
   cadastro_submetido_em: string | null;
   aprovado_em: string | null;
   motivo_rejeicao: string | null;
+  cadastro_completo?: boolean;
+  created_at?: string | null;
 };
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any }> = {
@@ -59,6 +64,7 @@ const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon
   em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye },
   aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2 },
   rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle },
+  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX },
 };
 
 async function getSignedUrl(publicUrl: string | null) {
@@ -124,13 +130,16 @@ function AdminValidacao() {
     const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
 
     setPrestadores(
-      (perfis ?? [])
-        .filter((p: any) => p.cadastro_completo || p.aprovacao_status !== "pendente")
-        .map((p: any) => ({
+      (perfis ?? []).map((p: any) => {
+        const isIncompleto =
+          !p.cadastro_completo && p.aprovacao_status === "pendente";
+        return {
           ...p,
+          aprovacao_status: isIncompleto ? "incompleto" : p.aprovacao_status,
           nome: profileMap[p.user_id]?.nome || "—",
           email: profileMap[p.user_id]?.email || "—",
-        })),
+        };
+      }),
     );
     setLoadingList(false);
   };
@@ -255,9 +264,10 @@ function AdminValidacao() {
 
   const counts = {
     em_analise: prestadores.filter((p) => p.aprovacao_status === "em_analise").length,
-    pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
+    incompleto: prestadores.filter((p) => p.aprovacao_status === "incompleto").length,
     aprovado: prestadores.filter((p) => p.aprovacao_status === "aprovado").length,
     rejeitado: prestadores.filter((p) => p.aprovacao_status === "rejeitado").length,
+    pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
   };
 
   if (loading)
@@ -300,8 +310,8 @@ function AdminValidacao() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {(["em_analise", "pendente", "aprovado", "rejeitado"] as const).map((s) => {
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+          {(["em_analise", "incompleto", "aprovado", "rejeitado", "pendente"] as const).map((s) => {
             const cfg = STATUS_CFG[s];
             const Icon = cfg.icon;
             return (
@@ -525,23 +535,54 @@ function AdminValidacao() {
                     </div>
                   )}
 
+                  {/* Incompleto: contato para cobrança */}
+                  {selected.aprovacao_status === "incompleto" && (
+                    <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 space-y-3">
+                      <p className="text-sm font-bold text-orange-800">
+                        Cadastro não finalizado
+                      </p>
+                      <p className="text-xs text-orange-700">
+                        Este profissional criou a conta mas não enviou o cadastro para análise. Entre em contato para finalizar.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {selected.telefone && (
+                          <a
+                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline"
+                          >
+                            <Phone className="h-4 w-4" /> {selected.telefone} (WhatsApp)
+                          </a>
+                        )}
+                        {selected.email && selected.email !== "—" && (
+                          <a
+                            href={`mailto:${selected.email}`}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline"
+                          >
+                            <Mail className="h-4 w-4" /> {selected.email}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
-                  {(selected.aprovacao_status as string) !== "aprovado" && (
+                  {selected.aprovacao_status !== "aprovado" &&
+                    selected.aprovacao_status !== "incompleto" && (
                     <div className="space-y-3 pt-2 border-t border-border">
-                      {selected.aprovacao_status !== "aprovado" && (
-                        <Button
-                          onClick={handleAprovar}
-                          disabled={saving}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
-                        >
-                          {saving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-4 w-4" />
-                          )}{" "}
-                          Aprovar prestador
-                        </Button>
-                      )}
+                      <Button
+                        onClick={handleAprovar}
+                        disabled={saving}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
+                      >
+                        {saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}{" "}
+                        Aprovar prestador
+                      </Button>
                       <div className="space-y-2">
                         <textarea
                           value={motivo}
