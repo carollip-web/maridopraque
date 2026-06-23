@@ -343,7 +343,6 @@ function ProfissionalArea() {
   return (
     <div className="min-h-screen bg-slate-50">
       <OnboardingWizard />
-      <PanicButton />
 
       <OrcamentoDetailsSheet
         orcamento={sheetOrc}
