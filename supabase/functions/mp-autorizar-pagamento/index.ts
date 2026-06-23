@@ -81,11 +81,13 @@ serve(async (req) => {
       statement_descriptor: "MARIDO PRA QUE"
     };
 
+    const idempotencyKey = `auth-${orcamento.id}-${Date.now()}-${crypto.randomUUID()}`;
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
+        "X-Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(paymentPayload),
     });
