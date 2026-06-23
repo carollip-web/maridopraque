@@ -184,7 +184,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data, error } = await supabase
         .from("orcamentos")
         .select(
-          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, pagamentos(status_autorizacao, confirmacao_profissional_em, confirmacao_cliente_em, metadata, mp_card_id, valor_total)",
+          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido",
         )
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
@@ -194,6 +194,20 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const list = data || [];
 
       const orcIds = list.map((o) => o.id);
+
+      // Busca pagamentos separadamente (embed via PostgREST falhava)
+      const pagamentosMap: Record<string, any> = {};
+      if (orcIds.length > 0) {
+        const { data: pagData } = await supabase
+          .from("pagamentos")
+          .select("orcamento_id, status_autorizacao, confirmacao_profissional_em, confirmacao_cliente_em, metadata, mp_card_id, valor_total, created_at")
+          .in("orcamento_id", orcIds)
+          .order("created_at", { ascending: true });
+        (pagData || []).forEach((pg) => {
+          pagamentosMap[pg.orcamento_id] = pg; // ordem asc → fica o mais recente
+        });
+      }
+
       let propostas: any[] = [];
       const profsMap: Record<
         string,
@@ -284,8 +298,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                           ? "Disputa Resolvida"
                           : o.status;
 
-        const pagamentosArray = (o as any).pagamentos || [];
-        const lastPagamento = pagamentosArray.length > 0 ? pagamentosArray[pagamentosArray.length - 1] : null;
+        const lastPagamento = pagamentosMap[o.id] || null;
 
         return {
           propostas: propsForOrc,
