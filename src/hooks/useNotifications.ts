@@ -75,6 +75,7 @@ export function useNotifications() {
   useEffect(() => {
     let userId: string | undefined;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     const fetchAll = async () => {
       if (!userId) return;
@@ -84,6 +85,7 @@ export function useNotifications() {
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
+      if (cancelled) return;
       const list = (data ?? []).map((n) => {
         const pedidoId = n.orcamento_id ?? undefined;
         return {
@@ -97,7 +99,6 @@ export function useNotifications() {
         };
       });
 
-      // Detect new unread items (skip on first load) and trigger native notification
       if (!firstLoad.current) {
         for (const n of list) {
           if (!knownIds.current.has(n.id) && !n.read) {
@@ -110,26 +111,54 @@ export function useNotifications() {
       setNotifications(list);
     };
 
-    supabase.auth.getUser().then(({ data }) => {
-      userId = data.user?.id;
-      if (!userId) return;
+    const subscribeFor = (uid: string) => {
+      userId = uid;
       fetchAll();
-      // Use a unique channel name per hook instance to avoid duplicate subscription errors
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
       const instanceId = Math.random().toString(36).slice(2, 8);
       channel = supabase
-        .channel("notif-" + userId + "-" + instanceId)
+        .channel("notif-" + uid + "-" + instanceId)
         .on(
           "postgres_changes",
-          { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${userId}` },
+          { event: "*", schema: "public", table: "notificacoes", filter: `user_id=eq.${uid}` },
           () => fetchAll(),
         )
         .subscribe();
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      const uid = data.session?.user?.id;
+      if (uid) subscribeFor(uid);
+    });
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      const uid = session?.user?.id;
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") && uid && uid !== userId) {
+        firstLoad.current = true;
+        knownIds.current = new Set();
+        subscribeFor(uid);
+      } else if (event === "SIGNED_OUT") {
+        userId = undefined;
+        if (channel) {
+          supabase.removeChannel(channel);
+          channel = null;
+        }
+        setNotifications([]);
+      }
     });
 
     return () => {
+      cancelled = true;
+      authSub.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
   }, []);
+
 
   const markAsRead = async (id: string | number) => {
     await supabase.from("notificacoes").update({ lida: true }).eq("id", String(id));
