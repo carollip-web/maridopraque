@@ -1,0 +1,1 @@
+UPDATE public.orcamentos SET status = 'concluido', updated_at = now() WHERE id = '3da7cfc6-ea1b-453c-8672-461fd5fb10dc' AND status = 'pago';
