@@ -438,7 +438,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     } catch (e: any) {
       toast.error("Erro ao aprovar", { description: e.message });
       setApprovalStep("confirm");
-      return;
+      throw e;
     }
 
     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
@@ -544,6 +544,11 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   const token = sessionData.session?.access_token;
                   if (!token) throw new Error("Sessão expirada");
 
+                  // 1) Aceita a proposta PRIMEIRO (move orcamento -> aprovado).
+                  //    Se falhar, não cobra o cartão e o usuário vê o erro.
+                  await handleApprove();
+
+                  // 2) Autoriza o cartão (reserva). Só depois da proposta aceita.
                   const { data, error } = await supabase.functions.invoke("mp-autorizar-pagamento", {
                     body: { orcamento_id: selectedPedido?.id, card_token: formData.token },
                     headers: { Authorization: `Bearer ${token}` },
@@ -553,11 +558,9 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                     throw new Error(data?.message || "Falha na autorização do cartão.");
                   }
 
-                  // Se autorizou com sucesso, chamamos handleApprove para aceitar efetivamente a proposta!
-                  await handleApprove();
                   setApprovalStep("success");
-                  toast.success("Cartão autorizado! Proposta aceita.");
-                  // Redireciona automaticamente de volta ao pedido após breve confirmação
+                  toast.success("Proposta aceita e cartão autorizado!");
+                  // Fecha o modal e atualiza a lista automaticamente
                   setTimeout(() => {
                     setApprovalStep(null);
                     queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
