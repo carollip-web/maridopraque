@@ -201,10 +201,24 @@ function ProximoServicoCard({
   );
 }
 
-function PrimeirosPassosCard({ userId, setTab, metrics }: { userId?: string, setTab: any, metrics: any }) {
+function PrimeirosPassosCard({
+  userId,
+  setTab,
+  metrics,
+  counts,
+}: {
+  userId?: string,
+  setTab: any,
+  metrics: any,
+  counts: ProfissionalDashboardProps["counts"],
+}) {
+  const recebeuPrimeiroPedido =
+    metrics.totalConcluidos > 0 ||
+    counts.oportunidades + counts.elaboracao + counts.enviados + counts.ativos + counts.finalizados > 0;
+
   const { data, isLoading } = useQuery({
     queryKey: ["profissional", "primeiros-passos-check", userId],
-    enabled: !!userId && metrics.totalConcluidos === 0,
+    enabled: !!userId && !recebeuPrimeiroPedido,
     queryFn: async () => {
       const { data: perfil } = await supabase
         .from("profissional_perfil")
@@ -238,7 +252,7 @@ function PrimeirosPassosCard({ userId, setTab, metrics }: { userId?: string, set
     }
   });
 
-  if (metrics.totalConcluidos > 0) return null;
+  if (recebeuPrimeiroPedido) return null;
   if (!data?.isComplete) return null;
 
   return (
@@ -472,7 +486,7 @@ export function ProfissionalDashboard({
 
       <ProfissionalEarningsChart userId={user?.id} />
 
-      <PrimeirosPassosCard userId={user?.id} setTab={setTab} metrics={metrics} />
+      <PrimeirosPassosCard userId={user?.id} setTab={setTab} metrics={metrics} counts={counts} />
       
       <ProfileCompletenessCard />
 
