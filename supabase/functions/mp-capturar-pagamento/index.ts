@@ -189,7 +189,7 @@ serve(async (req) => {
         } as any)
         .eq("id", pagamento.id);
         
-      await admin.from("orcamentos").update({ status: "pago", data_pagamento: now } as any).eq("id", orcamento_id);
+      await admin.from("orcamentos").update({ status: "concluido", updated_at: now } as any).eq("id", orcamento_id);
 
       return json({
         ok: true,
