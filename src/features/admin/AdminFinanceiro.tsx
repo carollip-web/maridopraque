@@ -89,6 +89,7 @@ export function AdminFinanceiro() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
+  const [splitsByOrc, setSplitsByOrc] = useState<Record<string, any>>({});
   const [estornosPendentes, setEstornosPendentes] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<ProfMap>({});
   const [ledger, setLedger] = useState<{
