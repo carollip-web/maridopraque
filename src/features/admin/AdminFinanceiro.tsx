@@ -115,7 +115,7 @@ export function AdminFinanceiro() {
       supabase
         .from("pagamentos")
         .select(
-          `id, status, valor_total, created_at, gateway, metadata, profissional_id, cliente_id,
+          `id, status, valor_total, created_at, gateway, metadata, profissional_id, cliente_id, orcamento_id,
            orcamentos!fk_pag_orcamento ( service_name, data_pagamento )`,
         )
         .eq("gateway", "mercado_pago")
