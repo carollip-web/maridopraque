@@ -100,7 +100,7 @@ export function AgendaCalendar() {
             .gt("data_fim", weekStart.toISOString()),
           supabase
             .from("orcamentos")
-            .select("id,service_name,data_agendada,status,valor,cliente:profiles!cliente_id(nome)")
+            .select("id,service_name,data_agendada,status,valor,cliente_id")
             .eq("profissional_id", user.id)
             .not("data_agendada", "is", null)
             .gte("data_agendada", weekStart.toISOString())
@@ -112,7 +112,7 @@ export function AgendaCalendar() {
             .maybeSingle(),
           supabase
             .from("profissional_bloqueios_agenda")
-            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name, valor, cliente:profiles!cliente_id(nome))")
+            .select("id,orcamento_id,inicio,fim,status,motivo,expires_at,orcamentos(service_name, valor, cliente_id)")
             .eq("profissional_id", user.id)
             .in("status", ["temporario", "confirmado"])
             .lt("inicio", weekEnd.toISOString())
@@ -123,6 +123,7 @@ export function AgendaCalendar() {
         console.warn("[AgendaCalendar] bloqueios_agenda indisponíveis", pbaRes.error);
       }
       const now = new Date();
+      type OrcRow = { id: string; service_name: string; data_agendada: string | null; status: string; valor: number | null; cliente_id: string | null };
       type PbaRow = {
         id: string;
         orcamento_id: string | null;
@@ -131,8 +132,28 @@ export function AgendaCalendar() {
         status: string;
         motivo: string | null;
         expires_at: string | null;
-        orcamentos?: { service_name?: string | null; valor?: number | null; cliente?: { nome: string } | null } | null;
+        orcamentos?: { service_name?: string | null; valor?: number | null; cliente_id?: string | null } | null;
       };
+      const agRows = ((ags as unknown as OrcRow[]) ?? []);
+      const pbaRows = ((pbaRes.data as unknown as PbaRow[]) || []);
+      const clienteIds = Array.from(
+        new Set(
+          [
+            ...agRows.map((a) => a.cliente_id),
+            ...pbaRows.map((r) => r.orcamentos?.cliente_id ?? null),
+          ].filter(Boolean) as string[],
+        ),
+      );
+      const nomesClientes: Record<string, { nome: string }> = {};
+      if (clienteIds.length > 0) {
+        const { data: clientes } = await supabase
+          .from("profiles")
+          .select("id,nome")
+          .in("id", clienteIds);
+        (clientes ?? []).forEach((c) => {
+          nomesClientes[c.id] = { nome: c.nome };
+        });
+      }
       const reservasValidas: ReservaAgenda[] = ((pbaRes.data as unknown as PbaRow[]) || [])
         .filter((r) => {
           if (r.status !== "temporario") return true;
@@ -149,7 +170,7 @@ export function AgendaCalendar() {
           expires_at: r.expires_at,
           service_name: r.orcamentos?.service_name || "Serviço",
           valor: r.orcamentos?.valor ?? undefined,
-          cliente: r.orcamentos?.cliente ?? undefined,
+          cliente: r.orcamentos?.cliente_id ? nomesClientes[r.orcamentos.cliente_id] : undefined,
         }) as unknown as ReservaAgenda);
 
       setJanelas((jans as Janela[]) ?? []);
@@ -157,14 +178,13 @@ export function AgendaCalendar() {
       setReservas(reservasValidas);
       const dur = perfil?.duracao_padrao_min ?? 60;
       setDuracao(dur);
-      type OrcRow = { id: string; service_name: string; data_agendada: string | null; status: string; valor: number | null; cliente?: { nome: string } | null };
-      setAgendamentos(((ags as unknown as OrcRow[]) ?? []).map((a) => ({
+      setAgendamentos(agRows.map((a) => ({
         id: a.id,
         service_name: a.service_name,
         data_agendada: a.data_agendada ?? "",
         status: a.status,
         valor: a.valor ?? undefined,
-        cliente: a.cliente ?? undefined,
+        cliente: a.cliente_id ? nomesClientes[a.cliente_id] : undefined,
         duracao_min: dur,
       })));
       setLoading(false);
