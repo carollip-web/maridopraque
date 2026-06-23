@@ -731,7 +731,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     variant="ghost"
                     size="sm"
                     className="text-red-500 font-bold text-xs"
-                    onClick={() => onRecusar?.(o.id)}
+                    onClick={() => setRecusarOpen(true)}
                   >
                     Recusar
                   </Button>
