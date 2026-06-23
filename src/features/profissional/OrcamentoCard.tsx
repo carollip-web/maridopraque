@@ -47,7 +47,7 @@ interface OrcamentoCardProps {
   enviar: any;
   refresh?: () => void;
   userId: string;
-  onRecusar?: (id: string) => Promise<void>;
+  onRecusar?: (id: string, motivo?: string | null) => Promise<void>;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
   disableChat?: boolean;
   minhaProposta?: any;
