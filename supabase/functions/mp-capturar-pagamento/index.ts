@@ -101,6 +101,33 @@ serve(async (req) => {
     const ambasConfirmadas = !!confProfissional && !!confCliente;
 
     if (!ambasConfirmadas) {
+      // Notificar a outra parte que precisa confirmar
+      try {
+        if (isProfissional) {
+          await admin.from("notificacoes").insert({
+            user_id: pagamento.cliente_id,
+            titulo: "Confirme a conclusão do serviço",
+            mensagem:
+              "O profissional marcou o serviço como concluído. Confirme a conclusão no app para liberar o pagamento.",
+            orcamento_id,
+            link: `/cliente?tab=pedidos&pedidoId=${orcamento_id}`,
+            lida: false,
+          });
+        } else {
+          await admin.from("notificacoes").insert({
+            user_id: pagamento.profissional_id,
+            titulo: "Cliente confirmou a conclusão",
+            mensagem:
+              "O cliente confirmou a conclusão do serviço. Marque como concluído para liberar o repasse.",
+            orcamento_id,
+            link: `/profissional?tab=servicos&orcamentoId=${orcamento_id}`,
+            lida: false,
+          });
+        }
+      } catch (notifErr) {
+        console.error("Falha ao criar notificação de confirmação parcial", notifErr);
+      }
+
       return json({
         ok: true,
         status: "partial",
