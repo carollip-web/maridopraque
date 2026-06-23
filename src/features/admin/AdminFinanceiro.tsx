@@ -44,6 +44,7 @@ type PagamentoRow = {
   metadata: any;
   profissional_id: string | null;
   cliente_id: string | null;
+  orcamento_id: string | null;
   orcamentos?: { service_name: string | null; data_pagamento?: string | null } | null;
 };
 
@@ -89,6 +90,7 @@ export function AdminFinanceiro() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pagamentos, setPagamentos] = useState<PagamentoRow[]>([]);
+  const [splitsByOrc, setSplitsByOrc] = useState<Record<string, any>>({});
   const [estornosPendentes, setEstornosPendentes] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<ProfMap>({});
   const [ledger, setLedger] = useState<{
@@ -114,7 +116,7 @@ export function AdminFinanceiro() {
       supabase
         .from("pagamentos")
         .select(
-          `id, status, valor_total, created_at, gateway, metadata, profissional_id, cliente_id,
+          `id, status, valor_total, created_at, gateway, metadata, profissional_id, cliente_id, orcamento_id,
            orcamentos!fk_pag_orcamento ( service_name, data_pagamento )`,
         )
         .eq("gateway", "mercado_pago")
@@ -156,6 +158,11 @@ export function AdminFinanceiro() {
 
     // Ledger (pagamento_splits) — splits MP são liquidados automaticamente
     const sp = splits || [];
+    const splitMap: Record<string, any> = {};
+    sp.forEach((s: any) => {
+      if (s.orcamento_id) splitMap[s.orcamento_id] = s;
+    });
+    setSplitsByOrc(splitMap);
     const totalRecebido = sp.reduce((s, x: any) => s + Number(x.valor_total || 0), 0);
     const totalTaxaPlat = sp.reduce(
       (s, x: any) => s + Number(x.taxa_plataforma || 0) + Number(x.taxa_gateway || 0),
@@ -186,18 +193,31 @@ export function AdminFinanceiro() {
     return pagamentos.filter((p) => new Date(p.created_at).getTime() >= limite);
   }, [pagamentos, periodo]);
 
-  // Métricas
+  // Métricas — usa pagamento_splits (real) quando existe; senão estima.
   const metrics = useMemo(() => {
     const aprovados = pagamentosPeriodo.filter(
       (r) => r.status === "approved" || r.status === "paid",
     );
-    const bruto = aprovados.reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
-    const comissao = aprovados.reduce((acc, r) => acc + getMarketplaceFee(r), 0);
-    const taxaMP = aprovados.reduce(
-      (acc, r) => acc + Number(r.valor_total || 0) * TAXA_MP_CREDITO,
-      0,
-    );
-    const liquidoPro = bruto - comissao - taxaMP;
+    let bruto = 0;
+    let comissao = 0;
+    let taxaMP = 0;
+    let liquidoPro = 0;
+    aprovados.forEach((r) => {
+      const valor = Number(r.valor_total || 0);
+      const split = r.orcamento_id ? splitsByOrc[r.orcamento_id] : null;
+      bruto += valor;
+      if (split) {
+        comissao += Number(split.taxa_plataforma || 0);
+        taxaMP += Number(split.taxa_gateway || 0);
+        liquidoPro += Number(split.valor_profissional || 0);
+      } else {
+        const fee = getMarketplaceFee(r);
+        const tmp = valor * TAXA_MP_CREDITO;
+        comissao += fee;
+        taxaMP += tmp;
+        liquidoPro += valor - fee - tmp;
+      }
+    });
     const pendente = pagamentosPeriodo
       .filter((r) => r.status === "pending")
       .reduce((acc, r) => acc + Number(r.valor_total || 0), 0);
@@ -215,7 +235,7 @@ export function AdminFinanceiro() {
       qtdAprovados: aprovados.length,
       qtdPendentes: pagamentosPeriodo.filter((r) => r.status === "pending").length,
     };
-  }, [pagamentosPeriodo]);
+  }, [pagamentosPeriodo, splitsByOrc]);
 
 
 
@@ -543,9 +563,17 @@ export function AdminFinanceiro() {
                     const prof = p.profissional_id ? profiles[p.profissional_id] : null;
                     const cli = p.cliente_id ? profiles[p.cliente_id] : null;
                     const valor = Number(p.valor_total || 0);
-                    const fee = getMarketplaceFee(p);
-                    const taxaMP = Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
-                    const liquido = Math.round((valor - fee - taxaMP) * 100) / 100;
+                    const split = p.orcamento_id ? splitsByOrc[p.orcamento_id] : null;
+                    const fee = split
+                      ? Number(split.taxa_plataforma || 0)
+                      : getMarketplaceFee(p);
+                    const taxaMP = split
+                      ? Number(split.taxa_gateway || 0)
+                      : Math.round(valor * TAXA_MP_CREDITO * 100) / 100;
+                    const liquido = split
+                      ? Number(split.valor_profissional || 0)
+                      : Math.round((valor - fee - taxaMP) * 100) / 100;
+                    const isEstimado = !split;
                     const badge =
                       STATUS_BADGES[p.status] || {
                         bg: "bg-slate-100 text-slate-700 border-slate-200",
@@ -597,7 +625,9 @@ export function AdminFinanceiro() {
                           {efetivado ? (
                             <>
                               − {brl(taxaMP)}
-                              <div className="text-[9px] text-slate-300 font-medium">est.</div>
+                              {isEstimado && (
+                                <div className="text-[9px] text-slate-300 font-medium">est.</div>
+                              )}
                             </>
                           ) : (
                             <span className="text-slate-300">—</span>
