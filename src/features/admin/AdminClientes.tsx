@@ -982,23 +982,9 @@ export function AdminClientes() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
-                      {/* total_servicos_pagos is a static counter on profiles — it may
-                         be slightly out of sync with the real pagamentos data.
-                         A per-client orcamentos query here would be too expensive
-                         for a list view with many clients. */}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className="text-xs font-bold text-slate-900 cursor-default">
-                              {c.total_servicos_pagos} pedidos pagos{" "}
-                              <span className="text-[10px] font-normal text-slate-400">(aprox.)</span>
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            <p className="text-xs">Valor aproximado — abra o detalhe do cliente para dados exatos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <p className="text-xs font-bold text-slate-900">
+                        {c.pedidos_pagos_real} pedidos pagos
+                      </p>
                       <p className="text-[10px] text-slate-400">
                         Desde {new Date(c.created_at).toLocaleDateString("pt-BR")}
                       </p>
