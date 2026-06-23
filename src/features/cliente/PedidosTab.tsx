@@ -200,7 +200,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (orcIds.length > 0) {
         const { data: pagData } = await supabase
           .from("pagamentos")
-          .select("orcamento_id, status_autorizacao, confirmacao_profissional_em, confirmacao_cliente_em, metadata, mp_card_id, valor_total, created_at")
+          .select("orcamento_id, status_autorizacao, confirmacao_profissional_em, confirmacao_cliente_em, metadata, valor_total, created_at")
           .in("orcamento_id", orcIds)
           .order("created_at", { ascending: true });
         (pagData || []).forEach((pg) => {
