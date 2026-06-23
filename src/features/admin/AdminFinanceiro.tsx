@@ -625,7 +625,9 @@ export function AdminFinanceiro() {
                           {efetivado ? (
                             <>
                               − {brl(taxaMP)}
-                              <div className="text-[9px] text-slate-300 font-medium">est.</div>
+                              {isEstimado && (
+                                <div className="text-[9px] text-slate-300 font-medium">est.</div>
+                              )}
                             </>
                           ) : (
                             <span className="text-slate-300">—</span>
