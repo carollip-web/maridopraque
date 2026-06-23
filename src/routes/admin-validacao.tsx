@@ -130,13 +130,16 @@ function AdminValidacao() {
     const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
 
     setPrestadores(
-      (perfis ?? [])
-        .filter((p: any) => p.cadastro_completo || p.aprovacao_status !== "pendente")
-        .map((p: any) => ({
+      (perfis ?? []).map((p: any) => {
+        const isIncompleto =
+          !p.cadastro_completo && p.aprovacao_status === "pendente";
+        return {
           ...p,
+          aprovacao_status: isIncompleto ? "incompleto" : p.aprovacao_status,
           nome: profileMap[p.user_id]?.nome || "—",
           email: profileMap[p.user_id]?.email || "—",
-        })),
+        };
+      }),
     );
     setLoadingList(false);
   };
