@@ -465,22 +465,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         )}
 
-        {o.tipo_atendimento && (
-        <div className="flex flex-wrap gap-2">
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
-              atendimentoCompat.level,
-            )}`}
-          >
-            {atendimentoCompat.label}
+        {o.tipo_atendimento === "homem_com_apoio_feminino" && (
+          <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
+            👩 Com apoio feminino
           </span>
-          {o.tipo_atendimento === "homem_com_apoio_feminino" && (
-            <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
-              👩 Com apoio feminino
-            </span>
-          )}
-        </div>
-      )}
+        )}
 
 
       <div className="text-sm space-y-2">
@@ -512,21 +501,12 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           );
         })()}
 
-        {/* Resumo compacto Atendimento/Agenda (Sempre visível) */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 rounded-2xl bg-slate-50 p-4 border border-slate-100/50">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Atendimento
-            </p>
-            <p className="text-sm font-bold text-slate-800">{atendimentoPedidoLabel}</p>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Agenda desejada
-            </p>
-            <p className="text-sm font-bold text-slate-800">{agendaLabel}</p>
-          </div>
+        {/* Resumo compacto Agenda (Sempre visível) */}
+        <div className="mt-4 rounded-2xl bg-slate-50 p-4 border border-slate-100/50">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Agenda desejada
+          </p>
+          <p className="text-sm font-bold text-slate-800">{agendaLabel}</p>
         </div>
 
         {!o.tipo_atendimento && !o.data_preferida && (
