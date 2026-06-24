@@ -106,11 +106,13 @@ export function useOrcamentoForm({
     setHorarioPreferido("");
     setFlexibilidadeAgenda("flexivel");
     setPicked({});
+    setMetragemM2("");
     setFotos([]);
     setStep(1);
     setShowNew(false);
     setEditingId(null);
   }, []);
+
 
   const applyDraft = useCallback((d: OrcamentoDraft) => {
     setSelServiceId(d.selServiceId ?? "");
