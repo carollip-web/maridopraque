@@ -467,9 +467,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
         {o.tipo_atendimento && (
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-            {atendimentoPedidoLabel}
-          </span>
           <span
             className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
               atendimentoCompat.level,
@@ -484,6 +481,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           )}
         </div>
       )}
+
 
       <div className="text-sm space-y-2">
         <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
