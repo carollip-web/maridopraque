@@ -6,6 +6,7 @@ import { ShieldCheck, Hourglass, Banknote, RotateCcw, AlertTriangle } from "luci
 interface Props {
   orcamentoId: string;
   compact?: boolean;
+  showFees?: boolean;
 }
 
 type Split = {
