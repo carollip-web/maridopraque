@@ -167,6 +167,8 @@ export function AdminPedidos() {
   const orcamentos = data?.orcamentos || [];
   const profiles = data?.profiles || {};
   const materials = data?.materials || {};
+  const recusas: Record<string, any[]> = data?.recusas || {};
+
 
   const allPros = useMemo(() => {
     const ids = Array.from(new Set(orcamentos.map((o) => o.profissional_id).filter(Boolean)));
