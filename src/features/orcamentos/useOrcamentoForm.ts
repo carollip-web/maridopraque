@@ -438,6 +438,10 @@ export function useOrcamentoForm({
           .eq("id", editingId);
         toast.success("Orçamento atualizado.");
       } else {
+        const metragemNum = (() => {
+          const v = parseFloat(metragemM2.replace(",", "."));
+          return Number.isFinite(v) && v > 0 ? v : null;
+        })();
         const insertPayload = {
           cliente_id: user?.id as string,
           service_id: payload.serviceId,
@@ -449,8 +453,10 @@ export function useOrcamentoForm({
           periodo_preferido: payload.periodoPreferido || null,
           horario_preferido: payload.horarioPreferido || null,
           flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
+          metragem_m2: metragemNum,
           status: "customizado_pendente",
         };
+
 
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
