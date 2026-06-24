@@ -121,6 +121,8 @@ export function OrcamentoWizard({
     setFlexibilidadeAgenda,
     picked,
     setPicked,
+    metragemM2,
+    setMetragemM2,
     fotos,
     setFotos,
     guestFiles,
@@ -134,6 +136,13 @@ export function OrcamentoWizard({
     togglePick,
     handleNew,
   } = form;
+
+  const isM2Service = !!selServico && /\(m²?\)|\bm2\b|metro quadrado/i.test(selServico.nome);
+  const metragemNum = (() => {
+    const v = parseFloat((metragemM2 || "").replace(",", "."));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  })();
+
 
   return (
     <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
