@@ -858,6 +858,8 @@ export function useProfissionalData(user: User | null) {
     clienteEndereco,
     minhaAgenda,
     loadingList,
+    temAgenda,
+
 
     // Perfil
     ativo,
