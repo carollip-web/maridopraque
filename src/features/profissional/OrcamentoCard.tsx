@@ -885,12 +885,10 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 </div>
                 {min != null && max != null && (
                   <p className="text-[10px] text-muted-foreground italic">
-                    Faixa do cliente: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
-                    {isM2 && unitMin != null && unitMax != null && (
-                      <> ({metragem} m² × {formatCurrency(unitMin)}–{formatCurrency(unitMax)}/m²)</>
-                    )}
+                    Dentro da faixa: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
                   </p>
                 )}
+
 
               </div>
               <div className="space-y-1.5">
