@@ -66,7 +66,8 @@ export function ProfissionalOrcamentos({
   profGenero,
   profApoioFeminino,
   onProposalSent,
-}: ProfissionalOrcamentosProps) {
+  temAgenda = true,
+
   return (
     <div className="space-y-6">
       <Tabs
