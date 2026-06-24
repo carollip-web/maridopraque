@@ -77,37 +77,11 @@ const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null
 
 const roundMoney = (value: number) => Math.round(Number(value || 0) * 100) / 100;
 
-const getPlatformFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_plataforma">) => {
-  const taxa = roundMoney(Number(sp.taxa_plataforma || 0));
-  if (taxa > 0) return taxa;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  const liquido = roundMoney(Number(sp.valor_profissional || 0));
-  const totalTaxas = Math.max(roundMoney(total - liquido), 0);
-  if (total <= 0 || totalTaxas <= 0) return 0;
-
-  return Math.min(roundMoney(total * 0.15), totalTaxas);
-};
-
-const getGatewayFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
-  const taxa = roundMoney(Number(sp.taxa_gateway || 0));
-  if (taxa > 0) return taxa;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  const liquido = roundMoney(Number(sp.valor_profissional || 0));
-  return Math.max(roundMoney(total - liquido - getPlatformFee(sp)), 0);
-};
-
-const getProfessionalAmount = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
+const getProfessionalAmount = (sp: Pick<Split, "valor_total" | "valor_profissional">) => {
   const liquido = roundMoney(Number(sp.valor_profissional || 0));
   if (liquido > 0) return liquido;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  return Math.max(roundMoney(total - getPlatformFee(sp) - getGatewayFee(sp)), 0);
+  return Math.max(roundMoney(Number(sp.valor_total || 0)), 0);
 };
-
-const getTotalFees = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) =>
-  roundMoney(getPlatformFee(sp) + getGatewayFee(sp));
 
 
 const brl = (n: number) =>
@@ -173,14 +147,6 @@ export function ProfissionalFinanceiro() {
     const recebidos = splitsPeriodo.filter((s) => deriveStatus(s) === "recebido");
     const pendentes = splitsPeriodo.filter((s) => deriveStatus(s) === "pendente");
 
-    const brutoPeriodo = splitsPeriodo.reduce(
-      (acc, s) => acc + Number(s.valor_total || 0),
-      0,
-    );
-    const taxasPeriodo = splitsPeriodo.reduce(
-      (acc, s) => acc + getTotalFees(s),
-      0,
-    );
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + getProfessionalAmount(s),
       0,
@@ -201,8 +167,6 @@ export function ProfissionalFinanceiro() {
 
     return {
       liquidoRecebido,
-      brutoPeriodo,
-      taxasPeriodo,
       totalPendente,
       ticket,
       noMes,
@@ -210,6 +174,7 @@ export function ProfissionalFinanceiro() {
       qtdPendentes: pendentes.length,
     };
   }, [splitsPeriodo, splits]);
+
 
 
   const listaFiltrada = useMemo(() => {
@@ -236,11 +201,8 @@ export function ProfissionalFinanceiro() {
     const headers = [
       "Data",
       "Serviço",
-      "Valor Total (R$)",
-      "Sua Parte (R$)",
-      "Taxa Plataforma (R$)",
-      "Taxa Gateway (R$)",
       "Status",
+      "Você recebeu (R$)",
     ];
 
     const rows = listaFiltrada.map((sp) => {
@@ -250,11 +212,8 @@ export function ProfissionalFinanceiro() {
       return [
         new Date(sp.created_at).toLocaleDateString("pt-BR"),
         sp.orcamentos?.service_name || "Serviço",
-        Number(sp.valor_total || 0).toFixed(2).replace(".", ","),
-        getProfessionalAmount(sp).toFixed(2).replace(".", ","),
-        getPlatformFee(sp).toFixed(2).replace(".", ","),
-        getGatewayFee(sp).toFixed(2).replace(".", ","),
         meta.label,
+        getProfessionalAmount(sp).toFixed(2).replace(".", ","),
       ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
     });
 
@@ -366,11 +325,8 @@ export function ProfissionalFinanceiro() {
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-brand" /> Pagamentos
           </h3>
-          <div className="text-xs text-muted-foreground">
-            Bruto: <span className="font-bold tabular-nums">{brl(metricas.brutoPeriodo)}</span>{" "}
-            · Taxas: <span className="font-bold tabular-nums text-rose-600">− {brl(metricas.taxasPeriodo)}</span>
-          </div>
         </div>
+
 
         <Tabs value={statusFiltro} onValueChange={setStatusFiltro} className="mb-3">
           <TabsList className="bg-slate-100">
@@ -400,16 +356,13 @@ export function ProfissionalFinanceiro() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[820px]">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
                   <th className="px-3 py-2 font-bold">Data</th>
                   <th className="px-3 py-2 font-bold">Serviço</th>
                   <th className="px-3 py-2 font-bold">Método</th>
                   <th className="px-3 py-2 font-bold">Status</th>
-                  <th className="px-3 py-2 font-bold text-right">Bruto</th>
-                  <th className="px-3 py-2 font-bold text-right">Comissão</th>
-                  <th className="px-3 py-2 font-bold text-right">Taxa MP</th>
                   <th className="px-3 py-2 font-bold text-right">Você recebeu</th>
                 </tr>
               </thead>
@@ -452,16 +405,6 @@ export function ProfissionalFinanceiro() {
                         >
                           {meta.label}
                         </span>
-                      </td>
-
-                      <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
-                        {brl(Number(sp.valor_total ?? 0))}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(getPlatformFee(sp))}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(getGatewayFee(sp))}
                       </td>
                       <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
                         {brl(getProfessionalAmount(sp))}

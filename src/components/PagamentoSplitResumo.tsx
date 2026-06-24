@@ -6,6 +6,7 @@ import { ShieldCheck, Hourglass, Banknote, RotateCcw, AlertTriangle } from "luci
 interface Props {
   orcamentoId: string;
   compact?: boolean;
+  showFees?: boolean;
 }
 
 type Split = {
@@ -32,23 +33,32 @@ const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> 
   retido: { label: "Retido pela plataforma", color: "bg-slate-100 text-slate-700", icon: AlertTriangle },
 };
 
-export function PagamentoSplitResumo({ orcamentoId, compact }: Props) {
+export function PagamentoSplitResumo({ orcamentoId, compact, showFees = false }: Props) {
   const { user } = useAuth();
+  const [tipoAtendimento, setTipoAtendimento] = useState<string | null>(null);
   const [split, setSplit] = useState<Split | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     async function load() {
-      const { data } = await supabase
-        .from("pagamento_splits")
-        .select("id, valor_total, taxa_plataforma, taxa_gateway, valor_profissional, valor_reembolso, status, disponivel_em, pago_em, motivo_cancelamento")
-        .eq("orcamento_id", orcamentoId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [{ data }, { data: orc }] = await Promise.all([
+        supabase
+          .from("pagamento_splits")
+          .select("id, valor_total, taxa_plataforma, taxa_gateway, valor_profissional, valor_reembolso, status, disponivel_em, pago_em, motivo_cancelamento")
+          .eq("orcamento_id", orcamentoId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("orcamentos")
+          .select("tipo_atendimento")
+          .eq("id", orcamentoId)
+          .maybeSingle(),
+      ]);
       if (active) {
         setSplit((data as unknown as Split) || null);
+        setTipoAtendimento(((orc as any)?.tipo_atendimento as string) ?? null);
         setLoading(false);
       }
     }
@@ -95,9 +105,18 @@ export function PagamentoSplitResumo({ orcamentoId, compact }: Props) {
 
       <div className="space-y-2 text-sm">
         <Row label="Valor pago pelo cliente" value={BRL(Number(split.valor_total))} bold />
-        <Row label="Retido para o profissional" value={BRL(Number(split.valor_profissional))} />
-        <Row label="Comissão plataforma" value={BRL(Number(split.taxa_plataforma))} muted />
-        <Row label="Taxa gateway" value={BRL(Number(split.taxa_gateway))} muted />
+        {showFees ? (
+          <>
+            <Row label="Retido para o profissional" value={BRL(Number(split.valor_profissional))} />
+            <Row label="Comissão plataforma" value={BRL(Number(split.taxa_plataforma))} muted />
+            <Row label="Taxa gateway" value={BRL(Number(split.taxa_gateway))} muted />
+          </>
+        ) : tipoAtendimento === "homem_com_apoio_feminino" ? (
+          <>
+            <Row label="Serviço" value={BRL(Number(split.valor_total) / 1.3)} muted />
+            <Row label="Apoio Feminino" value={BRL(Number(split.valor_total) - Number(split.valor_total) / 1.3)} muted />
+          </>
+        ) : null}
         {reemb > 0 && (
           <Row label="Reembolso ao cliente" value={BRL(reemb)} highlight />
         )}
