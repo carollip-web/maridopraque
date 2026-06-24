@@ -314,12 +314,29 @@ serve(async (req) => {
       };
 
       const valorTotal = Math.round(Number(mpPayment.transaction_amount || (pagamento as any)?.valor_total || 0) * 100) / 100;
-      const taxaGateway = calcularTaxaMP(mpPayment);
-      const valorApoioFeminino = Number(currentMetadata?.valor_apoio_feminino || 0);
-      const valorBase = Math.round((valorTotal - valorApoioFeminino) * 100) / 100;
-      const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT + valorApoioFeminino) * 100) / 100;
-      const valorProfissional = Math.round((valorTotal - taxaGateway - taxaPlataforma) * 100) / 100;
 
+      // base = total sem o surcharge de apoio (apoio é sempre 30% sobre a base → fator 1.30)
+      const apoioFactor = requiresApoio ? 1.30 : 1.00;
+      const valorBase = Math.round((valorTotal / apoioFactor) * 100) / 100;
+
+      // Taxa REAL do MP (mercadopago_fee). Se não vier no payload, estima e marca p/ reconciliar.
+      const feeReal = Array.isArray(mpPayment.fee_details)
+        ? mpPayment.fee_details
+            .filter((f: any) => f?.type === "mercadopago_fee")
+            .reduce((acc: number, f: any) => acc + (Number(f.amount) || 0), 0)
+        : 0;
+      const gatewayConfirmado = feeReal > 0;
+      const taxaGatewayTotal = gatewayConfirmado
+        ? Math.round(feeReal * 100) / 100
+        : calcularTaxaMP(mpPayment); // estimativa por método
+
+      // Prestador arca SÓ com a parte dele do gateway (proporcional à base)
+      const taxaGatewayPrestador = valorTotal > 0
+        ? Math.round((taxaGatewayTotal * valorBase / valorTotal) * 100) / 100
+        : 0;
+
+      const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT) * 100) / 100; // comissão (15% da base)
+      const valorProfissional = Math.round((valorBase * (1 - MARKETPLACE_FEE_PERCENT) - taxaGatewayPrestador) * 100) / 100;
 
       const { error: splitErr } = await supabase.from("pagamento_splits").upsert({
         orcamento_id: updatedOrc.id,
@@ -327,9 +344,10 @@ serve(async (req) => {
         profissional_id: updatedOrc.profissional_id,
         cliente_id: updatedOrc.cliente_id,
         valor_total: valorTotal,
-        taxa_gateway: taxaGateway,
+        taxa_gateway: taxaGatewayPrestador,
         taxa_plataforma: taxaPlataforma,
         valor_profissional: valorProfissional,
+        taxa_gateway_estimada: !gatewayConfirmado,
         status: "aguardando_conclusao",
         disponivel_em: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
       }, { onConflict: "pagamento_id" });
