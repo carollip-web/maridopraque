@@ -172,8 +172,13 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           : isDisputaResolvida
             ? "bg-slate-200 text-slate-600"
             : (meta?.className ?? "bg-slate-100 text-slate-600");
-  const min = range?.preco_min != null ? Number(range.preco_min) : null;
-  const max = range?.preco_max != null ? Number(range.preco_max) : null;
+  const unitMin = range?.preco_min != null ? Number(range.preco_min) : null;
+  const unitMax = range?.preco_max != null ? Number(range.preco_max) : null;
+  const metragem = o.metragem_m2 != null ? Number(o.metragem_m2) : 0;
+  const isM2 = metragem > 0;
+  const min = unitMin != null ? (isM2 ? unitMin * metragem : unitMin) : null;
+  const max = unitMax != null ? (isM2 ? unitMax * metragem : unitMax) : null;
+
 
   const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
     tipoAtendimento: o.tipo_atendimento as import("@/lib/atendimento.compat").TipoAtendimento,
@@ -816,9 +821,13 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 </div>
                 {min != null && max != null && (
                   <p className="text-[10px] text-muted-foreground italic">
-                    Tabela: R$ {min.toFixed(0)} – {max.toFixed(0)}
+                    Faixa do cliente: <span className="font-bold text-foreground not-italic">R$ {min.toFixed(2).replace(".", ",")} – R$ {max.toFixed(2).replace(".", ",")}</span>
+                    {isM2 && unitMin != null && unitMax != null && (
+                      <> ({metragem} m² × R$ {unitMin.toFixed(2).replace(".", ",")}–{unitMax.toFixed(2).replace(".", ",")}/m²)</>
+                    )}
                   </p>
                 )}
+
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
