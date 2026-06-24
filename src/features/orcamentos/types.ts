@@ -32,8 +32,10 @@ export type OrcamentoRow = {
   auto_aprovado: boolean;
   observacoes_profissional: string | null;
   tipo_atendimento: string | null;
+  metragem_m2: number | null;
   created_at: string;
 };
+
 
 export type OrcMaterial = {
   id: string;
