@@ -240,7 +240,7 @@ export function useProfissionalData(user: User | null) {
         }
       }
 
-      return { orcamentos: list as Orcamento[], propostasIniciais: propsList } satisfies OrcamentosQueryData;
+      return { orcamentos: list as Orcamento[], propostasIniciais: propsList, temAgenda } satisfies OrcamentosQueryData;
     },
   });
 
