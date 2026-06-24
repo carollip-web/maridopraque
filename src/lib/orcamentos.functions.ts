@@ -22,6 +22,7 @@ interface OrcamentoParaEnvio {
   service_id: string | null;
   service_name: string | null;
   tipo_atendimento: string | null;
+  metragem_m2: number | null;
 }
 
 /** Perfil do profissional usado na validação de envio de proposta. */
@@ -132,7 +133,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     let orc: OrcamentoParaEnvio | null = null;
     const { data: orcCompleto, error: orcError } = await supabase
       .from("orcamentos")
-      .select("id, status, cliente_id, service_id, service_name, tipo_atendimento")
+        .select("id, status, cliente_id, service_id, service_name, tipo_atendimento, metragem_m2")
       .eq("id", data.orcamentoId)
       .maybeSingle();
 
@@ -158,6 +159,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           service_id: orcBasico.service_id ?? null,
           service_name: orcBasico.service_name ?? null,
           tipo_atendimento: tipoFallback,
+          metragem_m2: null,
         };
       } else {
         orc = null;
@@ -206,12 +208,16 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
         .eq("id", orc.service_id)
         .single();
       if (cat?.preco_min != null && cat?.preco_max != null) {
+        const metragem = orc.metragem_m2 != null ? Number(orc.metragem_m2) : 0;
+        const isM2 = metragem > 0 && /\(m²?\)|\bm2\b|metro quadrado/i.test(`${orc.service_name ?? ""} ${cat.nome ?? ""}`);
+        const minRange = Number(cat.preco_min) * (isM2 ? metragem : 1);
+        const maxRange = Number(cat.preco_max) * (isM2 ? metragem : 1);
         if (
-          data.valorServico < Number(cat.preco_min) ||
-          data.valorServico > Number(cat.preco_max)
+          data.valorServico < minRange ||
+          data.valorServico > maxRange
         ) {
           throw new Error(
-            `Valor fora do range tabelado para "${cat.nome}" (R$ ${Number(cat.preco_min).toFixed(2)} – R$ ${Number(cat.preco_max).toFixed(2)})`,
+            `Valor fora do range tabelado para "${cat.nome}" (R$ ${minRange.toFixed(2)} – R$ ${maxRange.toFixed(2)})`,
           );
         }
       }

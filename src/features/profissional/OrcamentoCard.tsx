@@ -172,10 +172,12 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           : isDisputaResolvida
             ? "bg-slate-200 text-slate-600"
             : (meta?.className ?? "bg-slate-100 text-slate-600");
+  const formatCurrency = (value: number) =>
+    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const unitMin = range?.preco_min != null ? Number(range.preco_min) : null;
   const unitMax = range?.preco_max != null ? Number(range.preco_max) : null;
   const metragem = o.metragem_m2 != null ? Number(o.metragem_m2) : 0;
-  const isM2 = metragem > 0;
+  const isM2 = metragem > 0 && /\(m²?\)|\bm2\b|metro quadrado/i.test(`${o.service_name} ${range?.nome ?? ""}`);
   const min = unitMin != null ? (isM2 ? unitMin * metragem : unitMin) : null;
   const max = unitMax != null ? (isM2 ? unitMax * metragem : unitMax) : null;
 
@@ -447,7 +449,23 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         </div>
       </div>
 
-      {o.tipo_atendimento && (
+        {min != null && max != null && (
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700">
+              Faixa estimada da mão de obra
+            </p>
+            <p className="mt-1 text-base font-bold text-slate-900 tabular-nums">
+              {formatCurrency(min)} – {formatCurrency(max)}
+            </p>
+            {isM2 && unitMin != null && unitMax != null && (
+              <p className="mt-0.5 text-[11px] font-medium text-amber-700">
+                {metragem} m² × {formatCurrency(unitMin)}–{formatCurrency(unitMax)}/m²
+              </p>
+            )}
+          </div>
+        )}
+
+        {o.tipo_atendimento && (
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
             {atendimentoPedidoLabel}
@@ -821,9 +839,9 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 </div>
                 {min != null && max != null && (
                   <p className="text-[10px] text-muted-foreground italic">
-                    Faixa do cliente: <span className="font-bold text-foreground not-italic">R$ {min.toFixed(2).replace(".", ",")} – R$ {max.toFixed(2).replace(".", ",")}</span>
+                    Faixa do cliente: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
                     {isM2 && unitMin != null && unitMax != null && (
-                      <> ({metragem} m² × R$ {unitMin.toFixed(2).replace(".", ",")}–{unitMax.toFixed(2).replace(".", ",")}/m²)</>
+                      <> ({metragem} m² × {formatCurrency(unitMin)}–{formatCurrency(unitMax)}/m²)</>
                     )}
                   </p>
                 )}

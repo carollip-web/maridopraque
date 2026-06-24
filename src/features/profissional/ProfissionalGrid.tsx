@@ -3,6 +3,13 @@ import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo } from "./types";
 import { distanceKm } from "@/lib/geo";
 import { OrcamentoCard } from "./OrcamentoCard";
 
+const catalogNameKey = (name: string | null | undefined) =>
+  `name:${String(name ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()}`;
+
 interface ProfissionalGridProps {
   items: Orcamento[];
   profiles: Record<string, Profile>;
@@ -79,7 +86,7 @@ export function ProfissionalGrid({
           cliente={profiles[o.cliente_id]}
           clienteCidade={clienteGeo[o.cliente_id]?.cidade ?? null}
           distanciaKm={distFor(o.cliente_id)}
-          range={o.service_id ? catalog[o.service_id] : undefined}
+          range={(o.service_id ? catalog[o.service_id] : undefined) ?? catalog[catalogNameKey(o.service_name)]}
           materiais={orcMats[o.id] ?? []}
           mode={mode}
           enviar={enviar}

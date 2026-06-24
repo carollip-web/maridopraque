@@ -46,6 +46,7 @@ interface OrcMatRow {
 /** Row returned by `select(...)` on `services_catalog` */
 interface CatalogRow {
   id: string;
+  nome: string | null;
   preco_min: number | null;
   preco_max: number | null;
   categoria: string;
@@ -130,6 +131,13 @@ interface PerfilRow {
 const EMPTY_ORCS: Orcamento[] = [];
 const EMPTY_PROPS: PropostaRow[] = [];
 const EMPTY_RECUSAS: string[] = [];
+
+const catalogNameKey = (name: string | null | undefined) =>
+  `name:${String(name ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()}`;
 
 /**
  * Encapsula todo o estado e a busca de dados do painel do profissional.
@@ -332,16 +340,19 @@ export function useProfissionalData(user: User | null) {
   );
 
   const catalogQuery = useQuery({
-    queryKey: ["profissional", "catalog", serviceIds.join(",")],
-    enabled: serviceIds.length > 0,
+    queryKey: ["profissional", "catalog", serviceIds.join(","), orcamentos.length],
+    enabled: orcamentos.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("services_catalog")
-        .select("id, preco_min, preco_max, categoria")
-        .in("id", serviceIds);
+        .select("id, nome, preco_min, preco_max, categoria");
       if (error) throw error;
       const cmap: Record<string, ServicoCat> = {};
-      (data ?? []).forEach((c) => (cmap[c.id] = c as ServicoCat));
+      (data ?? []).forEach((c) => {
+        const row = c as CatalogRow;
+        cmap[row.id] = row as ServicoCat;
+        if (row.nome) cmap[catalogNameKey(row.nome)] = row as ServicoCat;
+      });
       return cmap;
     },
   });

@@ -45,6 +45,7 @@ export type GeneroProfissional = "homem" | "mulher" | "outro" | "nao_informar";
 
 export type ServicoCat = {
   id: string;
+  nome?: string | null;
   preco_min: number | null;
   preco_max: number | null;
   categoria?: string;

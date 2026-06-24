@@ -54,6 +54,13 @@ const profissionalSearchSchema = z.object({
 
 type ProfissionalSearch = z.infer<typeof profissionalSearchSchema>;
 
+const catalogNameKey = (name: string | null | undefined) =>
+  `name:${String(name ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()}`;
+
 export const Route = createFileRoute("/profissional")({
   validateSearch: profissionalSearchSchema,
   component: ProfissionalArea,
@@ -352,7 +359,10 @@ function ProfissionalArea() {
           sheetOrc ? (data.clienteGeo[sheetOrc.cliente_id]?.cidade ?? null) : null
         }
         range={
-          sheetOrc?.service_id ? data.catalog[sheetOrc.service_id] : undefined
+          sheetOrc
+            ? ((sheetOrc.service_id ? data.catalog[sheetOrc.service_id] : undefined) ??
+              data.catalog[catalogNameKey(sheetOrc.service_name)])
+            : undefined
         }
         materiais={sheetOrc ? (data.orcMats[sheetOrc.id] ?? []) : []}
         mode={sheetMode}
