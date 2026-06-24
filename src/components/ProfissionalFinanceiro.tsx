@@ -201,11 +201,8 @@ export function ProfissionalFinanceiro() {
     const headers = [
       "Data",
       "Serviço",
-      "Valor Total (R$)",
-      "Sua Parte (R$)",
-      "Taxa Plataforma (R$)",
-      "Taxa Gateway (R$)",
       "Status",
+      "Você recebeu (R$)",
     ];
 
     const rows = listaFiltrada.map((sp) => {
@@ -215,11 +212,8 @@ export function ProfissionalFinanceiro() {
       return [
         new Date(sp.created_at).toLocaleDateString("pt-BR"),
         sp.orcamentos?.service_name || "Serviço",
-        Number(sp.valor_total || 0).toFixed(2).replace(".", ","),
-        getProfessionalAmount(sp).toFixed(2).replace(".", ","),
-        getPlatformFee(sp).toFixed(2).replace(".", ","),
-        getGatewayFee(sp).toFixed(2).replace(".", ","),
         meta.label,
+        getProfessionalAmount(sp).toFixed(2).replace(".", ","),
       ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
     });
 
