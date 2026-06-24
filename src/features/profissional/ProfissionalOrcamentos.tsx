@@ -67,6 +67,8 @@ export function ProfissionalOrcamentos({
   profApoioFeminino,
   onProposalSent,
   temAgenda = true,
+}: ProfissionalOrcamentosProps) {
+
 
   return (
     <div className="space-y-6">
