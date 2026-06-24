@@ -105,9 +105,18 @@ export function PagamentoSplitResumo({ orcamentoId, compact, showFees = false }:
 
       <div className="space-y-2 text-sm">
         <Row label="Valor pago pelo cliente" value={BRL(Number(split.valor_total))} bold />
-        <Row label="Retido para o profissional" value={BRL(Number(split.valor_profissional))} />
-        <Row label="Comissão plataforma" value={BRL(Number(split.taxa_plataforma))} muted />
-        <Row label="Taxa gateway" value={BRL(Number(split.taxa_gateway))} muted />
+        {showFees ? (
+          <>
+            <Row label="Retido para o profissional" value={BRL(Number(split.valor_profissional))} />
+            <Row label="Comissão plataforma" value={BRL(Number(split.taxa_plataforma))} muted />
+            <Row label="Taxa gateway" value={BRL(Number(split.taxa_gateway))} muted />
+          </>
+        ) : tipoAtendimento === "homem_com_apoio_feminino" ? (
+          <>
+            <Row label="Serviço" value={BRL(Number(split.valor_total) / 1.3)} muted />
+            <Row label="Apoio Feminino" value={BRL(Number(split.valor_total) - Number(split.valor_total) / 1.3)} muted />
+          </>
+        ) : null}
         {reemb > 0 && (
           <Row label="Reembolso ao cliente" value={BRL(reemb)} highlight />
         )}
