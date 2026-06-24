@@ -678,7 +678,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     (async () => {
       const { data } = await supabase
         .from("profissionais_publicos")
-        .select("foto_url, especialidades, aprovacao_status, bio, cidade, estado, criado_em")
+        .select("foto_url, especialidades, aprovacao_status, bio, cidade, anos_experiencia, slug, created_at")
         .eq("user_id", profIdParaCard)
         .maybeSingle();
       if (active) setProfPublico(data);
