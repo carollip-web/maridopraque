@@ -23,6 +23,10 @@ interface OrcamentoParaEnvio {
   service_name: string | null;
   tipo_atendimento: string | null;
   metragem_m2: number | null;
+  data_preferida: string | null;
+  periodo_preferido: string | null;
+  horario_preferido: string | null;
+  flexibilidade_agenda: string | null;
 }
 
 /** Perfil do profissional usado na validação de envio de proposta. */
