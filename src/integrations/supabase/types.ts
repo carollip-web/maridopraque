@@ -1080,6 +1080,7 @@ export type Database = {
           profissional_id: string
           status: string
           taxa_gateway: number
+          taxa_gateway_estimada: boolean
           taxa_plataforma: number
           updated_at: string
           valor_profissional: number
@@ -1101,6 +1102,7 @@ export type Database = {
           profissional_id: string
           status?: string
           taxa_gateway?: number
+          taxa_gateway_estimada?: boolean
           taxa_plataforma?: number
           updated_at?: string
           valor_profissional: number
@@ -1122,6 +1124,7 @@ export type Database = {
           profissional_id?: string
           status?: string
           taxa_gateway?: number
+          taxa_gateway_estimada?: boolean
           taxa_plataforma?: number
           updated_at?: string
           valor_profissional?: number
@@ -2468,6 +2471,7 @@ export type Database = {
           profissional_id: string
           status: string
           taxa_gateway: number
+          taxa_gateway_estimada: boolean
           taxa_plataforma: number
           updated_at: string
           valor_profissional: number
