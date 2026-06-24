@@ -375,13 +375,14 @@ export function OrcamentoWizard({
 
           <div className="flex justify-end">
             <Button
-              onClick={() => setStep(2)}
-              disabled={!selServiceId}
+              onClick={() => form.goToStep2()}
+              disabled={!selServiceId || (isM2Service && metragemNum <= 0)}
               className="rounded-full bg-foreground text-background font-bold gap-2"
             >
               Continuar <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+
         </div>
       )}
 
