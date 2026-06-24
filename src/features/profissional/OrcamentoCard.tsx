@@ -409,6 +409,16 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-bold truncate text-slate-900">{o.service_name}</h3>
+          {o.metragem_m2 != null && Number(o.metragem_m2) > 0 && (
+            <p className="text-[11px] mt-0.5 font-bold text-brand">
+              Área informada: {Number(o.metragem_m2)} m²
+              {range?.preco_min != null && range?.preco_max != null && (
+                <span className="font-medium text-slate-500">
+                  {" "}· R$ {Number(range.preco_min).toFixed(2)}–{Number(range.preco_max).toFixed(2)}/m²
+                </span>
+              )}
+            </p>
+          )}
           <p
             className={`text-xs mt-0.5 font-medium ${isUrgent ? "text-red-500" : "text-muted-foreground"}`}
           >
@@ -421,6 +431,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             })}
           </p>
         </div>
+
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap uppercase tracking-wider ${statusClassOverride}`}
