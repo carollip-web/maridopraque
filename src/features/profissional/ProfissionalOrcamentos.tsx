@@ -37,6 +37,8 @@ interface ProfissionalOrcamentosProps {
   profGenero?: string | null;
   profApoioFeminino?: boolean;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
+  temAgenda?: boolean;
+
 }
 
 export function ProfissionalOrcamentos({
