@@ -909,6 +909,7 @@ export type Database = {
           horario_preferido: string | null
           id: string
           is_test: boolean
+          metragem_m2: number | null
           observacoes_profissional: string | null
           periodo_preferido: string | null
           profissional_id: string | null
@@ -948,6 +949,7 @@ export type Database = {
           horario_preferido?: string | null
           id?: string
           is_test?: boolean
+          metragem_m2?: number | null
           observacoes_profissional?: string | null
           periodo_preferido?: string | null
           profissional_id?: string | null
@@ -987,6 +989,7 @@ export type Database = {
           horario_preferido?: string | null
           id?: string
           is_test?: boolean
+          metragem_m2?: number | null
           observacoes_profissional?: string | null
           periodo_preferido?: string | null
           profissional_id?: string | null
