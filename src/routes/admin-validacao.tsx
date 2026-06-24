@@ -59,12 +59,12 @@ type Prestador = {
   created_at?: string | null;
 };
 
-const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any }> = {
-  pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock },
-  em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye },
-  aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2 },
-  rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle },
-  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX },
+const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any; desc: string }> = {
+  pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock, desc: "Aguardando início da análise" },
+  em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye, desc: "Em revisão pelo admin" },
+  aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2, desc: "Cadastros liberados" },
+  rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle, desc: "Cadastros recusados" },
+  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX, desc: "Faltam dados do prestador" },
 };
 
 async function getSignedUrl(publicUrl: string | null) {
