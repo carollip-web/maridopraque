@@ -23,6 +23,10 @@ interface OrcamentoParaEnvio {
   service_name: string | null;
   tipo_atendimento: string | null;
   metragem_m2: number | null;
+  data_preferida: string | null;
+  periodo_preferido: string | null;
+  horario_preferido: string | null;
+  flexibilidade_agenda: string | null;
 }
 
 /** Perfil do profissional usado na validação de envio de proposta. */
@@ -133,7 +137,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     let orc: OrcamentoParaEnvio | null = null;
     const { data: orcCompleto, error: orcError } = await supabase
       .from("orcamentos")
-        .select("id, status, cliente_id, service_id, service_name, tipo_atendimento, metragem_m2")
+        .select("id, status, cliente_id, service_id, service_name, tipo_atendimento, metragem_m2, data_preferida, periodo_preferido, horario_preferido, flexibilidade_agenda")
       .eq("id", data.orcamentoId)
       .maybeSingle();
 
@@ -160,6 +164,10 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           service_name: orcBasico.service_name ?? null,
           tipo_atendimento: tipoFallback,
           metragem_m2: null,
+          data_preferida: null,
+          periodo_preferido: null,
+          horario_preferido: null,
+          flexibilidade_agenda: null,
         };
       } else {
         orc = null;
@@ -299,13 +307,20 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
     }
 
-    // Bloqueia envio de proposta se o profissional não tem agenda cadastrada
-    const { count: agendaCount } = await supabase
-      .from("profissional_disponibilidade")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
-    if (!agendaCount || agendaCount === 0) {
-      throw new Error("Cadastre horários na sua Agenda antes de enviar propostas.");
+    // Bloqueia envio se o pedido não cabe na agenda do profissional
+    const { carregarAgendaProfissional, isAgendaCompativel } = await import("@/lib/agenda");
+    const agendaProf = await carregarAgendaProfissional(userId, supabase);
+    const { compativel, motivo } = isAgendaCompativel(
+      {
+        data_preferida: orc.data_preferida,
+        periodo_preferido: orc.periodo_preferido,
+        horario_preferido: orc.horario_preferido,
+        flexibilidade_agenda: orc.flexibilidade_agenda,
+      },
+      agendaProf,
+    );
+    if (!compativel) {
+      throw new Error(motivo || "Esse pedido não está dentro dos seus horários disponíveis.");
     }
 
     // 3. Update budget status to 'enviado' using RPC
