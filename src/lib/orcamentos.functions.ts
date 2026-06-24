@@ -299,7 +299,17 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       );
     }
 
+    // Bloqueia envio de proposta se o profissional não tem agenda cadastrada
+    const { count: agendaCount } = await supabase
+      .from("profissional_disponibilidade")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    if (!agendaCount || agendaCount === 0) {
+      throw new Error("Cadastre horários na sua Agenda antes de enviar propostas.");
+    }
+
     // 3. Update budget status to 'enviado' using RPC
+
     console.info("[enviarOrcamento] chamando RPC marcar_orcamento_enviado", {
       orcamentoId: data.orcamentoId,
       statusAtual: orc.status,

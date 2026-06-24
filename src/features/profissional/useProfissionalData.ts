@@ -93,7 +93,9 @@ interface OrcamentoPartial {
 interface OrcamentosQueryData {
   orcamentos: Orcamento[];
   propostasIniciais: PropostaRow[];
+  temAgenda: boolean;
 }
+
 
 interface RecusaRow {
   orcamento_id: string;
@@ -158,6 +160,16 @@ export function useProfissionalData(user: User | null) {
     queryKey: ["profissional", "orcamentos", userId],
     enabled,
     queryFn: async () => {
+      const { count: agendaCount } = await supabase
+        .from("profissional_disponibilidade")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId!);
+      const temAgenda = (agendaCount ?? 0) > 0;
+
+      const orFilter = temAgenda
+        ? `profissional_id.is.null,profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`
+        : `profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`;
+
       const [propsRes, orcsRes] = await Promise.all([
         supabase
           .from("propostas")
@@ -166,11 +178,10 @@ export function useProfissionalData(user: User | null) {
         supabase
           .from("orcamentos")
           .select("*")
-          .or(
-            `profissional_id.is.null,profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`,
-          )
+          .or(orFilter)
           .order("created_at", { ascending: false }),
       ]);
+
 
       if (propsRes.error) throw propsRes.error;
       if (orcsRes.error) throw orcsRes.error;
@@ -229,7 +240,7 @@ export function useProfissionalData(user: User | null) {
         }
       }
 
-      return { orcamentos: list as Orcamento[], propostasIniciais: propsList } satisfies OrcamentosQueryData;
+      return { orcamentos: list as Orcamento[], propostasIniciais: propsList, temAgenda } satisfies OrcamentosQueryData;
     },
   });
 
@@ -831,6 +842,8 @@ export function useProfissionalData(user: User | null) {
   const orcMats = orcMatsQuery.data ?? {};
   const propostasMateriais = propostasMateriaisQuery.data ?? [];
   const minhaAgenda = agendaQuery.data ?? null;
+  const temAgenda = orcamentosQuery.data?.temAgenda ?? false;
+
 
   return {
     // Dados
@@ -845,6 +858,8 @@ export function useProfissionalData(user: User | null) {
     clienteEndereco,
     minhaAgenda,
     loadingList,
+    temAgenda,
+
 
     // Perfil
     ativo,

@@ -1,7 +1,8 @@
 import React from "react";
-import { Clock, Pencil, Send, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { Clock, Pencil, Send, DollarSign, TrendingUp, Loader2, CalendarClock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+
 import { Stat } from "./ProfissionalStats";
 import { ProfissionalGrid } from "./ProfissionalGrid";
 import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo } from "./types";
@@ -36,6 +37,8 @@ interface ProfissionalOrcamentosProps {
   profGenero?: string | null;
   profApoioFeminino?: boolean;
   onProposalSent?: (data: { orcamentoId: string; proposta: any; orcamento: any }) => void;
+  temAgenda?: boolean;
+
 }
 
 export function ProfissionalOrcamentos({
@@ -63,7 +66,10 @@ export function ProfissionalOrcamentos({
   profGenero,
   profApoioFeminino,
   onProposalSent,
+  temAgenda = true,
 }: ProfissionalOrcamentosProps) {
+
+
   return (
     <div className="space-y-6">
       <Tabs
@@ -129,6 +135,21 @@ export function ProfissionalOrcamentos({
           ) : (
             <>
               <TabsContent value="oportunidades" className="mt-0 focus-visible:outline-none">
+                {!temAgenda && (
+                  <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-900 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <CalendarClock className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold">Cadastre seus horários na Agenda para começar a receber novos pedidos.</p>
+                      <p className="mt-1 text-rose-800">
+                        Sem agenda configurada, novas oportunidades ficam ocultas. Propostas já enviadas e pedidos atribuídos continuam disponíveis.
+                      </p>
+                      <Button asChild size="sm" className="mt-3">
+                        <a href="/profissional?tab=agenda">Configurar agenda</a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {especialidades.length === 0 && (
                   <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
                     <Clock className="h-5 w-5 shrink-0 mt-0.5" />
