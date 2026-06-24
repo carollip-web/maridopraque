@@ -665,13 +665,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
   const [profPublico, setProfPublico] = useState<any>(null);
 
+  // Carrega dados públicos do profissional para exibir no card de proposta/atendimento.
+  // Usa o profissional_id do pedido (após aceite) OU o da primeira proposta recebida.
+  const propostaProfId = (selectedPedido?.propostas?.[0]?.profissional_id as string | undefined) ?? null;
+  const profIdParaCard = (selectedPedido?.profissional_id as string | undefined) ?? propostaProfId;
   useEffect(() => {
-    if (!selectedPedido?.profissional_id) {
-      setProfPublico(null);
-      return;
-    }
-    const raw = String(selectedPedido.rawStatus || "").toLowerCase();
-    if (!["pago", "concluido", "em_disputa"].includes(raw)) {
+    if (!profIdParaCard) {
       setProfPublico(null);
       return;
     }
@@ -679,15 +678,15 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     (async () => {
       const { data } = await supabase
         .from("profissionais_publicos")
-        .select("foto_url, especialidades, aprovacao_status")
-        .eq("user_id", selectedPedido.profissional_id as string)
+        .select("foto_url, especialidades, aprovacao_status, bio, cidade, estado, criado_em")
+        .eq("user_id", profIdParaCard)
         .maybeSingle();
       if (active) setProfPublico(data);
     })();
     return () => {
       active = false;
     };
-  }, [selectedPedido?.profissional_id, selectedPedido?.rawStatus]);
+  }, [profIdParaCard]);
 
   useEffect(() => {
     if (!selectedPedido?.id || selectedPedido.rawStatus !== "concluido") {
