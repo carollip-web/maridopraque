@@ -115,6 +115,7 @@ function MeusOrcamentos() {
       horarioPreferido: form.horarioPreferido,
       flexibilidadeAgenda: form.flexibilidadeAgenda,
       picked: form.picked,
+      metragemM2: form.metragemM2,
       step: form.step,
     }),
     [
@@ -126,9 +127,11 @@ function MeusOrcamentos() {
       form.horarioPreferido,
       form.flexibilidadeAgenda,
       form.picked,
+      form.metragemM2,
       form.step,
     ],
   );
+
 
   const draft = useOrcamentoDraft({
     draftKey,

@@ -74,6 +74,8 @@ export function useOrcamentoForm({
   const [flexibilidadeAgenda, setFlexibilidadeAgenda] =
     useState<string>("flexivel");
   const [picked, setPicked] = useState<Record<string, number>>({});
+  const [metragemM2, setMetragemM2] = useState<string>("");
+
   const [fotos, setFotos] = useState<string[]>([]);
   const [guestFiles, setGuestFiles] = useState<
     { file: File; previewUrl: string }[]
@@ -104,11 +106,13 @@ export function useOrcamentoForm({
     setHorarioPreferido("");
     setFlexibilidadeAgenda("flexivel");
     setPicked({});
+    setMetragemM2("");
     setFotos([]);
     setStep(1);
     setShowNew(false);
     setEditingId(null);
   }, []);
+
 
   const applyDraft = useCallback((d: OrcamentoDraft) => {
     setSelServiceId(d.selServiceId ?? "");
@@ -119,6 +123,7 @@ export function useOrcamentoForm({
     setHorarioPreferido(d.horarioPreferido ?? "");
     setFlexibilidadeAgenda(d.flexibilidadeAgenda ?? "flexivel");
     setPicked(d.picked ?? {});
+    setMetragemM2(d.metragemM2 ?? "");
     setStep(d.step ?? 1);
     setEditingId(null);
     setShowNew(true);
@@ -137,8 +142,16 @@ export function useOrcamentoForm({
       toast.error("Range de preço inválido para este serviço.");
       return;
     }
+    const isM2 = /\(m²?\)|\bm2\b|metro quadrado/i.test(selServico.nome);
+    if (isM2) {
+      const m = parseFloat(metragemM2.replace(",", "."));
+      if (!Number.isFinite(m) || m <= 0) {
+        toast.error("Informe a metragem em m² para este serviço.");
+        return;
+      }
+    }
     setStep(2);
-  }, [selServico]);
+  }, [selServico, metragemM2]);
 
   const startEdit = useCallback(
     (o: OrcamentoRow) => {
@@ -149,6 +162,7 @@ export function useOrcamentoForm({
       setEditingId(o.id);
       setSelServiceId(o.service_id ?? "");
       setDescricao(o.descricao ?? "");
+      setMetragemM2(o.metragem_m2 != null ? String(o.metragem_m2).replace(".", ",") : "");
       const mats = orcMats[o.id] ?? [];
       const p: Record<string, number> = {};
       mats.forEach((m) => {
@@ -159,6 +173,7 @@ export function useOrcamentoForm({
       setStep(1);
       setShowNew(true);
     },
+
     [orcMats],
   );
 
@@ -417,12 +432,21 @@ export function useOrcamentoForm({
             materiais: payload.materiais,
           },
         });
+        const metragemEdit = (() => {
+          const v = parseFloat(metragemM2.replace(",", "."));
+          return Number.isFinite(v) && v > 0 ? v : null;
+        })();
         await supabase
           .from("orcamentos")
-          .update({ fotos_problema: fotos })
+          .update({ fotos_problema: fotos, metragem_m2: metragemEdit } as never)
           .eq("id", editingId);
         toast.success("Orçamento atualizado.");
+
       } else {
+        const metragemNum = (() => {
+          const v = parseFloat(metragemM2.replace(",", "."));
+          return Number.isFinite(v) && v > 0 ? v : null;
+        })();
         const insertPayload = {
           cliente_id: user?.id as string,
           service_id: payload.serviceId,
@@ -434,8 +458,10 @@ export function useOrcamentoForm({
           periodo_preferido: payload.periodoPreferido || null,
           horario_preferido: payload.horarioPreferido || null,
           flexibilidade_agenda: payload.flexibilidadeAgenda || "flexivel",
+          metragem_m2: metragemNum,
           status: "customizado_pendente",
         };
+
 
         const { data: novoOrcamento, error: orcamentoError } = await supabase
           .from("orcamentos")
@@ -551,7 +577,9 @@ export function useOrcamentoForm({
     horarioPreferido,
     flexibilidadeAgenda,
     picked,
+    metragemM2,
     fotos,
+
     guestFiles,
     guestEmail,
     guestSenha,
@@ -592,8 +620,11 @@ export function useOrcamentoForm({
     setFlexibilidadeAgenda,
     picked,
     setPicked,
+    metragemM2,
+    setMetragemM2,
     fotos,
     setFotos,
+
     guestFiles,
     setGuestFiles,
 

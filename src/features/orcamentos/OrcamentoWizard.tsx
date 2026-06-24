@@ -121,6 +121,8 @@ export function OrcamentoWizard({
     setFlexibilidadeAgenda,
     picked,
     setPicked,
+    metragemM2,
+    setMetragemM2,
     fotos,
     setFotos,
     guestFiles,
@@ -134,6 +136,13 @@ export function OrcamentoWizard({
     togglePick,
     handleNew,
   } = form;
+
+  const isM2Service = !!selServico && /\(m²?\)|\bm2\b|metro quadrado/i.test(selServico.nome);
+  const metragemNum = (() => {
+    const v = parseFloat((metragemM2 || "").replace(",", "."));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  })();
+
 
   return (
     <div className="bg-white rounded-2xl border border-border p-6 mb-6 shadow-soft space-y-5">
@@ -201,8 +210,8 @@ export function OrcamentoWizard({
                 : horas < 5
                   ? `≈ ${Math.round(horas * 2) / 2} h`
                   : `≈ ${Math.round(horas)} h`;
-          const totalMin = min + subtotalMat;
-          const totalMax = max + subtotalMat;
+          const totalMin = (isM2Service && metragemNum > 0 ? min * metragemNum : min) + subtotalMat;
+          const totalMax = (isM2Service && metragemNum > 0 ? max * metragemNum : max) + subtotalMat;
           const qtdMat = Object.keys(picked).length;
           return (
             <div className="rounded-2xl border border-border bg-card px-5 py-4">
@@ -215,24 +224,31 @@ export function OrcamentoWizard({
                     {selServico.nome}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
+                    {isM2Service && metragemNum > 0 ? `${metragemNum} m² · ` : ""}
                     {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} ·{" "}
                     {tempo}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Total estimado
+                    {isM2Service && metragemNum > 0 ? "Total estimado" : "Total estimado"}
                   </p>
                   <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
                     {min === max
                       ? brl(totalMin)
                       : `${brl(totalMin)} – ${brl(totalMax)}`}
                   </p>
+                  {isM2Service && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {brl(min)}–{brl(max)} / m²
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           );
         })()}
+
 
       {/* Step 1: Serviço */}
       {step === 1 && (
@@ -269,6 +285,7 @@ export function OrcamentoWizard({
                   <span className="font-semibold text-foreground">
                     {brl(Number(selServico.preco_min))} a{" "}
                     {brl(Number(selServico.preco_max))}
+                    {isM2Service ? " / m²" : ""}
                   </span>
                   . O profissional confirmará o valor exato dentro desse range.
                 </p>
@@ -280,6 +297,37 @@ export function OrcamentoWizard({
                 </p>
               )}
           </div>
+
+          {isM2Service && (
+            <div className="rounded-2xl border border-brand/20 bg-brand-soft/40 p-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="text-xs uppercase font-bold text-brand flex items-center gap-2">
+                <Wrench className="h-3 w-3" /> Metragem do serviço (m²) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.1"
+                value={metragemM2}
+                onChange={(e) => setMetragemM2(e.target.value)}
+                placeholder="Ex.: 12"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-white focus:ring-2 focus:ring-brand/20 outline-none text-base font-semibold"
+              />
+              {metragemNum > 0 && selServico?.preco_min != null && selServico?.preco_max != null && (
+                <p className="text-xs text-slate-700">
+                  Estimativa:{" "}
+                  <span className="font-bold text-foreground">
+                    {brl(Number(selServico.preco_min) * metragemNum)} – {brl(Number(selServico.preco_max) * metragemNum)}
+                  </span>{" "}
+                  ({metragemNum} m² × {brl(Number(selServico.preco_min))}–{brl(Number(selServico.preco_max))}/m²)
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Informe a área a ser trabalhada. O valor sugerido é calculado automaticamente; o profissional confirma o valor final.
+              </p>
+            </div>
+          )}
+
 
           <div>
             <label className="text-xs uppercase font-bold text-muted-foreground">
@@ -327,13 +375,14 @@ export function OrcamentoWizard({
 
           <div className="flex justify-end">
             <Button
-              onClick={() => setStep(2)}
-              disabled={!selServiceId}
+              onClick={() => form.goToStep2()}
+              disabled={!selServiceId || (isM2Service && metragemNum <= 0)}
               className="rounded-full bg-foreground text-background font-bold gap-2"
             >
               Continuar <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+
         </div>
       )}
 
