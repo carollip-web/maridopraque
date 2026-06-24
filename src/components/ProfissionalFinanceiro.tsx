@@ -147,14 +147,6 @@ export function ProfissionalFinanceiro() {
     const recebidos = splitsPeriodo.filter((s) => deriveStatus(s) === "recebido");
     const pendentes = splitsPeriodo.filter((s) => deriveStatus(s) === "pendente");
 
-    const brutoPeriodo = splitsPeriodo.reduce(
-      (acc, s) => acc + Number(s.valor_total || 0),
-      0,
-    );
-    const taxasPeriodo = splitsPeriodo.reduce(
-      (acc, s) => acc + getTotalFees(s),
-      0,
-    );
     const liquidoRecebido = recebidos.reduce(
       (acc, s) => acc + getProfessionalAmount(s),
       0,
@@ -175,8 +167,6 @@ export function ProfissionalFinanceiro() {
 
     return {
       liquidoRecebido,
-      brutoPeriodo,
-      taxasPeriodo,
       totalPendente,
       ticket,
       noMes,
@@ -184,6 +174,7 @@ export function ProfissionalFinanceiro() {
       qtdPendentes: pendentes.length,
     };
   }, [splitsPeriodo, splits]);
+
 
 
   const listaFiltrada = useMemo(() => {
