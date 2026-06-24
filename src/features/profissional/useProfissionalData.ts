@@ -160,15 +160,10 @@ export function useProfissionalData(user: User | null) {
     queryKey: ["profissional", "orcamentos", userId],
     enabled,
     queryFn: async () => {
-      const { count: agendaCount } = await supabase
-        .from("profissional_disponibilidade")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId!);
-      const temAgenda = (agendaCount ?? 0) > 0;
+      const agenda = await carregarAgendaProfissional(userId!);
+      const temAgenda = agenda.janelas.length > 0;
 
-      const orFilter = temAgenda
-        ? `profissional_id.is.null,profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`
-        : `profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`;
+      const orFilter = `profissional_id.is.null,profissional_id.eq.${userId},status_apoio.eq.buscando,apoio_profissional_id.eq.${userId},tipo_atendimento.eq.homem_com_apoio_feminino`;
 
       const [propsRes, orcsRes] = await Promise.all([
         supabase
@@ -200,6 +195,26 @@ export function useProfissionalData(user: User | null) {
           .in("id", missingOrcIds);
         if (missingOrcs) list = [...list, ...(missingOrcs as OrcamentoWithApoio[])];
       }
+
+      // Filtro de compatibilidade de agenda: apenas para pool aberto (sem profissional atribuído
+      // e que não sejam fluxo de apoio feminino). Atribuídos a mim ou de apoio passam sempre.
+      list = list.filter((o) => {
+        const poolAberto =
+          !o.profissional_id &&
+          o.tipo_atendimento !== "homem_com_apoio_feminino" &&
+          o.status_apoio !== "buscando" &&
+          o.apoio_profissional_id !== userId;
+        if (!poolAberto) return true;
+        return isAgendaCompativel(
+          {
+            data_preferida: o.data_preferida,
+            periodo_preferido: o.periodo_preferido,
+            horario_preferido: o.horario_preferido,
+            flexibilidade_agenda: o.flexibilidade_agenda,
+          },
+          agenda,
+        ).compativel;
+      });
 
       // Repasse 30% apoio feminino
       const apoioOrcs = list.filter(
