@@ -432,11 +432,16 @@ export function useOrcamentoForm({
             materiais: payload.materiais,
           },
         });
+        const metragemEdit = (() => {
+          const v = parseFloat(metragemM2.replace(",", "."));
+          return Number.isFinite(v) && v > 0 ? v : null;
+        })();
         await supabase
           .from("orcamentos")
-          .update({ fotos_problema: fotos })
+          .update({ fotos_problema: fotos, metragem_m2: metragemEdit } as never)
           .eq("id", editingId);
         toast.success("Orçamento atualizado.");
+
       } else {
         const metragemNum = (() => {
           const v = parseFloat(metragemM2.replace(",", "."));
