@@ -59,5 +59,7 @@ export interface OrcamentoDraft {
   horarioPreferido?: string;
   flexibilidadeAgenda?: string;
   picked?: Record<string, number>;
+  metragemM2?: string;
   step?: WizardStep;
 }
+
