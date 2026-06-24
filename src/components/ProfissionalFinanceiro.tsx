@@ -325,11 +325,8 @@ export function ProfissionalFinanceiro() {
           <h3 className="font-bold text-slate-900 flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-brand" /> Pagamentos
           </h3>
-          <div className="text-xs text-muted-foreground">
-            Bruto: <span className="font-bold tabular-nums">{brl(metricas.brutoPeriodo)}</span>{" "}
-            · Taxas: <span className="font-bold tabular-nums text-rose-600">− {brl(metricas.taxasPeriodo)}</span>
-          </div>
         </div>
+
 
         <Tabs value={statusFiltro} onValueChange={setStatusFiltro} className="mb-3">
           <TabsList className="bg-slate-100">
