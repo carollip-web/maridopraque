@@ -93,7 +93,9 @@ interface OrcamentoPartial {
 interface OrcamentosQueryData {
   orcamentos: Orcamento[];
   propostasIniciais: PropostaRow[];
+  temAgenda: boolean;
 }
+
 
 interface RecusaRow {
   orcamento_id: string;
