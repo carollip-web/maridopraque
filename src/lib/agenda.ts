@@ -55,28 +55,28 @@ export function slotsDoDia(opts: {
   return slots;
 }
 
-export async function carregarAgendaProfissional(profissionalId: string) {
+export async function carregarAgendaProfissional(profissionalId: string, client = supabase) {
   const [jansRes, blocsRes, orcsRes, perfilRes, pbaRes] = await Promise.all([
-    supabase
+    client
       .from("profissional_disponibilidade")
       .select("dia_semana, hora_inicio, hora_fim")
       .eq("user_id", profissionalId),
-    supabase
+    client
       .from("profissional_bloqueios")
       .select("data_inicio, data_fim")
       .eq("user_id", profissionalId),
-    supabase
+    client
       .from("orcamentos")
       .select("id, data_agendada")
       .eq("profissional_id", profissionalId)
       .not("data_agendada", "is", null)
       .in("status", ["aprovado", "pago"]),
-    supabase
+    client
       .from("profissional_perfil")
       .select("duracao_padrao_min")
       .eq("user_id", profissionalId)
       .maybeSingle(),
-    supabase
+    client
       .from("profissional_bloqueios_agenda")
       .select("*")
       .eq("profissional_id", profissionalId)
