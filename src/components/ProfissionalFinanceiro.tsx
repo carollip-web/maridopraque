@@ -355,67 +355,74 @@ export function ProfissionalFinanceiro() {
             Nenhum pagamento neste filtro.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
-                  <th className="px-3 py-2 font-bold">Data</th>
-                  <th className="px-3 py-2 font-bold">Serviço</th>
-                  <th className="px-3 py-2 font-bold">Método</th>
-                  <th className="px-3 py-2 font-bold">Status</th>
-                  <th className="px-3 py-2 font-bold text-right">Você recebeu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {listaFiltrada.map((sp) => {
-                  const ds = deriveStatus(sp);
-                  const meta = DERIVED_LABEL[ds];
-                  const isCancelled = ds === "cancelado" || ds === "estornado";
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
+                    <th className="px-3 py-2 font-bold">Data</th>
+                    <th className="px-3 py-2 font-bold">Serviço</th>
+                    <th className="px-3 py-2 font-bold">Método</th>
+                    <th className="px-3 py-2 font-bold">Status</th>
+                    <th className="px-3 py-2 font-bold text-right">Você recebeu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listaFiltrada.map((sp) => {
+                    const ds = deriveStatus(sp);
+                    const meta = DERIVED_LABEL[ds];
+                    const isCancelled = ds === "cancelado" || ds === "estornado";
 
-                  const mm = methodMeta(
-                    sp.pagamentos?.payment_method_id ?? null,
-                    sp.pagamentos?.metodo ?? null,
-                  );
-                  const inst = sp.pagamentos?.installments ?? null;
-                  return (
-                    <tr
-                      key={sp.id}
-                      className={`border-b border-slate-100 hover:bg-slate-50 ${isCancelled ? "opacity-60" : ""}`}
-                    >
-                      <td className="px-3 py-2.5 text-xs text-slate-600 tabular-nums whitespace-nowrap">
-                        {new Date(sp.created_at).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className={`px-3 py-2.5 font-medium text-slate-900 ${isCancelled ? "line-through" : ""}`}>
-                        {sp.orcamentos?.service_name ?? "Serviço"}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="inline-flex items-center gap-1.5 text-xs">
-                          <mm.Icon className={`h-3.5 w-3.5 ${mm.color}`} />
-                          <span className="font-medium text-slate-700">{mm.label}</span>
-                          {inst && inst > 1 && (
-                            <span className="text-[10px] text-slate-500">
-                              {inst}x
-                            </span>
-                          )}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span
-                          className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
-                        >
-                          {meta.label}
-                        </span>
-                      </td>
-                      <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
-                        {brl(getProfessionalAmount(sp))}
-                      </td>
-                    </tr>
+                    const mm = methodMeta(
+                      sp.pagamentos?.payment_method_id ?? null,
+                      sp.pagamentos?.metodo ?? null,
+                    );
+                    const inst = sp.pagamentos?.installments ?? null;
+                    return (
+                      <tr
+                        key={sp.id}
+                        className={`border-b border-slate-100 hover:bg-slate-50 ${isCancelled ? "opacity-60" : ""}`}
+                      >
+                        <td className="px-3 py-2.5 text-xs text-slate-600 tabular-nums whitespace-nowrap">
+                          {new Date(sp.created_at).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className={`px-3 py-2.5 font-medium text-slate-900 ${isCancelled ? "line-through" : ""}`}>
+                          {sp.orcamentos?.service_name ?? "Serviço"}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-xs">
+                            <mm.Icon className={`h-3.5 w-3.5 ${mm.color}`} />
+                            <span className="font-medium text-slate-700">{mm.label}</span>
+                            {inst && inst > 1 && (
+                              <span className="text-[10px] text-slate-500">
+                                {inst}x
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${meta.color}`}
+                          >
+                            {meta.label}
+                          </span>
+                        </td>
+                        <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
+                          {brl(getProfessionalAmount(sp))}
+                        </td>
+                      </tr>
 
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-2 flex justify-end">
+              <p className="text-[11px] text-muted-foreground max-w-md text-right">
+                valor do serviço creditado via split — a taxa do Mercado Pago é descontada pela MP no seu depósito.
+              </p>
+            </div>
+          </>
         )}
       </section>
     </div>
