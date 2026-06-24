@@ -356,16 +356,13 @@ export function ProfissionalFinanceiro() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[820px]">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-left text-xs uppercase text-muted-foreground border-b border-border">
                   <th className="px-3 py-2 font-bold">Data</th>
                   <th className="px-3 py-2 font-bold">Serviço</th>
                   <th className="px-3 py-2 font-bold">Método</th>
                   <th className="px-3 py-2 font-bold">Status</th>
-                  <th className="px-3 py-2 font-bold text-right">Bruto</th>
-                  <th className="px-3 py-2 font-bold text-right">Comissão</th>
-                  <th className="px-3 py-2 font-bold text-right">Taxa MP</th>
                   <th className="px-3 py-2 font-bold text-right">Você recebeu</th>
                 </tr>
               </thead>
@@ -408,16 +405,6 @@ export function ProfissionalFinanceiro() {
                         >
                           {meta.label}
                         </span>
-                      </td>
-
-                      <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">
-                        {brl(Number(sp.valor_total ?? 0))}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(getPlatformFee(sp))}
-                      </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-rose-600">
-                        − {brl(getGatewayFee(sp))}
                       </td>
                       <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${isCancelled ? "text-slate-400 line-through" : "text-emerald-700"}`}>
                         {brl(getProfessionalAmount(sp))}
