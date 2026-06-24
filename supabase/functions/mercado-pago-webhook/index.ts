@@ -336,7 +336,7 @@ serve(async (req) => {
         : 0;
 
       const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT) * 100) / 100; // comissão (15% da base)
-      const valorProfissional = Math.round((valorBase * (1 - MARKETPLACE_FEE_PERCENT) - taxaGatewayPrestador) * 100) / 100;
+      const valorProfissional = Math.round((valorBase * (1 - MARKETPLACE_FEE_PERCENT)) * 100) / 100;
 
       const { error: splitErr } = await supabase.from("pagamento_splits").upsert({
         orcamento_id: updatedOrc.id,
