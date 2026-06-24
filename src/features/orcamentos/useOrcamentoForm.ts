@@ -123,6 +123,7 @@ export function useOrcamentoForm({
     setHorarioPreferido(d.horarioPreferido ?? "");
     setFlexibilidadeAgenda(d.flexibilidadeAgenda ?? "flexivel");
     setPicked(d.picked ?? {});
+    setMetragemM2(d.metragemM2 ?? "");
     setStep(d.step ?? 1);
     setEditingId(null);
     setShowNew(true);
@@ -141,8 +142,16 @@ export function useOrcamentoForm({
       toast.error("Range de preço inválido para este serviço.");
       return;
     }
+    const isM2 = /\(m²?\)|\bm2\b|metro quadrado/i.test(selServico.nome);
+    if (isM2) {
+      const m = parseFloat(metragemM2.replace(",", "."));
+      if (!Number.isFinite(m) || m <= 0) {
+        toast.error("Informe a metragem em m² para este serviço.");
+        return;
+      }
+    }
     setStep(2);
-  }, [selServico]);
+  }, [selServico, metragemM2]);
 
   const startEdit = useCallback(
     (o: OrcamentoRow) => {
@@ -153,6 +162,7 @@ export function useOrcamentoForm({
       setEditingId(o.id);
       setSelServiceId(o.service_id ?? "");
       setDescricao(o.descricao ?? "");
+      setMetragemM2(o.metragem_m2 != null ? String(o.metragem_m2).replace(".", ",") : "");
       const mats = orcMats[o.id] ?? [];
       const p: Record<string, number> = {};
       mats.forEach((m) => {
@@ -163,6 +173,7 @@ export function useOrcamentoForm({
       setStep(1);
       setShowNew(true);
     },
+
     [orcMats],
   );
 
