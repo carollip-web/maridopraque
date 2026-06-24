@@ -49,6 +49,16 @@ import { Tab, SUPPORT_MAILTO } from "./constants";
 const gerarPdfOrcamento = (id: string) =>
   import("@/lib/pdf-orcamento").then((m) => m.gerarPdfOrcamento(id));
 
+const formatCurrency = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const catalogNameKey = (name: string | null | undefined) =>
+  `name:${String(name ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()}`;
+
 interface PedidosTabProps {
   setActiveTab: (tab: Tab) => void;
 }
@@ -184,7 +194,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const { data, error } = await supabase
         .from("orcamentos")
         .select(
-          "id, status, created_at, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, metragem_m2",
+          "id, status, created_at, service_id, service_name, descricao, valor, valor_servico, cliente_id, profissional_id, tipo_atendimento, data_preferida, periodo_preferido, horario_preferido, metragem_m2",
         )
         .eq("cliente_id", user.id)
         .order("created_at", { ascending: false });
@@ -192,6 +202,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       if (error) console.error("Error fetching orcamentos:", error);
 
       const list = data || [];
+
+      const catalogMap: Record<string, any> = {};
+      if (list.length > 0) {
+        const { data: catalogData } = await supabase
+          .from("services_catalog_publico")
+          .select("id, nome, preco_min, preco_max");
+        (catalogData || []).forEach((svc) => {
+          if (!svc.id) return;
+          catalogMap[svc.id] = svc;
+          catalogMap[catalogNameKey(svc.nome)] = svc;
+        });
+      }
 
       const orcIds = list.map((o) => o.id);
 
@@ -300,6 +322,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
         const lastPagamento = pagamentosMap[o.id] || null;
 
+        const catalogSvc =
+          (o.service_id ? catalogMap[o.service_id] : null) ?? catalogMap[catalogNameKey(o.service_name)];
+        const unitMin = catalogSvc?.preco_min != null ? Number(catalogSvc.preco_min) : null;
+        const unitMax = catalogSvc?.preco_max != null ? Number(catalogSvc.preco_max) : null;
+        const metragem = o.metragem_m2 != null ? Number(o.metragem_m2) : 0;
+        const isM2 = metragem > 0 && /\(m²?\)|\bm2\b|metro quadrado/i.test(`${o.service_name} ${catalogSvc?.nome ?? ""}`);
+        const rangeMin = unitMin != null ? unitMin * (isM2 ? metragem : 1) : null;
+        const rangeMax = unitMax != null ? unitMax * (isM2 ? metragem : 1) : null;
+        const rangeDisplay =
+          rangeMin != null && rangeMax != null
+            ? rangeMin === rangeMax
+              ? formatCurrency(rangeMin)
+              : `${formatCurrency(rangeMin)} – ${formatCurrency(rangeMax)}`
+            : null;
+
         return {
           propostas: propsForOrc,
           lastPagamento,
@@ -312,15 +349,21 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           date: new Date(o.created_at).toLocaleDateString(),
           prof: propsForOrc[0]?.profNome || "-",
           price: o.valor
-            ? `R$ ${Number(o.valor).toFixed(2)}`
+            ? formatCurrency(Number(o.valor))
             : o.valor_servico
-              ? `R$ ${Number(o.valor_servico).toFixed(2)}`
+              ? formatCurrency(Number(o.valor_servico))
               : "A definir",
-          displayPrice: o.valor
-            ? `R$ ${Number(o.valor).toFixed(2)}`
-            : o.valor_servico
-              ? `R$ ${Number(o.valor_servico).toFixed(2)}`
-              : "A definir",
+          displayPrice:
+            propsForOrc[0]?.valor_servico != null
+              ? formatCurrency(Number(propsForOrc[0].valor_servico))
+              : o.valor != null
+                ? formatCurrency(Number(o.valor))
+                : rangeDisplay ?? (o.valor_servico != null ? formatCurrency(Number(o.valor_servico)) : "A definir"),
+          rangeDisplay,
+          unitRangeDisplay:
+            isM2 && unitMin != null && unitMax != null
+              ? `${metragem} m² × ${formatCurrency(unitMin)}–${formatCurrency(unitMax)}/m²`
+              : null,
         };
       });
     },
@@ -806,7 +849,13 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
               <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
                 Investimento
               </p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{sp.price}</p>
+              <p className="text-3xl font-bold text-slate-800 mt-1">{sp.displayPrice}</p>
+              {sp.rangeDisplay && !temProposta && (
+                <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                  Faixa estimada da mão de obra
+                  {sp.unitRangeDisplay ? ` · ${sp.unitRangeDisplay}` : ""}
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -883,6 +932,18 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                   </p>
                   <p className="font-bold">{agendaLabel || "A combinar"}</p>
                 </div>
+
+                {sp.rangeDisplay && (
+                  <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4 md:col-span-2">
+                    <p className="text-[10px] uppercase tracking-widest text-amber-700 font-bold mb-1">
+                      Faixa estimada da mão de obra
+                    </p>
+                    <p className="font-bold text-slate-900">{sp.rangeDisplay}</p>
+                    {sp.unitRangeDisplay && (
+                      <p className="mt-1 text-xs font-medium text-amber-700">{sp.unitRangeDisplay}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
 
