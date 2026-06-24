@@ -1,7 +1,8 @@
 import React from "react";
-import { Clock, Pencil, Send, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { Clock, Pencil, Send, DollarSign, TrendingUp, Loader2, CalendarClock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+
 import { Stat } from "./ProfissionalStats";
 import { ProfissionalGrid } from "./ProfissionalGrid";
 import { Orcamento, Profile, ServicoCat, OrcMat, ClienteGeo } from "./types";
