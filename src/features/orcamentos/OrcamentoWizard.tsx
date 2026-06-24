@@ -210,8 +210,8 @@ export function OrcamentoWizard({
                 : horas < 5
                   ? `≈ ${Math.round(horas * 2) / 2} h`
                   : `≈ ${Math.round(horas)} h`;
-          const totalMin = min + subtotalMat;
-          const totalMax = max + subtotalMat;
+          const totalMin = (isM2Service && metragemNum > 0 ? min * metragemNum : min) + subtotalMat;
+          const totalMax = (isM2Service && metragemNum > 0 ? max * metragemNum : max) + subtotalMat;
           const qtdMat = Object.keys(picked).length;
           return (
             <div className="rounded-2xl border border-border bg-card px-5 py-4">
@@ -224,24 +224,31 @@ export function OrcamentoWizard({
                     {selServico.nome}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
+                    {isM2Service && metragemNum > 0 ? `${metragemNum} m² · ` : ""}
                     {qtdMat > 0 ? `${qtdMat} material(is)` : "Sem materiais"} ·{" "}
                     {tempo}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Total estimado
+                    {isM2Service && metragemNum > 0 ? "Total estimado" : "Total estimado"}
                   </p>
                   <p className="text-lg font-semibold text-foreground whitespace-nowrap tabular-nums">
                     {min === max
                       ? brl(totalMin)
                       : `${brl(totalMin)} – ${brl(totalMax)}`}
                   </p>
+                  {isM2Service && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {brl(min)}–{brl(max)} / m²
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           );
         })()}
+
 
       {/* Step 1: Serviço */}
       {step === 1 && (
