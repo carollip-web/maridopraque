@@ -59,12 +59,12 @@ type Prestador = {
   created_at?: string | null;
 };
 
-const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any }> = {
-  pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock },
-  em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye },
-  aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2 },
-  rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle },
-  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX },
+const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any; desc: string }> = {
+  pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock, desc: "Aguardando início da análise" },
+  em_analise: { label: "Em análise", bg: "bg-amber-50", text: "text-amber-700", icon: Eye, desc: "Em revisão pelo admin" },
+  aprovado: { label: "Aprovado", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle2, desc: "Cadastros liberados" },
+  rejeitado: { label: "Rejeitado", bg: "bg-red-50", text: "text-red-700", icon: XCircle, desc: "Cadastros recusados" },
+  incompleto: { label: "Incompleto", bg: "bg-orange-50", text: "text-orange-700", icon: UserX, desc: "Faltam dados do prestador" },
 };
 
 async function getSignedUrl(publicUrl: string | null) {
@@ -309,28 +309,71 @@ function AdminValidacao() {
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-          {(["em_analise", "incompleto", "aprovado", "rejeitado", "pendente"] as const).map((s) => {
+        {/* Stats — organizadas por fluxo: ação necessária → resolvidos */}
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ação necessária
+          </p>
+          {filterStatus !== "todos" && (
+            <button
+              onClick={() => setFilterStatus("todos")}
+              className="text-xs text-brand hover:underline font-medium"
+            >
+              Limpar filtro
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          {(["pendente", "em_analise"] as const).map((s) => {
             const cfg = STATUS_CFG[s];
             const Icon = cfg.icon;
+            const active = filterStatus === s;
             return (
               <button
                 key={s}
                 onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
-                className={`p-4 rounded-2xl border text-left transition-all ${filterStatus === s ? "border-brand ring-2 ring-brand/20" : "border-slate-200 bg-white"}`}
+                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-4 ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
               >
-                <div
-                  className={`h-9 w-9 rounded-xl flex items-center justify-center mb-2 ${cfg.bg}`}
-                >
-                  <Icon className={`h-4 w-4 ${cfg.text}`} />
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
+                  <Icon className={`h-5 w-5 ${cfg.text}`} />
                 </div>
-                <p className="text-2xl font-bold">{counts[s]}</p>
-                <p className="text-xs text-muted-foreground">{cfg.label}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{counts[s]}</p>
+                    <p className="text-sm font-semibold">{cfg.label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{cfg.desc}</p>
+                </div>
               </button>
             );
           })}
         </div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          Histórico
+        </p>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {(["incompleto", "aprovado", "rejeitado"] as const).map((s) => {
+            const cfg = STATUS_CFG[s];
+            const Icon = cfg.icon;
+            const active = filterStatus === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
+                className={`p-3 rounded-2xl border text-left transition-all ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${cfg.bg}`}>
+                    <Icon className={`h-3.5 w-3.5 ${cfg.text}`} />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">{cfg.label}</p>
+                </div>
+                <p className="text-xl font-bold">{counts[s]}</p>
+              </button>
+            );
+          })}
+        </div>
+
 
         <div className="grid lg:grid-cols-5 gap-6">
           {/* List */}
