@@ -540,7 +540,7 @@ function ProfissionalCadastro() {
         ...(urlFrente && { foto_documento_frente: urlFrente }),
         ...(urlVerso && { foto_documento_verso: urlVerso }),
         ...(urlSelfie && { foto_selfie: urlSelfie }),
-        aprovacao_status: "em_analise",
+        aprovacao_status: "pendente",
         cadastro_completo: true,
         cadastro_submetido_em: new Date().toISOString(),
         ativo: false,
