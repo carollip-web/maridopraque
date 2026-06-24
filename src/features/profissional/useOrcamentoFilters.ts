@@ -3,6 +3,31 @@ import { distanceKm } from "@/lib/geo";
 import { isProfissionalCompativelComTipoAtendimento } from "@/lib/atendimento.compat";
 import { Orcamento, ServicoCat, ClienteGeo } from "./types";
 
+const normalizeText = (value: string | null | undefined) =>
+  String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const specialtyMatchesService = (
+  especialidade: string,
+  categoria: string | null | undefined,
+  serviceName: string | null | undefined,
+) => {
+  const specialty = normalizeText(especialidade);
+  const cat = normalizeText(categoria);
+  const name = normalizeText(serviceName);
+  if (!specialty) return false;
+
+  return (
+    (!!cat && (specialty === cat || specialty.includes(cat) || cat.includes(specialty))) ||
+    (!!name && (specialty === name || name.includes(specialty) || specialty.includes(name)))
+  );
+};
+
 export type OrcamentoFilterType =
   | "oportunidades"
   | "elaboracao"
@@ -97,12 +122,15 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
           if (especialidades.length > 0) {
             const serviceId = (o as unknown as Record<string, unknown>).service_id;
             if (serviceId) {
-              const cat = catalog[serviceId as string]?.categoria?.toLowerCase();
+              const service = catalog[serviceId as string];
               if (
-                cat &&
-                !especialidades.map((e) => e.toLowerCase()).includes(cat)
-              )
+                service &&
+                !especialidades.some((e) =>
+                  specialtyMatchesService(e, service.categoria, service.nome ?? o.service_name),
+                )
+              ) {
                 return false;
+              }
             }
           }
 
