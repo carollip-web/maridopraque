@@ -868,9 +868,26 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     Dentro da faixa: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
                   </p>
                 )}
-
-
+                {(() => {
+                  const v = parseFloat((valor || "").replace(",", "."));
+                  if (!v || v <= 0) return null;
+                  const liquido = v * 0.85;
+                  return (
+                    <div className="mt-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
+                        Você receberá aprox.
+                      </p>
+                      <p className="text-base font-bold text-emerald-800 tabular-nums">
+                        {formatCurrency(liquido)}
+                      </p>
+                      <p className="text-[10px] text-emerald-700/80 leading-snug mt-0.5">
+                        Já descontada a taxa da plataforma (15%). Ainda será descontada a taxa do Mercado Pago no momento do pagamento.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
                   Observações para o cliente
