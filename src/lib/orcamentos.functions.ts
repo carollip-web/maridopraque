@@ -137,7 +137,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     let orc: OrcamentoParaEnvio | null = null;
     const { data: orcCompleto, error: orcError } = await supabase
       .from("orcamentos")
-        .select("id, status, cliente_id, service_id, service_name, tipo_atendimento, metragem_m2")
+        .select("id, status, cliente_id, service_id, service_name, tipo_atendimento, metragem_m2, data_preferida, periodo_preferido, horario_preferido, flexibilidade_agenda")
       .eq("id", data.orcamentoId)
       .maybeSingle();
 
@@ -164,6 +164,10 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
           service_name: orcBasico.service_name ?? null,
           tipo_atendimento: tipoFallback,
           metragem_m2: null,
+          data_preferida: null,
+          periodo_preferido: null,
+          horario_preferido: null,
+          flexibilidade_agenda: null,
         };
       } else {
         orc = null;
