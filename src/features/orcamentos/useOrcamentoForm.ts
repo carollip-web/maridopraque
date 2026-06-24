@@ -620,8 +620,11 @@ export function useOrcamentoForm({
     setFlexibilidadeAgenda,
     picked,
     setPicked,
+    metragemM2,
+    setMetragemM2,
     fotos,
     setFotos,
+
     guestFiles,
     setGuestFiles,
 
