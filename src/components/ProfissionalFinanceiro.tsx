@@ -416,6 +416,11 @@ export function ProfissionalFinanceiro() {
               </tbody>
             </table>
           </div>
+          <div className="mt-2 flex justify-end">
+            <p className="text-[11px] text-muted-foreground max-w-md text-right">
+              valor do serviço creditado via split — a taxa do Mercado Pago é descontada pela MP no seu depósito.
+            </p>
+          </div>
         )}
       </section>
     </div>
