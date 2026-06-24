@@ -465,22 +465,11 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         )}
 
-        {o.tipo_atendimento && (
-        <div className="flex flex-wrap gap-2">
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
-              atendimentoCompat.level,
-            )}`}
-          >
-            {atendimentoCompat.label}
+        {o.tipo_atendimento === "homem_com_apoio_feminino" && (
+          <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
+            👩 Com apoio feminino
           </span>
-          {o.tipo_atendimento === "homem_com_apoio_feminino" && (
-            <span className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700 border border-purple-100">
-              👩 Com apoio feminino
-            </span>
-          )}
-        </div>
-      )}
+        )}
 
 
       <div className="text-sm space-y-2">
