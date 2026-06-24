@@ -774,7 +774,26 @@ export function AdminPedidos() {
                         ) : (
                           <span className="text-xs text-slate-300 italic">Não atribuído</span>
                         )}
+                        {(() => {
+                          const rs = recusas[o.id] || [];
+                          if (rs.length === 0) return null;
+                          const tooltip = rs
+                            .map((r: any) => {
+                              const nome = profiles[r.profissional_id]?.nome || r.profissional_id.slice(0, 8);
+                              return `• ${nome}${r.motivo ? ` — ${r.motivo}` : ""}`;
+                            })
+                            .join("\n");
+                          return (
+                            <span
+                              title={tooltip}
+                              className="mt-2 inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 w-fit cursor-help"
+                            >
+                              {rs.length} recusa{rs.length > 1 ? "s" : ""}
+                            </span>
+                          );
+                        })()}
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-tight inline-block ${meta.bg} ${meta.color}`}
