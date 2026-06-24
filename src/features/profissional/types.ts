@@ -35,6 +35,8 @@ export interface Orcamento {
   periodo_preferido?: string | null;
   horario_preferido?: string | null;
   flexibilidade_agenda?: string | null;
+  metragem_m2?: number | null;
+
   genero?: string | null;
   oferece_apoio_feminino?: boolean | null;
 }
