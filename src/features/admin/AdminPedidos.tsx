@@ -107,12 +107,35 @@ export function AdminPedidos() {
 
       let profileMap: Record<string, any> = {};
       const materialsMap: Record<string, any[]> = {};
+      const recusasMap: Record<string, any[]> = {};
 
       const promises: Promise<any>[] = [];
 
-      if (ids.length > 0) {
+      if (orcIds.length > 0) {
         promises.push(
-          Promise.resolve(supabase.from("profiles").select("id, nome, email").in("id", ids)).then(
+          Promise.resolve(
+            supabase
+              .from("orcamento_recusas")
+              .select("orcamento_id, profissional_id, motivo, created_at")
+              .in("orcamento_id", orcIds),
+          ).then(({ data }) => {
+            (data || []).forEach((r: any) => {
+              if (!recusasMap[r.orcamento_id]) recusasMap[r.orcamento_id] = [];
+              recusasMap[r.orcamento_id].push(r);
+              if (r.profissional_id) ids.push(r.profissional_id);
+            });
+          }),
+        );
+      }
+
+      // wait for recusas before fetching profiles so we include rejecting pros
+      await Promise.all(promises);
+      promises.length = 0;
+
+      const uniqIds = Array.from(new Set(ids));
+      if (uniqIds.length > 0) {
+        promises.push(
+          Promise.resolve(supabase.from("profiles").select("id, nome, email").in("id", uniqIds)).then(
             ({ data }) => {
               profileMap = Object.fromEntries((data || []).map((p: any) => [p.id, p]));
             },
@@ -135,7 +158,8 @@ export function AdminPedidos() {
 
       await Promise.all(promises);
 
-      return { orcamentos: list, count: count || 0, profiles: profileMap, materials: materialsMap };
+      return { orcamentos: list, count: count || 0, profiles: profileMap, materials: materialsMap, recusas: recusasMap };
+
     },
   });
 
