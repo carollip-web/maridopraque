@@ -53,13 +53,6 @@ interface OrcamentoDetailsSheetProps {
   clienteEndereco?: any;
 }
 
-const catalogNameKey = (name: string | null | undefined) =>
-  `name:${String(name ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()}`;
-
 /**
  * Painel lateral (Sheet) com os detalhes de um orçamento selecionado.
  * Extraído do route file para isolar a árvore do Sheet.
