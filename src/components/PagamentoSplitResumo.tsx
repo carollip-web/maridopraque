@@ -33,8 +33,9 @@ const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> 
   retido: { label: "Retido pela plataforma", color: "bg-slate-100 text-slate-700", icon: AlertTriangle },
 };
 
-export function PagamentoSplitResumo({ orcamentoId, compact }: Props) {
+export function PagamentoSplitResumo({ orcamentoId, compact, showFees = false }: Props) {
   const { user } = useAuth();
+  const [tipoAtendimento, setTipoAtendimento] = useState<string | null>(null);
   const [split, setSplit] = useState<Split | null>(null);
   const [loading, setLoading] = useState(true);
 
