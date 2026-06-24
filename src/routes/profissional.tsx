@@ -480,6 +480,8 @@ function ProfissionalArea() {
                 minhaAgenda={data.minhaAgenda}
                 profGenero={data.profGenero}
                 profApoioFeminino={data.profApoioFeminino}
+                temAgenda={data.temAgenda}
+
               />
             )}
             {tab === "pedidos" && (
