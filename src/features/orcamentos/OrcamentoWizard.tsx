@@ -285,6 +285,7 @@ export function OrcamentoWizard({
                   <span className="font-semibold text-foreground">
                     {brl(Number(selServico.preco_min))} a{" "}
                     {brl(Number(selServico.preco_max))}
+                    {isM2Service ? " / m²" : ""}
                   </span>
                   . O profissional confirmará o valor exato dentro desse range.
                 </p>
@@ -296,6 +297,37 @@ export function OrcamentoWizard({
                 </p>
               )}
           </div>
+
+          {isM2Service && (
+            <div className="rounded-2xl border border-brand/20 bg-brand-soft/40 p-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="text-xs uppercase font-bold text-brand flex items-center gap-2">
+                <Wrench className="h-3 w-3" /> Metragem do serviço (m²) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.1"
+                value={metragemM2}
+                onChange={(e) => setMetragemM2(e.target.value)}
+                placeholder="Ex.: 12"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-white focus:ring-2 focus:ring-brand/20 outline-none text-base font-semibold"
+              />
+              {metragemNum > 0 && selServico?.preco_min != null && selServico?.preco_max != null && (
+                <p className="text-xs text-slate-700">
+                  Estimativa:{" "}
+                  <span className="font-bold text-foreground">
+                    {brl(Number(selServico.preco_min) * metragemNum)} – {brl(Number(selServico.preco_max) * metragemNum)}
+                  </span>{" "}
+                  ({metragemNum} m² × {brl(Number(selServico.preco_min))}–{brl(Number(selServico.preco_max))}/m²)
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Informe a área a ser trabalhada. O valor sugerido é calculado automaticamente; o profissional confirma o valor final.
+              </p>
+            </div>
+          )}
+
 
           <div>
             <label className="text-xs uppercase font-bold text-muted-foreground">
