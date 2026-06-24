@@ -821,9 +821,13 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 </div>
                 {min != null && max != null && (
                   <p className="text-[10px] text-muted-foreground italic">
-                    Tabela: R$ {min.toFixed(0)} – {max.toFixed(0)}
+                    Faixa do cliente: <span className="font-bold text-foreground not-italic">R$ {min.toFixed(2).replace(".", ",")} – R$ {max.toFixed(2).replace(".", ",")}</span>
+                    {isM2 && unitMin != null && unitMax != null && (
+                      <> ({metragem} m² × R$ {unitMin.toFixed(2).replace(".", ",")}–{unitMax.toFixed(2).replace(".", ",")}/m²)</>
+                    )}
                   </p>
                 )}
+
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">
