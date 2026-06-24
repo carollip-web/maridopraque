@@ -172,8 +172,13 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           : isDisputaResolvida
             ? "bg-slate-200 text-slate-600"
             : (meta?.className ?? "bg-slate-100 text-slate-600");
-  const min = range?.preco_min != null ? Number(range.preco_min) : null;
-  const max = range?.preco_max != null ? Number(range.preco_max) : null;
+  const unitMin = range?.preco_min != null ? Number(range.preco_min) : null;
+  const unitMax = range?.preco_max != null ? Number(range.preco_max) : null;
+  const metragem = o.metragem_m2 != null ? Number(o.metragem_m2) : 0;
+  const isM2 = metragem > 0;
+  const min = unitMin != null ? (isM2 ? unitMin * metragem : unitMin) : null;
+  const max = unitMax != null ? (isM2 ? unitMax * metragem : unitMax) : null;
+
 
   const atendimentoCompat = isProfissionalCompativelComTipoAtendimento({
     tipoAtendimento: o.tipo_atendimento as import("@/lib/atendimento.compat").TipoAtendimento,
