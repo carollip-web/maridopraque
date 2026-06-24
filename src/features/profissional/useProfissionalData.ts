@@ -842,6 +842,8 @@ export function useProfissionalData(user: User | null) {
   const orcMats = orcMatsQuery.data ?? {};
   const propostasMateriais = propostasMateriaisQuery.data ?? [];
   const minhaAgenda = agendaQuery.data ?? null;
+  const temAgenda = orcamentosQuery.data?.temAgenda ?? false;
+
 
   return {
     // Dados
