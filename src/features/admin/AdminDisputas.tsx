@@ -144,7 +144,7 @@ export function AdminDisputas() {
                   <p className="text-xs text-muted-foreground mt-1">ID: {selected.id}</p>
                 </div>
 
-                <PagamentoSplitResumo orcamentoId={selected.id} compact />
+                <PagamentoSplitResumo orcamentoId={selected.id} compact showFees />
                 <PagamentoSplitDetalhado orcamentoId={selected.id} />
 
                 <div className="space-y-4">
