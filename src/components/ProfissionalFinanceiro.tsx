@@ -77,37 +77,11 @@ const deriveStatus = (s: { status: string; pagamentos?: { paid_at: string | null
 
 const roundMoney = (value: number) => Math.round(Number(value || 0) * 100) / 100;
 
-const getPlatformFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_plataforma">) => {
-  const taxa = roundMoney(Number(sp.taxa_plataforma || 0));
-  if (taxa > 0) return taxa;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  const liquido = roundMoney(Number(sp.valor_profissional || 0));
-  const totalTaxas = Math.max(roundMoney(total - liquido), 0);
-  if (total <= 0 || totalTaxas <= 0) return 0;
-
-  return Math.min(roundMoney(total * 0.15), totalTaxas);
-};
-
-const getGatewayFee = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
-  const taxa = roundMoney(Number(sp.taxa_gateway || 0));
-  if (taxa > 0) return taxa;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  const liquido = roundMoney(Number(sp.valor_profissional || 0));
-  return Math.max(roundMoney(total - liquido - getPlatformFee(sp)), 0);
-};
-
-const getProfessionalAmount = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) => {
+const getProfessionalAmount = (sp: Pick<Split, "valor_total" | "valor_profissional">) => {
   const liquido = roundMoney(Number(sp.valor_profissional || 0));
   if (liquido > 0) return liquido;
-
-  const total = roundMoney(Number(sp.valor_total || 0));
-  return Math.max(roundMoney(total - getPlatformFee(sp) - getGatewayFee(sp)), 0);
+  return Math.max(roundMoney(Number(sp.valor_total || 0)), 0);
 };
-
-const getTotalFees = (sp: Pick<Split, "valor_total" | "valor_profissional" | "taxa_gateway" | "taxa_plataforma">) =>
-  roundMoney(getPlatformFee(sp) + getGatewayFee(sp));
 
 
 const brl = (n: number) =>
