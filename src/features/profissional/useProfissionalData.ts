@@ -344,12 +344,13 @@ export function useProfissionalData(user: User | null) {
     enabled: orcamentos.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("services_catalog")
+        .from("services_catalog_publico")
         .select("id, nome, preco_min, preco_max, categoria");
       if (error) throw error;
       const cmap: Record<string, ServicoCat> = {};
       (data ?? []).forEach((c) => {
         const row = c as CatalogRow;
+        if (!row.id) return;
         cmap[row.id] = row as ServicoCat;
         if (row.nome) cmap[catalogNameKey(row.nome)] = row as ServicoCat;
       });

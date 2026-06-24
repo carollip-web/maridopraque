@@ -203,7 +203,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     // 0.1 Valida range do catálogo
     if (orc.service_id) {
       const { data: cat } = await supabase
-        .from("services_catalog")
+        .from("services_catalog_publico")
         .select("preco_min, preco_max, nome")
         .eq("id", orc.service_id)
         .single();

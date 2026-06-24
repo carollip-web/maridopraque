@@ -206,9 +206,10 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       const catalogMap: Record<string, any> = {};
       if (list.length > 0) {
         const { data: catalogData } = await supabase
-          .from("services_catalog")
+          .from("services_catalog_publico")
           .select("id, nome, preco_min, preco_max");
         (catalogData || []).forEach((svc) => {
+          if (!svc.id) return;
           catalogMap[svc.id] = svc;
           catalogMap[catalogNameKey(svc.nome)] = svc;
         });
