@@ -691,6 +691,11 @@ export function OrcamentoWizard({
                       <h4 className="font-bold text-slate-800 leading-tight">
                         {selServico.nome}
                       </h4>
+                      {isM2Service && metragemNum > 0 && (
+                        <p className="mt-1 text-xs font-semibold text-brand">
+                          Área: {metragemNum} m²
+                        </p>
+                      )}
                       {descricao.trim() && (
                         <p className="mt-2 text-xs text-muted-foreground line-clamp-3 italic">
                           "{descricao}"
@@ -699,6 +704,7 @@ export function OrcamentoWizard({
                     </div>
                   </div>
                 </div>
+
 
                 <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-50">
                   <div className="px-6 py-5">
