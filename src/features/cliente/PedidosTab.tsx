@@ -665,13 +665,12 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const selectedPedido = pedidoId ? pedidos.find((p) => p.id === pedidoId) : null;
   const [profPublico, setProfPublico] = useState<any>(null);
 
+  // Carrega dados públicos do profissional para exibir no card de proposta/atendimento.
+  // Usa o profissional_id do pedido (após aceite) OU o da primeira proposta recebida.
+  const propostaProfId = (selectedPedido?.propostas?.[0]?.profissional_id as string | undefined) ?? null;
+  const profIdParaCard = (selectedPedido?.profissional_id as string | undefined) ?? propostaProfId;
   useEffect(() => {
-    if (!selectedPedido?.profissional_id) {
-      setProfPublico(null);
-      return;
-    }
-    const raw = String(selectedPedido.rawStatus || "").toLowerCase();
-    if (!["pago", "concluido", "em_disputa"].includes(raw)) {
+    if (!profIdParaCard) {
       setProfPublico(null);
       return;
     }
@@ -679,15 +678,15 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     (async () => {
       const { data } = await supabase
         .from("profissionais_publicos")
-        .select("foto_url, especialidades, aprovacao_status")
-        .eq("user_id", selectedPedido.profissional_id as string)
+        .select("foto_url, especialidades, aprovacao_status, bio, cidade, anos_experiencia, slug, created_at")
+        .eq("user_id", profIdParaCard)
         .maybeSingle();
       if (active) setProfPublico(data);
     })();
     return () => {
       active = false;
     };
-  }, [selectedPedido?.profissional_id, selectedPedido?.rawStatus]);
+  }, [profIdParaCard]);
 
   useEffect(() => {
     if (!selectedPedido?.id || selectedPedido.rawStatus !== "concluido") {
@@ -1096,13 +1095,37 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                 </p>
 
                 <div className="rounded-2xl bg-slate-50 p-5 mb-5">
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">
                     Profissional que enviou a proposta
                   </p>
-                  <p className="font-bold text-lg flex items-center gap-2">
-                    {primeiraProposta.profNome || "Profissional"}
-                  </p>
-                  <div className="mt-2 space-y-1 mb-3">
+                  <div className="flex items-start gap-3 mb-3">
+                    <Avatar className="h-16 w-16 rounded-xl shrink-0">
+                      {profPublico?.foto_url ? (
+                        <AvatarImage src={profPublico.foto_url} alt={primeiraProposta.profNome || "Profissional"} className="rounded-xl object-cover" />
+                      ) : null}
+                      <AvatarFallback className="rounded-xl bg-brand-soft text-brand font-bold text-lg">
+                        {String(primeiraProposta.profNome || "P").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-lg leading-tight">{primeiraProposta.profNome || "Profissional"}</p>
+                      {profPublico?.aprovacao_status === "aprovado" && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-0.5 mt-1">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          Identidade verificada
+                        </span>
+                      )}
+                      {(profPublico?.cidade || profPublico?.anos_experiencia) && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          {profPublico?.cidade ? profPublico.cidade : null}
+                          {profPublico?.cidade && profPublico?.anos_experiencia ? " · " : null}
+                          {profPublico?.anos_experiencia ? `${profPublico.anos_experiencia} anos de experiência` : null}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 mb-3">
                     <NivelBadge concluidos={primeiraProposta.profConcluidos || 0} notaMedia={Number(primeiraProposta.profMedia) || 0} compact />
                     <p className="text-xs text-slate-500 font-medium">
                       {primeiraProposta.profTotalAvaliacoes > 0 ? (
@@ -1113,20 +1136,41 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       {primeiraProposta.profConcluidos || 0} serviços realizados
                     </p>
                   </div>
-                  {primeiraProposta.profSlug && (
+
+                  {profPublico?.especialidades && profPublico.especialidades.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {profPublico.especialidades.slice(0, 4).map((e: string) => (
+                        <span key={e} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-bold text-slate-700">
+                          {e}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {profPublico?.bio && (
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-3">{profPublico.bio}</p>
+                  )}
+
+                  {(primeiraProposta.profSlug || profPublico?.slug) && (
                     <a
-                      href={`/profissionais/perfil/${primeiraProposta.profSlug}`}
+                      href={`/profissionais/perfil/${primeiraProposta.profSlug || profPublico?.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-brand hover:underline inline-block mt-1 mb-2"
+                      className="text-sm text-brand hover:underline inline-block mb-2 font-semibold"
                     >
-                      Ver Perfil e Avaliações
+                      Ver perfil completo e avaliações →
                     </a>
                   )}
+
                   {primeiraProposta.observacoes && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {primeiraProposta.observacoes}
-                    </p>
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+                        Mensagem do profissional
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        {primeiraProposta.observacoes}
+                      </p>
+                    </div>
                   )}
                 </div>
 
