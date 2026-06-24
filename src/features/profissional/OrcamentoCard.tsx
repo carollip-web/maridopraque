@@ -467,9 +467,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
         {o.tipo_atendimento && (
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
-            {atendimentoPedidoLabel}
-          </span>
           <span
             className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${compatibilityBadgeClass(
               atendimentoCompat.level,
@@ -484,6 +481,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           )}
         </div>
       )}
+
 
       <div className="text-sm space-y-2">
         <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
@@ -536,6 +534,54 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             Este pedido foi criado sem preferências de atendimento ou agenda registradas.
           </p>
         )}
+
+        {o.descricao && (
+          <div className="mt-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
+              Descrição do cliente
+            </p>
+            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/60 border border-slate-100 rounded-xl p-3">
+              {o.descricao}
+            </p>
+          </div>
+        )}
+
+        {o.fotos_problema && o.fotos_problema.length > 0 && (
+          <div className="mt-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+              Fotos e vídeos enviados pelo cliente
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {o.fotos_problema.map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={async () => {
+                    const signed = await getOrcamentoFotoSignedUrl(u);
+                    window.open(signed, "_blank", "noopener,noreferrer");
+                  }}
+                  className="group relative"
+                >
+                  {isVideo(u) ? (
+                    <div className="h-20 w-28 rounded-lg bg-slate-100 flex flex-col items-center justify-center border border-slate-200 group-hover:bg-slate-200 transition-colors">
+                      <Camera className="h-5 w-5 text-slate-500" />
+                      <span className="text-[9px] font-bold text-slate-600 mt-1">
+                        VER VÍDEO
+                      </span>
+                    </div>
+                  ) : (
+                    <SignedImage
+                      src={u}
+                      alt="Anexo do cliente"
+                      className="h-20 w-20 rounded-lg object-cover border border-slate-200 group-hover:opacity-90 transition shadow-sm"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
 
         {isEmDisputa && (
           <div className="p-4 rounded-xl bg-red-50 border border-red-100 space-y-2">
@@ -839,12 +885,10 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 </div>
                 {min != null && max != null && (
                   <p className="text-[10px] text-muted-foreground italic">
-                    Faixa do cliente: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
-                    {isM2 && unitMin != null && unitMax != null && (
-                      <> ({metragem} m² × {formatCurrency(unitMin)}–{formatCurrency(unitMax)}/m²)</>
-                    )}
+                    Dentro da faixa: <span className="font-bold text-foreground not-italic">{formatCurrency(min)} – {formatCurrency(max)}</span>
                   </p>
                 )}
+
 
               </div>
               <div className="space-y-1.5">
