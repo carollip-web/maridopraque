@@ -74,6 +74,8 @@ export function useOrcamentoForm({
   const [flexibilidadeAgenda, setFlexibilidadeAgenda] =
     useState<string>("flexivel");
   const [picked, setPicked] = useState<Record<string, number>>({});
+  const [metragemM2, setMetragemM2] = useState<string>("");
+
   const [fotos, setFotos] = useState<string[]>([]);
   const [guestFiles, setGuestFiles] = useState<
     { file: File; previewUrl: string }[]
