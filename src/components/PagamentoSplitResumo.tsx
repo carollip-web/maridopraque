@@ -42,15 +42,23 @@ export function PagamentoSplitResumo({ orcamentoId, compact, showFees = false }:
   useEffect(() => {
     let active = true;
     async function load() {
-      const { data } = await supabase
-        .from("pagamento_splits")
-        .select("id, valor_total, taxa_plataforma, taxa_gateway, valor_profissional, valor_reembolso, status, disponivel_em, pago_em, motivo_cancelamento")
-        .eq("orcamento_id", orcamentoId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const [{ data }, { data: orc }] = await Promise.all([
+        supabase
+          .from("pagamento_splits")
+          .select("id, valor_total, taxa_plataforma, taxa_gateway, valor_profissional, valor_reembolso, status, disponivel_em, pago_em, motivo_cancelamento")
+          .eq("orcamento_id", orcamentoId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("orcamentos")
+          .select("tipo_atendimento")
+          .eq("id", orcamentoId)
+          .maybeSingle(),
+      ]);
       if (active) {
         setSplit((data as unknown as Split) || null);
+        setTipoAtendimento(((orc as any)?.tipo_atendimento as string) ?? null);
         setLoading(false);
       }
     }
