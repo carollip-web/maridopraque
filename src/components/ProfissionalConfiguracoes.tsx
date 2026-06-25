@@ -3,6 +3,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,8 +29,12 @@ import {
   MapPin,
   Save,
   Wallet,
+  Trash2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { excluirMinhaConta } from "@/lib/conta.functions";
+import { useNavigate } from "@tanstack/react-router";
 
 const ESPECIALIDADES_LABEL: Record<string, string> = {
   chaveiro: "Chaveiro",
@@ -136,6 +149,11 @@ export function ProfissionalConfiguracoes() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("basico");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
+  const excluirContaFn = useServerFn(excluirMinhaConta);
 
   const { data: profissionalPerfil, refetch: refetchPerfil } = useQuery({
     queryKey: ["profissional_perfil", user?.id],
@@ -353,6 +371,22 @@ export function ProfissionalConfiguracoes() {
     else toast.success("E-mail de redefinição enviado!");
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "EXCLUIR" || !user) return;
+    setIsDeleting(true);
+    try {
+      await excluirContaFn({});
+      toast.success("Sua conta foi excluída permanentemente.");
+      await supabase.auth.signOut();
+      navigate({ to: "/" });
+    } catch (e: any) {
+      toast.error("Não foi possível excluir a conta", { description: e?.message });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const handleConnectMercadoPago = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
@@ -479,7 +513,7 @@ export function ProfissionalConfiguracoes() {
           })}
         </nav>
 
-        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm space-y-3">
           <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
           </h4>
@@ -490,9 +524,22 @@ export function ProfissionalConfiguracoes() {
           >
             Redefinir senha
           </Button>
-          <p className="text-[11px] text-muted-foreground mt-2 text-center leading-relaxed">
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
             Um link será enviado para o seu e-mail.
           </p>
+          <div className="pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              className="w-full rounded-xl text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => {
+                setDeleteConfirmText("");
+                setDeleteDialogOpen(true);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Excluir minha conta
+            </Button>
+          </div>
         </section>
       </aside>
 
@@ -813,6 +860,40 @@ export function ProfissionalConfiguracoes() {
           </div>
         </div>
       </form>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> Confirmar Exclusão
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação é <strong>imediata e irreversível</strong>. Sua conta e todos os seus dados serão apagados em definitivo. Se tiver pedidos em andamento, finalize-os antes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm font-medium mb-2">Para confirmar, digite EXCLUIR abaixo:</p>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="EXCLUIR"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== "EXCLUIR" || isDeleting}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir minha conta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
