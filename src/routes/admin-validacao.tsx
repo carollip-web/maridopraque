@@ -658,11 +658,19 @@ function AdminValidacao() {
                       </p>
                     );
                   })()}
+                  {p.cadastro_retomado_em && (
+                    <p className="text-[10px] mt-2 font-semibold text-amber-700 inline-flex items-center gap-1">
+                      <RotateCcw className="h-3 w-3" />
+                      Retomou em {new Date(p.cadastro_retomado_em).toLocaleDateString("pt-BR")}
+                      {" "}às {new Date(p.cadastro_retomado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  )}
                   {p.cadastro_submetido_em && (
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Enviado em {new Date(p.cadastro_submetido_em).toLocaleDateString("pt-BR")}
                     </p>
                   )}
+
                 </button>
               ))
             )}
