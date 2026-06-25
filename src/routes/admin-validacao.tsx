@@ -40,6 +40,9 @@ import {
   X,
   Save,
   RotateCcw,
+  Send,
+  CheckSquare,
+  Square,
 }  from "lucide-react";
 
 
