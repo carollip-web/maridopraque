@@ -28,7 +28,7 @@ export const excluirMinhaConta = createServerFn({ method: "POST" })
       .from("orcamentos")
       .select("id, status")
       .or(`cliente_id.eq.${userId},profissional_id.eq.${userId}`)
-      .in("status", ["aceito", "em_andamento", "agendado", "pago"]);
+      .in("status", ["aprovado", "pago"]);
 
     if (pendentes && pendentes.length > 0) {
       throw new Error(
