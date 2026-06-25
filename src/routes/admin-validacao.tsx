@@ -352,10 +352,13 @@ function AdminValidacao() {
         .from("documentos-profissionais")
         .getPublicUrl(path);
 
+      const updatePayload: Record<string, string> = {};
+      updatePayload[field] = pub.publicUrl;
       const { error: dbErr } = await supabase
         .from("profissional_perfil")
-        .update({ [field]: pub.publicUrl })
+        .update(updatePayload as any)
         .eq("user_id", selected.user_id);
+
       if (dbErr) throw dbErr;
 
       await logAdminAction(supabase, {
