@@ -775,15 +775,33 @@ function AdminValidacao() {
         <div className="grid lg:grid-cols-5 gap-6 items-start">
           {/* List */}
           <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1 space-y-3">
-            <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm flex gap-2">
-              <Search className="h-4 w-4 text-muted-foreground self-center ml-1" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar prestador..."
-                className="flex-1 text-sm bg-transparent outline-none"
-              />
+            <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 px-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar prestador..."
+                  className="flex-1 text-sm bg-transparent outline-none py-1"
+                />
+              </div>
+              <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="text-xs bg-transparent outline-none font-medium text-slate-700 pr-1"
+                  aria-label="Ordenar"
+                >
+                  <option value="recente">Mais recentes</option>
+                  <option value="nome">Nome (A–Z)</option>
+                  <option value="etapa">Etapa</option>
+                </select>
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground px-1">
+              {filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}
+            </p>
             {/* Bulk toolbar */}
             {filtered.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex items-center justify-between gap-2 flex-wrap">
