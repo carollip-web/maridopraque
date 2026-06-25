@@ -23,7 +23,13 @@ import {
   UserX,
   Phone,
   Mail,
-} from "lucide-react";
+  Pencil,
+  Upload,
+  X,
+  Save,
+  RotateCcw,
+}  from "lucide-react";
+
 
 export const Route = createFileRoute("/admin-validacao")({
   component: AdminValidacao,
