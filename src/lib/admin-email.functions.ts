@@ -116,8 +116,7 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
     const gwBody = await gwRes.text();
     const status = gwRes.ok ? "sent" : "failed";
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("email_send_log").insert({
+    await (adminClient as any).from("email_send_log").insert({
       message_id: `admin-${userId}-${Date.now()}`,
       template_name: "admin_manual",
       recipient_email: data.to,
