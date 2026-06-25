@@ -264,6 +264,26 @@ function ProfissionalCadastro() {
           const status = perfil.aprovacao_status ?? "pendente";
           setExistingStatus(status);
 
+          // Marca retomada do cadastro (uma vez por sessão por usuário)
+          // quando o perfil já existe e ainda não foi aprovado.
+          if (status !== "aprovado") {
+            const flagKey = `mpq:retomada:${user.id}`;
+            if (typeof window !== "undefined" && !sessionStorage.getItem(flagKey)) {
+              sessionStorage.setItem(flagKey, "1");
+              supabase
+                .rpc("increment_cadastro_retomada", { _user_id: user.id })
+                .then(({ error }) => {
+                  // fallback silencioso: se a função não existir, atualiza direto
+                  if (error) {
+                    void supabase
+                      .from("profissional_perfil")
+                      .update({ cadastro_retomado_em: new Date().toISOString() })
+                      .eq("user_id", user.id);
+                  }
+                });
+            }
+          }
+
           // If cadastro_completo and not yet approved, go straight to submitted screen
           if (perfil.cadastro_completo && status !== "aprovado") {
             setSubmitted(true);
@@ -275,6 +295,7 @@ function ProfissionalCadastro() {
           if (perfil.foto_documento_frente) setExistingDocFrente(perfil.foto_documento_frente as string);
           if (perfil.foto_documento_verso) setExistingDocVerso(perfil.foto_documento_verso as string);
           if (perfil.foto_selfie) setExistingSelfie(perfil.foto_selfie as string);
+
 
           // Pre-fill ALL form fields from profissional_perfil
           setForm((f) => ({
