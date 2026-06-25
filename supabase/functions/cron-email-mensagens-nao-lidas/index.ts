@@ -101,11 +101,31 @@ Deno.serve(async (req) => {
       
       const nomeRemetente = profileData?.nome || "Um usuário";
       
-      // Enviar Email
-      // Como admin.auth.admin.sendRawEmail não é padrão na lib do supabase-js,
-      // usaremos um logger por enquanto para indicar que o serviço não está configurado,
-      // ou um endpoint customizado se existisse.
-      console.log(`[EMAIL] Simulando envio para ${emailDestinatario} de ${nomeRemetente}. "email service not configured".`);
+      // Enviar via Gmail connector gateway
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      const GMAIL_KEY = Deno.env.get("GOOGLE_MAIL_API_KEY");
+      if (LOVABLE_API_KEY && GMAIL_KEY) {
+        const subject = `Você tem ${msgs.length} mensagem(ns) não lida(s) de ${nomeRemetente}`;
+        const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:auto;padding:24px;background:#fff;border-radius:12px"><h2 style="color:#FF6B35">Marido pra Quê?</h2><p>${nomeRemetente} te enviou ${msgs.length} mensagem(ns) que você ainda não leu.</p><a href="https://maridopraque.lovable.app" style="display:inline-block;background:#FF6B35;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:600">Abrir conversa</a></div>`;
+        const headers = [
+          "From: Marido pra Quê <contato@maridopraque.com>",
+          `To: ${emailDestinatario}`,
+          `Subject: =?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+          "MIME-Version: 1.0",
+          'Content-Type: text/html; charset="UTF-8"',
+          "",
+          html,
+        ].join("\r\n");
+        const raw = btoa(unescape(encodeURIComponent(headers))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        const gw = await fetch("https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/messages/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GMAIL_KEY },
+          body: JSON.stringify({ raw }),
+        });
+        if (!gw.ok) console.error("Falha Gmail:", await gw.text());
+      } else {
+        console.log(`[EMAIL] Gmail connector não configurado para ${emailDestinatario}`);
+      }
       // Simulação de sucesso
       
       // Atualizar mensagens para não notificar de novo
