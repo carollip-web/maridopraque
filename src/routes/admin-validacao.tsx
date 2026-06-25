@@ -1546,6 +1546,7 @@ function AdminValidacao() {
                     subject: bulkDialog.subject,
                     message: bulkDialog.message,
                     recipients,
+                    template_slug: bulkDialog.template_slug,
                   },
                 });
                 if (res?.ok) {
