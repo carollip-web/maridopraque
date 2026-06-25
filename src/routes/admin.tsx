@@ -171,6 +171,7 @@ function AdminArea() {
             {activeTab === "config" && <AdminConfig />}
             {activeTab === "equipe" && <AdminEquipe />}
             {activeTab === "notificacoes" && <AdminNotificacoes />}
+            {activeTab === "emails" && <AdminEmails />}
             {activeTab === "leads" && <AdminLeads />}
             {activeTab === "apoio_feminino" && <AdminApoioFeminino />}
             {activeTab === "disputas" && <AdminDisputas />}
