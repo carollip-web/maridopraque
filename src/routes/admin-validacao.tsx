@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/auditLog";
 import { enviarEmailAdmin } from "@/lib/admin-email.functions";
 import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
+import { getEmailConfirmStatus, reenviarConfirmacaoEmail } from "@/lib/admin-auth-actions.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -249,6 +250,10 @@ function AdminValidacao() {
     origem: string;
     created_at: string;
   }>>([]);
+  const fetchConfirmStatus = useServerFn(getEmailConfirmStatus);
+  const resendConfirm = useServerFn(reenviarConfirmacaoEmail);
+  const [emailConfirmados, setEmailConfirmados] = useState<Record<string, boolean>>({});
+  const [resendingConfirm, setResendingConfirm] = useState(false);
 
 
   useEffect(() => {
@@ -297,6 +302,35 @@ function AdminValidacao() {
       }),
     );
     setLoadingList(false);
+
+    // Load email confirmation status for incomplete/pending users
+    const idsParaChecar = (perfis ?? [])
+      .filter((p: any) => !p.cadastro_completo || p.aprovacao_status === "pendente")
+      .map((p: any) => p.user_id);
+    if (idsParaChecar.length > 0) {
+      try {
+        const r = await fetchConfirmStatus({ data: { userIds: idsParaChecar } });
+        if (r?.ok) setEmailConfirmados(r.confirmados);
+      } catch (e) {
+        console.warn("Falha ao checar confirmação de e-mail", e);
+      }
+    }
+  };
+
+  const handleReenviarConfirmacao = async (uid: string) => {
+    setResendingConfirm(true);
+    try {
+      const r = await resendConfirm({ data: { userId: uid } });
+      if (r.ok) {
+        toast.success("E-mail de confirmação reenviado");
+      } else {
+        toast.error(r.error || "Falha ao reenviar");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reenviar");
+    } finally {
+      setResendingConfirm(false);
+    }
   };
 
   useEffect(() => {
@@ -919,6 +953,12 @@ function AdminValidacao() {
                       </p>
                     );
                   })()}
+                  {emailConfirmados[p.user_id] === false && (
+                    <p className="text-[10px] mt-2 font-semibold text-red-700 inline-flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      E-mail não confirmado
+                    </p>
+                  )}
                   {p.cadastro_retomado_em && (
                     <p className="text-[10px] mt-2 font-semibold text-amber-700 inline-flex items-center gap-1">
                       <RotateCcw className="h-3 w-3" />
@@ -961,6 +1001,27 @@ function AdminValidacao() {
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
                         <RotateCcw className="h-3 w-3" /> Aguardando reenvio
                       </span>
+                    )}
+                    {emailConfirmados[selected.user_id] === false && (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                          <Mail className="h-3 w-3" /> E-mail não confirmado
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => handleReenviarConfirmacao(selected.user_id)}
+                          disabled={resendingConfirm}
+                        >
+                          {resendingConfirm ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                          Reenviar confirmação
+                        </Button>
+                      </>
                     )}
                     {selected.aprovacao_status === "pendente" && (
                       <Button
