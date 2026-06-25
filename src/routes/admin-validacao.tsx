@@ -321,7 +321,7 @@ function AdminValidacao() {
     setEditForm({
       nome: selected.nome === "—" ? "" : selected.nome ?? "",
       cpf: selected.cpf ?? "",
-      data_nascimento: selected.data_nascimento ?? "",
+      data_nascimento: selected.data_nascimento ? String(selected.data_nascimento).slice(0, 10) : "",
       telefone: selected.telefone ?? "",
       cep: selected.cep ?? "",
       endereco: selected.endereco ?? "",
