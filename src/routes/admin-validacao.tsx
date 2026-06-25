@@ -643,16 +643,28 @@ function AdminValidacao() {
     refresh();
   };
 
-  const filtered = prestadores.filter((p) => {
-    if (filterStatus !== "todos" && p.aprovacao_status !== filterStatus) return false;
-    if (
-      search &&
-      !p.nome.toLowerCase().includes(search.toLowerCase()) &&
-      !p.email.toLowerCase().includes(search.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  const filtered = prestadores
+    .filter((p) => {
+      if (filterStatus !== "todos" && p.aprovacao_status !== filterStatus) return false;
+      if (
+        search &&
+        !p.nome.toLowerCase().includes(search.toLowerCase()) &&
+        !p.email.toLowerCase().includes(search.toLowerCase())
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "nome") return (a.nome ?? "").localeCompare(b.nome ?? "");
+      if (sortBy === "etapa") {
+        const ea = computarEtapaParou(a)?.numero ?? 999;
+        const eb = computarEtapaParou(b)?.numero ?? 999;
+        if (ea !== eb) return ea - eb;
+      }
+      const ta = new Date(a.updated_at ?? a.cadastro_submetido_em ?? 0).getTime();
+      const tb = new Date(b.updated_at ?? b.cadastro_submetido_em ?? 0).getTime();
+      return tb - ta;
+    });
 
   const counts = {
     em_analise: prestadores.filter((p) => p.aprovacao_status === "em_analise").length,
@@ -661,6 +673,28 @@ function AdminValidacao() {
     rejeitado: prestadores.filter((p) => p.aprovacao_status === "rejeitado").length,
     pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
   };
+
+  // Sync URL <-> state (tab, sort, id)
+  useEffect(() => {
+    navigate({
+      to: "/admin-validacao",
+      search: {
+        tab: filterStatus === "em_analise" ? undefined : filterStatus,
+        sort: sortBy === "recente" ? undefined : sortBy,
+        id: selected?.user_id,
+      },
+      replace: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, sortBy, selected?.user_id]);
+
+  // Pre-select prestador from URL once list loads
+  useEffect(() => {
+    if (selected || !searchParams.id || prestadores.length === 0) return;
+    const found = prestadores.find((p) => p.user_id === searchParams.id);
+    if (found) setSelected(found as Prestador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prestadores, searchParams.id]);
 
   if (loading)
     return (
