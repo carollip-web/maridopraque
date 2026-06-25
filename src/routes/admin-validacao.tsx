@@ -881,10 +881,10 @@ function AdminValidacao() {
                   <Section title="Documentos" icon={FileText}>
                     <div className="grid sm:grid-cols-3 gap-3">
                       {[
-                        { label: "Doc. Frente", url: signedUrls.frente, original: selected.foto_documento_frente },
-                        { label: "Doc. Verso", url: signedUrls.verso, original: selected.foto_documento_verso },
-                        { label: "Selfie", url: signedUrls.selfie, original: selected.foto_selfie },
-                      ].map(({ label, url, original }) => (
+                        { label: "Doc. Frente", field: "foto_documento_frente" as const, url: signedUrls.frente },
+                        { label: "Doc. Verso", field: "foto_documento_verso" as const, url: signedUrls.verso },
+                        { label: "Selfie", field: "foto_selfie" as const, url: signedUrls.selfie },
+                      ].map(({ label, field, url }) => (
                         <div key={label}>
                           <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
                             {label}
@@ -910,10 +910,33 @@ function AdminValidacao() {
                               <AlertTriangle className="h-4 w-4 text-amber-400" />
                             </div>
                           )}
+                          <label className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-brand cursor-pointer hover:underline">
+                            {uploadingField === field ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" /> Enviando…
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-3 w-3" /> {url ? "Substituir" : "Enviar"}
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="hidden"
+                              disabled={uploadingField === field}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleUploadDoc(field, f);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
                         </div>
                       ))}
                     </div>
                   </Section>
+
 
                   {/* Rejection info */}
                   {selected.motivo_rejeicao && (
