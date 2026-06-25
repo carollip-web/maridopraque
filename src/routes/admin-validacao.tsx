@@ -1008,7 +1008,11 @@ function AdminValidacao() {
                             label="Nascimento"
                             value={
                               selected.data_nascimento
-                                ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
+                                ? (() => {
+                                    const s = String(selected.data_nascimento).slice(0, 10);
+                                    const [y, m, d] = s.split("-");
+                                    return y && m && d ? `${d}/${m}/${y}` : s;
+                                  })()
                                 : null
                             }
                           />
