@@ -551,6 +551,7 @@ function AdminValidacao() {
         aprovado_por: user?.id,
         aprovado_em: new Date().toISOString(),
         motivo_rejeicao: null,
+        aguardando_reenvio_admin: false,
       })
       .eq("user_id", selected.user_id);
     // grant role
