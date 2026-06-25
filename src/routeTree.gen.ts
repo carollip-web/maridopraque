@@ -43,6 +43,8 @@ import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as AdminMpTesteRouteImport } from './routes/admin.mp-teste'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSendNotificationEmailRouteImport } from './routes/api.public.hooks.send-notification-email'
 
 const TermosRoute = TermosRouteImport.update({
@@ -216,6 +218,16 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSendNotificationEmailRoute =
   ApiPublicHooksSendNotificationEmailRouteImport.update({
     id: '/api/public/hooks/send-notification-email',
@@ -258,6 +270,8 @@ export interface FileRoutesByFullPath {
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
   '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
@@ -295,6 +309,8 @@ export interface FileRoutesByTo {
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
   '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
@@ -333,6 +349,8 @@ export interface FileRoutesById {
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
   '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
@@ -372,6 +390,8 @@ export interface FileRouteTypes {
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
     | '/api/public/hooks/send-notification-email'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -409,6 +429,8 @@ export interface FileRouteTypes {
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
     | '/api/public/hooks/send-notification-email'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   id:
     | '__root__'
@@ -446,6 +468,8 @@ export interface FileRouteTypes {
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
     | '/api/public/hooks/send-notification-email'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
@@ -481,6 +505,8 @@ export interface RootRouteChildren {
   LoginProfissionalRoute: typeof LoginProfissionalRoute
   MpCallbackRoute: typeof MpCallbackRoute
   ApiPublicHooksSendNotificationEmailRoute: typeof ApiPublicHooksSendNotificationEmailRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -724,6 +750,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/send-notification-email': {
       id: '/api/public/hooks/send-notification-email'
       path: '/api/public/hooks/send-notification-email'
@@ -801,6 +841,8 @@ const rootRouteChildren: RootRouteChildren = {
   MpCallbackRoute: MpCallbackRoute,
   ApiPublicHooksSendNotificationEmailRoute:
     ApiPublicHooksSendNotificationEmailRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
