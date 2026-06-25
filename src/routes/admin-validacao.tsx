@@ -1412,7 +1412,7 @@ function AdminValidacao() {
               if (!emailDialog) return;
               setSendingEmail(true);
               try {
-                const res = await sendAdminEmail({ data: emailDialog });
+                const res = await sendAdminEmail({ data: { ...emailDialog, template_slug: emailTemplateSlug } });
                 if (res?.ok) {
                   toast.success("E-mail enviado");
                   setEmailDialog(null);
