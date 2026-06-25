@@ -84,22 +84,34 @@ function LoginProfissionalPage() {
         return;
       }
 
-      // Garante que existe um perfil_profissional vinculado (sem bloquear caso falhe)
+      // Garante que existe um perfil_profissional vinculado e verifica status
+      let precisaCompletarCadastro = false;
       try {
         const { data: perfil } = await supabase
           .from("profissional_perfil")
-          .select("user_id")
+          .select("user_id, cadastro_completo, aprovacao_status")
           .eq("user_id", userId)
           .maybeSingle();
         if (!perfil) {
           await supabase.from("profissional_perfil").insert({ user_id: userId, ativo: false });
-          setInfo("Bem-vindo! Complete seu perfil profissional para receber pedidos.");
+          precisaCompletarCadastro = true;
+          setInfo("Bem-vindo! Complete seu cadastro para enviar para validação.");
+        } else if (!perfil.cadastro_completo || perfil.aprovacao_status === "incompleto") {
+          precisaCompletarCadastro = true;
+          setInfo("Continue de onde parou e envie seu cadastro para validação.");
         }
       } catch {
         // silencioso — usuário pode completar manualmente
       }
 
-      navigate({ to: lista.includes("admin") ? "/admin" : "/profissional" });
+      if (lista.includes("admin")) {
+        navigate({ to: "/admin" });
+      } else if (precisaCompletarCadastro) {
+        navigate({ to: "/profissional-cadastro" });
+      } else {
+        navigate({ to: "/profissional" });
+      }
+
     } catch (err: any) {
       setError(err?.message ?? "Erro ao autenticar");
     } finally {
