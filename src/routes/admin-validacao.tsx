@@ -1132,14 +1132,62 @@ function AdminValidacao() {
                     );
                   })()}
 
+                  {/* Histórico de alterações */}
+                  {alteracoes.length > 0 && (
+                    <Section title="Histórico de alterações" icon={RotateCcw}>
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {alteracoes.map((a) => (
+                          <div
+                            key={a.id}
+                            className="text-xs p-3 rounded-lg bg-slate-50 border border-slate-200"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-bold text-slate-700">
+                                {FIELD_LABELS[a.campo] ?? a.campo}
+                              </span>
+                              <span className="text-slate-500">
+                                {new Date(a.created_at).toLocaleString("pt-BR")} ·{" "}
+                                {a.alterado_por_role === "admin" ? "Admin" : "Profissional"}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="p-2 rounded bg-red-50 border border-red-100">
+                                <div className="text-[10px] uppercase text-red-600 font-bold mb-0.5">
+                                  Antes
+                                </div>
+                                <div className="text-slate-700 break-words">
+                                  {a.valor_antigo || <em className="text-slate-400">vazio</em>}
+                                </div>
+                              </div>
+                              <div className="p-2 rounded bg-green-50 border border-green-100">
+                                <div className="text-[10px] uppercase text-green-700 font-bold mb-0.5">
+                                  Depois
+                                </div>
+                                <div className="text-slate-700 break-words">
+                                  {a.valor_novo || <em className="text-slate-400">vazio</em>}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Section>
+                  )}
+
                   {/* Actions */}
                   {selected.aprovacao_status !== "aprovado" &&
                     selected.aprovacao_status !== "incompleto" && (
                     <div className="space-y-3 pt-2 border-t border-border">
+                      {selected.aguardando_reenvio_admin && (
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                          <strong>Validação bloqueada.</strong> A equipe ajustou dados deste
+                          cadastro. Aguarde o profissional revisar e reenviar antes de aprovar.
+                        </div>
+                      )}
                       <Button
                         onClick={handleAprovar}
-                        disabled={saving}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
+                        disabled={saving || !!selected.aguardando_reenvio_admin}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2 disabled:opacity-50"
                       >
                         {saving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1167,6 +1215,7 @@ function AdminValidacao() {
                       </div>
                     </div>
                   )}
+
                   {selected.aprovacao_status === "aprovado" && (
                     <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-sm text-green-800 font-medium">
                       ✓ Aprovado em{" "}
