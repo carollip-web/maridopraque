@@ -1079,3 +1079,27 @@ function Field({ label, value }: { label: string; value: string | null | undefin
     </div>
   );
 }
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string | null | undefined;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
+      <input
+        type={type}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm"
+      />
+    </div>
+  );
+}
