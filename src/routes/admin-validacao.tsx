@@ -492,6 +492,15 @@ function AdminValidacao() {
                       </span>
                     )}
                   </div>
+                  {p.aprovacao_status === "incompleto" && (() => {
+                    const et = computarEtapaParou(p);
+                    if (!et) return null;
+                    return (
+                      <p className="text-[10px] mt-2 font-semibold text-orange-700">
+                        Parou na etapa {et.numero}/{et.total}: {et.label}
+                      </p>
+                    );
+                  })()}
                   {p.cadastro_submetido_em && (
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Enviado em {new Date(p.cadastro_submetido_em).toLocaleDateString("pt-BR")}
