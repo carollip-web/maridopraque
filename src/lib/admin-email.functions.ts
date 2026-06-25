@@ -31,21 +31,29 @@ function encodeRFC2822(to: string, subject: string, html: string): string {
     .replace(/=+$/, "");
 }
 
-function renderHtml(titulo: string, mensagem: string) {
-  const safeMsg = mensagem
+function escapeHtml(s: string) {
+  return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\n/g, "<br/>");
+    .replace(/>/g, "&gt;");
+}
+
+function applyVars(tpl: string, vars: Record<string, string>): string {
+  let out = tpl;
+  for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{{${k}}}`, v);
+  return out.replace(/\{\{[^}]+\}\}/g, "");
+}
+
+function renderFallback(subject: string, mensagem: string) {
+  const safeMsg = escapeHtml(mensagem).replace(/\n/g, "<br/>");
   return `<!doctype html><html><body style="margin:0;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:32px 12px">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.06)">
         <tr><td style="background:#FF6B35;padding:18px 24px;color:#fff;font-weight:700;font-size:16px">Marido pra Quê?</td></tr>
         <tr><td style="padding:28px 24px">
-          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">${titulo}</h1>
+          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.3">${escapeHtml(subject)}</h1>
           <p style="margin:0;font-size:15px;line-height:1.55;color:#334155">${safeMsg}</p>
-          <a href="${APP_URL}/profissional-cadastro" style="display:inline-block;background:#FF6B35;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;margin-top:18px">Continuar cadastro</a>
         </td></tr>
         <tr><td style="padding:18px 24px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">
           Equipe Marido pra Quê — contato@maridopraque.com
