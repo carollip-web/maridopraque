@@ -1304,13 +1304,12 @@ function AdminValidacao() {
                     <div className="space-y-3 pt-2 border-t border-border">
                       {selected.aguardando_reenvio_admin && (
                         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                          <strong>Validação bloqueada.</strong> A equipe ajustou dados deste
-                          cadastro. Aguarde o profissional revisar e reenviar antes de aprovar.
+                          <strong>Atenção:</strong> a equipe ajustou dados deste cadastro. O ideal é aguardar o profissional revisar e reenviar, mas você pode aprovar mesmo assim se já validou as mudanças.
                         </div>
                       )}
                       <Button
                         onClick={handleAprovar}
-                        disabled={saving || !!selected.aguardando_reenvio_admin}
+                        disabled={saving}
                         className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2 disabled:opacity-50"
                       >
                         {saving ? (
