@@ -258,6 +258,20 @@ function AdminValidacao() {
     }
     fetchSignedUrls();
     setEditMode(false);
+    // Carrega histórico de alterações
+    (async () => {
+      if (!selected) {
+        setAlteracoes([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("profissional_perfil_alteracoes")
+        .select("id, campo, valor_antigo, valor_novo, alterado_por_role, origem, created_at")
+        .eq("profissional_user_id", selected.user_id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      setAlteracoes((data as any) ?? []);
+    })();
   }, [selected]);
 
   const startEdit = () => {
