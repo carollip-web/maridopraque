@@ -31,7 +31,7 @@ function encodeRFC2822(to: string, subject: string, html: string): string {
     .replace(/=+$/, "");
 }
 
-function renderHtml(titulo: string, mensagem: string, link?: string | null) {
+function renderFallback(titulo: string, mensagem: string, link?: string | null) {
   const cta = link
     ? `<a href="${APP_URL}${link}" style="display:inline-block;background:#FF6B35;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;margin-top:18px">Abrir no Marido pra Quê</a>`
     : "";
@@ -52,6 +52,12 @@ function renderHtml(titulo: string, mensagem: string, link?: string | null) {
     </td></tr>
   </table>
 </body></html>`;
+}
+
+function applyVars(tpl: string, vars: Record<string, string>): string {
+  let out = tpl;
+  for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{{${k}}}`, v);
+  return out.replace(/\{\{[^}]+\}\}/g, "");
 }
 
 export const Route = createFileRoute("/api/public/hooks/send-notification-email")({
@@ -89,8 +95,28 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
             return new Response(JSON.stringify({ error: "NO_EMAIL" }), { status: 200 });
           }
 
-          const html = renderHtml(notif.titulo, notif.mensagem, notif.link);
-          const raw = encodeRFC2822(email, notif.titulo, html);
+          // Try DB template first; fall back to hardcoded layout.
+          const { data: tpl } = await (admin as any)
+            .from("email_templates")
+            .select("assunto, html, ativo")
+            .eq("slug", "notificacao")
+            .maybeSingle();
+
+          const cta = notif.link
+            ? `<a href="${APP_URL}${notif.link}" style="display:inline-block;background:#FF6B35;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;margin-top:18px">Abrir no Marido pra Quê</a>`
+            : "";
+          const vars = {
+            titulo: notif.titulo ?? "",
+            mensagem: notif.mensagem ?? "",
+            link: notif.link ? `${APP_URL}${notif.link}` : "",
+            app_url: APP_URL,
+            cta,
+          };
+          const subject = tpl?.ativo ? applyVars(tpl.assunto, vars) : notif.titulo;
+          const html = tpl?.ativo
+            ? applyVars(tpl.html, vars)
+            : renderFallback(notif.titulo, notif.mensagem, notif.link);
+          const raw = encodeRFC2822(email, subject, html);
 
           const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY!;
           const GOOGLE_MAIL_API_KEY = process.env.GOOGLE_MAIL_API_KEY!;

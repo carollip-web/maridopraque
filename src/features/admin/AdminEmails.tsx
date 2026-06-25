@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink } from "lucide-react";
+import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink, FileText, Inbox } from "lucide-react";
+import { AdminEmailTemplates } from "./AdminEmailTemplates";
 
 type LogRow = {
   id: string;
@@ -46,6 +47,7 @@ function StatusBadge({ status }: { status: string | null }) {
 }
 
 export function AdminEmails() {
+  const [tab, setTab] = useState<"log" | "templates">("log");
   const [rows, setRows] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -160,8 +162,32 @@ export function AdminEmails() {
         </button>
       </div>
 
+      <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+        <button
+          onClick={() => setTab("log")}
+          className={`px-3 py-1.5 text-sm rounded-md inline-flex items-center gap-1.5 ${
+            tab === "log" ? "bg-slate-900 text-white" : "text-slate-600"
+          }`}
+        >
+          <Inbox className="h-3.5 w-3.5" /> Histórico
+        </button>
+        <button
+          onClick={() => setTab("templates")}
+          className={`px-3 py-1.5 text-sm rounded-md inline-flex items-center gap-1.5 ${
+            tab === "templates" ? "bg-slate-900 text-white" : "text-slate-600"
+          }`}
+        >
+          <FileText className="h-3.5 w-3.5" /> Templates
+        </button>
+      </div>
+
+      {tab === "templates" ? (
+        <AdminEmailTemplates />
+      ) : (
+      <>
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+
         {[
           { label: "Total", value: stats.total, cls: "text-slate-900" },
           { label: "Enviados", value: stats.sent, cls: "text-emerald-600" },
@@ -324,6 +350,9 @@ export function AdminEmails() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
+
