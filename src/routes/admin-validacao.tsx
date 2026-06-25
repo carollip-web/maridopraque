@@ -871,7 +871,8 @@ function AdminValidacao() {
                     </p>
                   )}
 
-                </button>
+                  </button>
+                </div>
               ))
             )}
           </div>
