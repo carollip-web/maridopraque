@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink } from "lucide-react";
+import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink, FileText, Inbox } from "lucide-react";
+import { AdminEmailTemplates } from "./AdminEmailTemplates";
 
 type LogRow = {
   id: string;
