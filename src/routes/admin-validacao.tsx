@@ -205,6 +205,9 @@ function AdminValidacao() {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const sendAdminEmail = useServerFn(enviarEmailAdmin);
+  const [emailDialog, setEmailDialog] = useState<{ to: string; subject: string; message: string } | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
