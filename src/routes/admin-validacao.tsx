@@ -250,6 +250,10 @@ function AdminValidacao() {
     origem: string;
     created_at: string;
   }>>([]);
+  const fetchConfirmStatus = useServerFn(getEmailConfirmStatus);
+  const resendConfirm = useServerFn(reenviarConfirmacaoEmail);
+  const [emailConfirmados, setEmailConfirmados] = useState<Record<string, boolean>>({});
+  const [resendingConfirm, setResendingConfirm] = useState(false);
 
 
   useEffect(() => {
