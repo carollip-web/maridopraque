@@ -302,6 +302,35 @@ function AdminValidacao() {
       }),
     );
     setLoadingList(false);
+
+    // Load email confirmation status for incomplete/pending users
+    const idsParaChecar = (perfis ?? [])
+      .filter((p: any) => !p.cadastro_completo || p.aprovacao_status === "pendente")
+      .map((p: any) => p.user_id);
+    if (idsParaChecar.length > 0) {
+      try {
+        const r = await fetchConfirmStatus({ data: { userIds: idsParaChecar } });
+        if (r?.ok) setEmailConfirmados(r.confirmados);
+      } catch (e) {
+        console.warn("Falha ao checar confirmação de e-mail", e);
+      }
+    }
+  };
+
+  const handleReenviarConfirmacao = async (uid: string) => {
+    setResendingConfirm(true);
+    try {
+      const r = await resendConfirm({ data: { userId: uid } });
+      if (r.ok) {
+        toast.success("E-mail de confirmação reenviado");
+      } else {
+        toast.error(r.error || "Falha ao reenviar");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reenviar");
+    } finally {
+      setResendingConfirm(false);
+    }
   };
 
   useEffect(() => {
