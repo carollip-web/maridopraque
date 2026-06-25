@@ -953,6 +953,12 @@ function AdminValidacao() {
                       </p>
                     );
                   })()}
+                  {emailConfirmados[p.user_id] === false && (
+                    <p className="text-[10px] mt-2 font-semibold text-red-700 inline-flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      E-mail não confirmado
+                    </p>
+                  )}
                   {p.cadastro_retomado_em && (
                     <p className="text-[10px] mt-2 font-semibold text-amber-700 inline-flex items-center gap-1">
                       <RotateCcw className="h-3 w-3" />
