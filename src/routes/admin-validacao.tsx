@@ -51,6 +51,7 @@ import {
   CheckSquare,
   Square,
   ArrowUpDown,
+  Info,
 }  from "lucide-react";
 
 
