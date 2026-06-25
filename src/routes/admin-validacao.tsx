@@ -806,6 +806,11 @@ function AdminValidacao() {
                   </div>
                   <div className="flex gap-2 items-center flex-wrap">
                     <StatusBadge status={selected.aprovacao_status} />
+                    {selected.aguardando_reenvio_admin && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        <RotateCcw className="h-3 w-3" /> Aguardando reenvio
+                      </span>
+                    )}
                     {selected.aprovacao_status === "pendente" && (
                       <Button
                         size="sm"
