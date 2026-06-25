@@ -561,6 +561,9 @@ function ProfissionalCadastro() {
         ativo: false,
         genero: form.genero || "nao_informar",
         oferece_apoio_feminino: false,
+        aguardando_reenvio_admin: false,
+        bloqueado_em: null,
+        bloqueado_por: null,
       };
 
       const { error } = await supabase.from("profissional_perfil").upsert(payload);
