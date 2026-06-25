@@ -772,67 +772,110 @@ function AdminValidacao() {
 
 
                 <div className="p-6 space-y-6 max-h-[calc(100vh-280px)] overflow-y-auto">
-                  {/* Personal info */}
-                  <Section title="Dados pessoais" icon={User}>
-                    <Grid2>
-                      <Field label="CPF" value={selected.cpf} />
-                      <Field
-                        label="Nascimento"
-                        value={
-                          selected.data_nascimento
-                            ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
-                            : null
-                        }
-                      />
-                      <Field label="Telefone" value={selected.telefone} />
-                      <Field
-                        label="Experiência"
-                        value={
-                          selected.experiencia_anos ? `${selected.experiencia_anos} anos` : null
-                        }
-                      />
-                    </Grid2>
-                  </Section>
+                  {!editMode ? (
+                    <>
+                      {/* Personal info */}
+                      <Section title="Dados pessoais" icon={User}>
+                        <Grid2>
+                          <Field label="CPF" value={selected.cpf} />
+                          <Field
+                            label="Nascimento"
+                            value={
+                              selected.data_nascimento
+                                ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
+                                : null
+                            }
+                          />
+                          <Field label="Telefone" value={selected.telefone} />
+                          <Field
+                            label="Experiência"
+                            value={
+                              selected.experiencia_anos ? `${selected.experiencia_anos} anos` : null
+                            }
+                          />
+                        </Grid2>
+                      </Section>
 
-                  {/* Address */}
-                  <Section title="Endereço" icon={MapPin}>
-                    <Field
-                      label="Endereço completo"
-                      value={[
-                        selected.endereco,
-                        selected.numero,
-                        selected.bairro,
-                        selected.cidade,
-                        selected.estado,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    />
-                  </Section>
+                      {/* Address */}
+                      <Section title="Endereço" icon={MapPin}>
+                        <Field
+                          label="Endereço completo"
+                          value={[
+                            selected.endereco,
+                            selected.numero,
+                            selected.bairro,
+                            selected.cidade,
+                            selected.estado,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        />
+                      </Section>
 
-                  {/* Experience */}
-                  <Section title="Experiência" icon={FileText}>
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {selected.especialidades.map((e) => (
-                        <span
-                          key={e}
-                          className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-medium"
-                        >
-                          {e}
-                        </span>
-                      ))}
-                    </div>
-                    {selected.bio && (
-                      <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-xl p-4">
-                        {selected.bio}
-                      </p>
-                    )}
-                    {selected.observacoes_cadastro && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {selected.observacoes_cadastro}
-                      </p>
-                    )}
-                  </Section>
+                      {/* Experience */}
+                      <Section title="Experiência" icon={FileText}>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {selected.especialidades.map((e) => (
+                            <span
+                              key={e}
+                              className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-medium"
+                            >
+                              {e}
+                            </span>
+                          ))}
+                        </div>
+                        {selected.bio && (
+                          <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-xl p-4">
+                            {selected.bio}
+                          </p>
+                        )}
+                        {selected.observacoes_cadastro && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {selected.observacoes_cadastro}
+                          </p>
+                        )}
+                      </Section>
+                    </>
+                  ) : (
+                    <Section title="Editar dados do prestador" icon={Pencil}>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <EditField label="Nome completo" value={editForm.nome} onChange={(v) => setEditForm({ ...editForm, nome: v })} />
+                        <EditField label="CPF" value={editForm.cpf} onChange={(v) => setEditForm({ ...editForm, cpf: v })} />
+                        <EditField label="Data de nascimento" type="date" value={editForm.data_nascimento} onChange={(v) => setEditForm({ ...editForm, data_nascimento: v })} />
+                        <EditField label="Telefone" value={editForm.telefone} onChange={(v) => setEditForm({ ...editForm, telefone: v })} />
+                        <EditField label="CEP" value={editForm.cep} onChange={(v) => setEditForm({ ...editForm, cep: v })} />
+                        <EditField label="Endereço" value={editForm.endereco} onChange={(v) => setEditForm({ ...editForm, endereco: v })} />
+                        <EditField label="Número" value={editForm.numero} onChange={(v) => setEditForm({ ...editForm, numero: v })} />
+                        <EditField label="Complemento" value={editForm.complemento} onChange={(v) => setEditForm({ ...editForm, complemento: v })} />
+                        <EditField label="Bairro" value={editForm.bairro} onChange={(v) => setEditForm({ ...editForm, bairro: v })} />
+                        <EditField label="Cidade" value={editForm.cidade} onChange={(v) => setEditForm({ ...editForm, cidade: v })} />
+                        <EditField label="Estado (UF)" value={editForm.estado} onChange={(v) => setEditForm({ ...editForm, estado: v })} />
+                        <EditField label="Anos de experiência" type="number" value={editForm.experiencia_anos} onChange={(v) => setEditForm({ ...editForm, experiencia_anos: v })} />
+                      </div>
+                      <div className="mt-3">
+                        <EditField label="Especialidades (separadas por vírgula)" value={editForm.especialidades} onChange={(v) => setEditForm({ ...editForm, especialidades: v })} />
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Bio</p>
+                        <textarea
+                          value={editForm.bio || ""}
+                          onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm resize-none"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Observações</p>
+                        <textarea
+                          value={editForm.observacoes_cadastro || ""}
+                          onChange={(e) => setEditForm({ ...editForm, observacoes_cadastro: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm resize-none"
+                        />
+                      </div>
+                    </Section>
+                  )}
+
 
                   {/* Documents */}
                   <Section title="Documentos" icon={FileText}>
