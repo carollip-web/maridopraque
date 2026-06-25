@@ -15,6 +15,7 @@ export type AdminSection =
   | "config"
   | "equipe"
   | "notificacoes"
+  | "emails"
   | "leads"
   | "apoio_feminino"
   | "kpis"
