@@ -187,6 +187,11 @@ function AdminValidacao() {
   const [search, setSearch] = useState("");
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
