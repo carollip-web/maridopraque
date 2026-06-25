@@ -48,6 +48,7 @@ async function moveToDlq(
     recipient_email: payload.to,
     status: 'dlq',
     error_message: reason,
+    metadata: { html: payload.html },
   })
   const { error } = await supabase.rpc('move_to_dlq', {
     source_queue: queue,
