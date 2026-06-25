@@ -270,19 +270,13 @@ function ProfissionalCadastro() {
             const flagKey = `mpq:retomada:${user.id}`;
             if (typeof window !== "undefined" && !sessionStorage.getItem(flagKey)) {
               sessionStorage.setItem(flagKey, "1");
-              supabase
-                .rpc("increment_cadastro_retomada", { _user_id: user.id })
-                .then(({ error }) => {
-                  // fallback silencioso: se a função não existir, atualiza direto
-                  if (error) {
-                    void supabase
-                      .from("profissional_perfil")
-                      .update({ cadastro_retomado_em: new Date().toISOString() })
-                      .eq("user_id", user.id);
-                  }
-                });
+              void supabase
+                .from("profissional_perfil")
+                .update({ cadastro_retomado_em: new Date().toISOString() })
+                .eq("user_id", user.id);
             }
           }
+
 
           // If cadastro_completo and not yet approved, go straight to submitted screen
           if (perfil.cadastro_completo && status !== "aprovado") {
