@@ -935,7 +935,7 @@ function AdminValidacao() {
           </div>
 
           {/* Detail */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             {!selected ? (
               <div className="py-24 text-center bg-white rounded-2xl border border-dashed border-slate-300">
                 <Shield className="h-10 w-10 text-slate-300 mx-auto mb-3" />
@@ -946,7 +946,7 @@ function AdminValidacao() {
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Detail header */}
-                <div className="px-6 py-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
+                <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-xl font-bold">{selected.nome}</h2>
                     <p className="text-sm text-muted-foreground">{selected.email}</p>
