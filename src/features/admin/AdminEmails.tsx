@@ -368,9 +368,41 @@ export function AdminEmails() {
                 Próxima
               </button>
             </div>
-          </div>
-        )}
       </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <div className="text-sm font-medium text-slate-900">
+                Visualizar e-mail — {previewRow.recipient_email}
+              </div>
+              <button
+                onClick={() => setPreviewRow(null)}
+                className="p-1 rounded-md hover:bg-slate-100 text-slate-500"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-0">
+              {getHtml(previewRow) ? (
+                <iframe
+                  title="Preview do e-mail"
+                  srcDoc={getHtml(previewRow)!}
+                  className="w-full h-full min-h-[400px] border-0"
+                />
+              ) : (
+                <div className="p-6 text-sm text-slate-500">
+                  Conteúdo do e-mail não disponível para envios anteriores a esta atualização.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
       </>
       )}
     </div>
