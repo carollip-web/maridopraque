@@ -50,10 +50,18 @@ import {
   Send,
   CheckSquare,
   Square,
+  ArrowUpDown,
 }  from "lucide-react";
 
 
 export const Route = createFileRoute("/admin-validacao")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (typeof search.tab === "string" ? search.tab : undefined) as
+      | "todos" | "pendente" | "em_analise" | "incompleto" | "aprovado" | "rejeitado" | undefined,
+    id: typeof search.id === "string" ? (search.id as string) : undefined,
+    sort: (typeof search.sort === "string" ? search.sort : undefined) as
+      | "recente" | "nome" | "etapa" | undefined,
+  }),
   component: AdminValidacao,
 });
 
