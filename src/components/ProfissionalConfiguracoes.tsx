@@ -149,6 +149,11 @@ export function ProfissionalConfiguracoes() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("basico");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
+  const excluirContaFn = useServerFn(excluirMinhaConta);
 
   const { data: profissionalPerfil, refetch: refetchPerfil } = useQuery({
     queryKey: ["profissional_perfil", user?.id],
