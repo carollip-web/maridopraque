@@ -371,6 +371,22 @@ export function ProfissionalConfiguracoes() {
     else toast.success("E-mail de redefinição enviado!");
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "EXCLUIR" || !user) return;
+    setIsDeleting(true);
+    try {
+      await excluirContaFn({});
+      toast.success("Sua conta foi excluída permanentemente.");
+      await supabase.auth.signOut();
+      navigate({ to: "/" });
+    } catch (e: any) {
+      toast.error("Não foi possível excluir a conta", { description: e?.message });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const handleConnectMercadoPago = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("mercado-pago-oauth-start");
