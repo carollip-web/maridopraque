@@ -68,6 +68,7 @@ const schema = z.object({
   to: z.string().email(),
   subject: z.string().trim().min(1).max(200),
   message: z.string().trim().min(1).max(5000),
+  template_slug: z.string().trim().min(1).max(80).optional(),
 });
 
 export const enviarEmailAdmin = createServerFn({ method: "POST" })
@@ -88,7 +89,7 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
     const { data: tpl } = await (adminClient as any)
       .from("email_templates")
       .select("assunto, html, ativo")
-      .eq("slug", "admin_contato")
+      .eq("slug", data.template_slug || "admin_contato")
       .maybeSingle();
     const vars = {
       assunto: data.subject,

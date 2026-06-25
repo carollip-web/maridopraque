@@ -15,6 +15,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -214,8 +221,10 @@ function AdminValidacao() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendBulkEmail = useServerFn(enviarEmailMassaAdmin);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDialog, setBulkDialog] = useState<{ subject: string; message: string } | null>(null);
+  const [bulkDialog, setBulkDialog] = useState<{ subject: string; message: string; template_slug?: string } | null>(null);
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [templates, setTemplates] = useState<Array<{ slug: string; nome: string; assunto: string }>>([]);
+  const [emailTemplateSlug, setEmailTemplateSlug] = useState<string>("admin_contato");
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
@@ -230,6 +239,17 @@ function AdminValidacao() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user, navigate]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("email_templates")
+        .select("slug, nome, assunto, ativo")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+      setTemplates((data ?? []) as any);
+    })();
+  }, []);
 
   const refresh = async () => {
     setLoadingList(true);
@@ -1343,6 +1363,27 @@ function AdminValidacao() {
               <Input value={emailDialog.to} readOnly className="bg-slate-50" />
             </div>
             <div>
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Template</p>
+              <Select
+                value={emailTemplateSlug}
+                onValueChange={(v) => {
+                  setEmailTemplateSlug(v);
+                  const tpl = templates.find((t) => t.slug === v);
+                  if (tpl && emailDialog) {
+                    setEmailDialog({ ...emailDialog, subject: tpl.assunto || emailDialog.subject });
+                  }
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar template" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin_contato">Padrão (admin_contato)</SelectItem>
+                  {templates.filter((t) => t.slug !== "admin_contato").map((t) => (
+                    <SelectItem key={t.slug} value={t.slug}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Assunto</p>
               <Input
                 value={emailDialog.subject}
@@ -1371,7 +1412,7 @@ function AdminValidacao() {
               if (!emailDialog) return;
               setSendingEmail(true);
               try {
-                const res = await sendAdminEmail({ data: emailDialog });
+                const res = await sendAdminEmail({ data: { ...emailDialog, template_slug: emailTemplateSlug } });
                 if (res?.ok) {
                   toast.success("E-mail enviado");
                   setEmailDialog(null);
@@ -1408,6 +1449,28 @@ function AdminValidacao() {
                 <p className="text-muted-foreground">
                   Um e-mail individual será enviado para cada um (não aparece como lista). Throttle ~1,5/s.
                 </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-1">Template</p>
+                <Select
+                  value={bulkDialog.template_slug || "admin_contato"}
+                  onValueChange={(v) => {
+                    const tpl = templates.find((t) => t.slug === v);
+                    setBulkDialog({
+                      ...bulkDialog,
+                      template_slug: v,
+                      subject: tpl?.assunto || bulkDialog.subject,
+                    });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecionar template" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin_contato">Padrão (admin_contato)</SelectItem>
+                    {templates.filter((t) => t.slug !== "admin_contato").map((t) => (
+                      <SelectItem key={t.slug} value={t.slug}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <p className="text-xs font-semibold mb-1">Assunto</p>
@@ -1483,6 +1546,7 @@ function AdminValidacao() {
                     subject: bulkDialog.subject,
                     message: bulkDialog.message,
                     recipients,
+                    template_slug: bulkDialog.template_slug,
                   },
                 });
                 if (res?.ok) {
