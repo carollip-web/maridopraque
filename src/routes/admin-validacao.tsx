@@ -84,6 +84,73 @@ async function getSignedUrl(publicUrl: string | null) {
   }
 }
 
+type EtapaInfo = {
+  numero: number;
+  total: number;
+  label: string;
+  faltando: string[];
+  preenchidas: string[];
+};
+
+function computarEtapaParou(p: any): EtapaInfo | null {
+  const ETAPAS = [
+    {
+      label: "Dados pessoais",
+      campos: [
+        { key: "nome", ok: !!p.nome && p.nome !== "—" },
+        { key: "CPF", ok: !!p.cpf },
+        { key: "telefone", ok: !!p.telefone },
+        { key: "data de nascimento", ok: !!p.data_nascimento },
+      ],
+    },
+    {
+      label: "Endereço",
+      campos: [
+        { key: "CEP", ok: !!p.cep },
+        { key: "endereço", ok: !!p.endereco },
+        { key: "número", ok: !!p.numero },
+        { key: "bairro", ok: !!p.bairro },
+        { key: "cidade", ok: !!p.cidade },
+        { key: "estado", ok: !!p.estado },
+      ],
+    },
+    {
+      label: "Experiência",
+      campos: [
+        { key: "especialidades", ok: Array.isArray(p.especialidades) && p.especialidades.length > 0 },
+        { key: "bio", ok: !!p.bio },
+      ],
+    },
+    {
+      label: "Documentos",
+      campos: [
+        { key: "documento (frente)", ok: !!p.foto_documento_frente },
+        { key: "documento (verso)", ok: !!p.foto_documento_verso },
+        { key: "selfie", ok: !!p.foto_selfie },
+      ],
+    },
+    {
+      label: "Revisão e envio",
+      campos: [{ key: "envio do cadastro para análise", ok: !!p.cadastro_submetido_em }],
+    },
+  ];
+
+  for (let i = 0; i < ETAPAS.length; i++) {
+    const etapa = ETAPAS[i];
+    const faltando = etapa.campos.filter((c) => !c.ok).map((c) => c.key);
+    if (faltando.length > 0) {
+      return {
+        numero: i + 1,
+        total: ETAPAS.length,
+        label: etapa.label,
+        faltando,
+        preenchidas: etapa.campos.filter((c) => c.ok).map((c) => c.key),
+      };
+    }
+  }
+  return null;
+}
+
 function StatusBadge({ status }: { status: Status }) {
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.pendente;
   const Icon = cfg.icon;
