@@ -513,7 +513,7 @@ export function ProfissionalConfiguracoes() {
           })}
         </nav>
 
-        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm">
+        <section className="bg-white rounded-3xl border border-border p-6 shadow-sm space-y-3">
           <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-brand" /> Segurança
           </h4>
@@ -524,9 +524,22 @@ export function ProfissionalConfiguracoes() {
           >
             Redefinir senha
           </Button>
-          <p className="text-[11px] text-muted-foreground mt-2 text-center leading-relaxed">
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
             Um link será enviado para o seu e-mail.
           </p>
+          <div className="pt-3 border-t border-border">
+            <Button
+              variant="ghost"
+              className="w-full rounded-xl text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => {
+                setDeleteConfirmText("");
+                setDeleteDialogOpen(true);
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Excluir minha conta
+            </Button>
+          </div>
         </section>
       </aside>
 
