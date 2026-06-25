@@ -1134,12 +1134,21 @@ function AdminValidacao() {
                           </a>
                         )}
                         {selected.email && selected.email !== "—" && (
-                          <a
-                            href={`mailto:${selected.email}`}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const primeiro = selected.nome?.split(" ")[0] || "";
+                              const etapaTxt = etapa?.label || "final";
+                              setEmailDialog({
+                                to: selected.email,
+                                subject: `Vamos finalizar seu cadastro na Marido pra Quê?`,
+                                message: `Olá ${primeiro},\n\nVimos que seu cadastro como prestador na Marido pra Quê parou na etapa "${etapaTxt}". Estamos aqui para te ajudar a concluir e começar a receber oportunidades.\n\nÉ rápido — basta entrar na sua conta e continuar de onde parou.\n\nQualquer dúvida, é só responder este e-mail.\n\nEquipe Marido pra Quê`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline text-left"
                           >
                             <Mail className="h-4 w-4" /> {selected.email}
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>
