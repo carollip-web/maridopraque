@@ -83,8 +83,22 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Gmail não configurado" };
     }
 
-    const html = renderHtml(data.subject, data.message);
-    const raw = encodeRFC2822(data.to, data.subject, html);
+    // Look up DB template (admin_contato); fallback to hardcoded layout.
+    const { supabaseAdmin: adminClient } = await import("@/integrations/supabase/client.server");
+    const { data: tpl } = await (adminClient as any)
+      .from("email_templates")
+      .select("assunto, html, ativo")
+      .eq("slug", "admin_contato")
+      .maybeSingle();
+    const vars = {
+      assunto: data.subject,
+      nome: data.to.split("@")[0],
+      mensagem: escapeHtml(data.message).replace(/\n/g, "<br/>"),
+      app_url: APP_URL,
+    };
+    const subject = tpl?.ativo ? applyVars(tpl.assunto, vars) : data.subject;
+    const html = tpl?.ativo ? applyVars(tpl.html, vars) : renderFallback(data.subject, data.message);
+    const raw = encodeRFC2822(data.to, subject, html);
 
     const gwRes = await fetch(
       "https://connector-gateway.lovable.dev/google_mail/gmail/v1/users/me/messages/send",
