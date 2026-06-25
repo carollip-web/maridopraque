@@ -91,7 +91,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
     const { data: tpl } = await (adminClient as any)
       .from("email_templates")
       .select("assunto, html, ativo")
-      .eq("slug", "admin_contato")
+      .eq("slug", data.template_slug || "admin_contato")
       .maybeSingle();
 
     const batchId = `bulk-${userId}-${Date.now()}`;
