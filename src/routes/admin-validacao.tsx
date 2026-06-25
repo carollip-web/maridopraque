@@ -274,11 +274,34 @@ function AdminValidacao() {
     setEditMode(true);
   };
 
+  const FIELD_LABELS: Record<string, string> = {
+    nome: "Nome",
+    cpf: "CPF",
+    data_nascimento: "Data de nascimento",
+    telefone: "Telefone",
+    cep: "CEP",
+    endereco: "Endereço",
+    numero: "Número",
+    complemento: "Complemento",
+    bairro: "Bairro",
+    cidade: "Cidade",
+    estado: "Estado",
+    especialidades: "Especialidades",
+    experiencia_anos: "Anos de experiência",
+    bio: "Biografia",
+    observacoes_cadastro: "Observações",
+  };
+
   const handleSaveEdit = async () => {
-    if (!selected) return;
+    if (!selected || !user) return;
     setSavingEdit(true);
     try {
-      const perfilPayload = {
+      const novosEspecialidades = String(editForm.especialidades || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const perfilPayload: Record<string, any> = {
         cpf: editForm.cpf || null,
         data_nascimento: editForm.data_nascimento || null,
         telefone: editForm.telefone || null,
@@ -289,19 +312,43 @@ function AdminValidacao() {
         bairro: editForm.bairro || null,
         cidade: editForm.cidade || null,
         estado: editForm.estado || null,
-        especialidades: String(editForm.especialidades || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        especialidades: novosEspecialidades,
         experiencia_anos: editForm.experiencia_anos
           ? Number(editForm.experiencia_anos)
           : null,
         bio: editForm.bio || null,
         observacoes_cadastro: editForm.observacoes_cadastro || null,
       };
+
+      // Diff campo a campo
+      const formatar = (v: any) =>
+        v == null || v === "" ? "" : Array.isArray(v) ? v.join(", ") : String(v);
+      const diffs: Array<{ campo: string; antigo: string; novo: string }> = [];
+      for (const k of Object.keys(perfilPayload)) {
+        const antigo = formatar((selected as any)[k]);
+        const novo = formatar(perfilPayload[k]);
+        if (antigo !== novo) diffs.push({ campo: k, antigo, novo });
+      }
+      if (editForm.nome && editForm.nome !== selected.nome) {
+        diffs.push({ campo: "nome", antigo: selected.nome ?? "", novo: editForm.nome });
+      }
+
+      if (diffs.length === 0) {
+        toast.info("Nenhuma alteração detectada");
+        setEditMode(false);
+        setSavingEdit(false);
+        return;
+      }
+
+      // Aplica + marca aguardando reenvio
       const { error: e1 } = await supabase
         .from("profissional_perfil")
-        .update(perfilPayload)
+        .update({
+          ...perfilPayload,
+          aguardando_reenvio_admin: true,
+          bloqueado_em: new Date().toISOString(),
+          bloqueado_por: user.id,
+        })
         .eq("user_id", selected.user_id);
       if (e1) throw e1;
 
@@ -313,17 +360,54 @@ function AdminValidacao() {
         if (e2) throw e2;
       }
 
+      // Registra histórico campo a campo
+      const rows = diffs.map((d) => ({
+        profissional_user_id: selected.user_id,
+        campo: d.campo,
+        valor_antigo: d.antigo,
+        valor_novo: d.novo,
+        alterado_por: user.id,
+        alterado_por_role: "admin",
+        origem: "admin",
+      }));
+      await supabase.from("profissional_perfil_alteracoes").insert(rows);
+
+      // Notifica profissional in-app
+      await supabase.from("notificacoes").insert({
+        user_id: selected.user_id,
+        titulo: "Seu cadastro foi atualizado pela equipe",
+        mensagem:
+          "A equipe ajustou " +
+          diffs.length +
+          " campo(s) do seu cadastro (" +
+          diffs
+            .slice(0, 3)
+            .map((d) => FIELD_LABELS[d.campo] ?? d.campo)
+            .join(", ") +
+          (diffs.length > 3 ? "…" : "") +
+          "). Revise e reenvie para validação.",
+        link: "/profissional-cadastro",
+        lida: false,
+      });
+
       await logAdminAction(supabase, {
         acao: "profissional_editado_admin",
-        detalhes: { campos: Object.keys(perfilPayload) },
+        detalhes: { campos: diffs.map((d) => d.campo), total: diffs.length },
         entidadeTipo: "profissional",
         entidadeId: selected.user_id,
       });
 
-      toast.success("Dados atualizados");
+      toast.success("Dados atualizados", {
+        description: "Validação bloqueada até o profissional reenviar.",
+      });
       setEditMode(false);
-      // Reflete localmente
-      setSelected({ ...selected, ...perfilPayload, nome: editForm.nome || selected.nome } as Prestador);
+      setSelected({
+        ...selected,
+        ...perfilPayload,
+        nome: editForm.nome || selected.nome,
+        aguardando_reenvio_admin: true,
+        bloqueado_em: new Date().toISOString(),
+      } as Prestador);
       refresh();
     } catch (err: any) {
       toast.error("Erro ao salvar", { description: err?.message });
@@ -331,6 +415,7 @@ function AdminValidacao() {
       setSavingEdit(false);
     }
   };
+
 
   const handleUploadDoc = async (
     field: "foto_documento_frente" | "foto_documento_verso" | "foto_selfie",
