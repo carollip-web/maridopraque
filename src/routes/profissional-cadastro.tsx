@@ -158,6 +158,32 @@ function isValidCnpj(v: string) {
   return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
 }
 
+function isValidCpf(v: string) {
+  const c = v.replace(/\D/g, "");
+  if (c.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(c)) return false;
+  const calc = (base: string, fator: number) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * (fator - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  const d1 = calc(c.slice(0, 9), 10);
+  const d2 = calc(c.slice(0, 10), 11);
+  return d1 === parseInt(c[9], 10) && d2 === parseInt(c[10], 10);
+}
+
+function isAdult(dateStr: string) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+  return age >= 18 && age <= 100;
+}
+
 function fmtPhone(v: string) {
   return v
     .replace(/\D/g, "")
@@ -499,6 +525,24 @@ function ProfissionalCadastro() {
 
   const handleSubmit = async () => {
     if (!user) return;
+    // Final guard — bloqueia envio com qualquer campo obrigatório faltando
+    const missing: string[] = [];
+    if (!form.nome.trim() || form.nome.trim().split(/\s+/).length < 2) missing.push("nome completo");
+    if (!isValidCpf(form.cpf)) missing.push("CPF válido");
+    if (!form.data_nascimento || !isAdult(form.data_nascimento)) missing.push("data de nascimento");
+    if (form.telefone.replace(/\D/g, "").length < 10) missing.push("telefone");
+    if (form.cep.replace(/\D/g, "").length !== 8) missing.push("CEP");
+    if (!form.endereco.trim() || !form.numero.trim() || !form.bairro.trim() || !form.cidade.trim() || !form.estado.trim()) missing.push("endereço completo");
+    if (form.especialidades.length === 0) missing.push("especialidades");
+    if (form.bio.trim().length < 30) missing.push("mini bio (mín. 30 caracteres)");
+    if (form.experiencia_anos === "" || form.experiencia_anos === null) missing.push("anos de experiência");
+    if ((!form.foto_documento_frente && !existingDocFrente) ||
+        (!form.foto_documento_verso && !existingDocVerso) ||
+        (!form.foto_selfie && !existingSelfie)) missing.push("documentos (frente, verso e selfie)");
+    if (missing.length > 0) {
+      toast.error("Cadastro incompleto", { description: `Faltam: ${missing.join(", ")}` });
+      return;
+    }
     setSaving(true);
     try {
       // Documents should already be uploaded by step 4 save.
@@ -944,7 +988,7 @@ function ProfissionalCadastro() {
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Anos de experiência
+                    Anos de experiência *
                   </label>
                   <input
                     type="number"
@@ -1170,8 +1214,20 @@ function ProfissionalCadastro() {
                 disabled={savingStep}
                 onClick={async () => {
                   if (step === 1) {
-                    if (!form.nome.trim() || !form.cpf || !form.telefone) {
-                      toast.error("Preencha nome, CPF e telefone");
+                    if (!form.nome.trim() || form.nome.trim().split(/\s+/).length < 2) {
+                      toast.error("Informe seu nome completo (nome e sobrenome)");
+                      return;
+                    }
+                    if (!isValidCpf(form.cpf)) {
+                      toast.error("CPF inválido — confira os dígitos");
+                      return;
+                    }
+                    if (!form.data_nascimento || !isAdult(form.data_nascimento)) {
+                      toast.error("Informe uma data de nascimento válida (maior de 18 anos)");
+                      return;
+                    }
+                    if (form.telefone.replace(/\D/g, "").length < 10) {
+                      toast.error("Telefone/WhatsApp inválido");
                       return;
                     }
                     if (form.cnpj && !isValidCnpj(form.cnpj)) {
@@ -1179,13 +1235,29 @@ function ProfissionalCadastro() {
                       return;
                     }
                   }
-                  if (step === 2 && (!form.cep || !form.endereco || !form.numero || !form.cidade)) {
-                    toast.error("Preencha os campos de endereço");
-                    return;
+                  if (step === 2) {
+                    if (form.cep.replace(/\D/g, "").length !== 8) {
+                      toast.error("CEP inválido");
+                      return;
+                    }
+                    if (!form.endereco.trim() || !form.numero.trim() || !form.bairro.trim() || !form.cidade.trim() || !form.estado.trim()) {
+                      toast.error("Preencha todos os campos de endereço (logradouro, número, bairro, cidade e estado)");
+                      return;
+                    }
                   }
-                  if (step === 3 && (form.especialidades.length === 0 || !form.bio.trim())) {
-                    toast.error("Selecione especialidades e preencha a bio");
-                    return;
+                  if (step === 3) {
+                    if (form.especialidades.length === 0) {
+                      toast.error("Selecione pelo menos uma especialidade");
+                      return;
+                    }
+                    if (form.bio.trim().length < 30) {
+                      toast.error("A mini bio precisa ter pelo menos 30 caracteres");
+                      return;
+                    }
+                    if (form.experiencia_anos === "" || form.experiencia_anos === null || Number(form.experiencia_anos) < 0) {
+                      toast.error("Informe seus anos de experiência");
+                      return;
+                    }
                   }
                   if (
                     step === 4 &&
@@ -1193,7 +1265,7 @@ function ProfissionalCadastro() {
                      (!form.foto_documento_verso && !existingDocVerso) ||
                      (!form.foto_selfie && !existingSelfie))
                   ) {
-                    toast.error("Envie todos os documentos obrigatórios");
+                    toast.error("Envie todos os documentos obrigatórios (frente, verso e selfie)");
                     return;
                   }
                   // Save progress before advancing
