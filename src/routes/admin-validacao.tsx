@@ -46,8 +46,10 @@ type Prestador = {
   data_nascimento: string | null;
   cidade: string | null;
   estado: string | null;
+  cep: string | null;
   endereco: string | null;
   numero: string | null;
+  complemento: string | null;
   bairro: string | null;
   bio: string | null;
   especialidades: string[];
@@ -59,11 +61,14 @@ type Prestador = {
   foto_selfie: string | null;
   aprovacao_status: Status;
   cadastro_submetido_em: string | null;
+  cadastro_retomado_em: string | null;
   aprovado_em: string | null;
   motivo_rejeicao: string | null;
   cadastro_completo?: boolean;
   created_at?: string | null;
+  updated_at?: string | null;
 };
+
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any; desc: string }> = {
   pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock, desc: "Aguardando início da análise" },
