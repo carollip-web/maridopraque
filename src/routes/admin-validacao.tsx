@@ -1363,6 +1363,26 @@ function AdminValidacao() {
               <Input value={emailDialog.to} readOnly className="bg-slate-50" />
             </div>
             <div>
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Template</p>
+              <Select
+                value={emailTemplateSlug}
+                onValueChange={(v) => {
+                  setEmailTemplateSlug(v);
+                  const tpl = templates.find((t) => t.slug === v);
+                  if (tpl && emailDialog) {
+                    setEmailDialog({ ...emailDialog, subject: tpl.assunto || emailDialog.subject });
+                  }
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecionar template" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin_contato">Padrão (admin_contato)</SelectItem>
+                  {templates.filter((t) => t.slug !== "admin_contato").map((t) => (
+                    <SelectItem key={t.slug} value={t.slug}>{t.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            <div>
               <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Assunto</p>
               <Input
                 value={emailDialog.subject}
