@@ -278,6 +278,7 @@ export function AdminEmails() {
                 <th className="px-4 py-3">Evento</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Link</th>
+                <th className="px-4 py-3">Visualizar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
