@@ -736,75 +736,45 @@ function AdminValidacao() {
           </Link>
         </div>
 
-        {/* Stats — organizadas por fluxo: ação necessária → resolvidos */}
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Ação necessária
-          </p>
-          {filterStatus !== "todos" && (
-            <button
-              onClick={() => setFilterStatus("todos")}
-              className="text-xs text-brand hover:underline font-medium"
-            >
-              Limpar filtro
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          {(["pendente", "em_analise"] as const).map((s) => {
-            const cfg = STATUS_CFG[s];
-            const Icon = cfg.icon;
-            const active = filterStatus === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
-                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-4 ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
-              >
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                  <Icon className={`h-5 w-5 ${cfg.text}`} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold">{counts[s]}</p>
-                    <p className="text-sm font-semibold">{cfg.label}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{cfg.desc}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Histórico
-        </p>
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {(["incompleto", "aprovado", "rejeitado"] as const).map((s) => {
-            const cfg = STATUS_CFG[s];
-            const Icon = cfg.icon;
-            const active = filterStatus === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
-                className={`p-3 rounded-2xl border text-left transition-all ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${cfg.bg}`}>
-                    <Icon className={`h-3.5 w-3.5 ${cfg.text}`} />
-                  </div>
-                  <p className="text-xs font-medium text-muted-foreground">{cfg.label}</p>
-                </div>
-                <p className="text-xl font-bold">{counts[s]}</p>
-              </button>
-            );
-          })}
+        {/* Compact sticky tab bar */}
+        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-5 bg-slate-50/85 backdrop-blur border-b border-slate-200">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {(["todos", "em_analise", "pendente", "incompleto", "aprovado", "rejeitado"] as const).map((s) => {
+              const active = filterStatus === s;
+              const label = s === "todos" ? "Todos" : STATUS_CFG[s as Status].label;
+              const n = s === "todos" ? prestadores.length : counts[s as Status];
+              const isAction = s === "em_analise" || s === "pendente";
+              return (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    active
+                      ? "bg-brand text-brand-foreground border-brand shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  {label}
+                  <span
+                    className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold ${
+                      active
+                        ? "bg-white/25 text-white"
+                        : isAction && n > 0
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {n}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid lg:grid-cols-5 gap-6 items-start">
           {/* List */}
-          <div className="lg:col-span-2 space-y-3">
+          <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1 space-y-3">
             <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm flex gap-2">
               <Search className="h-4 w-4 text-muted-foreground self-center ml-1" />
               <input
