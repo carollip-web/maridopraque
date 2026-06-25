@@ -31,7 +31,7 @@ function encodeRFC2822(to: string, subject: string, html: string): string {
     .replace(/=+$/, "");
 }
 
-function renderHtml(titulo: string, mensagem: string, link?: string | null) {
+function renderFallback(titulo: string, mensagem: string, link?: string | null) {
   const cta = link
     ? `<a href="${APP_URL}${link}" style="display:inline-block;background:#FF6B35;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;margin-top:18px">Abrir no Marido pra Quê</a>`
     : "";
@@ -52,6 +52,12 @@ function renderHtml(titulo: string, mensagem: string, link?: string | null) {
     </td></tr>
   </table>
 </body></html>`;
+}
+
+function applyVars(tpl: string, vars: Record<string, string>): string {
+  let out = tpl;
+  for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{{${k}}}`, v);
+  return out.replace(/\{\{[^}]+\}\}/g, "");
 }
 
 export const Route = createFileRoute("/api/public/hooks/send-notification-email")({
