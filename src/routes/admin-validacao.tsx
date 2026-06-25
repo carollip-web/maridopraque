@@ -23,7 +23,13 @@ import {
   UserX,
   Phone,
   Mail,
-} from "lucide-react";
+  Pencil,
+  Upload,
+  X,
+  Save,
+  RotateCcw,
+}  from "lucide-react";
+
 
 export const Route = createFileRoute("/admin-validacao")({
   component: AdminValidacao,
@@ -40,8 +46,10 @@ type Prestador = {
   data_nascimento: string | null;
   cidade: string | null;
   estado: string | null;
+  cep: string | null;
   endereco: string | null;
   numero: string | null;
+  complemento: string | null;
   bairro: string | null;
   bio: string | null;
   especialidades: string[];
@@ -53,11 +61,14 @@ type Prestador = {
   foto_selfie: string | null;
   aprovacao_status: Status;
   cadastro_submetido_em: string | null;
+  cadastro_retomado_em: string | null;
   aprovado_em: string | null;
   motivo_rejeicao: string | null;
   cadastro_completo?: boolean;
   created_at?: string | null;
+  updated_at?: string | null;
 };
+
 
 const STATUS_CFG: Record<Status, { label: string; bg: string; text: string; icon: any; desc: string }> = {
   pendente: { label: "Pendente", bg: "bg-slate-100", text: "text-slate-600", icon: Clock, desc: "Aguardando início da análise" },
@@ -176,6 +187,11 @@ function AdminValidacao() {
   const [search, setSearch] = useState("");
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -229,7 +245,148 @@ function AdminValidacao() {
       setLoadingUrls(false);
     }
     fetchSignedUrls();
+    setEditMode(false);
   }, [selected]);
+
+  const startEdit = () => {
+    if (!selected) return;
+    setEditForm({
+      nome: selected.nome === "—" ? "" : selected.nome ?? "",
+      cpf: selected.cpf ?? "",
+      data_nascimento: selected.data_nascimento ?? "",
+      telefone: selected.telefone ?? "",
+      cep: selected.cep ?? "",
+      endereco: selected.endereco ?? "",
+      numero: selected.numero ?? "",
+      complemento: selected.complemento ?? "",
+      bairro: selected.bairro ?? "",
+      cidade: selected.cidade ?? "",
+      estado: selected.estado ?? "",
+      especialidades: (selected.especialidades ?? []).join(", "),
+      experiencia_anos:
+        selected.experiencia_anos != null ? String(selected.experiencia_anos) : "",
+      bio: selected.bio ?? "",
+      observacoes_cadastro: selected.observacoes_cadastro ?? "",
+    });
+    setEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selected) return;
+    setSavingEdit(true);
+    try {
+      const perfilPayload = {
+        cpf: editForm.cpf || null,
+        data_nascimento: editForm.data_nascimento || null,
+        telefone: editForm.telefone || null,
+        cep: editForm.cep || null,
+        endereco: editForm.endereco || null,
+        numero: editForm.numero || null,
+        complemento: editForm.complemento || null,
+        bairro: editForm.bairro || null,
+        cidade: editForm.cidade || null,
+        estado: editForm.estado || null,
+        especialidades: String(editForm.especialidades || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        experiencia_anos: editForm.experiencia_anos
+          ? Number(editForm.experiencia_anos)
+          : null,
+        bio: editForm.bio || null,
+        observacoes_cadastro: editForm.observacoes_cadastro || null,
+      };
+      const { error: e1 } = await supabase
+        .from("profissional_perfil")
+        .update(perfilPayload)
+        .eq("user_id", selected.user_id);
+      if (e1) throw e1;
+
+      if (editForm.nome) {
+        const { error: e2 } = await supabase
+          .from("profiles")
+          .update({ nome: editForm.nome })
+          .eq("id", selected.user_id);
+        if (e2) throw e2;
+      }
+
+      await logAdminAction(supabase, {
+        acao: "profissional_editado_admin",
+        detalhes: { campos: Object.keys(perfilPayload) },
+        entidadeTipo: "profissional",
+        entidadeId: selected.user_id,
+      });
+
+      toast.success("Dados atualizados");
+      setEditMode(false);
+      // Reflete localmente
+      setSelected({ ...selected, ...perfilPayload, nome: editForm.nome || selected.nome } as Prestador);
+      refresh();
+    } catch (err: any) {
+      toast.error("Erro ao salvar", { description: err?.message });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleUploadDoc = async (
+    field: "foto_documento_frente" | "foto_documento_verso" | "foto_selfie",
+    file: File,
+  ) => {
+    if (!selected) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx. 10MB)");
+      return;
+    }
+    setUploadingField(field);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${field}-admin-${Date.now()}.${ext}`;
+      const path = `${selected.user_id}/${fileName}`;
+      const { error: upErr } = await supabase.storage
+        .from("documentos-profissionais")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage
+        .from("documentos-profissionais")
+        .getPublicUrl(path);
+
+      const updatePayload: Record<string, string> = {};
+      updatePayload[field] = pub.publicUrl;
+      const { error: dbErr } = await supabase
+        .from("profissional_perfil")
+        .update(updatePayload as any)
+        .eq("user_id", selected.user_id);
+
+      if (dbErr) throw dbErr;
+
+      await logAdminAction(supabase, {
+        acao: "profissional_documento_atualizado_admin",
+        detalhes: { campo: field },
+        entidadeTipo: "profissional",
+        entidadeId: selected.user_id,
+      });
+
+      const updated = { ...selected, [field]: pub.publicUrl } as Prestador;
+      setSelected(updated);
+      const signed = await getSignedUrl(pub.publicUrl);
+      setSignedUrls((s) => ({
+        ...s,
+        frente: field === "foto_documento_frente" ? signed : s.frente,
+        verso: field === "foto_documento_verso" ? signed : s.verso,
+        selfie: field === "foto_selfie" ? signed : s.selfie,
+      }));
+      toast.success("Documento atualizado");
+      refresh();
+    } catch (err: any) {
+      toast.error("Erro ao enviar documento", { description: err?.message });
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+
 
   const handleAprovar = async () => {
     if (!selected) return;
@@ -501,11 +658,19 @@ function AdminValidacao() {
                       </p>
                     );
                   })()}
+                  {p.cadastro_retomado_em && (
+                    <p className="text-[10px] mt-2 font-semibold text-amber-700 inline-flex items-center gap-1">
+                      <RotateCcw className="h-3 w-3" />
+                      Retomou em {new Date(p.cadastro_retomado_em).toLocaleDateString("pt-BR")}
+                      {" "}às {new Date(p.cadastro_retomado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  )}
                   {p.cadastro_submetido_em && (
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Enviado em {new Date(p.cadastro_submetido_em).toLocaleDateString("pt-BR")}
                     </p>
                   )}
+
                 </button>
               ))
             )}
@@ -540,80 +705,186 @@ function AdminValidacao() {
                         Iniciar análise
                       </Button>
                     )}
+                    {!editMode ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full text-xs gap-1.5"
+                        onClick={startEdit}
+                      >
+                        <Pencil className="h-3 w-3" /> Editar dados
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          className="rounded-full text-xs gap-1.5 bg-brand text-brand-foreground"
+                          onClick={handleSaveEdit}
+                          disabled={savingEdit}
+                        >
+                          {savingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          Salvar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full text-xs gap-1.5"
+                          onClick={() => setEditMode(false)}
+                          disabled={savingEdit}
+                        >
+                          <X className="h-3 w-3" /> Cancelar
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
+                {/* Atividade do prestador (datas-chave) */}
+                <div className="px-6 py-3 bg-slate-50 border-b border-border flex flex-wrap gap-4 text-xs">
+                  {selected.cadastro_submetido_em && (
+                    <span className="text-slate-600">
+                      <span className="font-semibold">Enviado:</span>{" "}
+                      {new Date(selected.cadastro_submetido_em).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {selected.cadastro_retomado_em && (
+                    <span className="text-amber-700 inline-flex items-center gap-1 font-semibold">
+                      <RotateCcw className="h-3 w-3" />
+                      Retomou em {new Date(selected.cadastro_retomado_em).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {selected.updated_at && (
+                    <span className="text-slate-600">
+                      <span className="font-semibold">Última edição:</span>{" "}
+                      {new Date(selected.updated_at).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {(() => {
+                    const et = computarEtapaParou(selected);
+                    if (!et || selected.aprovacao_status === "aprovado") return null;
+                    return (
+                      <span className="text-orange-700 font-semibold">
+                        Etapa atual: {et.numero}/{et.total} — {et.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+
+
                 <div className="p-6 space-y-6 max-h-[calc(100vh-280px)] overflow-y-auto">
-                  {/* Personal info */}
-                  <Section title="Dados pessoais" icon={User}>
-                    <Grid2>
-                      <Field label="CPF" value={selected.cpf} />
-                      <Field
-                        label="Nascimento"
-                        value={
-                          selected.data_nascimento
-                            ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
-                            : null
-                        }
-                      />
-                      <Field label="Telefone" value={selected.telefone} />
-                      <Field
-                        label="Experiência"
-                        value={
-                          selected.experiencia_anos ? `${selected.experiencia_anos} anos` : null
-                        }
-                      />
-                    </Grid2>
-                  </Section>
+                  {!editMode ? (
+                    <>
+                      {/* Personal info */}
+                      <Section title="Dados pessoais" icon={User}>
+                        <Grid2>
+                          <Field label="CPF" value={selected.cpf} />
+                          <Field
+                            label="Nascimento"
+                            value={
+                              selected.data_nascimento
+                                ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
+                                : null
+                            }
+                          />
+                          <Field label="Telefone" value={selected.telefone} />
+                          <Field
+                            label="Experiência"
+                            value={
+                              selected.experiencia_anos ? `${selected.experiencia_anos} anos` : null
+                            }
+                          />
+                        </Grid2>
+                      </Section>
 
-                  {/* Address */}
-                  <Section title="Endereço" icon={MapPin}>
-                    <Field
-                      label="Endereço completo"
-                      value={[
-                        selected.endereco,
-                        selected.numero,
-                        selected.bairro,
-                        selected.cidade,
-                        selected.estado,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    />
-                  </Section>
+                      {/* Address */}
+                      <Section title="Endereço" icon={MapPin}>
+                        <Field
+                          label="Endereço completo"
+                          value={[
+                            selected.endereco,
+                            selected.numero,
+                            selected.bairro,
+                            selected.cidade,
+                            selected.estado,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        />
+                      </Section>
 
-                  {/* Experience */}
-                  <Section title="Experiência" icon={FileText}>
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {selected.especialidades.map((e) => (
-                        <span
-                          key={e}
-                          className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-medium"
-                        >
-                          {e}
-                        </span>
-                      ))}
-                    </div>
-                    {selected.bio && (
-                      <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-xl p-4">
-                        {selected.bio}
-                      </p>
-                    )}
-                    {selected.observacoes_cadastro && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {selected.observacoes_cadastro}
-                      </p>
-                    )}
-                  </Section>
+                      {/* Experience */}
+                      <Section title="Experiência" icon={FileText}>
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {selected.especialidades.map((e) => (
+                            <span
+                              key={e}
+                              className="text-xs bg-brand/10 text-brand px-2.5 py-1 rounded-full font-medium"
+                            >
+                              {e}
+                            </span>
+                          ))}
+                        </div>
+                        {selected.bio && (
+                          <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-xl p-4">
+                            {selected.bio}
+                          </p>
+                        )}
+                        {selected.observacoes_cadastro && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {selected.observacoes_cadastro}
+                          </p>
+                        )}
+                      </Section>
+                    </>
+                  ) : (
+                    <Section title="Editar dados do prestador" icon={Pencil}>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <EditField label="Nome completo" value={editForm.nome} onChange={(v) => setEditForm({ ...editForm, nome: v })} />
+                        <EditField label="CPF" value={editForm.cpf} onChange={(v) => setEditForm({ ...editForm, cpf: v })} />
+                        <EditField label="Data de nascimento" type="date" value={editForm.data_nascimento} onChange={(v) => setEditForm({ ...editForm, data_nascimento: v })} />
+                        <EditField label="Telefone" value={editForm.telefone} onChange={(v) => setEditForm({ ...editForm, telefone: v })} />
+                        <EditField label="CEP" value={editForm.cep} onChange={(v) => setEditForm({ ...editForm, cep: v })} />
+                        <EditField label="Endereço" value={editForm.endereco} onChange={(v) => setEditForm({ ...editForm, endereco: v })} />
+                        <EditField label="Número" value={editForm.numero} onChange={(v) => setEditForm({ ...editForm, numero: v })} />
+                        <EditField label="Complemento" value={editForm.complemento} onChange={(v) => setEditForm({ ...editForm, complemento: v })} />
+                        <EditField label="Bairro" value={editForm.bairro} onChange={(v) => setEditForm({ ...editForm, bairro: v })} />
+                        <EditField label="Cidade" value={editForm.cidade} onChange={(v) => setEditForm({ ...editForm, cidade: v })} />
+                        <EditField label="Estado (UF)" value={editForm.estado} onChange={(v) => setEditForm({ ...editForm, estado: v })} />
+                        <EditField label="Anos de experiência" type="number" value={editForm.experiencia_anos} onChange={(v) => setEditForm({ ...editForm, experiencia_anos: v })} />
+                      </div>
+                      <div className="mt-3">
+                        <EditField label="Especialidades (separadas por vírgula)" value={editForm.especialidades} onChange={(v) => setEditForm({ ...editForm, especialidades: v })} />
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Bio</p>
+                        <textarea
+                          value={editForm.bio || ""}
+                          onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                          rows={3}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm resize-none"
+                        />
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Observações</p>
+                        <textarea
+                          value={editForm.observacoes_cadastro || ""}
+                          onChange={(e) => setEditForm({ ...editForm, observacoes_cadastro: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm resize-none"
+                        />
+                      </div>
+                    </Section>
+                  )}
+
 
                   {/* Documents */}
                   <Section title="Documentos" icon={FileText}>
                     <div className="grid sm:grid-cols-3 gap-3">
                       {[
-                        { label: "Doc. Frente", url: signedUrls.frente, original: selected.foto_documento_frente },
-                        { label: "Doc. Verso", url: signedUrls.verso, original: selected.foto_documento_verso },
-                        { label: "Selfie", url: signedUrls.selfie, original: selected.foto_selfie },
-                      ].map(({ label, url, original }) => (
+                        { label: "Doc. Frente", field: "foto_documento_frente" as const, url: signedUrls.frente },
+                        { label: "Doc. Verso", field: "foto_documento_verso" as const, url: signedUrls.verso },
+                        { label: "Selfie", field: "foto_selfie" as const, url: signedUrls.selfie },
+                      ].map(({ label, field, url }) => (
                         <div key={label}>
                           <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">
                             {label}
@@ -639,10 +910,33 @@ function AdminValidacao() {
                               <AlertTriangle className="h-4 w-4 text-amber-400" />
                             </div>
                           )}
+                          <label className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-brand cursor-pointer hover:underline">
+                            {uploadingField === field ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" /> Enviando…
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-3 w-3" /> {url ? "Substituir" : "Enviar"}
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              className="hidden"
+                              disabled={uploadingField === field}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleUploadDoc(field, f);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
                         </div>
                       ))}
                     </div>
                   </Section>
+
 
                   {/* Rejection info */}
                   {selected.motivo_rejeicao && (
@@ -805,6 +1099,30 @@ function Field({ label, value }: { label: string; value: string | null | undefin
       <p className="text-sm font-medium mt-0.5">
         {value || <span className="text-muted-foreground">—</span>}
       </p>
+    </div>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string | null | undefined;
+  onChange: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{label}</p>
+      <input
+        type={type}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 rounded-lg border border-border bg-slate-50 text-sm"
+      />
     </div>
   );
 }
