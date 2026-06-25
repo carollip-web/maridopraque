@@ -143,7 +143,7 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
             recipient_email: email,
             status,
             error_message: gwRes.ok ? null : gwBody.slice(0, 500),
-            metadata: { notification_id: notif.id, titulo: notif.titulo },
+            metadata: { notification_id: notif.id, titulo: notif.titulo, html },
           } as any);
 
           if (gwRes.ok) {
