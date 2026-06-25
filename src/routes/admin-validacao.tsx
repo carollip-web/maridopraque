@@ -321,7 +321,7 @@ function AdminValidacao() {
     setEditForm({
       nome: selected.nome === "—" ? "" : selected.nome ?? "",
       cpf: selected.cpf ?? "",
-      data_nascimento: selected.data_nascimento ?? "",
+      data_nascimento: selected.data_nascimento ? String(selected.data_nascimento).slice(0, 10) : "",
       telefone: selected.telefone ?? "",
       cep: selected.cep ?? "",
       endereco: selected.endereco ?? "",
@@ -1008,7 +1008,11 @@ function AdminValidacao() {
                             label="Nascimento"
                             value={
                               selected.data_nascimento
-                                ? new Date(selected.data_nascimento).toLocaleDateString("pt-BR")
+                                ? (() => {
+                                    const s = String(selected.data_nascimento).slice(0, 10);
+                                    const [y, m, d] = s.split("-");
+                                    return y && m && d ? `${d}/${m}/${y}` : s;
+                                  })()
                                 : null
                             }
                           />
