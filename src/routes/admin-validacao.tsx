@@ -745,6 +745,50 @@ function AdminValidacao() {
                 className="flex-1 text-sm bg-transparent outline-none"
               />
             </div>
+            {/* Bulk toolbar */}
+            {filtered.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex items-center justify-between gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allSelected = filtered.every((p) => selectedIds.has(p.user_id));
+                    const next = new Set(selectedIds);
+                    if (allSelected) filtered.forEach((p) => next.delete(p.user_id));
+                    else filtered.forEach((p) => next.add(p.user_id));
+                    setSelectedIds(next);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 px-2 py-1 rounded-lg hover:bg-slate-50"
+                >
+                  {filtered.every((p) => selectedIds.has(p.user_id)) ? (
+                    <CheckSquare className="h-3.5 w-3.5 text-brand" />
+                  ) : (
+                    <Square className="h-3.5 w-3.5" />
+                  )}
+                  Selecionar todos ({filtered.length})
+                </button>
+                <div className="flex items-center gap-2">
+                  {selectedIds.size > 0 && (
+                    <span className="text-xs text-muted-foreground">{selectedIds.size} selecionado(s)</span>
+                  )}
+                  <Button
+                    size="sm"
+                    className="rounded-full text-xs gap-1.5 bg-brand text-brand-foreground"
+                    disabled={selectedIds.size === 0}
+                    onClick={() =>
+                      setBulkDialog({
+                        subject: "",
+                        message:
+                          "Olá {{nome}},\n\nNotamos que seu cadastro está em {{etapa}}.\n\nFaltam: {{campos_faltantes}}\n\nFinalize em: " +
+                          "https://maridopraque.lovable.app/profissional-cadastro\n\nAbraços,\nEquipe Marido pra Quê",
+                      })
+                    }
+                  >
+                    <Send className="h-3 w-3" />
+                    Enviar e-mail em massa
+                  </Button>
+                </div>
+              </div>
+            )}
             {loadingList ? (
               <div className="py-12 text-center">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
@@ -756,11 +800,33 @@ function AdminValidacao() {
               </div>
             ) : (
               filtered.map((p) => (
-                <button
+                <div
                   key={p.user_id}
-                  onClick={() => setSelected(p)}
-                  className={`w-full text-left bg-white rounded-2xl border p-4 transition-all hover:shadow-sm ${selected?.user_id === p.user_id ? "border-brand ring-2 ring-brand/20" : "border-slate-200"}`}
+                  className={`w-full text-left bg-white rounded-2xl border p-4 transition-all hover:shadow-sm flex gap-3 ${selected?.user_id === p.user_id ? "border-brand ring-2 ring-brand/20" : "border-slate-200"}`}
                 >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(selectedIds);
+                      if (next.has(p.user_id)) next.delete(p.user_id);
+                      else next.add(p.user_id);
+                      setSelectedIds(next);
+                    }}
+                    className="shrink-0 mt-0.5"
+                    aria-label="Selecionar"
+                  >
+                    {selectedIds.has(p.user_id) ? (
+                      <CheckSquare className="h-4 w-4 text-brand" />
+                    ) : (
+                      <Square className="h-4 w-4 text-slate-400" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(p)}
+                    className="flex-1 min-w-0 text-left"
+                  >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <p className="font-bold text-sm truncate">{p.nome}</p>
