@@ -123,7 +123,7 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
       recipient_email: data.to,
       status,
       error_message: gwRes.ok ? null : gwBody.slice(0, 500),
-      metadata: { sent_by: userId, subject: data.subject },
+      metadata: { sent_by: userId, subject: data.subject, html },
     } as never);
 
     if (!gwRes.ok) {

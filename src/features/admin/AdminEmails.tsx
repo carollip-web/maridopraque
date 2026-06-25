@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink, FileText, Inbox } from "lucide-react";
+import { Mail, Search, RefreshCw, CheckCircle2, XCircle, Clock, Ban, ExternalLink, FileText, Inbox, Eye, X } from "lucide-react";
 import { AdminEmailTemplates } from "./AdminEmailTemplates";
 
 type LogRow = {
@@ -56,7 +56,14 @@ export function AdminEmails() {
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [previewRow, setPreviewRow] = useState<LogRow | null>(null);
   const PAGE_SIZE = 50;
+
+  const getHtml = (r: LogRow): string | null => {
+    const m = r.metadata as Record<string, unknown> | null;
+    if (m && typeof m.html === "string" && m.html) return m.html;
+    return null;
+  };
 
   const load = async () => {
     setLoading(true);
@@ -271,18 +278,19 @@ export function AdminEmails() {
                 <th className="px-4 py-3">Evento</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Link</th>
+                <th className="px-4 py-3">Visualizar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
                     Carregando...
                   </td>
                 </tr>
               ) : paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
                     Nenhum envio encontrado.
                   </td>
                 </tr>
@@ -318,6 +326,19 @@ export function AdminEmails() {
                           <span className="text-slate-300">—</span>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        {getHtml(r) ? (
+                          <button
+                            onClick={() => setPreviewRow(r)}
+                            className="inline-flex items-center gap-1 text-brand hover:underline text-xs"
+                            title="Visualizar e-mail"
+                          >
+                            <Eye className="h-3 w-3" /> Ver
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -347,9 +368,41 @@ export function AdminEmails() {
                 Próxima
               </button>
             </div>
-          </div>
-        )}
       </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <div className="text-sm font-medium text-slate-900">
+                Visualizar e-mail — {previewRow.recipient_email}
+              </div>
+              <button
+                onClick={() => setPreviewRow(null)}
+                className="p-1 rounded-md hover:bg-slate-100 text-slate-500"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-0">
+              {getHtml(previewRow) ? (
+                <iframe
+                  title="Preview do e-mail"
+                  srcDoc={getHtml(previewRow)!}
+                  className="w-full h-full min-h-[400px] border-0"
+                />
+              ) : (
+                <div className="p-6 text-sm text-slate-500">
+                  Conteúdo do e-mail não disponível para envios anteriores a esta atualização.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
       </>
       )}
     </div>

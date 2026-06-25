@@ -143,7 +143,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
           recipient_email: r.email,
           status,
           error_message: gwRes.ok ? null : gwBody.slice(0, 500),
-          metadata: { sent_by: userId, subject: data.subject, batch_id: batchId, index: i },
+          metadata: { sent_by: userId, subject: data.subject, batch_id: batchId, index: i, html },
         } as never);
       } catch (e: any) {
         failed++;
@@ -153,7 +153,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
           recipient_email: r.email,
           status: "failed",
           error_message: String(e?.message || e).slice(0, 500),
-          metadata: { sent_by: userId, subject: data.subject, batch_id: batchId, index: i },
+          metadata: { sent_by: userId, subject: data.subject, batch_id: batchId, index: i, html },
         } as never);
       }
 
