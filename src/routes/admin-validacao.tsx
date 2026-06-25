@@ -240,6 +240,17 @@ function AdminValidacao() {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user, navigate]);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("email_templates")
+        .select("slug, nome, assunto, ativo")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+      setTemplates((data ?? []) as any);
+    })();
+  }, []);
+
   const refresh = async () => {
     setLoadingList(true);
     const { data: perfis } = await supabase
