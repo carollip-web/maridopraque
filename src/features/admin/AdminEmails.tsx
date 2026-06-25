@@ -56,7 +56,14 @@ export function AdminEmails() {
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [previewRow, setPreviewRow] = useState<LogRow | null>(null);
   const PAGE_SIZE = 50;
+
+  const getHtml = (r: LogRow): string | null => {
+    const m = r.metadata as Record<string, unknown> | null;
+    if (m && typeof m.html === "string" && m.html) return m.html;
+    return null;
+  };
 
   const load = async () => {
     setLoading(true);
