@@ -67,6 +67,9 @@ type Prestador = {
   cadastro_completo?: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+  aguardando_reenvio_admin?: boolean;
+  bloqueado_em?: string | null;
+  bloqueado_por?: string | null;
 };
 
 
