@@ -245,7 +245,145 @@ function AdminValidacao() {
       setLoadingUrls(false);
     }
     fetchSignedUrls();
+    setEditMode(false);
   }, [selected]);
+
+  const startEdit = () => {
+    if (!selected) return;
+    setEditForm({
+      nome: selected.nome === "—" ? "" : selected.nome ?? "",
+      cpf: selected.cpf ?? "",
+      data_nascimento: selected.data_nascimento ?? "",
+      telefone: selected.telefone ?? "",
+      cep: selected.cep ?? "",
+      endereco: selected.endereco ?? "",
+      numero: selected.numero ?? "",
+      complemento: selected.complemento ?? "",
+      bairro: selected.bairro ?? "",
+      cidade: selected.cidade ?? "",
+      estado: selected.estado ?? "",
+      especialidades: (selected.especialidades ?? []).join(", "),
+      experiencia_anos:
+        selected.experiencia_anos != null ? String(selected.experiencia_anos) : "",
+      bio: selected.bio ?? "",
+      observacoes_cadastro: selected.observacoes_cadastro ?? "",
+    });
+    setEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selected) return;
+    setSavingEdit(true);
+    try {
+      const perfilPayload = {
+        cpf: editForm.cpf || null,
+        data_nascimento: editForm.data_nascimento || null,
+        telefone: editForm.telefone || null,
+        cep: editForm.cep || null,
+        endereco: editForm.endereco || null,
+        numero: editForm.numero || null,
+        complemento: editForm.complemento || null,
+        bairro: editForm.bairro || null,
+        cidade: editForm.cidade || null,
+        estado: editForm.estado || null,
+        especialidades: String(editForm.especialidades || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        experiencia_anos: editForm.experiencia_anos
+          ? Number(editForm.experiencia_anos)
+          : null,
+        bio: editForm.bio || null,
+        observacoes_cadastro: editForm.observacoes_cadastro || null,
+      };
+      const { error: e1 } = await supabase
+        .from("profissional_perfil")
+        .update(perfilPayload)
+        .eq("user_id", selected.user_id);
+      if (e1) throw e1;
+
+      if (editForm.nome) {
+        const { error: e2 } = await supabase
+          .from("profiles")
+          .update({ nome: editForm.nome })
+          .eq("id", selected.user_id);
+        if (e2) throw e2;
+      }
+
+      await logAdminAction(supabase, {
+        acao: "profissional_editado_admin",
+        detalhes: { campos: Object.keys(perfilPayload) },
+        entidadeTipo: "profissional",
+        entidadeId: selected.user_id,
+      });
+
+      toast.success("Dados atualizados");
+      setEditMode(false);
+      // Reflete localmente
+      setSelected({ ...selected, ...perfilPayload, nome: editForm.nome || selected.nome } as Prestador);
+      refresh();
+    } catch (err: any) {
+      toast.error("Erro ao salvar", { description: err?.message });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleUploadDoc = async (
+    field: "foto_documento_frente" | "foto_documento_verso" | "foto_selfie",
+    file: File,
+  ) => {
+    if (!selected) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx. 10MB)");
+      return;
+    }
+    setUploadingField(field);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const fileName = `${field}-admin-${Date.now()}.${ext}`;
+      const path = `${selected.user_id}/${fileName}`;
+      const { error: upErr } = await supabase.storage
+        .from("documentos-profissionais")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage
+        .from("documentos-profissionais")
+        .getPublicUrl(path);
+
+      const { error: dbErr } = await supabase
+        .from("profissional_perfil")
+        .update({ [field]: pub.publicUrl })
+        .eq("user_id", selected.user_id);
+      if (dbErr) throw dbErr;
+
+      await logAdminAction(supabase, {
+        acao: "profissional_documento_atualizado_admin",
+        detalhes: { campo: field },
+        entidadeTipo: "profissional",
+        entidadeId: selected.user_id,
+      });
+
+      const updated = { ...selected, [field]: pub.publicUrl } as Prestador;
+      setSelected(updated);
+      const signed = await getSignedUrl(pub.publicUrl);
+      setSignedUrls((s) => ({
+        ...s,
+        frente: field === "foto_documento_frente" ? signed : s.frente,
+        verso: field === "foto_documento_verso" ? signed : s.verso,
+        selfie: field === "foto_selfie" ? signed : s.selfie,
+      }));
+      toast.success("Documento atualizado");
+      refresh();
+    } catch (err: any) {
+      toast.error("Erro ao enviar documento", { description: err?.message });
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
+
 
   const handleAprovar = async () => {
     if (!selected) return;
