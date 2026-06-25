@@ -1451,6 +1451,28 @@ function AdminValidacao() {
                 </p>
               </div>
               <div>
+                <p className="text-xs font-semibold mb-1">Template</p>
+                <Select
+                  value={bulkDialog.template_slug || "admin_contato"}
+                  onValueChange={(v) => {
+                    const tpl = templates.find((t) => t.slug === v);
+                    setBulkDialog({
+                      ...bulkDialog,
+                      template_slug: v,
+                      subject: tpl?.assunto || bulkDialog.subject,
+                    });
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecionar template" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin_contato">Padrão (admin_contato)</SelectItem>
+                    {templates.filter((t) => t.slug !== "admin_contato").map((t) => (
+                      <SelectItem key={t.slug} value={t.slug}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <p className="text-xs font-semibold mb-1">Assunto</p>
                 <Input
                   value={bulkDialog.subject}
