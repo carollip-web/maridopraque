@@ -50,10 +50,18 @@ import {
   Send,
   CheckSquare,
   Square,
+  ArrowUpDown,
 }  from "lucide-react";
 
 
 export const Route = createFileRoute("/admin-validacao")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (typeof search.tab === "string" ? search.tab : undefined) as
+      | "todos" | "pendente" | "em_analise" | "incompleto" | "aprovado" | "rejeitado" | undefined,
+    id: typeof search.id === "string" ? (search.id as string) : undefined,
+    sort: (typeof search.sort === "string" ? search.sort : undefined) as
+      | "recente" | "nome" | "etapa" | undefined,
+  }),
   component: AdminValidacao,
 });
 
@@ -208,8 +216,14 @@ function AdminValidacao() {
   const [selected, setSelected] = useState<Prestador | null>(null);
   const [signedUrls, setSignedUrls] = useState<{ frente: string | null; verso: string | null; selfie: string | null }>({ frente: null, verso: null, selfie: null });
   const [loadingUrls, setLoadingUrls] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<Status | "todos">("em_analise");
+  const searchParams = Route.useSearch();
+  const [filterStatus, setFilterStatus] = useState<Status | "todos">(
+    (searchParams.tab as any) ?? "em_analise",
+  );
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"recente" | "nome" | "etapa">(
+    (searchParams.sort as any) ?? "recente",
+  );
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -629,16 +643,28 @@ function AdminValidacao() {
     refresh();
   };
 
-  const filtered = prestadores.filter((p) => {
-    if (filterStatus !== "todos" && p.aprovacao_status !== filterStatus) return false;
-    if (
-      search &&
-      !p.nome.toLowerCase().includes(search.toLowerCase()) &&
-      !p.email.toLowerCase().includes(search.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  const filtered = prestadores
+    .filter((p) => {
+      if (filterStatus !== "todos" && p.aprovacao_status !== filterStatus) return false;
+      if (
+        search &&
+        !p.nome.toLowerCase().includes(search.toLowerCase()) &&
+        !p.email.toLowerCase().includes(search.toLowerCase())
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "nome") return (a.nome ?? "").localeCompare(b.nome ?? "");
+      if (sortBy === "etapa") {
+        const ea = computarEtapaParou(a)?.numero ?? 999;
+        const eb = computarEtapaParou(b)?.numero ?? 999;
+        if (ea !== eb) return ea - eb;
+      }
+      const ta = new Date(a.updated_at ?? a.cadastro_submetido_em ?? 0).getTime();
+      const tb = new Date(b.updated_at ?? b.cadastro_submetido_em ?? 0).getTime();
+      return tb - ta;
+    });
 
   const counts = {
     em_analise: prestadores.filter((p) => p.aprovacao_status === "em_analise").length,
@@ -647,6 +673,28 @@ function AdminValidacao() {
     rejeitado: prestadores.filter((p) => p.aprovacao_status === "rejeitado").length,
     pendente: prestadores.filter((p) => p.aprovacao_status === "pendente").length,
   };
+
+  // Sync URL <-> state (tab, sort, id)
+  useEffect(() => {
+    navigate({
+      to: "/admin-validacao",
+      search: {
+        tab: filterStatus === "em_analise" ? undefined : filterStatus,
+        sort: sortBy === "recente" ? undefined : sortBy,
+        id: selected?.user_id,
+      },
+      replace: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus, sortBy, selected?.user_id]);
+
+  // Pre-select prestador from URL once list loads
+  useEffect(() => {
+    if (selected || !searchParams.id || prestadores.length === 0) return;
+    const found = prestadores.find((p) => p.user_id === searchParams.id);
+    if (found) setSelected(found as Prestador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prestadores, searchParams.id]);
 
   if (loading)
     return (
@@ -688,84 +736,72 @@ function AdminValidacao() {
           </Link>
         </div>
 
-        {/* Stats — organizadas por fluxo: ação necessária → resolvidos */}
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Ação necessária
-          </p>
-          {filterStatus !== "todos" && (
-            <button
-              onClick={() => setFilterStatus("todos")}
-              className="text-xs text-brand hover:underline font-medium"
-            >
-              Limpar filtro
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          {(["pendente", "em_analise"] as const).map((s) => {
-            const cfg = STATUS_CFG[s];
-            const Icon = cfg.icon;
-            const active = filterStatus === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
-                className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-4 ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
-              >
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                  <Icon className={`h-5 w-5 ${cfg.text}`} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold">{counts[s]}</p>
-                    <p className="text-sm font-semibold">{cfg.label}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{cfg.desc}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-          Histórico
-        </p>
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {(["incompleto", "aprovado", "rejeitado"] as const).map((s) => {
-            const cfg = STATUS_CFG[s];
-            const Icon = cfg.icon;
-            const active = filterStatus === s;
-            return (
-              <button
-                key={s}
-                onClick={() => setFilterStatus(s === filterStatus ? "todos" : s)}
-                className={`p-3 rounded-2xl border text-left transition-all ${active ? "border-brand ring-2 ring-brand/20 bg-white" : "border-slate-200 bg-white hover:border-slate-300"}`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${cfg.bg}`}>
-                    <Icon className={`h-3.5 w-3.5 ${cfg.text}`} />
-                  </div>
-                  <p className="text-xs font-medium text-muted-foreground">{cfg.label}</p>
-                </div>
-                <p className="text-xl font-bold">{counts[s]}</p>
-              </button>
-            );
-          })}
+        {/* Compact sticky tab bar */}
+        <div className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-5 bg-slate-50/85 backdrop-blur border-b border-slate-200">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {(["todos", "em_analise", "pendente", "incompleto", "aprovado", "rejeitado"] as const).map((s) => {
+              const active = filterStatus === s;
+              const label = s === "todos" ? "Todos" : STATUS_CFG[s as Status].label;
+              const n = s === "todos" ? prestadores.length : counts[s as Status];
+              const isAction = s === "em_analise" || s === "pendente";
+              return (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    active
+                      ? "bg-brand text-brand-foreground border-brand shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  {label}
+                  <span
+                    className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold ${
+                      active
+                        ? "bg-white/25 text-white"
+                        : isAction && n > 0
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {n}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid lg:grid-cols-5 gap-6 items-start">
           {/* List */}
-          <div className="lg:col-span-2 space-y-3">
-            <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm flex gap-2">
-              <Search className="h-4 w-4 text-muted-foreground self-center ml-1" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar prestador..."
-                className="flex-1 text-sm bg-transparent outline-none"
-              />
+          <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1 space-y-3">
+            <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 px-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar prestador..."
+                  className="flex-1 text-sm bg-transparent outline-none py-1"
+                />
+              </div>
+              <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="text-xs bg-transparent outline-none font-medium text-slate-700 pr-1"
+                  aria-label="Ordenar"
+                >
+                  <option value="recente">Mais recentes</option>
+                  <option value="nome">Nome (A–Z)</option>
+                  <option value="etapa">Etapa</option>
+                </select>
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground px-1">
+              {filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}
+            </p>
             {/* Bulk toolbar */}
             {filtered.length > 0 && (
               <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm flex items-center justify-between gap-2 flex-wrap">
@@ -899,7 +935,7 @@ function AdminValidacao() {
           </div>
 
           {/* Detail */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             {!selected ? (
               <div className="py-24 text-center bg-white rounded-2xl border border-dashed border-slate-300">
                 <Shield className="h-10 w-10 text-slate-300 mx-auto mb-3" />
@@ -910,7 +946,7 @@ function AdminValidacao() {
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Detail header */}
-                <div className="px-6 py-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
+                <div className="sticky top-0 z-10 bg-white px-6 py-4 border-b border-border flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-xl font-bold">{selected.nome}</h2>
                     <p className="text-sm text-muted-foreground">{selected.email}</p>
