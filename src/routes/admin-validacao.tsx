@@ -1392,6 +1392,120 @@ function AdminValidacao() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Bulk email dialog */}
+    <Dialog open={!!bulkDialog} onOpenChange={(o) => !o && setBulkDialog(null)}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Enviar e-mail em massa</DialogTitle>
+        </DialogHeader>
+        {bulkDialog && (() => {
+          const recipients = prestadores.filter((p) => selectedIds.has(p.user_id) && p.email && p.email !== "—");
+          return (
+            <div className="space-y-3">
+              <div className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="font-semibold mb-1">{recipients.length} destinatário(s)</p>
+                <p className="text-muted-foreground">
+                  Um e-mail individual será enviado para cada um (não aparece como lista). Throttle ~1,5/s.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold mb-1">Assunto</p>
+                <Input
+                  value={bulkDialog.subject}
+                  onChange={(e) => setBulkDialog({ ...bulkDialog, subject: e.target.value })}
+                  placeholder="Ex: Falta pouco para concluir seu cadastro"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-semibold">Mensagem</p>
+                  <div className="flex gap-1 flex-wrap">
+                    {["{{nome}}", "{{etapa}}", "{{campos_faltantes}}"].map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() =>
+                          setBulkDialog({ ...bulkDialog, message: (bulkDialog.message || "") + " " + v })
+                        }
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 font-mono"
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Textarea
+                  rows={10}
+                  value={bulkDialog.message}
+                  onChange={(e) => setBulkDialog({ ...bulkDialog, message: e.target.value })}
+                />
+              </div>
+            </div>
+          );
+        })()}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setBulkDialog(null)} disabled={sendingBulk}>
+            Cancelar
+          </Button>
+          <Button
+            className="bg-brand text-brand-foreground"
+            disabled={
+              sendingBulk ||
+              !bulkDialog?.subject.trim() ||
+              !bulkDialog?.message.trim() ||
+              selectedIds.size === 0
+            }
+            onClick={async () => {
+              if (!bulkDialog) return;
+              const recipients = prestadores
+                .filter((p) => selectedIds.has(p.user_id) && p.email && p.email !== "—")
+                .map((p) => {
+                  const et = computarEtapaParou(p);
+                  return {
+                    email: p.email,
+                    nome: p.nome || "",
+                    etapa: et ? `${et.numero}/${et.total} — ${et.label}` : "—",
+                    campos_faltantes: et ? et.faltando.join(", ") : "—",
+                  };
+                });
+              if (recipients.length === 0) {
+                toast.error("Nenhum destinatário válido");
+                return;
+              }
+              if (recipients.length > 20) {
+                if (!confirm(`Enviar para ${recipients.length} destinatários?`)) return;
+              }
+              setSendingBulk(true);
+              try {
+                const res = await sendBulkEmail({
+                  data: {
+                    subject: bulkDialog.subject,
+                    message: bulkDialog.message,
+                    recipients,
+                  },
+                });
+                if (res?.ok) {
+                  toast.success(`${res.sent} enviado(s)`, {
+                    description: res.failed > 0 ? `${res.failed} falha(s)` : undefined,
+                  });
+                  setBulkDialog(null);
+                  setSelectedIds(new Set());
+                } else {
+                  toast.error(res?.error || "Falha ao enviar");
+                }
+              } catch (e: unknown) {
+                toast.error(e instanceof Error ? e.message : "Falha ao enviar");
+              } finally {
+                setSendingBulk(false);
+              }
+            }}
+          >
+            {sendingBulk ? <Loader2 className="h-4 w-4 animate-spin" /> : `Enviar para ${selectedIds.size}`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
