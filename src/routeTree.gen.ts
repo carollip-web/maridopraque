@@ -43,6 +43,7 @@ import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as AdminMpTesteRouteImport } from './routes/admin.mp-teste'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksSendNotificationEmailRouteImport } from './routes/api.public.hooks.send-notification-email'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -215,6 +216,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendNotificationEmailRoute =
+  ApiPublicHooksSendNotificationEmailRouteImport.update({
+    id: '/api/public/hooks/send-notification-email',
+    path: '/api/public/hooks/send-notification-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
@@ -286,6 +294,7 @@ export interface FileRoutesByTo {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
@@ -323,6 +332,7 @@ export interface FileRoutesById {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/api/public/hooks/send-notification-email': typeof ApiPublicHooksSendNotificationEmailRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/api/public/hooks/send-notification-email'
     | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/api/public/hooks/send-notification-email'
     | '/lovable/email/queue/process'
   id:
     | '__root__'
@@ -433,6 +445,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/api/public/hooks/send-notification-email'
     | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
@@ -467,6 +480,7 @@ export interface RootRouteChildren {
   AuthRedirectRoute: typeof AuthRedirectRoute
   LoginProfissionalRoute: typeof LoginProfissionalRoute
   MpCallbackRoute: typeof MpCallbackRoute
+  ApiPublicHooksSendNotificationEmailRoute: typeof ApiPublicHooksSendNotificationEmailRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -710,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-notification-email': {
+      id: '/api/public/hooks/send-notification-email'
+      path: '/api/public/hooks/send-notification-email'
+      fullPath: '/api/public/hooks/send-notification-email'
+      preLoaderRoute: typeof ApiPublicHooksSendNotificationEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -778,17 +799,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRedirectRoute: AuthRedirectRoute,
   LoginProfissionalRoute: LoginProfissionalRoute,
   MpCallbackRoute: MpCallbackRoute,
+  ApiPublicHooksSendNotificationEmailRoute:
+    ApiPublicHooksSendNotificationEmailRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
