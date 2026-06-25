@@ -436,6 +436,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          assunto: string
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          html: string
+          id: string
+          nome: string
+          slug: string
+          updated_at: string
+          updated_by: string | null
+          variaveis: Json
+        }
+        Insert: {
+          assunto: string
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          html: string
+          id?: string
+          nome: string
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+          variaveis?: Json
+        }
+        Update: {
+          assunto?: string
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          html?: string
+          id?: string
+          nome?: string
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+          variaveis?: Json
+        }
+        Relationships: []
+      }
       email_unsubscribe_tokens: {
         Row: {
           created_at: string
