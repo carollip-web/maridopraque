@@ -345,7 +345,7 @@ function ProfissionalCadastro() {
           }));
 
           // Compute first incomplete step to resume from
-          const hasStep1 = !!((profile?.nome || perfil.cpf) && (perfil.telefone || profile?.whatsapp));
+          const hasStep1 = !!(perfil.cpf && perfil.data_nascimento && perfil.telefone);
           const hasStep2 = !!(perfil.cep && perfil.endereco && perfil.cidade);
           const hasStep3 = !!((perfil.especialidades as string[] | null)?.length && perfil.bio);
           const hasStep4 = !!(perfil.foto_documento_frente && perfil.foto_documento_verso && perfil.foto_selfie);
