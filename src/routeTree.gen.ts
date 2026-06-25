@@ -42,6 +42,7 @@ import { Route as LoginProfissionalRouteImport } from './routes/login_.profissio
 import { Route as AuthRedirectRouteImport } from './routes/auth.redirect'
 import { Route as AdminMpTesteRouteImport } from './routes/admin.mp-teste'
 import { Route as ProfissionaisPerfilSlugRouteImport } from './routes/profissionais.perfil.$slug'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
@@ -208,6 +209,12 @@ const ProfissionaisPerfilSlugRoute = ProfissionaisPerfilSlugRouteImport.update({
   path: '/perfil/$slug',
   getParentRoute: () => ProfissionaisRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -278,6 +286,7 @@ export interface FileRoutesByTo {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -314,6 +323,7 @@ export interface FileRoutesById {
   '/mp/callback': typeof MpCallbackRoute
   '/servicos/$categoria': typeof ServicosCategoriaRoute
   '/profissionais/perfil/$slug': typeof ProfissionaisPerfilSlugRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -421,6 +433,7 @@ export interface FileRouteTypes {
     | '/mp/callback'
     | '/servicos/$categoria'
     | '/profissionais/perfil/$slug'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -454,6 +467,7 @@ export interface RootRouteChildren {
   AuthRedirectRoute: typeof AuthRedirectRoute
   LoginProfissionalRoute: typeof LoginProfissionalRoute
   MpCallbackRoute: typeof MpCallbackRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -689,6 +703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfissionaisPerfilSlugRouteImport
       parentRoute: typeof ProfissionaisRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -757,6 +778,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRedirectRoute: AuthRedirectRoute,
   LoginProfissionalRoute: LoginProfissionalRoute,
   MpCallbackRoute: MpCallbackRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
