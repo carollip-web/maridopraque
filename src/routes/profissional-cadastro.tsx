@@ -158,6 +158,32 @@ function isValidCnpj(v: string) {
   return d1 === parseInt(c[12], 10) && d2 === parseInt(c[13], 10);
 }
 
+function isValidCpf(v: string) {
+  const c = v.replace(/\D/g, "");
+  if (c.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(c)) return false;
+  const calc = (base: string, fator: number) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * (fator - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  const d1 = calc(c.slice(0, 9), 10);
+  const d2 = calc(c.slice(0, 10), 11);
+  return d1 === parseInt(c[9], 10) && d2 === parseInt(c[10], 10);
+}
+
+function isAdult(dateStr: string) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return false;
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+  return age >= 18 && age <= 100;
+}
+
 function fmtPhone(v: string) {
   return v
     .replace(/\D/g, "")
