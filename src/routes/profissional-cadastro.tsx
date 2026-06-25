@@ -525,6 +525,24 @@ function ProfissionalCadastro() {
 
   const handleSubmit = async () => {
     if (!user) return;
+    // Final guard — bloqueia envio com qualquer campo obrigatório faltando
+    const missing: string[] = [];
+    if (!form.nome.trim() || form.nome.trim().split(/\s+/).length < 2) missing.push("nome completo");
+    if (!isValidCpf(form.cpf)) missing.push("CPF válido");
+    if (!form.data_nascimento || !isAdult(form.data_nascimento)) missing.push("data de nascimento");
+    if (form.telefone.replace(/\D/g, "").length < 10) missing.push("telefone");
+    if (form.cep.replace(/\D/g, "").length !== 8) missing.push("CEP");
+    if (!form.endereco.trim() || !form.numero.trim() || !form.bairro.trim() || !form.cidade.trim() || !form.estado.trim()) missing.push("endereço completo");
+    if (form.especialidades.length === 0) missing.push("especialidades");
+    if (form.bio.trim().length < 30) missing.push("mini bio (mín. 30 caracteres)");
+    if (form.experiencia_anos === "" || form.experiencia_anos === null) missing.push("anos de experiência");
+    if ((!form.foto_documento_frente && !existingDocFrente) ||
+        (!form.foto_documento_verso && !existingDocVerso) ||
+        (!form.foto_selfie && !existingSelfie)) missing.push("documentos (frente, verso e selfie)");
+    if (missing.length > 0) {
+      toast.error("Cadastro incompleto", { description: `Faltam: ${missing.join(", ")}` });
+      return;
+    }
     setSaving(true);
     try {
       // Documents should already be uploaded by step 4 save.
