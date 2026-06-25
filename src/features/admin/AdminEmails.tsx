@@ -326,6 +326,19 @@ export function AdminEmails() {
                           <span className="text-slate-300">—</span>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        {getHtml(r) ? (
+                          <button
+                            onClick={() => setPreviewRow(r)}
+                            className="inline-flex items-center gap-1 text-brand hover:underline text-xs"
+                            title="Visualizar e-mail"
+                          >
+                            <Eye className="h-3 w-3" /> Ver
+                          </button>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
