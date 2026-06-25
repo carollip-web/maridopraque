@@ -1529,6 +1529,8 @@ export type Database = {
           bairro: string | null
           bio: string | null
           cadastro_completo: boolean
+          cadastro_retomadas_count: number
+          cadastro_retomado_em: string | null
           cadastro_submetido_em: string | null
           cep: string | null
           chave_pix: string | null
@@ -1591,6 +1593,8 @@ export type Database = {
           bairro?: string | null
           bio?: string | null
           cadastro_completo?: boolean
+          cadastro_retomadas_count?: number
+          cadastro_retomado_em?: string | null
           cadastro_submetido_em?: string | null
           cep?: string | null
           chave_pix?: string | null
@@ -1653,6 +1657,8 @@ export type Database = {
           bairro?: string | null
           bio?: string | null
           cadastro_completo?: boolean
+          cadastro_retomadas_count?: number
+          cadastro_retomado_em?: string | null
           cadastro_submetido_em?: string | null
           cep?: string | null
           chave_pix?: string | null
