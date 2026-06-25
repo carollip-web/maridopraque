@@ -194,6 +194,15 @@ function AdminValidacao() {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [alteracoes, setAlteracoes] = useState<Array<{
+    id: string;
+    campo: string;
+    valor_antigo: string | null;
+    valor_novo: string | null;
+    alterado_por_role: string | null;
+    origem: string;
+    created_at: string;
+  }>>([]);
 
 
   useEffect(() => {
