@@ -485,12 +485,17 @@ function ParaProfissionaisPage() {
               <input
                 required
                 type="password"
-                minLength={6}
+                minLength={8}
                 className="input-field"
-                placeholder="No mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={preCadForm.senha}
                 onChange={(e) => setPreCadForm({ ...preCadForm, senha: e.target.value })}
               />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Use no mínimo <strong>8 caracteres</strong>, combinando letras maiúsculas e
+                minúsculas, números e símbolos (ex.: <code>!@#$</code>). Evite sequências
+                (123456), datas de nascimento e palavras óbvias como seu nome ou "senha".
+              </p>
             </div>
             <Button
               type="submit"
