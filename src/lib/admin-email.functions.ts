@@ -68,6 +68,7 @@ const schema = z.object({
   to: z.string().email(),
   subject: z.string().trim().min(1).max(200),
   message: z.string().trim().min(1).max(5000),
+  template_slug: z.string().trim().min(1).max(80).optional(),
 });
 
 export const enviarEmailAdmin = createServerFn({ method: "POST" })
