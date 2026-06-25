@@ -705,8 +705,71 @@ function AdminValidacao() {
                         Iniciar análise
                       </Button>
                     )}
+                    {!editMode ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full text-xs gap-1.5"
+                        onClick={startEdit}
+                      >
+                        <Pencil className="h-3 w-3" /> Editar dados
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          className="rounded-full text-xs gap-1.5 bg-brand text-brand-foreground"
+                          onClick={handleSaveEdit}
+                          disabled={savingEdit}
+                        >
+                          {savingEdit ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          Salvar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-full text-xs gap-1.5"
+                          onClick={() => setEditMode(false)}
+                          disabled={savingEdit}
+                        >
+                          <X className="h-3 w-3" /> Cancelar
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
+
+                {/* Atividade do prestador (datas-chave) */}
+                <div className="px-6 py-3 bg-slate-50 border-b border-border flex flex-wrap gap-4 text-xs">
+                  {selected.cadastro_submetido_em && (
+                    <span className="text-slate-600">
+                      <span className="font-semibold">Enviado:</span>{" "}
+                      {new Date(selected.cadastro_submetido_em).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {selected.cadastro_retomado_em && (
+                    <span className="text-amber-700 inline-flex items-center gap-1 font-semibold">
+                      <RotateCcw className="h-3 w-3" />
+                      Retomou em {new Date(selected.cadastro_retomado_em).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {selected.updated_at && (
+                    <span className="text-slate-600">
+                      <span className="font-semibold">Última edição:</span>{" "}
+                      {new Date(selected.updated_at).toLocaleString("pt-BR")}
+                    </span>
+                  )}
+                  {(() => {
+                    const et = computarEtapaParou(selected);
+                    if (!et || selected.aprovacao_status === "aprovado") return null;
+                    return (
+                      <span className="text-orange-700 font-semibold">
+                        Etapa atual: {et.numero}/{et.total} — {et.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+
 
                 <div className="p-6 space-y-6 max-h-[calc(100vh-280px)] overflow-y-auto">
                   {/* Personal info */}
