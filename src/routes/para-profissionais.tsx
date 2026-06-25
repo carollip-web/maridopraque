@@ -110,7 +110,21 @@ function ParaProfissionaisPage() {
         toast.info("Confirme seu e-mail e depois faça login.");
       }
     } catch (err: any) {
-      toast.error("Erro ao enviar pré-cadastro", { description: err.message });
+      const raw = String(err?.message ?? "");
+      let description = raw;
+      if (/known to be weak|pwned|compromised|weak.*password|easy to guess/i.test(raw)) {
+        description =
+          "Esta senha é muito comum e fácil de adivinhar. Crie uma senha mais forte: use no mínimo 8 caracteres, combinando letras maiúsculas e minúsculas, números e símbolos (ex.: !@#$). Evite sequências (123456), datas de nascimento e palavras óbvias como 'senha' ou seu nome.";
+      } else if (/password should be at least|password.*short|min.*length/i.test(raw)) {
+        description = "A senha precisa ter no mínimo 8 caracteres.";
+      } else if (/already registered|already exists|user.*exists/i.test(raw)) {
+        description = "Este e-mail já está cadastrado. Faça login ou use outro e-mail.";
+      } else if (/invalid email/i.test(raw)) {
+        description = "E-mail inválido. Confira o endereço digitado.";
+      } else if (/rate limit|too many/i.test(raw)) {
+        description = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+      }
+      toast.error("Erro ao criar conta", { description });
     } finally {
       setPreCadLoading(false);
     }
