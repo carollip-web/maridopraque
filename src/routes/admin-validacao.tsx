@@ -67,6 +67,9 @@ type Prestador = {
   cadastro_completo?: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+  aguardando_reenvio_admin?: boolean;
+  bloqueado_em?: string | null;
+  bloqueado_por?: string | null;
 };
 
 
@@ -191,6 +194,15 @@ function AdminValidacao() {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [alteracoes, setAlteracoes] = useState<Array<{
+    id: string;
+    campo: string;
+    valor_antigo: string | null;
+    valor_novo: string | null;
+    alterado_por_role: string | null;
+    origem: string;
+    created_at: string;
+  }>>([]);
 
 
   useEffect(() => {
@@ -246,6 +258,20 @@ function AdminValidacao() {
     }
     fetchSignedUrls();
     setEditMode(false);
+    // Carrega histórico de alterações
+    (async () => {
+      if (!selected) {
+        setAlteracoes([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("profissional_perfil_alteracoes")
+        .select("id, campo, valor_antigo, valor_novo, alterado_por_role, origem, created_at")
+        .eq("profissional_user_id", selected.user_id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      setAlteracoes((data as any) ?? []);
+    })();
   }, [selected]);
 
   const startEdit = () => {
@@ -271,11 +297,34 @@ function AdminValidacao() {
     setEditMode(true);
   };
 
+  const FIELD_LABELS: Record<string, string> = {
+    nome: "Nome",
+    cpf: "CPF",
+    data_nascimento: "Data de nascimento",
+    telefone: "Telefone",
+    cep: "CEP",
+    endereco: "Endereço",
+    numero: "Número",
+    complemento: "Complemento",
+    bairro: "Bairro",
+    cidade: "Cidade",
+    estado: "Estado",
+    especialidades: "Especialidades",
+    experiencia_anos: "Anos de experiência",
+    bio: "Biografia",
+    observacoes_cadastro: "Observações",
+  };
+
   const handleSaveEdit = async () => {
-    if (!selected) return;
+    if (!selected || !user) return;
     setSavingEdit(true);
     try {
-      const perfilPayload = {
+      const novosEspecialidades = String(editForm.especialidades || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const perfilPayload: Record<string, any> = {
         cpf: editForm.cpf || null,
         data_nascimento: editForm.data_nascimento || null,
         telefone: editForm.telefone || null,
@@ -286,19 +335,43 @@ function AdminValidacao() {
         bairro: editForm.bairro || null,
         cidade: editForm.cidade || null,
         estado: editForm.estado || null,
-        especialidades: String(editForm.especialidades || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        especialidades: novosEspecialidades,
         experiencia_anos: editForm.experiencia_anos
           ? Number(editForm.experiencia_anos)
           : null,
         bio: editForm.bio || null,
         observacoes_cadastro: editForm.observacoes_cadastro || null,
       };
+
+      // Diff campo a campo
+      const formatar = (v: any) =>
+        v == null || v === "" ? "" : Array.isArray(v) ? v.join(", ") : String(v);
+      const diffs: Array<{ campo: string; antigo: string; novo: string }> = [];
+      for (const k of Object.keys(perfilPayload)) {
+        const antigo = formatar((selected as any)[k]);
+        const novo = formatar(perfilPayload[k]);
+        if (antigo !== novo) diffs.push({ campo: k, antigo, novo });
+      }
+      if (editForm.nome && editForm.nome !== selected.nome) {
+        diffs.push({ campo: "nome", antigo: selected.nome ?? "", novo: editForm.nome });
+      }
+
+      if (diffs.length === 0) {
+        toast.info("Nenhuma alteração detectada");
+        setEditMode(false);
+        setSavingEdit(false);
+        return;
+      }
+
+      // Aplica + marca aguardando reenvio
       const { error: e1 } = await supabase
         .from("profissional_perfil")
-        .update(perfilPayload)
+        .update({
+          ...perfilPayload,
+          aguardando_reenvio_admin: true,
+          bloqueado_em: new Date().toISOString(),
+          bloqueado_por: user.id,
+        })
         .eq("user_id", selected.user_id);
       if (e1) throw e1;
 
@@ -310,17 +383,54 @@ function AdminValidacao() {
         if (e2) throw e2;
       }
 
+      // Registra histórico campo a campo
+      const rows = diffs.map((d) => ({
+        profissional_user_id: selected.user_id,
+        campo: d.campo,
+        valor_antigo: d.antigo,
+        valor_novo: d.novo,
+        alterado_por: user.id,
+        alterado_por_role: "admin",
+        origem: "admin",
+      }));
+      await supabase.from("profissional_perfil_alteracoes").insert(rows);
+
+      // Notifica profissional in-app
+      await supabase.from("notificacoes").insert({
+        user_id: selected.user_id,
+        titulo: "Seu cadastro foi atualizado pela equipe",
+        mensagem:
+          "A equipe ajustou " +
+          diffs.length +
+          " campo(s) do seu cadastro (" +
+          diffs
+            .slice(0, 3)
+            .map((d) => FIELD_LABELS[d.campo] ?? d.campo)
+            .join(", ") +
+          (diffs.length > 3 ? "…" : "") +
+          "). Revise e reenvie para validação.",
+        link: "/profissional-cadastro",
+        lida: false,
+      });
+
       await logAdminAction(supabase, {
         acao: "profissional_editado_admin",
-        detalhes: { campos: Object.keys(perfilPayload) },
+        detalhes: { campos: diffs.map((d) => d.campo), total: diffs.length },
         entidadeTipo: "profissional",
         entidadeId: selected.user_id,
       });
 
-      toast.success("Dados atualizados");
+      toast.success("Dados atualizados", {
+        description: "Validação bloqueada até o profissional reenviar.",
+      });
       setEditMode(false);
-      // Reflete localmente
-      setSelected({ ...selected, ...perfilPayload, nome: editForm.nome || selected.nome } as Prestador);
+      setSelected({
+        ...selected,
+        ...perfilPayload,
+        nome: editForm.nome || selected.nome,
+        aguardando_reenvio_admin: true,
+        bloqueado_em: new Date().toISOString(),
+      } as Prestador);
       refresh();
     } catch (err: any) {
       toast.error("Erro ao salvar", { description: err?.message });
@@ -328,6 +438,7 @@ function AdminValidacao() {
       setSavingEdit(false);
     }
   };
+
 
   const handleUploadDoc = async (
     field: "foto_documento_frente" | "foto_documento_verso" | "foto_selfie",
@@ -695,6 +806,11 @@ function AdminValidacao() {
                   </div>
                   <div className="flex gap-2 items-center flex-wrap">
                     <StatusBadge status={selected.aprovacao_status} />
+                    {selected.aguardando_reenvio_admin && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        <RotateCcw className="h-3 w-3" /> Aguardando reenvio
+                      </span>
+                    )}
                     {selected.aprovacao_status === "pendente" && (
                       <Button
                         size="sm"
@@ -1016,14 +1132,62 @@ function AdminValidacao() {
                     );
                   })()}
 
+                  {/* Histórico de alterações */}
+                  {alteracoes.length > 0 && (
+                    <Section title="Histórico de alterações" icon={RotateCcw}>
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {alteracoes.map((a) => (
+                          <div
+                            key={a.id}
+                            className="text-xs p-3 rounded-lg bg-slate-50 border border-slate-200"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-bold text-slate-700">
+                                {FIELD_LABELS[a.campo] ?? a.campo}
+                              </span>
+                              <span className="text-slate-500">
+                                {new Date(a.created_at).toLocaleString("pt-BR")} ·{" "}
+                                {a.alterado_por_role === "admin" ? "Admin" : "Profissional"}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="p-2 rounded bg-red-50 border border-red-100">
+                                <div className="text-[10px] uppercase text-red-600 font-bold mb-0.5">
+                                  Antes
+                                </div>
+                                <div className="text-slate-700 break-words">
+                                  {a.valor_antigo || <em className="text-slate-400">vazio</em>}
+                                </div>
+                              </div>
+                              <div className="p-2 rounded bg-green-50 border border-green-100">
+                                <div className="text-[10px] uppercase text-green-700 font-bold mb-0.5">
+                                  Depois
+                                </div>
+                                <div className="text-slate-700 break-words">
+                                  {a.valor_novo || <em className="text-slate-400">vazio</em>}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Section>
+                  )}
+
                   {/* Actions */}
                   {selected.aprovacao_status !== "aprovado" &&
                     selected.aprovacao_status !== "incompleto" && (
                     <div className="space-y-3 pt-2 border-t border-border">
+                      {selected.aguardando_reenvio_admin && (
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                          <strong>Validação bloqueada.</strong> A equipe ajustou dados deste
+                          cadastro. Aguarde o profissional revisar e reenviar antes de aprovar.
+                        </div>
+                      )}
                       <Button
                         onClick={handleAprovar}
-                        disabled={saving}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2"
+                        disabled={saving || !!selected.aguardando_reenvio_admin}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold gap-2 disabled:opacity-50"
                       >
                         {saving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1051,6 +1215,7 @@ function AdminValidacao() {
                       </div>
                     </div>
                   )}
+
                   {selected.aprovacao_status === "aprovado" && (
                     <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-sm text-green-800 font-medium">
                       ✓ Aprovado em{" "}

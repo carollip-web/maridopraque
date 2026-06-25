@@ -561,6 +561,9 @@ function ProfissionalCadastro() {
         ativo: false,
         genero: form.genero || "nao_informar",
         oferece_apoio_feminino: false,
+        aguardando_reenvio_admin: false,
+        bloqueado_em: null,
+        bloqueado_por: null,
       };
 
       const { error } = await supabase.from("profissional_perfil").upsert(payload);
@@ -572,6 +575,34 @@ function ProfissionalCadastro() {
         .update({ nome: form.nome, whatsapp: form.telefone })
         .eq("id", user.id);
       if (profileErr) throw profileErr;
+
+      // Registra reenvio no histórico (para o admin ver)
+      await supabase.from("profissional_perfil_alteracoes").insert({
+        profissional_user_id: user.id,
+        campo: "__reenvio__",
+        valor_antigo: null,
+        valor_novo: "Profissional reenviou o cadastro para validação",
+        alterado_por: user.id,
+        alterado_por_role: "profissional",
+        origem: "profissional",
+      });
+
+      // Notifica admins
+      const { data: admins } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      if (admins && admins.length > 0) {
+        await supabase.from("notificacoes").insert(
+          admins.map((a: any) => ({
+            user_id: a.user_id,
+            titulo: "Profissional reenviou o cadastro",
+            mensagem: `${form.nome} revisou e reenviou o cadastro para validação.`,
+            link: "/admin-validacao",
+            lida: false,
+          })),
+        );
+      }
 
       toast.success("Cadastro enviado para análise!");
       setSubmitted(true);

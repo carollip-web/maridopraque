@@ -1520,6 +1520,7 @@ export type Database = {
       }
       profissional_perfil: {
         Row: {
+          aguardando_reenvio_admin: boolean
           anos_experiencia: number | null
           aprovacao_status: string
           aprovado_em: string | null
@@ -1528,6 +1529,8 @@ export type Database = {
           ativo: boolean
           bairro: string | null
           bio: string | null
+          bloqueado_em: string | null
+          bloqueado_por: string | null
           cadastro_completo: boolean
           cadastro_retomadas_count: number
           cadastro_retomado_em: string | null
@@ -1584,6 +1587,7 @@ export type Database = {
           veiculo_proprio: boolean | null
         }
         Insert: {
+          aguardando_reenvio_admin?: boolean
           anos_experiencia?: number | null
           aprovacao_status?: string
           aprovado_em?: string | null
@@ -1592,6 +1596,8 @@ export type Database = {
           ativo?: boolean
           bairro?: string | null
           bio?: string | null
+          bloqueado_em?: string | null
+          bloqueado_por?: string | null
           cadastro_completo?: boolean
           cadastro_retomadas_count?: number
           cadastro_retomado_em?: string | null
@@ -1648,6 +1654,7 @@ export type Database = {
           veiculo_proprio?: boolean | null
         }
         Update: {
+          aguardando_reenvio_admin?: boolean
           anos_experiencia?: number | null
           aprovacao_status?: string
           aprovado_em?: string | null
@@ -1656,6 +1663,8 @@ export type Database = {
           ativo?: boolean
           bairro?: string | null
           bio?: string | null
+          bloqueado_em?: string | null
+          bloqueado_por?: string | null
           cadastro_completo?: boolean
           cadastro_retomadas_count?: number
           cadastro_retomado_em?: string | null
@@ -1720,6 +1729,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profissional_perfil_alteracoes: {
+        Row: {
+          alterado_por: string | null
+          alterado_por_role: string | null
+          campo: string
+          created_at: string
+          id: string
+          origem: string
+          profissional_user_id: string
+          valor_antigo: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          alterado_por?: string | null
+          alterado_por_role?: string | null
+          campo: string
+          created_at?: string
+          id?: string
+          origem?: string
+          profissional_user_id: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          alterado_por?: string | null
+          alterado_por_role?: string | null
+          campo?: string
+          created_at?: string
+          id?: string
+          origem?: string
+          profissional_user_id?: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: []
       }
       profissional_saldos: {
         Row: {
