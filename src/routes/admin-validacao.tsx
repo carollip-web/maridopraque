@@ -1002,6 +1002,27 @@ function AdminValidacao() {
                         <RotateCcw className="h-3 w-3" /> Aguardando reenvio
                       </span>
                     )}
+                    {emailConfirmados[selected.user_id] === false && (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                          <Mail className="h-3 w-3" /> E-mail não confirmado
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => handleReenviarConfirmacao(selected.user_id)}
+                          disabled={resendingConfirm}
+                        >
+                          {resendingConfirm ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                          Reenviar confirmação
+                        </Button>
+                      </>
+                    )}
                     {selected.aprovacao_status === "pendente" && (
                       <Button
                         size="sm"
