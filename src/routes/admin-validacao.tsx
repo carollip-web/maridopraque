@@ -1382,6 +1382,7 @@ function AdminValidacao() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
             <div>
               <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Assunto</p>
               <Input
