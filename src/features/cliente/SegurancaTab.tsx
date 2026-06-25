@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Download, Trash2, FileJson, Loader2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { excluirMinhaConta } from "@/lib/conta.functions";
 
 export function SegurancaTab() {
   const { user } = useAuth();
@@ -116,23 +118,20 @@ export function SegurancaTab() {
     }
   };
 
+  const excluirContaFn = useServerFn(excluirMinhaConta);
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "EXCLUIR" || !user) return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase.from("suporte_tickets").insert({
-        user_id: user.id,
-        assunto: "Solicitação de exclusão de conta",
-        mensagem: "Solicito a exclusão permanente da minha conta e de todos os meus dados conforme a LGPD.",
-        status: "aberto",
-      });
-      if (error) throw error;
-      
-      import("sonner").then((m) => m.toast.success("Sua solicitação foi registrada. A exclusão será processada em até 5 dias úteis, conforme a LGPD."));
+      await excluirContaFn({});
+      import("sonner").then((m) =>
+        m.toast.success("Sua conta foi excluída permanentemente."),
+      );
       await supabase.auth.signOut();
-      navigate({ to: "/login" });
+      navigate({ to: "/" });
     } catch (e: any) {
-      toastError("Erro ao solicitar exclusão", e.message);
+      toastError("Não foi possível excluir a conta", e?.message);
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -229,7 +228,7 @@ export function SegurancaTab() {
                 <Trash2 className="h-4 w-4" /> Excluir minha conta
               </p>
               <p className="text-xs text-red-700 mt-1 max-w-sm">
-                A exclusão é permanente. Todos os seus dados serão apagados de nossos servidores em até 5 dias úteis.
+                A exclusão é permanente e imediata. Todos os seus dados pessoais serão apagados dos nossos servidores e não podem ser recuperados.
               </p>
             </div>
             <Button
@@ -299,8 +298,7 @@ export function SegurancaTab() {
               <Trash2 className="h-5 w-5" /> Confirmar Exclusão
             </DialogTitle>
             <DialogDescription>
-              Esta ação não pode ser desfeita. Sua solicitação será registrada e a exclusão
-              será processada em até 5 dias úteis, conforme a LGPD.
+              Esta ação é <strong>imediata e irreversível</strong>. Sua conta e todos os seus dados serão apagados em definitivo. Se tiver pedidos em andamento, finalize-os antes.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
