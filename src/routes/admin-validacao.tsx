@@ -275,7 +275,7 @@ function AdminValidacao() {
     const ids = (perfis ?? []).map((p: any) => p.user_id);
     const { data: profiles } =
       ids.length > 0
-        ? await supabase.from("profiles").select("id, nome, email").in("id", ids)
+        ? await supabase.from("profiles").select("id, nome, email, whatsapp").in("id", ids)
         : { data: [] };
 
     const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]));
@@ -284,11 +284,14 @@ function AdminValidacao() {
       (perfis ?? []).map((p: any) => {
         const isIncompleto =
           !p.cadastro_completo && p.aprovacao_status === "pendente";
+        const prof = profileMap[p.user_id];
         return {
           ...p,
           aprovacao_status: isIncompleto ? "incompleto" : p.aprovacao_status,
-          nome: profileMap[p.user_id]?.nome || "—",
-          email: profileMap[p.user_id]?.email || "—",
+          nome: prof?.nome || "—",
+          email: prof?.email || "—",
+          telefone: p.telefone || prof?.whatsapp || null,
+          experiencia_anos: p.experiencia_anos ?? p.anos_experiencia ?? null,
         };
       }),
     );
