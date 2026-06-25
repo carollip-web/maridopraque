@@ -16,6 +16,7 @@ import { AdminFinanceiro } from "@/features/admin/AdminFinanceiro";
 import { AdminConfig } from "@/features/admin/AdminConfig";
 import { AdminEquipe } from "@/features/admin/AdminEquipe";
 import { AdminNotificacoes } from "@/features/admin/AdminNotificacoes";
+import { AdminEmails } from "@/features/admin/AdminEmails";
 import { AdminLeads } from "@/features/admin/AdminLeads";
 import { AdminApoioFeminino } from "@/features/admin/AdminApoioFeminino";
 import { AdminDisputas } from "@/features/admin/AdminDisputas";
