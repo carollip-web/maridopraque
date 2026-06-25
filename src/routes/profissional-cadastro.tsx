@@ -988,7 +988,7 @@ function ProfissionalCadastro() {
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-muted-foreground">
-                    Anos de experiência
+                    Anos de experiência *
                   </label>
                   <input
                     type="number"
