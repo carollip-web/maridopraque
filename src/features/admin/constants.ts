@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Crown,
   Bell,
+  Mail,
   AlertTriangle,
   HeadphonesIcon,
   UserPlus,
