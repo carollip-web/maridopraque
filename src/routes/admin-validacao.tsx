@@ -1150,6 +1150,14 @@ function AdminValidacao() {
 
                   {/* Documents */}
                   <Section title="Documentos" icon={FileText}>
+                    {!signedUrls.frente && !signedUrls.verso && !signedUrls.selfie && !loadingUrls && (
+                      <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                        <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-800">
+                          Este prestador ainda não enviou nenhum documento.
+                        </p>
+                      </div>
+                    )}
                     <div className="grid sm:grid-cols-3 gap-3">
                       {[
                         { label: "Doc. Frente", field: "foto_documento_frente" as const, url: signedUrls.frente },
@@ -1177,8 +1185,9 @@ function AdminValidacao() {
                               <p className="text-xs text-brand font-medium mt-1">Ver completo ↗</p>
                             </a>
                           ) : (
-                            <div className="w-full h-28 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+                            <div className="w-full h-28 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1">
                               <AlertTriangle className="h-4 w-4 text-amber-400" />
+                              <span className="text-[10px] text-muted-foreground font-medium">Não enviado</span>
                             </div>
                           )}
                           <label className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-brand cursor-pointer hover:underline">
