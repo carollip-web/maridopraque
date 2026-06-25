@@ -1,10 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/auditLog";
+import { enviarEmailAdmin } from "@/lib/admin-email.functions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   Loader2,
@@ -194,6 +205,9 @@ function AdminValidacao() {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const sendAdminEmail = useServerFn(enviarEmailAdmin);
+  const [emailDialog, setEmailDialog] = useState<{ to: string; subject: string; message: string } | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
@@ -619,6 +633,7 @@ function AdminValidacao() {
     );
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         {/* Header */}
@@ -1120,12 +1135,21 @@ function AdminValidacao() {
                           </a>
                         )}
                         {selected.email && selected.email !== "—" && (
-                          <a
-                            href={`mailto:${selected.email}`}
-                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const primeiro = selected.nome?.split(" ")[0] || "";
+                              const etapaTxt = etapa?.label || "final";
+                              setEmailDialog({
+                                to: selected.email,
+                                subject: `Vamos finalizar seu cadastro na Marido pra Quê?`,
+                                message: `Olá ${primeiro},\n\nVimos que seu cadastro como prestador na Marido pra Quê parou na etapa "${etapaTxt}". Estamos aqui para te ajudar a concluir e começar a receber oportunidades.\n\nÉ rápido — basta entrar na sua conta e continuar de onde parou.\n\nQualquer dúvida, é só responder este e-mail.\n\nEquipe Marido pra Quê`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:underline text-left"
                           >
                             <Mail className="h-4 w-4" /> {selected.email}
-                          </a>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -1231,6 +1255,69 @@ function AdminValidacao() {
         </div>
       </div>
     </div>
+
+    <Dialog open={!!emailDialog} onOpenChange={(o) => !o && setEmailDialog(null)}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Enviar e-mail</DialogTitle>
+        </DialogHeader>
+        {emailDialog && (
+          <div className="space-y-3">
+            <div>
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Para</p>
+              <Input value={emailDialog.to} readOnly className="bg-slate-50" />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Assunto</p>
+              <Input
+                value={emailDialog.subject}
+                onChange={(e) => setEmailDialog({ ...emailDialog, subject: e.target.value })}
+              />
+            </div>
+            <div>
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-1">Mensagem</p>
+              <Textarea
+                rows={10}
+                value={emailDialog.message}
+                onChange={(e) => setEmailDialog({ ...emailDialog, message: e.target.value })}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Envio direto de contato@maridopraque.com via Gmail.
+              </p>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setEmailDialog(null)} disabled={sendingEmail}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!emailDialog) return;
+              setSendingEmail(true);
+              try {
+                const res = await sendAdminEmail({ data: emailDialog });
+                if (res?.ok) {
+                  toast.success("E-mail enviado");
+                  setEmailDialog(null);
+                } else {
+                  toast.error(res?.error || "Falha ao enviar");
+                }
+              } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : "Falha ao enviar";
+                toast.error(msg);
+              } finally {
+                setSendingEmail(false);
+              }
+            }}
+            disabled={sendingEmail || !emailDialog?.subject.trim() || !emailDialog?.message.trim()}
+          >
+            {sendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
