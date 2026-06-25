@@ -84,6 +84,73 @@ async function getSignedUrl(publicUrl: string | null) {
   }
 }
 
+type EtapaInfo = {
+  numero: number;
+  total: number;
+  label: string;
+  faltando: string[];
+  preenchidas: string[];
+};
+
+function computarEtapaParou(p: any): EtapaInfo | null {
+  const ETAPAS = [
+    {
+      label: "Dados pessoais",
+      campos: [
+        { key: "nome", ok: !!p.nome && p.nome !== "—" },
+        { key: "CPF", ok: !!p.cpf },
+        { key: "telefone", ok: !!p.telefone },
+        { key: "data de nascimento", ok: !!p.data_nascimento },
+      ],
+    },
+    {
+      label: "Endereço",
+      campos: [
+        { key: "CEP", ok: !!p.cep },
+        { key: "endereço", ok: !!p.endereco },
+        { key: "número", ok: !!p.numero },
+        { key: "bairro", ok: !!p.bairro },
+        { key: "cidade", ok: !!p.cidade },
+        { key: "estado", ok: !!p.estado },
+      ],
+    },
+    {
+      label: "Experiência",
+      campos: [
+        { key: "especialidades", ok: Array.isArray(p.especialidades) && p.especialidades.length > 0 },
+        { key: "bio", ok: !!p.bio },
+      ],
+    },
+    {
+      label: "Documentos",
+      campos: [
+        { key: "documento (frente)", ok: !!p.foto_documento_frente },
+        { key: "documento (verso)", ok: !!p.foto_documento_verso },
+        { key: "selfie", ok: !!p.foto_selfie },
+      ],
+    },
+    {
+      label: "Revisão e envio",
+      campos: [{ key: "envio do cadastro para análise", ok: !!p.cadastro_submetido_em }],
+    },
+  ];
+
+  for (let i = 0; i < ETAPAS.length; i++) {
+    const etapa = ETAPAS[i];
+    const faltando = etapa.campos.filter((c) => !c.ok).map((c) => c.key);
+    if (faltando.length > 0) {
+      return {
+        numero: i + 1,
+        total: ETAPAS.length,
+        label: etapa.label,
+        faltando,
+        preenchidas: etapa.campos.filter((c) => c.ok).map((c) => c.key),
+      };
+    }
+  }
+  return null;
+}
+
 function StatusBadge({ status }: { status: Status }) {
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.pendente;
   const Icon = cfg.icon;
@@ -425,6 +492,15 @@ function AdminValidacao() {
                       </span>
                     )}
                   </div>
+                  {p.aprovacao_status === "incompleto" && (() => {
+                    const et = computarEtapaParou(p);
+                    if (!et) return null;
+                    return (
+                      <p className="text-[10px] mt-2 font-semibold text-orange-700">
+                        Parou na etapa {et.numero}/{et.total}: {et.label}
+                      </p>
+                    );
+                  })()}
                   {p.cadastro_submetido_em && (
                     <p className="text-[10px] text-muted-foreground mt-2">
                       Enviado em {new Date(p.cadastro_submetido_em).toLocaleDateString("pt-BR")}
@@ -579,18 +655,53 @@ function AdminValidacao() {
                   )}
 
                   {/* Incompleto: contato para cobrança */}
-                  {selected.aprovacao_status === "incompleto" && (
+                  {selected.aprovacao_status === "incompleto" && (() => {
+                    const etapa = computarEtapaParou(selected);
+                    return (
                     <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 space-y-3">
                       <p className="text-sm font-bold text-orange-800">
                         Cadastro não finalizado
                       </p>
+                      {etapa ? (
+                        <div className="bg-white/70 rounded-lg p-3 border border-orange-200 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold uppercase text-orange-700">
+                              Parou na etapa {etapa.numero} de {etapa.total}
+                            </p>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                              {etapa.numero - 1}/{etapa.total} concluídas
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {etapa.label}
+                          </p>
+                          {etapa.faltando.length > 0 && (
+                            <div>
+                              <p className="text-[11px] font-bold uppercase text-slate-500 mb-1">
+                                Falta preencher
+                              </p>
+                              <ul className="text-xs text-slate-700 list-disc list-inside space-y-0.5">
+                                {etapa.faltando.map((f) => (
+                                  <li key={f}>{f}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-orange-700">
+                          Todos os dados foram preenchidos, mas o profissional ainda não enviou o cadastro para análise.
+                        </p>
+                      )}
                       <p className="text-xs text-orange-700">
-                        Este profissional criou a conta mas não enviou o cadastro para análise. Entre em contato para finalizar.
+                        Entre em contato para ajudar a finalizar:
                       </p>
                       <div className="flex flex-col gap-2">
                         {selected.telefone && (
                           <a
-                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}`}
+                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                              `Olá ${selected.nome?.split(" ")[0] || ""}! Vimos que seu cadastro na Mestres do Lar parou na etapa "${etapa?.label || "final"}". Posso te ajudar a finalizar?`,
+                            )}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline"
@@ -608,7 +719,8 @@ function AdminValidacao() {
                         )}
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Actions */}
                   {selected.aprovacao_status !== "aprovado" &&
