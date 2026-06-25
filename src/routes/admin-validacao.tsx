@@ -216,8 +216,14 @@ function AdminValidacao() {
   const [selected, setSelected] = useState<Prestador | null>(null);
   const [signedUrls, setSignedUrls] = useState<{ frente: string | null; verso: string | null; selfie: string | null }>({ frente: null, verso: null, selfie: null });
   const [loadingUrls, setLoadingUrls] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<Status | "todos">("em_analise");
+  const searchParams = Route.useSearch();
+  const [filterStatus, setFilterStatus] = useState<Status | "todos">(
+    (searchParams.tab as any) ?? "em_analise",
+  );
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"recente" | "nome" | "etapa">(
+    (searchParams.sort as any) ?? "recente",
+  );
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
