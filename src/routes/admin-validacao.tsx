@@ -212,6 +212,10 @@ function AdminValidacao() {
   const sendAdminEmail = useServerFn(enviarEmailAdmin);
   const [emailDialog, setEmailDialog] = useState<{ to: string; subject: string; message: string } | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const sendBulkEmail = useServerFn(enviarEmailMassaAdmin);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialog, setBulkDialog] = useState<{ subject: string; message: string } | null>(null);
+  const [sendingBulk, setSendingBulk] = useState(false);
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
