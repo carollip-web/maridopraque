@@ -7,6 +7,7 @@ import { logAdminAction } from "@/lib/auditLog";
 import { enviarEmailAdmin } from "@/lib/admin-email.functions";
 import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { getEmailConfirmStatus, reenviarConfirmacaoEmail } from "@/lib/admin-auth-actions.functions";
+import { excluirUsuarioAdmin } from "@/lib/usuarios.functions";
 import { ContatoBadge } from "@/components/ContatoBadge";
 import { WhatsappContatoDialog } from "@/components/WhatsappContatoDialog";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ import {
   Square,
   ArrowUpDown,
   Info,
+  Trash2,
 }  from "lucide-react";
 
 
@@ -267,6 +269,10 @@ function AdminValidacao() {
   const resendConfirm = useServerFn(reenviarConfirmacaoEmail);
   const [emailConfirmados, setEmailConfirmados] = useState<Record<string, boolean>>({});
   const [resendingConfirm, setResendingConfirm] = useState(false);
+  const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
+  const [deleteTarget, setDeleteTarget] = useState<Prestador | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
 
   useEffect(() => {
@@ -343,6 +349,34 @@ function AdminValidacao() {
       toast.error(e?.message || "Falha ao reenviar");
     } finally {
       setResendingConfirm(false);
+    }
+  };
+
+  const handleExcluirCadastro = async () => {
+    if (!deleteTarget) return;
+    if (deleteConfirmText.trim().toUpperCase() !== "EXCLUIR") {
+      toast.error('Digite "EXCLUIR" para confirmar');
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      const r = await excluirUsuarioFn({ data: { targetUserId: deleteTarget.user_id } });
+      if (!(r as any)?.ok) throw new Error("Falha ao excluir");
+      await logAdminAction(supabase, {
+        acao: "profissional_excluido_validacao",
+        detalhes: { nome: deleteTarget.nome, email: deleteTarget.email, status: deleteTarget.aprovacao_status },
+        entidadeTipo: "profissional",
+        entidadeId: deleteTarget.user_id,
+      });
+      toast.success("Cadastro excluído permanentemente");
+      if (selected?.user_id === deleteTarget.user_id) setSelected(null);
+      setDeleteTarget(null);
+      setDeleteConfirmText("");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao excluir", { description: e?.message });
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -1124,6 +1158,16 @@ function AdminValidacao() {
                         </Button>
                       </>
                     )}
+                    {!editMode && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={() => { setDeleteTarget(selected); setDeleteConfirmText(""); }}
+                      >
+                        <Trash2 className="h-3 w-3" /> Excluir cadastro
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1764,6 +1808,52 @@ function AdminValidacao() {
         onRegistered={() => setContatoRefresh((n) => n + 1)}
       />
     )}
+
+    <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirmText(""); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-700">
+            <Trash2 className="h-5 w-5" /> Excluir cadastro do prestador
+          </DialogTitle>
+        </DialogHeader>
+        {deleteTarget && (
+          <div className="space-y-3 text-sm">
+            <p>
+              Esta ação remove permanentemente <strong>{deleteTarget.nome}</strong> ({deleteTarget.email}) da
+              plataforma — login, perfil profissional, documentos e vínculos. Não é possível desfazer.
+            </p>
+            <p className="text-muted-foreground">
+              Use quando o prestador desistiu, não vai seguir conosco ou solicitou remoção. Para apenas pausar,
+              prefira <em>Rejeitar</em>.
+            </p>
+            <div>
+              <p className="text-xs font-bold uppercase text-muted-foreground mb-1">
+                Digite <span className="text-red-700">EXCLUIR</span> para confirmar
+              </p>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="EXCLUIR"
+                autoFocus
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(""); }} disabled={deletingAccount}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleExcluirCadastro}
+            disabled={deletingAccount || deleteConfirmText.trim().toUpperCase() !== "EXCLUIR"}
+            className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
+          >
+            {deletingAccount ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Excluir permanentemente
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
