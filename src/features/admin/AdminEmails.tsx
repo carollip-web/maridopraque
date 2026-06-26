@@ -49,7 +49,8 @@ function StatusBadge({ status }: { status: string | null }) {
 }
 
 export function AdminEmails() {
-  const [tab, setTab] = useState<"log" | "templates">("log");
+  const { adminLevel } = useAuth();
+  const [tab, setTab] = useState<"log" | "templates" | "whatsapp">("log");
   const [rows, setRows] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
