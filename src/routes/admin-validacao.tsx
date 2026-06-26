@@ -778,6 +778,7 @@ function AdminValidacao() {
           <div>
             <Link
               to="/admin"
+              search={{ tab: "profissionais" }}
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-2"
             >
               <ArrowLeft className="h-3 w-3" /> Voltar ao admin
