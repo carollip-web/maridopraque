@@ -1158,6 +1158,16 @@ function AdminValidacao() {
                         </Button>
                       </>
                     )}
+                    {!editMode && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                        onClick={() => { setDeleteTarget(selected); setDeleteConfirmText(""); }}
+                      >
+                        <Trash2 className="h-3 w-3" /> Excluir cadastro
+                      </Button>
+                    )}
                   </div>
                 </div>
 
