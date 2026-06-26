@@ -1128,20 +1128,26 @@ export function AdminProfissionais() {
                   )}
                   {selected.whatsapp && (
                     <Button
-                      asChild
                       variant="outline"
                       size="sm"
+                      onClick={() =>
+                        setWhatsDialog({
+                          open: true,
+                          userId: selected.id,
+                          email: selected.email ?? null,
+                          telefone: selected.whatsapp as string,
+                          nome: selected.nome ?? null,
+                        })
+                      }
                       className="w-full rounded-xl justify-start gap-2 text-green-600 border-green-200 hover:bg-green-50"
                     >
-                      <a
-                        href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Mail className="h-4 w-4" /> Contato via WhatsApp
-                      </a>
+                      <Mail className="h-4 w-4" /> Contato via WhatsApp
                     </Button>
                   )}
+                  <div className="pt-1">
+                    <ContatoBadge userId={selected.id} email={selected.email} nome={selected.nome} refreshKey={contatoRefresh} />
+                  </div>
+
                   <Button
                     variant="ghost"
                     size="sm"
