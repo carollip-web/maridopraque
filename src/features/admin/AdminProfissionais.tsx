@@ -1171,6 +1171,18 @@ export function AdminProfissionais() {
         </>
       )}
 
+      {whatsDialog?.open && (
+        <WhatsappContatoDialog
+          open={whatsDialog.open}
+          onOpenChange={(v) => setWhatsDialog(v ? whatsDialog : null)}
+          destinatarioUserId={whatsDialog.userId}
+          destinatarioEmail={whatsDialog.email}
+          telefone={whatsDialog.telefone}
+          nome={whatsDialog.nome}
+          mensagemSugerida={`Olá ${whatsDialog.nome?.split(" ")[0] || ""}, aqui é da equipe Marido pra Quê.`}
+          onRegistered={() => setContatoRefresh((n) => n + 1)}
+        />
+      )}
 
 
       {showAddModal && (
