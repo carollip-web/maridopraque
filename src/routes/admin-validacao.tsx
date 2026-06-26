@@ -1031,8 +1031,9 @@ function AdminValidacao() {
                   <div className="pt-2 mt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
                     <ContatoBadge userId={p.user_id} email={p.email && p.email !== "—" ? p.email : null} nome={p.nome} refreshKey={contatoRefresh} />
                   </div>
-
+                </div>
               ))
+
             )}
           </div>
 
