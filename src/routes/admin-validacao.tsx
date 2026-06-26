@@ -63,6 +63,9 @@ export const Route = createFileRoute("/admin-validacao")({
     id: typeof search.id === "string" ? (search.id as string) : undefined,
     sort: (typeof search.sort === "string" ? search.sort : undefined) as
       | "recente" | "nome" | "etapa" | undefined,
+    etapa: (typeof search.etapa === "string" ? search.etapa : undefined) as
+      | "1" | "2" | "3" | "4" | "5" | undefined,
+    email_nao_confirmado: search.email_nao_confirmado === true || search.email_nao_confirmado === "true",
   }),
   component: AdminValidacao,
 });
