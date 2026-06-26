@@ -352,6 +352,34 @@ function AdminValidacao() {
     }
   };
 
+  const handleExcluirCadastro = async () => {
+    if (!deleteTarget) return;
+    if (deleteConfirmText.trim().toUpperCase() !== "EXCLUIR") {
+      toast.error('Digite "EXCLUIR" para confirmar');
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      const r = await excluirUsuarioFn({ data: { targetUserId: deleteTarget.user_id } });
+      if (!(r as any)?.ok) throw new Error("Falha ao excluir");
+      await logAdminAction(supabase, {
+        acao: "profissional_excluido_validacao",
+        detalhes: { nome: deleteTarget.nome, email: deleteTarget.email, status: deleteTarget.aprovacao_status },
+        entidadeTipo: "profissional",
+        entidadeId: deleteTarget.user_id,
+      });
+      toast.success("Cadastro excluído permanentemente");
+      if (selected?.user_id === deleteTarget.user_id) setSelected(null);
+      setDeleteTarget(null);
+      setDeleteConfirmText("");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao excluir", { description: e?.message });
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   useEffect(() => {
     if (user && isAdmin) refresh();
   }, [user, isAdmin]);
