@@ -699,6 +699,13 @@ function AdminValidacao() {
         !p.email.toLowerCase().includes(search.toLowerCase())
       )
         return false;
+      if (filterEtapa) {
+        const et = computarEtapaParou(p);
+        if (!et || String(et.numero) !== filterEtapa) return false;
+      }
+      if (filterEmailNaoConfirmado) {
+        if (emailConfirmados[p.user_id] !== false) return false;
+      }
       return true;
     })
     .sort((a, b) => {
