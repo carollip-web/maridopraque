@@ -7,6 +7,8 @@ import { logAdminAction } from "@/lib/auditLog";
 import { enviarEmailAdmin } from "@/lib/admin-email.functions";
 import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { getEmailConfirmStatus, reenviarConfirmacaoEmail } from "@/lib/admin-auth-actions.functions";
+import { ContatoBadge } from "@/components/ContatoBadge";
+import { WhatsappContatoDialog } from "@/components/WhatsappContatoDialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
