@@ -160,9 +160,9 @@ export function AdminEmails() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Mail className="h-6 w-6 text-brand" /> E-mails
+            <Mail className="h-6 w-6 text-brand" /> Comunicação
           </h1>
-          <p className="text-sm text-slate-500">Histórico de envios via Gmail (contato@maridopraque.com).</p>
+          <p className="text-sm text-slate-500">E-mails enviados, modelos e mensagens padrão de WhatsApp.</p>
         </div>
         <button
           onClick={load}
@@ -172,14 +172,14 @@ export function AdminEmails() {
         </button>
       </div>
 
-      <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+      <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 flex-wrap">
         <button
           onClick={() => setTab("log")}
           className={`px-3 py-1.5 text-sm rounded-md inline-flex items-center gap-1.5 ${
             tab === "log" ? "bg-slate-900 text-white" : "text-slate-600"
           }`}
         >
-          <Inbox className="h-3.5 w-3.5" /> Histórico
+          <Inbox className="h-3.5 w-3.5" /> E-mails enviados
         </button>
         <button
           onClick={() => setTab("templates")}
@@ -187,14 +187,27 @@ export function AdminEmails() {
             tab === "templates" ? "bg-slate-900 text-white" : "text-slate-600"
           }`}
         >
-          <FileText className="h-3.5 w-3.5" /> Templates
+          <FileText className="h-3.5 w-3.5" /> Templates de e-mail
         </button>
+        {adminLevel === "super_admin" && (
+          <button
+            onClick={() => setTab("whatsapp")}
+            className={`px-3 py-1.5 text-sm rounded-md inline-flex items-center gap-1.5 ${
+              tab === "whatsapp" ? "bg-slate-900 text-white" : "text-slate-600"
+            }`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp & Marca
+          </button>
+        )}
       </div>
 
       {tab === "templates" ? (
         <AdminEmailTemplates />
+      ) : tab === "whatsapp" ? (
+        <AdminPlataformaConfig />
       ) : (
       <>
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
 
