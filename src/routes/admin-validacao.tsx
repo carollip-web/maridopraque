@@ -252,6 +252,8 @@ function AdminValidacao() {
   const [sendingBulk, setSendingBulk] = useState(false);
   const [templates, setTemplates] = useState<Array<{ slug: string; nome: string; assunto: string }>>([]);
   const [emailTemplateSlug, setEmailTemplateSlug] = useState<string>("admin_contato");
+  const [whatsDialog, setWhatsDialog] = useState<{ open: boolean; userId: string | null; email: string | null; telefone: string; nome: string | null; mensagem: string } | null>(null);
+  const [contatoRefresh, setContatoRefresh] = useState(0);
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
