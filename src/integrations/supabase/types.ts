@@ -1483,6 +1483,33 @@ export type Database = {
           },
         ]
       }
+      plataforma_config: {
+        Row: {
+          id: number
+          marca_assinatura: string
+          marca_nome: string
+          updated_at: string
+          updated_by: string | null
+          whatsapp_templates: Json
+        }
+        Insert: {
+          id?: number
+          marca_assinatura?: string
+          marca_nome?: string
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_templates?: Json
+        }
+        Update: {
+          id?: number
+          marca_assinatura?: string
+          marca_nome?: string
+          updated_at?: string
+          updated_by?: string | null
+          whatsapp_templates?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
