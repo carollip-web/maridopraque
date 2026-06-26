@@ -369,11 +369,6 @@ export function AdminConfig() {
         </section>
       </div>
 
-      {adminLevel === "super_admin" && (
-        <div className="lg:col-span-2">
-          <AdminPlataformaConfig />
-        </div>
-      )}
 
       <AuditLogViewer />
 
