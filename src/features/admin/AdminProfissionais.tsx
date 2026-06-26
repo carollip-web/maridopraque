@@ -294,6 +294,7 @@ export function AdminProfissionais() {
           genero: perfil?.genero || "nao_informar",
           oferece_apoio_feminino: !!perfil?.oferece_apoio_feminino,
           mp_user_id: perfil?.mp_user_id || null,
+          created_at: perfil?.created_at || null,
         };
       });
     },
