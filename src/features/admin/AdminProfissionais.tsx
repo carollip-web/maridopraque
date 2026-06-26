@@ -1179,7 +1179,7 @@ export function AdminProfissionais() {
           destinatarioEmail={whatsDialog.email}
           telefone={whatsDialog.telefone}
           nome={whatsDialog.nome}
-          mensagemSugerida={`Olá ${whatsDialog.nome?.split(" ")[0] || ""}, aqui é da equipe Marido pra Quê.`}
+          mensagemSugerida={`Olá {{nome}}, aqui é da {{assinatura}}.`}
           onRegistered={() => setContatoRefresh((n) => n + 1)}
         />
       )}
