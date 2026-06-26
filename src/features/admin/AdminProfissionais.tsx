@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, useSearch, Link } from "@tanstack/react-router";
@@ -17,6 +17,12 @@ import {
   Users,
   CheckCircle2,
   XCircle,
+  Send,
+  ArrowUpDown,
+  CheckSquare,
+  Square,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +31,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { logAdminAction } from "@/lib/auditLog";
 import { AdminLeads } from "./AdminLeads";
 import { AdminApoioFeminino } from "./AdminApoioFeminino";
