@@ -176,9 +176,12 @@ export function AdminProfissionais() {
   const navigate = useNavigate();
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
+  const enviarMassaFn = useServerFn(enviarEmailMassaAdmin);
   const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
   const search = (searchParams.pro_q as string | undefined) || "";
   const filterStatus = (searchParams.pro_status as string | undefined) || "todos";
+  const filterEsp = (searchParams.pro_esp as string | undefined) || "todas";
+  const sort = (searchParams.pro_sort as string | undefined) || "recentes";
 
   const setSearch = (val: string) =>
     navigate({
@@ -187,6 +190,14 @@ export function AdminProfissionais() {
   const setFilterStatus = (val: string) =>
     navigate({
       search: ((old: Record<string, unknown>) => ({ ...old, pro_status: val || "todos" })) as never,
+    });
+  const setFilterEsp = (val: string) =>
+    navigate({
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_esp: val === "todas" ? undefined : val })) as never,
+    });
+  const setSort = (val: string) =>
+    navigate({
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_sort: val === "recentes" ? undefined : val })) as never,
     });
   const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as never });
 
@@ -201,6 +212,23 @@ export function AdminProfissionais() {
   const [newPro, setNewPro] = useState({ nome: "", email: "", password: "" });
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; recipients: { email: string; nome: string }[] }>({ open: false, recipients: [] });
+  const [emailForm, setEmailForm] = useState({ subject: "", message: "", template_slug: "" });
+  const [templates, setTemplates] = useState<{ slug: string; nome: string; assunto: string }[]>([]);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("email_templates")
+        .select("slug, nome, assunto, ativo")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+      setTemplates((data ?? []) as any);
+    })();
+  }, []);
 
   const { data: pros = [], isLoading } = useQuery({
     queryKey: ["admin", "profissionais"],
