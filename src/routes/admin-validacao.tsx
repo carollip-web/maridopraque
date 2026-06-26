@@ -736,11 +736,13 @@ function AdminValidacao() {
         tab: filterStatus === "em_analise" ? undefined : filterStatus,
         sort: sortBy === "recente" ? undefined : sortBy,
         id: selected?.user_id,
+        etapa: filterEtapa || undefined,
+        email_nao_confirmado: filterEmailNaoConfirmado || undefined,
       },
       replace: true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus, sortBy, selected?.user_id]);
+  }, [filterStatus, sortBy, selected?.user_id, filterEtapa, filterEmailNaoConfirmado]);
 
   // Pre-select prestador from URL once list loads
   useEffect(() => {
