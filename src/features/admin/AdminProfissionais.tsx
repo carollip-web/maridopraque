@@ -595,53 +595,128 @@ export function AdminProfissionais() {
 
       {activeTab === "lista" && (
         <>
-          <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, e-mail ou especialidade…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
-          />
-        </div>
-        <div className="flex gap-2 items-center">
-          <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">Status:</span>
-          {[
-            { id: "todos", label: `Todos (${approvedPros.length})` },
-            {
-              id: "ativo",
-              label: `Ativos (${approvedPros.filter((p) => p.ativo).length})`,
-            },
-            {
-              id: "inativo",
-              label: `Inativos (${approvedPros.filter((p) => !p.ativo).length})`,
-            },
-          ].map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setFilterStatus(s.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${
-                filterStatus === s.id
-                  ? "bg-slate-900 text-white"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-          {(search || filterStatus !== "todos") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-slate-500 hover:text-red-500 gap-1 px-2"
-            >
-              <X className="h-4 w-4" /> Limpar
-            </Button>
-          )}
-        </div>
-      </div>
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome, e-mail ou especialidade…"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
+                />
+              </div>
+              <div className="flex gap-2 items-center flex-wrap">
+                {[
+                  { id: "todos", label: `Todos (${approvedPros.length})` },
+                  { id: "ativo", label: `Ativos (${approvedPros.filter((p) => p.ativo).length})` },
+                  { id: "inativo", label: `Inativos (${approvedPros.filter((p) => !p.ativo).length})` },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setFilterStatus(s.id)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      filterStatus === s.id
+                        ? "bg-slate-900 text-white"
+                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative">
+                <select
+                  value={filterEsp}
+                  onChange={(e) => setFilterEsp(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+                >
+                  <option value="todas">Todas as especialidades</option>
+                  {especialidadesUnicas.map((e) => (
+                    <option key={e} value={e}>
+                      {e}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative">
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="appearance-none pl-8 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+                >
+                  <option value="recentes">Mais recentes</option>
+                  <option value="nome">Nome (A→Z)</option>
+                  <option value="servicos">Mais serviços</option>
+                  <option value="ganhos">Maiores ganhos</option>
+                  <option value="rating">Melhor nota</option>
+                </select>
+                <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+              </div>
+              <button
+                onClick={toggleAll}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50"
+              >
+                {allSelected ? <CheckSquare className="h-3.5 w-3.5 text-brand" /> : <Square className="h-3.5 w-3.5" />}
+                {allSelected ? "Limpar seleção" : `Selecionar todos (${filtered.length})`}
+              </button>
+              {(search || filterStatus !== "todos" || filterEsp !== "todas" || sort !== "recentes") && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
+                  <X className="h-4 w-4" /> Limpar filtros
+                </Button>
+              )}
+            </div>
+
+            {someSelected && (
+              <div className="sticky top-16 z-30 flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/20">
+                <span className="text-xs font-bold mr-2">{selectedIds.size} selecionado(s)</span>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkSetAtivo(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-500 hover:bg-green-400 disabled:opacity-50"
+                >
+                  <Power className="h-3.5 w-3.5" /> Ativar
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkSetAtivo(false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
+                >
+                  <PowerOff className="h-3.5 w-3.5" /> Desativar
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => {
+                    const recipients = approvedPros
+                      .filter((p) => selectedIds.has(p.id) && p.email)
+                      .map((p) => ({ email: p.email as string, nome: p.nome as string }));
+                    openEmailDialog(recipients);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand hover:bg-brand/90 disabled:opacity-50"
+                >
+                  <Send className="h-3.5 w-3.5" /> Enviar e-mail
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={handleBulkDelete}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500 hover:bg-red-400 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Excluir
+                </button>
+                <button
+                  onClick={clearSelection}
+                  className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/70 hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+                {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-1" />}
+              </div>
+            )}
+          </div>
+
 
       <div className="flex gap-6">
         <div className={`flex-1 min-w-0 ${selected ? "hidden lg:block" : ""}`}>
