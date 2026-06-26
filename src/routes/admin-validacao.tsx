@@ -269,6 +269,10 @@ function AdminValidacao() {
   const resendConfirm = useServerFn(reenviarConfirmacaoEmail);
   const [emailConfirmados, setEmailConfirmados] = useState<Record<string, boolean>>({});
   const [resendingConfirm, setResendingConfirm] = useState(false);
+  const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
+  const [deleteTarget, setDeleteTarget] = useState<Prestador | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
 
   useEffect(() => {
