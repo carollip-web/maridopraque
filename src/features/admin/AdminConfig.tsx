@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ADMIN_LEVEL_LABELS } from "./constants";
-import { AdminPlataformaConfig } from "./AdminPlataformaConfig";
+
 
 const profileSchema = z.object({
   nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
