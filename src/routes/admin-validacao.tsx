@@ -56,6 +56,7 @@ import {
   Square,
   ArrowUpDown,
   Info,
+  Trash2,
 }  from "lucide-react";
 
 
