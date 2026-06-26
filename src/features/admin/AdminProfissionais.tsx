@@ -837,25 +837,29 @@ export function AdminProfissionais() {
                         </p>
                       </div>
                     </button>
-                    {pro.email && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
-                        }}
-                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
-                        title="Enviar e-mail"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </button>
-                    )}
+                    <div className="shrink-0 flex items-center gap-1">
+                      <ContatoBadge userId={pro.id} email={pro.email} nome={pro.nome} refreshKey={contatoRefresh} />
+                      {pro.email && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
+                          }}
+                          className="p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
+                          title="Enviar e-mail"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
 
         {selected && (
           <div className="w-full lg:w-96 shrink-0">
