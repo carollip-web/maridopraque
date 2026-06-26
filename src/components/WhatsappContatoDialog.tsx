@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { registrarContatoManual } from "@/lib/admin-contato-log.functions";
+import { getPlataformaConfig } from "@/lib/plataforma-config.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+
+function applyVars(text: string, vars: Record<string, string>) {
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+}
 
 export function WhatsappContatoDialog({
   open,
@@ -28,9 +34,42 @@ export function WhatsappContatoDialog({
   onRegistered?: () => void;
 }) {
   const registrar = useServerFn(registrarContatoManual);
+  const fetchConfig = useServerFn(getPlataformaConfig);
+
+  const { data: config } = useQuery({
+    queryKey: ["plataforma_config"],
+    queryFn: () => fetchConfig(),
+    staleTime: 60_000,
+  });
+
   const [assunto, setAssunto] = useState("");
-  const [observacao, setObservacao] = useState(mensagemSugerida ?? "");
+  const [observacao, setObservacao] = useState("");
+  const [templateId, setTemplateId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  const vars = {
+    nome: nome?.split(" ")[0] || "",
+    marca: config?.marca_nome || "Marido pra Quê",
+    assinatura: config?.marca_assinatura || "Equipe Marido pra Quê",
+  };
+
+  // Initialize text when dialog opens or config arrives
+  useEffect(() => {
+    if (!open) return;
+    setObservacao(mensagemSugerida ? applyVars(mensagemSugerida, vars) : "");
+    setAssunto("");
+    setTemplateId("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, config?.marca_nome]);
+
+  const handleTemplateChange = (id: string) => {
+    setTemplateId(id);
+    const tpl = config?.whatsapp_templates?.find((t) => t.id === id);
+    if (tpl) {
+      if (!assunto.trim()) setAssunto(tpl.titulo);
+      setObservacao(applyVars(tpl.mensagem, vars));
+    }
+  };
 
   const numero = telefone.replace(/\D/g, "");
   const numeroFinal = numero.length === 11 || numero.length === 10 ? `55${numero}` : numero;
@@ -62,12 +101,15 @@ export function WhatsappContatoDialog({
       onOpenChange(false);
       setAssunto("");
       setObservacao("");
+      setTemplateId("");
     } catch (e: any) {
       toast.error(e?.message || "Erro ao registrar");
     } finally {
       setSaving(false);
     }
   };
+
+  const templates = config?.whatsapp_templates ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,6 +124,27 @@ export function WhatsappContatoDialog({
           <div className="text-xs text-slate-500">
             Para <span className="font-medium text-slate-700">{nome || telefone}</span> ({telefone})
           </div>
+
+          {templates.length > 0 && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">
+                Modelo de mensagem
+              </label>
+              <select
+                value={templateId}
+                onChange={(e) => handleTemplateChange(e.target.value)}
+                className="w-full p-2 border border-slate-200 rounded-md text-sm bg-white"
+              >
+                <option value="">— Escolher modelo —</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.titulo || "(sem título)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium text-slate-600 mb-1 block">Assunto *</label>
             <Input
@@ -99,7 +162,7 @@ export function WhatsappContatoDialog({
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
               placeholder="Texto que será aberto no WhatsApp e salvo como observação."
-              rows={4}
+              rows={5}
               maxLength={2000}
             />
           </div>
