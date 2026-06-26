@@ -302,18 +302,143 @@ export function AdminProfissionais() {
 
   const approvedPros = pros.filter((p) => p.aprovacao_status === "aprovado");
 
-  const filtered = approvedPros.filter((p) => {
-    const matchSearch =
-      !search ||
-      p.nome?.toLowerCase().includes(search.toLowerCase()) ||
-      p.email?.toLowerCase().includes(search.toLowerCase()) ||
-      p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus =
-      filterStatus === "todos" ||
-      (filterStatus === "ativo" && p.ativo) ||
-      (filterStatus === "inativo" && !p.ativo);
-    return matchSearch && matchStatus;
-  });
+  const especialidadesUnicas = useMemo(() => {
+    const set = new Set<string>();
+    approvedPros.forEach((p) => p.especialidades?.forEach((e: string) => set.add(e)));
+    return Array.from(set).sort();
+  }, [approvedPros]);
+
+  const filtered = useMemo(() => {
+    const list = approvedPros.filter((p) => {
+      const matchSearch =
+        !search ||
+        p.nome?.toLowerCase().includes(search.toLowerCase()) ||
+        p.email?.toLowerCase().includes(search.toLowerCase()) ||
+        p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
+      const matchStatus =
+        filterStatus === "todos" ||
+        (filterStatus === "ativo" && p.ativo) ||
+        (filterStatus === "inativo" && !p.ativo);
+      const matchEsp = filterEsp === "todas" || p.especialidades?.includes(filterEsp);
+      return matchSearch && matchStatus && matchEsp;
+    });
+    const sorted = [...list];
+    if (sort === "nome") sorted.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+    else if (sort === "servicos") sorted.sort((a, b) => b.servicos - a.servicos);
+    else if (sort === "ganhos") sorted.sort((a, b) => b.ganhos - a.ganhos);
+    else if (sort === "rating")
+      sorted.sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+    else
+      sorted.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    return sorted;
+  }, [approvedPros, search, filterStatus, filterEsp, sort]);
+
+  const allSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
+  const someSelected = selectedIds.size > 0;
+  const toggleAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((p) => p.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkSetAtivo = async (ativo: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    const rows = ids.map((user_id) => ({ user_id, ativo, updated_at: new Date().toISOString() }));
+    const { error } = await supabase.from("profissional_perfil").upsert(rows);
+    setBulkBusy(false);
+    if (error) {
+      toast.error("Erro ao atualizar status em massa");
+      return;
+    }
+    toast.success(`${ids.length} profissional(is) ${ativo ? "ativado(s)" : "desativado(s)"}`);
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    clearSelection();
+    await logAdminAction(supabase, {
+      acao: ativo ? "ativou_profissional_massa" : "desativou_profissional_massa",
+      detalhes: { quantidade: ids.length, ids },
+      entidadeTipo: "profissional",
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (
+      !confirm(
+        `Excluir ${selectedIds.size} profissional(is)? Esta ação é irreversível e remove todos os dados dos usuários.`,
+      )
+    )
+      return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    let ok = 0;
+    let fail = 0;
+    for (const id of ids) {
+      try {
+        const r = await excluirUsuarioFn({
+          data: { targetUserId: id },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        } as never);
+        if ((r as any)?.ok) ok++;
+        else fail++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    if (ok > 0) toast.success(`${ok} excluído(s)${fail ? ` · ${fail} falhou` : ""}`);
+    if (ok === 0) toast.error("Nenhum profissional foi excluído");
+    clearSelection();
+    setSelected(null);
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+  };
+
+  const openEmailDialog = (recipients: { email: string; nome: string }[]) => {
+    if (recipients.length === 0) {
+      toast.error("Selecione ao menos um profissional");
+      return;
+    }
+    setEmailForm({ subject: "", message: "", template_slug: "" });
+    setEmailDialog({ open: true, recipients });
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailForm.subject.trim() || !emailForm.message.trim()) {
+      toast.error("Preencha assunto e mensagem");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const r = await enviarMassaFn({
+        data: {
+          subject: emailForm.subject,
+          message: emailForm.message,
+          recipients: emailDialog.recipients.map((r) => ({ email: r.email, nome: r.nome })),
+          template_slug: emailForm.template_slug || undefined,
+        },
+      } as never);
+      const resp = r as any;
+      if (resp?.ok) {
+        toast.success(`E-mail enviado: ${resp.sent} ok${resp.failed ? ` · ${resp.failed} falhou` : ""}`);
+        setEmailDialog({ open: false, recipients: [] });
+        clearSelection();
+      } else {
+        toast.error(resp?.error || "Falha ao enviar e-mails");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao enviar e-mails");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
 
   const handleToggleAtivo = async (pro: any) => {
     setTogglingId(pro.id);
