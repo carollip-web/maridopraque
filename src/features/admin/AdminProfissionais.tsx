@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, useSearch, Link } from "@tanstack/react-router";
@@ -17,6 +17,12 @@ import {
   Users,
   CheckCircle2,
   XCircle,
+  Send,
+  ArrowUpDown,
+  CheckSquare,
+  Square,
+  Power,
+  PowerOff,
 } from "lucide-react";
 import { type Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +31,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { criarUsuarioAdmin, excluirUsuarioAdmin } from "@/lib/usuarios.functions";
+import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { logAdminAction } from "@/lib/auditLog";
 import { AdminLeads } from "./AdminLeads";
 import { AdminApoioFeminino } from "./AdminApoioFeminino";
@@ -169,9 +176,12 @@ export function AdminProfissionais() {
   const navigate = useNavigate();
   const criarUsuarioFn = useServerFn(criarUsuarioAdmin);
   const excluirUsuarioFn = useServerFn(excluirUsuarioAdmin);
+  const enviarMassaFn = useServerFn(enviarEmailMassaAdmin);
   const searchParams = (useSearch({ strict: false }) || {}) as Record<string, unknown>;
   const search = (searchParams.pro_q as string | undefined) || "";
   const filterStatus = (searchParams.pro_status as string | undefined) || "todos";
+  const filterEsp = (searchParams.pro_esp as string | undefined) || "todas";
+  const sort = (searchParams.pro_sort as string | undefined) || "recentes";
 
   const setSearch = (val: string) =>
     navigate({
@@ -180,6 +190,14 @@ export function AdminProfissionais() {
   const setFilterStatus = (val: string) =>
     navigate({
       search: ((old: Record<string, unknown>) => ({ ...old, pro_status: val || "todos" })) as never,
+    });
+  const setFilterEsp = (val: string) =>
+    navigate({
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_esp: val === "todas" ? undefined : val })) as never,
+    });
+  const setSort = (val: string) =>
+    navigate({
+      search: ((old: Record<string, unknown>) => ({ ...old, pro_sort: val === "recentes" ? undefined : val })) as never,
     });
   const clearFilters = () => navigate({ search: ((old: Record<string, unknown>) => ({ tab: old.tab })) as never });
 
@@ -194,6 +212,23 @@ export function AdminProfissionais() {
   const [newPro, setNewPro] = useState({ nome: "", email: "", password: "" });
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; recipients: { email: string; nome: string }[] }>({ open: false, recipients: [] });
+  const [emailForm, setEmailForm] = useState({ subject: "", message: "", template_slug: "" });
+  const [templates, setTemplates] = useState<{ slug: string; nome: string; assunto: string }[]>([]);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("email_templates")
+        .select("slug, nome, assunto, ativo")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+      setTemplates((data ?? []) as any);
+    })();
+  }, []);
 
   const { data: pros = [], isLoading } = useQuery({
     queryKey: ["admin", "profissionais"],
@@ -259,6 +294,7 @@ export function AdminProfissionais() {
           genero: perfil?.genero || "nao_informar",
           oferece_apoio_feminino: !!perfil?.oferece_apoio_feminino,
           mp_user_id: perfil?.mp_user_id || null,
+          created_at: perfil?.created_at || null,
         };
       });
     },
@@ -266,18 +302,143 @@ export function AdminProfissionais() {
 
   const approvedPros = pros.filter((p) => p.aprovacao_status === "aprovado");
 
-  const filtered = approvedPros.filter((p) => {
-    const matchSearch =
-      !search ||
-      p.nome?.toLowerCase().includes(search.toLowerCase()) ||
-      p.email?.toLowerCase().includes(search.toLowerCase()) ||
-      p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus =
-      filterStatus === "todos" ||
-      (filterStatus === "ativo" && p.ativo) ||
-      (filterStatus === "inativo" && !p.ativo);
-    return matchSearch && matchStatus;
-  });
+  const especialidadesUnicas = useMemo(() => {
+    const set = new Set<string>();
+    approvedPros.forEach((p) => p.especialidades?.forEach((e: string) => set.add(e)));
+    return Array.from(set).sort();
+  }, [approvedPros]);
+
+  const filtered = useMemo(() => {
+    const list = approvedPros.filter((p) => {
+      const matchSearch =
+        !search ||
+        p.nome?.toLowerCase().includes(search.toLowerCase()) ||
+        p.email?.toLowerCase().includes(search.toLowerCase()) ||
+        p.especialidades?.some((e: string) => e.toLowerCase().includes(search.toLowerCase()));
+      const matchStatus =
+        filterStatus === "todos" ||
+        (filterStatus === "ativo" && p.ativo) ||
+        (filterStatus === "inativo" && !p.ativo);
+      const matchEsp = filterEsp === "todas" || p.especialidades?.includes(filterEsp);
+      return matchSearch && matchStatus && matchEsp;
+    });
+    const sorted = [...list];
+    if (sort === "nome") sorted.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+    else if (sort === "servicos") sorted.sort((a, b) => b.servicos - a.servicos);
+    else if (sort === "ganhos") sorted.sort((a, b) => b.ganhos - a.ganhos);
+    else if (sort === "rating")
+      sorted.sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1));
+    else
+      sorted.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    return sorted;
+  }, [approvedPros, search, filterStatus, filterEsp, sort]);
+
+  const allSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
+  const someSelected = selectedIds.size > 0;
+  const toggleAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map((p) => p.id)));
+  };
+  const toggleOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkSetAtivo = async (ativo: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    const rows = ids.map((user_id) => ({ user_id, ativo, updated_at: new Date().toISOString() }));
+    const { error } = await supabase.from("profissional_perfil").upsert(rows);
+    setBulkBusy(false);
+    if (error) {
+      toast.error("Erro ao atualizar status em massa");
+      return;
+    }
+    toast.success(`${ids.length} profissional(is) ${ativo ? "ativado(s)" : "desativado(s)"}`);
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+    clearSelection();
+    await logAdminAction(supabase, {
+      acao: ativo ? "ativou_profissional_massa" : "desativou_profissional_massa",
+      detalhes: { quantidade: ids.length, ids },
+      entidadeTipo: "profissional",
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (
+      !confirm(
+        `Excluir ${selectedIds.size} profissional(is)? Esta ação é irreversível e remove todos os dados dos usuários.`,
+      )
+    )
+      return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    let ok = 0;
+    let fail = 0;
+    for (const id of ids) {
+      try {
+        const r = await excluirUsuarioFn({
+          data: { targetUserId: id },
+          headers: { Authorization: `Bearer ${session?.access_token}` },
+        } as never);
+        if ((r as any)?.ok) ok++;
+        else fail++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    if (ok > 0) toast.success(`${ok} excluído(s)${fail ? ` · ${fail} falhou` : ""}`);
+    if (ok === 0) toast.error("Nenhum profissional foi excluído");
+    clearSelection();
+    setSelected(null);
+    qc.invalidateQueries({ queryKey: ["admin", "profissionais"] });
+  };
+
+  const openEmailDialog = (recipients: { email: string; nome: string }[]) => {
+    if (recipients.length === 0) {
+      toast.error("Selecione ao menos um profissional");
+      return;
+    }
+    setEmailForm({ subject: "", message: "", template_slug: "" });
+    setEmailDialog({ open: true, recipients });
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailForm.subject.trim() || !emailForm.message.trim()) {
+      toast.error("Preencha assunto e mensagem");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const r = await enviarMassaFn({
+        data: {
+          subject: emailForm.subject,
+          message: emailForm.message,
+          recipients: emailDialog.recipients.map((r) => ({ email: r.email, nome: r.nome })),
+          template_slug: emailForm.template_slug || undefined,
+        },
+      } as never);
+      const resp = r as any;
+      if (resp?.ok) {
+        toast.success(`E-mail enviado: ${resp.sent} ok${resp.failed ? ` · ${resp.failed} falhou` : ""}`);
+        setEmailDialog({ open: false, recipients: [] });
+        clearSelection();
+      } else {
+        toast.error(resp?.error || "Falha ao enviar e-mails");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao enviar e-mails");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
 
   const handleToggleAtivo = async (pro: any) => {
     setTogglingId(pro.id);
@@ -434,53 +595,128 @@ export function AdminProfissionais() {
 
       {activeTab === "lista" && (
         <>
-          <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, e-mail ou especialidade…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
-          />
-        </div>
-        <div className="flex gap-2 items-center">
-          <span className="text-xs text-slate-400 font-medium mr-1 hidden sm:inline">Status:</span>
-          {[
-            { id: "todos", label: `Todos (${approvedPros.length})` },
-            {
-              id: "ativo",
-              label: `Ativos (${approvedPros.filter((p) => p.ativo).length})`,
-            },
-            {
-              id: "inativo",
-              label: `Inativos (${approvedPros.filter((p) => !p.ativo).length})`,
-            },
-          ].map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setFilterStatus(s.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-all ${
-                filterStatus === s.id
-                  ? "bg-slate-900 text-white"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-          {(search || filterStatus !== "todos") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-slate-500 hover:text-red-500 gap-1 px-2"
-            >
-              <X className="h-4 w-4" /> Limpar
-            </Button>
-          )}
-        </div>
-      </div>
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome, e-mail ou especialidade…"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-brand/20 outline-none bg-white"
+                />
+              </div>
+              <div className="flex gap-2 items-center flex-wrap">
+                {[
+                  { id: "todos", label: `Todos (${approvedPros.length})` },
+                  { id: "ativo", label: `Ativos (${approvedPros.filter((p) => p.ativo).length})` },
+                  { id: "inativo", label: `Inativos (${approvedPros.filter((p) => !p.ativo).length})` },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setFilterStatus(s.id)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      filterStatus === s.id
+                        ? "bg-slate-900 text-white"
+                        : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center flex-wrap">
+              <div className="relative">
+                <select
+                  value={filterEsp}
+                  onChange={(e) => setFilterEsp(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+                >
+                  <option value="todas">Todas as especialidades</option>
+                  {especialidadesUnicas.map((e) => (
+                    <option key={e} value={e}>
+                      {e}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative">
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="appearance-none pl-8 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
+                >
+                  <option value="recentes">Mais recentes</option>
+                  <option value="nome">Nome (A→Z)</option>
+                  <option value="servicos">Mais serviços</option>
+                  <option value="ganhos">Maiores ganhos</option>
+                  <option value="rating">Melhor nota</option>
+                </select>
+                <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+              </div>
+              <button
+                onClick={toggleAll}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50"
+              >
+                {allSelected ? <CheckSquare className="h-3.5 w-3.5 text-brand" /> : <Square className="h-3.5 w-3.5" />}
+                {allSelected ? "Limpar seleção" : `Selecionar todos (${filtered.length})`}
+              </button>
+              {(search || filterStatus !== "todos" || filterEsp !== "todas" || sort !== "recentes") && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500 hover:text-red-500 gap-1 px-2">
+                  <X className="h-4 w-4" /> Limpar filtros
+                </Button>
+              )}
+            </div>
+
+            {someSelected && (
+              <div className="sticky top-16 z-30 flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/20">
+                <span className="text-xs font-bold mr-2">{selectedIds.size} selecionado(s)</span>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkSetAtivo(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-500 hover:bg-green-400 disabled:opacity-50"
+                >
+                  <Power className="h-3.5 w-3.5" /> Ativar
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkSetAtivo(false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 disabled:opacity-50"
+                >
+                  <PowerOff className="h-3.5 w-3.5" /> Desativar
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => {
+                    const recipients = approvedPros
+                      .filter((p) => selectedIds.has(p.id) && p.email)
+                      .map((p) => ({ email: p.email as string, nome: p.nome as string }));
+                    openEmailDialog(recipients);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand hover:bg-brand/90 disabled:opacity-50"
+                >
+                  <Send className="h-3.5 w-3.5" /> Enviar e-mail
+                </button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={handleBulkDelete}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-500 hover:bg-red-400 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Excluir
+                </button>
+                <button
+                  onClick={clearSelection}
+                  className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-white/70 hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+                {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-1" />}
+              </div>
+            )}
+          </div>
+
 
       <div className="flex gap-6">
         <div className={`flex-1 min-w-0 ${selected ? "hidden lg:block" : ""}`}>
@@ -521,64 +757,98 @@ export function AdminProfissionais() {
           )}
           {!isLoading && (
             <div className="space-y-3">
-              {filtered.map((pro) => (
-                <button
-                  key={pro.id}
-                  onClick={() => {
-                    setSelected(pro);
-                    setEditingEsp(false);
-                    setDetailView(null);
-                    setEspSelected([...pro.especialidades]);
-                  }}
-                  className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
-                    selected?.id === pro.id
-                      ? "border-brand ring-2 ring-brand/20"
-                      : "border-slate-200"
-                  }`}
-                >
+              {filtered.map((pro) => {
+                const checked = selectedIds.has(pro.id);
+                return (
                   <div
-                    className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}
+                    key={pro.id}
+                    className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
+                      selected?.id === pro.id
+                        ? "border-brand ring-2 ring-brand/20"
+                        : checked
+                        ? "border-brand/40 bg-brand/5"
+                        : "border-slate-200"
+                    }`}
                   >
-                    {pro.nome?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm truncate">{pro.nome}</p>
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 truncate">{pro.email}</p>
-                    {pro.especialidades.length > 0 && (
-                      <div className="flex gap-1 mt-1.5 flex-wrap">
-                        {pro.especialidades.slice(0, 3).map((e: string) => (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleOne(pro.id);
+                      }}
+                      className="shrink-0 p-1 text-slate-400 hover:text-brand"
+                      aria-label={checked ? "Desmarcar" : "Marcar"}
+                    >
+                      {checked ? <CheckSquare className="h-5 w-5 text-brand" /> : <Square className="h-5 w-5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(pro);
+                        setEditingEsp(false);
+                        setDetailView(null);
+                        setEspSelected([...pro.especialidades]);
+                      }}
+                      className="flex-1 min-w-0 flex items-center gap-4 text-left"
+                    >
+                      <div
+                        className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}
+                      >
+                        {pro.nome?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm truncate">{pro.nome}</p>
                           <span
-                            key={e}
-                            className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium"
-                          >
-                            {e}
-                          </span>
-                        ))}
-                        {pro.especialidades.length > 3 && (
-                          <span className="text-[9px] text-slate-400">
-                            +{pro.especialidades.length - 3}
-                          </span>
+                            className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{pro.email}</p>
+                        {pro.especialidades.length > 0 && (
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            {pro.especialidades.slice(0, 3).map((e: string) => (
+                              <span
+                                key={e}
+                                className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium"
+                              >
+                                {e}
+                              </span>
+                            ))}
+                            {pro.especialidades.length > 3 && (
+                              <span className="text-[9px] text-slate-400">
+                                +{pro.especialidades.length - 3}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
+                      <div className="shrink-0 text-right hidden sm:block">
+                        {pro.rating != null && (
+                          <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
+                            {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
+                          </p>
+                        )}
+                        <p className="text-[10px] text-slate-400">
+                          {pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </button>
+                    {pro.email && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
+                        }}
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
+                        title="Enviar e-mail"
+                      >
+                        <Mail className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
-                  <div className="shrink-0 text-right hidden sm:block">
-                    {pro.rating != null && (
-                      <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
-                        {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-400">
-                      {pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -947,6 +1217,99 @@ export function AdminProfissionais() {
                   {isCreating ? <Loader2 className="h-5 w-5 animate-spin" /> : "Criar Conta"}
                 </Button>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {emailDialog.open && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">Enviar e-mail</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {emailDialog.recipients.length} destinatário(s)
+                  </p>
+                </div>
+                <button
+                  onClick={() => setEmailDialog({ open: false, recipients: [] })}
+                  className="p-2 hover:bg-slate-100 rounded-xl"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-20 overflow-y-auto flex flex-wrap gap-1.5">
+                {emailDialog.recipients.slice(0, 30).map((r) => (
+                  <span key={r.email} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+                    {r.nome || r.email}
+                  </span>
+                ))}
+                {emailDialog.recipients.length > 30 && (
+                  <span className="text-[10px] text-slate-400">+{emailDialog.recipients.length - 30}</span>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Template (opcional)</label>
+                <select
+                  value={emailForm.template_slug}
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    const tpl = templates.find((t) => t.slug === slug);
+                    setEmailForm((f) => ({
+                      ...f,
+                      template_slug: slug,
+                      subject: tpl?.assunto || f.subject,
+                    }));
+                  }}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-white"
+                >
+                  <option value="">— Sem template (corpo livre) —</option>
+                  {templates.map((t) => (
+                    <option key={t.slug} value={t.slug}>{t.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Assunto</label>
+                <input
+                  value={emailForm.subject}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, subject: e.target.value }))}
+                  placeholder="Assunto do e-mail"
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Mensagem <span className="text-slate-400 normal-case font-medium">— use {"{{nome}}"} para personalizar</span>
+                </label>
+                <textarea
+                  rows={6}
+                  value={emailForm.message}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, message: e.target.value }))}
+                  placeholder={"Olá {{nome}},\n\n..."}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none"
+                />
+              </div>
+
+              <Button
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="w-full bg-brand text-white rounded-2xl h-12 font-bold shadow-lg shadow-brand/20"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" /> Enviar para {emailDialog.recipients.length} destinatário(s)
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
