@@ -1221,6 +1221,99 @@ export function AdminProfissionais() {
           </div>
         </div>
       )}
+
+      {emailDialog.open && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">Enviar e-mail</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {emailDialog.recipients.length} destinatário(s)
+                  </p>
+                </div>
+                <button
+                  onClick={() => setEmailDialog({ open: false, recipients: [] })}
+                  className="p-2 hover:bg-slate-100 rounded-xl"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-20 overflow-y-auto flex flex-wrap gap-1.5">
+                {emailDialog.recipients.slice(0, 30).map((r) => (
+                  <span key={r.email} className="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+                    {r.nome || r.email}
+                  </span>
+                ))}
+                {emailDialog.recipients.length > 30 && (
+                  <span className="text-[10px] text-slate-400">+{emailDialog.recipients.length - 30}</span>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Template (opcional)</label>
+                <select
+                  value={emailForm.template_slug}
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    const tpl = templates.find((t) => t.slug === slug);
+                    setEmailForm((f) => ({
+                      ...f,
+                      template_slug: slug,
+                      subject: tpl?.assunto || f.subject,
+                    }));
+                  }}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-white"
+                >
+                  <option value="">— Sem template (corpo livre) —</option>
+                  {templates.map((t) => (
+                    <option key={t.slug} value={t.slug}>{t.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">Assunto</label>
+                <input
+                  value={emailForm.subject}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, subject: e.target.value }))}
+                  placeholder="Assunto do e-mail"
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                  Mensagem <span className="text-slate-400 normal-case font-medium">— use {"{{nome}}"} para personalizar</span>
+                </label>
+                <textarea
+                  rows={6}
+                  value={emailForm.message}
+                  onChange={(e) => setEmailForm((f) => ({ ...f, message: e.target.value }))}
+                  placeholder={"Olá {{nome}},\n\n..."}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none"
+                />
+              </div>
+
+              <Button
+                onClick={handleSendEmail}
+                disabled={sendingEmail}
+                className="w-full bg-brand text-white rounded-2xl h-12 font-bold shadow-lg shadow-brand/20"
+              >
+                {sendingEmail ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" /> Enviar para {emailDialog.recipients.length} destinatário(s)
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
