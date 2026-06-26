@@ -875,7 +875,7 @@ function AdminValidacao() {
               <div className="flex items-center gap-1.5 border-l border-slate-200 pl-2">
                 <button
                   type="button"
-                  onClick={() => setFilterEmailNaoConfirmado((v) => !v)}
+                  onClick={() => setFilterEmailNaoConfirmado((v: boolean) => !v)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${
                     filterEmailNaoConfirmado
                       ? "bg-red-50 text-red-700 border-red-300"
