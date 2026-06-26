@@ -229,6 +229,12 @@ function AdminValidacao() {
   const [sortBy, setSortBy] = useState<"recente" | "nome" | "etapa">(
     (searchParams.sort as any) ?? "recente",
   );
+  const [filterEtapa, setFilterEtapa] = useState<"" | "1" | "2" | "3" | "4" | "5">(
+    (searchParams.etapa as any) ?? "",
+  );
+  const [filterEmailNaoConfirmado, setFilterEmailNaoConfirmado] = useState(
+    searchParams.email_nao_confirmado ?? false,
+  );
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
