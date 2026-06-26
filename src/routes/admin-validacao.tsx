@@ -1388,17 +1388,24 @@ function AdminValidacao() {
                       </p>
                       <div className="flex flex-col gap-2">
                         {selected.telefone && (
-                          <a
-                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                              `Olá ${selected.nome?.split(" ")[0] || ""}! Vimos que seu cadastro na Mestres do Lar parou na etapa "${etapa?.label || "final"}". Posso te ajudar a finalizar?`,
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setWhatsDialog({
+                                open: true,
+                                userId: selected.user_id,
+                                email: selected.email && selected.email !== "—" ? selected.email : null,
+                                telefone: selected.telefone as string,
+                                nome: selected.nome ?? null,
+                                mensagem: `Olá ${selected.nome?.split(" ")[0] || ""}! Vimos que seu cadastro na Marido pra Quê parou na etapa "${etapa?.label || "final"}". Posso te ajudar a finalizar?`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline text-left"
                           >
                             <Phone className="h-4 w-4" /> {selected.telefone} (WhatsApp)
-                          </a>
+                          </button>
                         )}
+
                         {selected.email && selected.email !== "—" && (
                           <button
                             type="button"
