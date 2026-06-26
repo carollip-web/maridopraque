@@ -220,6 +220,8 @@ export function AdminProfissionais() {
   const [emailForm, setEmailForm] = useState({ subject: "", message: "", template_slug: "" });
   const [templates, setTemplates] = useState<{ slug: string; nome: string; assunto: string }[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [whatsDialog, setWhatsDialog] = useState<{ open: boolean; userId: string | null; email: string | null; telefone: string; nome: string | null } | null>(null);
+  const [contatoRefresh, setContatoRefresh] = useState(0);
 
   useEffect(() => {
     (async () => {
