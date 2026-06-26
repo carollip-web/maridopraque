@@ -757,64 +757,98 @@ export function AdminProfissionais() {
           )}
           {!isLoading && (
             <div className="space-y-3">
-              {filtered.map((pro) => (
-                <button
-                  key={pro.id}
-                  onClick={() => {
-                    setSelected(pro);
-                    setEditingEsp(false);
-                    setDetailView(null);
-                    setEspSelected([...pro.especialidades]);
-                  }}
-                  className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
-                    selected?.id === pro.id
-                      ? "border-brand ring-2 ring-brand/20"
-                      : "border-slate-200"
-                  }`}
-                >
+              {filtered.map((pro) => {
+                const checked = selectedIds.has(pro.id);
+                return (
                   <div
-                    className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}
+                    key={pro.id}
+                    className={`w-full bg-white rounded-2xl border text-left p-5 flex items-center gap-4 transition-all hover:shadow-md ${
+                      selected?.id === pro.id
+                        ? "border-brand ring-2 ring-brand/20"
+                        : checked
+                        ? "border-brand/40 bg-brand/5"
+                        : "border-slate-200"
+                    }`}
                   >
-                    {pro.nome?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-sm truncate">{pro.nome}</p>
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 truncate">{pro.email}</p>
-                    {pro.especialidades.length > 0 && (
-                      <div className="flex gap-1 mt-1.5 flex-wrap">
-                        {pro.especialidades.slice(0, 3).map((e: string) => (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleOne(pro.id);
+                      }}
+                      className="shrink-0 p-1 text-slate-400 hover:text-brand"
+                      aria-label={checked ? "Desmarcar" : "Marcar"}
+                    >
+                      {checked ? <CheckSquare className="h-5 w-5 text-brand" /> : <Square className="h-5 w-5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(pro);
+                        setEditingEsp(false);
+                        setDetailView(null);
+                        setEspSelected([...pro.especialidades]);
+                      }}
+                      className="flex-1 min-w-0 flex items-center gap-4 text-left"
+                    >
+                      <div
+                        className={`h-11 w-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${pro.ativo ? "bg-brand-soft text-brand" : "bg-slate-100 text-slate-400"}`}
+                      >
+                        {pro.nome?.[0]?.toUpperCase() || "?"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm truncate">{pro.nome}</p>
                           <span
-                            key={e}
-                            className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium"
-                          >
-                            {e}
-                          </span>
-                        ))}
-                        {pro.especialidades.length > 3 && (
-                          <span className="text-[9px] text-slate-400">
-                            +{pro.especialidades.length - 3}
-                          </span>
+                            className={`h-1.5 w-1.5 rounded-full shrink-0 ${pro.ativo ? "bg-green-500" : "bg-slate-300"}`}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{pro.email}</p>
+                        {pro.especialidades.length > 0 && (
+                          <div className="flex gap-1 mt-1.5 flex-wrap">
+                            {pro.especialidades.slice(0, 3).map((e: string) => (
+                              <span
+                                key={e}
+                                className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium"
+                              >
+                                {e}
+                              </span>
+                            ))}
+                            {pro.especialidades.length > 3 && (
+                              <span className="text-[9px] text-slate-400">
+                                +{pro.especialidades.length - 3}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
+                      <div className="shrink-0 text-right hidden sm:block">
+                        {pro.rating != null && (
+                          <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
+                            {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
+                          </p>
+                        )}
+                        <p className="text-[10px] text-slate-400">
+                          {pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </button>
+                    {pro.email && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
+                        }}
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
+                        title="Enviar e-mail"
+                      >
+                        <Mail className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
-                  <div className="shrink-0 text-right hidden sm:block">
-                    {pro.rating != null && (
-                      <p className="text-sm font-bold flex items-center gap-0.5 text-amber-500">
-                        {pro.rating.toFixed(1)} <Star className="h-3 w-3" fill="currentColor" />
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-400">
-                      {pro.servicos} serviço{pro.servicos !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
