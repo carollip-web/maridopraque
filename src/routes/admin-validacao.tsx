@@ -1750,9 +1750,23 @@ function AdminValidacao() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {whatsDialog?.open && (
+      <WhatsappContatoDialog
+        open={whatsDialog.open}
+        onOpenChange={(v) => setWhatsDialog(v ? whatsDialog : null)}
+        destinatarioUserId={whatsDialog.userId}
+        destinatarioEmail={whatsDialog.email}
+        telefone={whatsDialog.telefone}
+        nome={whatsDialog.nome}
+        mensagemSugerida={whatsDialog.mensagem}
+        onRegistered={() => setContatoRefresh((n) => n + 1)}
+      />
+    )}
     </>
   );
 }
+
 
 function Section({
   title,
