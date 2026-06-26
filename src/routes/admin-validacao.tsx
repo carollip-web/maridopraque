@@ -7,6 +7,8 @@ import { logAdminAction } from "@/lib/auditLog";
 import { enviarEmailAdmin } from "@/lib/admin-email.functions";
 import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { getEmailConfirmStatus, reenviarConfirmacaoEmail } from "@/lib/admin-auth-actions.functions";
+import { ContatoBadge } from "@/components/ContatoBadge";
+import { WhatsappContatoDialog } from "@/components/WhatsappContatoDialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -250,6 +252,8 @@ function AdminValidacao() {
   const [sendingBulk, setSendingBulk] = useState(false);
   const [templates, setTemplates] = useState<Array<{ slug: string; nome: string; assunto: string }>>([]);
   const [emailTemplateSlug, setEmailTemplateSlug] = useState<string>("admin_contato");
+  const [whatsDialog, setWhatsDialog] = useState<{ open: boolean; userId: string | null; email: string | null; telefone: string; nome: string | null; mensagem: string } | null>(null);
+  const [contatoRefresh, setContatoRefresh] = useState(0);
   const [alteracoes, setAlteracoes] = useState<Array<{
     id: string;
     campo: string;
@@ -1024,8 +1028,12 @@ function AdminValidacao() {
                   )}
 
                   </button>
+                  <div className="pt-2 mt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <ContatoBadge userId={p.user_id} email={p.email && p.email !== "—" ? p.email : null} nome={p.nome} refreshKey={contatoRefresh} />
+                  </div>
                 </div>
               ))
+
             )}
           </div>
 
@@ -1384,17 +1392,24 @@ function AdminValidacao() {
                       </p>
                       <div className="flex flex-col gap-2">
                         {selected.telefone && (
-                          <a
-                            href={`https://wa.me/55${selected.telefone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                              `Olá ${selected.nome?.split(" ")[0] || ""}! Vimos que seu cadastro na Mestres do Lar parou na etapa "${etapa?.label || "final"}". Posso te ajudar a finalizar?`,
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setWhatsDialog({
+                                open: true,
+                                userId: selected.user_id,
+                                email: selected.email && selected.email !== "—" ? selected.email : null,
+                                telefone: selected.telefone as string,
+                                nome: selected.nome ?? null,
+                                mensagem: `Olá ${selected.nome?.split(" ")[0] || ""}! Vimos que seu cadastro na Marido pra Quê parou na etapa "${etapa?.label || "final"}". Posso te ajudar a finalizar?`,
+                              });
+                            }}
+                            className="inline-flex items-center gap-2 text-sm font-medium text-green-700 hover:underline text-left"
                           >
                             <Phone className="h-4 w-4" /> {selected.telefone} (WhatsApp)
-                          </a>
+                          </button>
                         )}
+
                         {selected.email && selected.email !== "—" && (
                           <button
                             type="button"
@@ -1735,9 +1750,23 @@ function AdminValidacao() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {whatsDialog?.open && (
+      <WhatsappContatoDialog
+        open={whatsDialog.open}
+        onOpenChange={(v) => setWhatsDialog(v ? whatsDialog : null)}
+        destinatarioUserId={whatsDialog.userId}
+        destinatarioEmail={whatsDialog.email}
+        telefone={whatsDialog.telefone}
+        nome={whatsDialog.nome}
+        mensagemSugerida={whatsDialog.mensagem}
+        onRegistered={() => setContatoRefresh((n) => n + 1)}
+      />
+    )}
     </>
   );
 }
+
 
 function Section({
   title,

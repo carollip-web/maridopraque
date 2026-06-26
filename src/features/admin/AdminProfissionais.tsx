@@ -35,6 +35,8 @@ import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { logAdminAction } from "@/lib/auditLog";
 import { AdminLeads } from "./AdminLeads";
 import { AdminApoioFeminino } from "./AdminApoioFeminino";
+import { ContatoBadge } from "@/components/ContatoBadge";
+import { WhatsappContatoDialog } from "@/components/WhatsappContatoDialog";
 
 function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servicos" | "nota" }) {
   const { data: details, isLoading } = useQuery({
@@ -218,6 +220,8 @@ export function AdminProfissionais() {
   const [emailForm, setEmailForm] = useState({ subject: "", message: "", template_slug: "" });
   const [templates, setTemplates] = useState<{ slug: string; nome: string; assunto: string }[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [whatsDialog, setWhatsDialog] = useState<{ open: boolean; userId: string | null; email: string | null; telefone: string; nome: string | null } | null>(null);
+  const [contatoRefresh, setContatoRefresh] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -833,25 +837,29 @@ export function AdminProfissionais() {
                         </p>
                       </div>
                     </button>
-                    {pro.email && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
-                        }}
-                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
-                        title="Enviar e-mail"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </button>
-                    )}
+                    <div className="shrink-0 flex items-center gap-1">
+                      <ContatoBadge userId={pro.id} email={pro.email} nome={pro.nome} refreshKey={contatoRefresh} />
+                      {pro.email && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEmailDialog([{ email: pro.email as string, nome: pro.nome as string }]);
+                          }}
+                          className="p-2 rounded-lg text-slate-400 hover:text-brand hover:bg-brand/10"
+                          title="Enviar e-mail"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
 
         {selected && (
           <div className="w-full lg:w-96 shrink-0">
@@ -1120,20 +1128,26 @@ export function AdminProfissionais() {
                   )}
                   {selected.whatsapp && (
                     <Button
-                      asChild
                       variant="outline"
                       size="sm"
+                      onClick={() =>
+                        setWhatsDialog({
+                          open: true,
+                          userId: selected.id,
+                          email: selected.email ?? null,
+                          telefone: selected.whatsapp as string,
+                          nome: selected.nome ?? null,
+                        })
+                      }
                       className="w-full rounded-xl justify-start gap-2 text-green-600 border-green-200 hover:bg-green-50"
                     >
-                      <a
-                        href={`https://wa.me/${selected.whatsapp.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Mail className="h-4 w-4" /> Contato via WhatsApp
-                      </a>
+                      <Mail className="h-4 w-4" /> Contato via WhatsApp
                     </Button>
                   )}
+                  <div className="pt-1">
+                    <ContatoBadge userId={selected.id} email={selected.email} nome={selected.nome} refreshKey={contatoRefresh} />
+                  </div>
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1157,6 +1171,18 @@ export function AdminProfissionais() {
         </>
       )}
 
+      {whatsDialog?.open && (
+        <WhatsappContatoDialog
+          open={whatsDialog.open}
+          onOpenChange={(v) => setWhatsDialog(v ? whatsDialog : null)}
+          destinatarioUserId={whatsDialog.userId}
+          destinatarioEmail={whatsDialog.email}
+          telefone={whatsDialog.telefone}
+          nome={whatsDialog.nome}
+          mensagemSugerida={`Olá ${whatsDialog.nome?.split(" ")[0] || ""}, aqui é da equipe Marido pra Quê.`}
+          onRegistered={() => setContatoRefresh((n) => n + 1)}
+        />
+      )}
 
 
       {showAddModal && (

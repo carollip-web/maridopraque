@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_contato_log: {
+        Row: {
+          admin_id: string
+          assunto: string
+          canal: string
+          created_at: string
+          destinatario_email: string | null
+          destinatario_telefone: string | null
+          destinatario_user_id: string | null
+          id: string
+          observacao: string | null
+        }
+        Insert: {
+          admin_id: string
+          assunto: string
+          canal: string
+          created_at?: string
+          destinatario_email?: string | null
+          destinatario_telefone?: string | null
+          destinatario_user_id?: string | null
+          id?: string
+          observacao?: string | null
+        }
+        Update: {
+          admin_id?: string
+          assunto?: string
+          canal?: string
+          created_at?: string
+          destinatario_email?: string | null
+          destinatario_telefone?: string | null
+          destinatario_user_id?: string | null
+          id?: string
+          observacao?: string | null
+        }
+        Relationships: []
+      }
       apoio_feminino_equipe: {
         Row: {
           ativo: boolean
