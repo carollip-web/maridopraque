@@ -63,6 +63,9 @@ export const Route = createFileRoute("/admin-validacao")({
     id: typeof search.id === "string" ? (search.id as string) : undefined,
     sort: (typeof search.sort === "string" ? search.sort : undefined) as
       | "recente" | "nome" | "etapa" | undefined,
+    etapa: (typeof search.etapa === "string" ? search.etapa : undefined) as
+      | "1" | "2" | "3" | "4" | "5" | undefined,
+    email_nao_confirmado: search.email_nao_confirmado === true || search.email_nao_confirmado === "true",
   }),
   component: AdminValidacao,
 });
@@ -225,6 +228,12 @@ function AdminValidacao() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"recente" | "nome" | "etapa">(
     (searchParams.sort as any) ?? "recente",
+  );
+  const [filterEtapa, setFilterEtapa] = useState<"" | "1" | "2" | "3" | "4" | "5">(
+    (searchParams.etapa as any) ?? "",
+  );
+  const [filterEmailNaoConfirmado, setFilterEmailNaoConfirmado] = useState(
+    searchParams.email_nao_confirmado ?? false,
   );
   const [motivo, setMotivo] = useState("");
   const [saving, setSaving] = useState(false);
@@ -690,6 +699,13 @@ function AdminValidacao() {
         !p.email.toLowerCase().includes(search.toLowerCase())
       )
         return false;
+      if (filterEtapa) {
+        const et = computarEtapaParou(p);
+        if (!et || String(et.numero) !== filterEtapa) return false;
+      }
+      if (filterEmailNaoConfirmado) {
+        if (emailConfirmados[p.user_id] !== false) return false;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -720,11 +736,13 @@ function AdminValidacao() {
         tab: filterStatus === "em_analise" ? undefined : filterStatus,
         sort: sortBy === "recente" ? undefined : sortBy,
         id: selected?.user_id,
+        etapa: filterEtapa || undefined,
+        email_nao_confirmado: filterEmailNaoConfirmado || undefined,
       },
       replace: true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus, sortBy, selected?.user_id]);
+  }, [filterStatus, sortBy, selected?.user_id, filterEtapa, filterEmailNaoConfirmado]);
 
   // Pre-select prestador from URL once list loads
   useEffect(() => {
@@ -835,6 +853,39 @@ function AdminValidacao() {
                   <option value="nome">Nome (A–Z)</option>
                   <option value="etapa">Etapa</option>
                 </select>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 px-1">
+                <span className="text-[10px] font-bold uppercase text-muted-foreground">Etapa:</span>
+                <select
+                  value={filterEtapa}
+                  onChange={(e) => setFilterEtapa(e.target.value as any)}
+                  className="text-xs bg-transparent outline-none font-medium text-slate-700 pr-1"
+                  aria-label="Filtrar por etapa"
+                >
+                  <option value="">Todas</option>
+                  <option value="1">1 — Dados pessoais</option>
+                  <option value="2">2 — Endereço</option>
+                  <option value="3">3 — Experiência</option>
+                  <option value="4">4 — Documentos</option>
+                  <option value="5">5 — Revisão e envio</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1.5 border-l border-slate-200 pl-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterEmailNaoConfirmado((v: boolean) => !v)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${
+                    filterEmailNaoConfirmado
+                      ? "bg-red-50 text-red-700 border-red-300"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <Mail className="h-3 w-3" />
+                  E-mail não confirmado
+                  {filterEmailNaoConfirmado && <X className="h-3 w-3" />}
+                </button>
               </div>
             </div>
             <p className="text-[11px] text-muted-foreground px-1">
