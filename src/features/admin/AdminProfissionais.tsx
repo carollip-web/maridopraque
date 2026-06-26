@@ -35,6 +35,8 @@ import { enviarEmailMassaAdmin } from "@/lib/admin-email-massa.functions";
 import { logAdminAction } from "@/lib/auditLog";
 import { AdminLeads } from "./AdminLeads";
 import { AdminApoioFeminino } from "./AdminApoioFeminino";
+import { ContatoBadge } from "@/components/ContatoBadge";
+import { WhatsappContatoDialog } from "@/components/WhatsappContatoDialog";
 
 function ProDetailView({ proId, view }: { proId: string; view: "ganhos" | "servicos" | "nota" }) {
   const { data: details, isLoading } = useQuery({
