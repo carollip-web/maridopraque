@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner";
 import { Tab } from "./constants";
 
 interface DashboardTabProps {
@@ -106,6 +107,8 @@ export function DashboardTab({ setActiveTab }: DashboardTabProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <NotificationPermissionBanner />
+
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading

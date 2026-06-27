@@ -49,10 +49,10 @@ export function NotificationPermissionBanner() {
         <Bell className="h-5 w-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-bold text-sm text-slate-900">Receba avisos de novos chamados</h4>
+        <h4 className="font-bold text-sm text-slate-900">Receba avisos em tempo real</h4>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ative as notificações do navegador para ser avisado em tempo real quando um cliente
-          solicitar um orçamento.
+          Ative as notificações para acompanhar propostas, pagamentos e mensagens — mesmo com o app
+          fechado.
         </p>
         <div className="flex gap-2 mt-3">
           <Button
