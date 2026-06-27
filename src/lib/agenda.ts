@@ -124,6 +124,17 @@ export function isAgendaCompativel(
   if (!orcamento.data_preferida) return { compativel: true };
 
   const data = new Date(orcamento.data_preferida + "T00:00:00");
+
+  // Se a data preferida já passou, a preferência ficou obsoleta — mas o pedido
+  // continua válido: o profissional pode assumir e combinar uma nova data no
+  // chat. Tratar como compatível evita que pedidos "flexíveis" sumam do radar
+  // (e que o envio de proposta seja bloqueado) só porque a data escolhida passou.
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  if (data.getTime() < hoje.getTime()) {
+    return { compativel: true, motivo: "Data preferida já passou — combine uma nova data no chat" };
+  }
+
   const slots = slotsDoDia({
     data,
     janelas: agenda.janelas,
