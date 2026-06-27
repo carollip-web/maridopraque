@@ -20,10 +20,12 @@ dist-ssr
 .wrangler/
 .dev.vars
 
-# Env files (keep .env.example tracked)
-.env
-.env.*
-!.env.example
+# NOTE: .env é versionado de propósito — o build do Vite no Lovable depende
+# dele para as variáveis VITE_ em tempo de build. Ele contém apenas a anon/
+# publishable key (pública, já vai no bundle do client) e a URL do projeto,
+# sem service-role. Não adicionar segredos reais aqui.
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
