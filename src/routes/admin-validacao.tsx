@@ -98,14 +98,14 @@ function AdminValidacao() {
   const [loadingUrls, setLoadingUrls] = useState(false);
   const searchParams = Route.useSearch();
   const [filterStatus, setFilterStatus] = useState<Status | "todos">(
-    (searchParams.tab as any) ?? "em_analise",
+    searchParams.tab ?? "em_analise",
   );
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"recente" | "nome" | "etapa">(
-    (searchParams.sort as any) ?? "recente",
+    searchParams.sort ?? "recente",
   );
   const [filterEtapa, setFilterEtapa] = useState<"" | "1" | "2" | "3" | "4" | "5">(
-    (searchParams.etapa as any) ?? "",
+    searchParams.etapa ?? "",
   );
   const [filterEmailNaoConfirmado, setFilterEmailNaoConfirmado] = useState(
     searchParams.email_nao_confirmado ?? false,
@@ -380,7 +380,7 @@ function AdminValidacao() {
         v == null || v === "" ? "" : Array.isArray(v) ? v.join(", ") : String(v);
       const diffs: Array<{ campo: string; antigo: string; novo: string }> = [];
       for (const k of Object.keys(perfilPayload)) {
-        const antigo = formatar((selected as any)[k]);
+        const antigo = formatar(selected[k as keyof Prestador]);
         const novo = formatar(perfilPayload[k]);
         if (antigo !== novo) diffs.push({ campo: k, antigo, novo });
       }
@@ -776,7 +776,7 @@ function AdminValidacao() {
                   <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e) => setSortBy(e.target.value as "recente" | "nome" | "etapa")}
                     className="text-xs bg-transparent outline-none font-medium text-slate-700 pr-1"
                     aria-label="Ordenar"
                   >
@@ -793,7 +793,9 @@ function AdminValidacao() {
                   </span>
                   <select
                     value={filterEtapa}
-                    onChange={(e) => setFilterEtapa(e.target.value as any)}
+                    onChange={(e) =>
+                      setFilterEtapa(e.target.value as "" | "1" | "2" | "3" | "4" | "5")
+                    }
                     className="text-xs bg-transparent outline-none font-medium text-slate-700 pr-1"
                     aria-label="Filtrar por etapa"
                   >

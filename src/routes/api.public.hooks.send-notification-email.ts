@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const APP_URL = "https://maridopraque.lovable.app";
 const FROM = "Marido pra Quê <contato@maridopraque.com>";
@@ -74,7 +75,7 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
 
           const SUPABASE_URL = process.env.SUPABASE_URL!;
           const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-          const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+          const admin = createClient<Database>(SUPABASE_URL, SERVICE_KEY);
 
           const { data: notif } = await admin
             .from("notificacoes")
@@ -83,7 +84,7 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
             .maybeSingle();
 
           if (!notif) return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
-          if ((notif as any).email_enviado) {
+          if (notif.email_enviado) {
             return new Response(JSON.stringify({ ok: true, skipped: "already_sent" }), {
               status: 200,
             });
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
           }
 
           // Try DB template first; fall back to hardcoded layout.
-          const { data: tpl } = await (admin as any)
+          const { data: tpl } = await admin
             .from("email_templates")
             .select("assunto, html, ativo")
             .eq("slug", "notificacao")
@@ -144,12 +145,12 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
             status,
             error_message: gwRes.ok ? null : gwBody.slice(0, 500),
             metadata: { notification_id: notif.id, titulo: notif.titulo, html },
-          } as any);
+          });
 
           if (gwRes.ok) {
             await admin
               .from("notificacoes")
-              .update({ email_enviado: true } as any)
+              .update({ email_enviado: true })
               .eq("id", notif.id);
             return new Response(JSON.stringify({ ok: true }), { status: 200 });
           }

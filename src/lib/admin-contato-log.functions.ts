@@ -107,23 +107,23 @@ export const listarHistoricoContatos = createServerFn({ method: "POST" })
     const { data: contatos, error: e2 } = await cq;
     if (e2) return { ok: false, error: e2.message };
 
-    const adminIds = Array.from(new Set((contatos ?? []).map((c: any) => c.admin_id).filter(Boolean)));
+    const adminIds = Array.from(new Set((contatos ?? []).map((c) => c.admin_id).filter(Boolean)));
     let adminMap: Record<string, string> = {};
     if (adminIds.length) {
       const { data: profs } = await supabase.from("profiles").select("id, nome").in("id", adminIds);
-      for (const p of profs ?? []) adminMap[(p as any).id] = (p as any).nome ?? "";
+      for (const p of profs ?? []) adminMap[p.id] = p.nome ?? "";
     }
 
     for (const c of contatos ?? []) {
       items.push({
-        id: (c as any).id,
-        tipo: (c as any).canal,
-        assunto: (c as any).assunto,
+        id: c.id,
+        tipo: c.canal as "email" | "whatsapp" | "telefone" | "outro",
+        assunto: c.assunto,
         status: "registrado",
-        observacao: (c as any).observacao,
-        created_at: (c as any).created_at,
-        destinatario: (c as any).destinatario_telefone ?? (c as any).destinatario_email ?? null,
-        admin_nome: adminMap[(c as any).admin_id] ?? null,
+        observacao: c.observacao,
+        created_at: c.created_at,
+        destinatario: c.destinatario_telefone ?? c.destinatario_email ?? null,
+        admin_nome: adminMap[c.admin_id] ?? null,
         html: null,
       });
     }
@@ -155,12 +155,12 @@ export const contarContatosLote = createServerFn({ method: "POST" })
       const byKey = new Map<string, Set<string>>();
       const lastByEmail = new Map<string, string>();
       for (const r of rows ?? []) {
-        const email = (r as any).recipient_email as string;
-        const key = (r as any).message_id ?? (r as any).id;
+        const email = r.recipient_email as string;
+        const key = r.message_id ?? r.id;
         if (!byKey.has(email)) byKey.set(email, new Set());
         byKey.get(email)!.add(key);
         const prev = lastByEmail.get(email);
-        if (!prev || (r as any).created_at > prev) lastByEmail.set(email, (r as any).created_at);
+        if (!prev || r.created_at > prev) lastByEmail.set(email, r.created_at);
       }
       for (const email of data.emails) {
         result[email] = result[email] ?? { emails: 0, whatsapp: 0, ultimo: null };
@@ -181,15 +181,15 @@ export const contarContatosLote = createServerFn({ method: "POST" })
         .select("id, email")
         .in("id", data.user_ids);
       const emailById: Record<string, string> = {};
-      for (const p of profs ?? []) emailById[(p as any).id] = (p as any).email ?? "";
+      for (const p of profs ?? []) emailById[p.id] = p.email ?? "";
 
       const countByUser = new Map<string, number>();
       const lastByUser = new Map<string, string>();
       for (const r of rows ?? []) {
-        const uid = (r as any).destinatario_user_id as string;
+        const uid = r.destinatario_user_id as string;
         countByUser.set(uid, (countByUser.get(uid) ?? 0) + 1);
         const prev = lastByUser.get(uid);
-        if (!prev || (r as any).created_at > prev) lastByUser.set(uid, (r as any).created_at);
+        if (!prev || r.created_at > prev) lastByUser.set(uid, r.created_at);
       }
       for (const uid of data.user_ids) {
         const email = emailById[uid] ?? "";

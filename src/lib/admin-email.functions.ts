@@ -86,7 +86,7 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
 
     // Look up DB template (admin_contato); fallback to hardcoded layout.
     const { supabaseAdmin: adminClient } = await import("@/integrations/supabase/client.server");
-    const { data: tpl } = await (adminClient as any)
+    const { data: tpl } = await adminClient
       .from("email_templates")
       .select("assunto, html, ativo")
       .eq("slug", data.template_slug || "admin_contato")
@@ -117,7 +117,7 @@ export const enviarEmailAdmin = createServerFn({ method: "POST" })
     const gwBody = await gwRes.text();
     const status = gwRes.ok ? "sent" : "failed";
 
-    await (adminClient as any).from("email_send_log").insert({
+    await adminClient.from("email_send_log").insert({
       message_id: `admin-${userId}-${Date.now()}`,
       template_name: "admin_manual",
       recipient_email: data.to,

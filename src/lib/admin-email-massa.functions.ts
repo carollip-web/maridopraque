@@ -88,7 +88,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin: adminClient } = await import("@/integrations/supabase/client.server");
-    const { data: tpl } = await (adminClient as any)
+    const { data: tpl } = await adminClient
       .from("email_templates")
       .select("assunto, html, ativo")
       .eq("slug", data.template_slug || "admin_contato")
@@ -137,7 +137,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
         if (gwRes.ok) sent++;
         else failed++;
 
-        await (adminClient as any).from("email_send_log").insert({
+        await adminClient.from("email_send_log").insert({
           message_id: `${batchId}-${i}`,
           template_name: "admin_bulk",
           recipient_email: r.email,
@@ -147,7 +147,7 @@ export const enviarEmailMassaAdmin = createServerFn({ method: "POST" })
         } as never);
       } catch (e: any) {
         failed++;
-        await (adminClient as any).from("email_send_log").insert({
+        await adminClient.from("email_send_log").insert({
           message_id: `${batchId}-${i}`,
           template_name: "admin_bulk",
           recipient_email: r.email,

@@ -113,7 +113,7 @@ export const reenviarConfirmacaoEmail = createServerFn({ method: "POST" })
       return { ok: false as const, error: "E-mail já foi confirmado" };
     }
 
-    const { data: profile } = await (supabaseAdmin as any)
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("nome")
       .eq("id", data.userId)
@@ -151,7 +151,7 @@ export const reenviarConfirmacaoEmail = createServerFn({ method: "POST" })
     const gwBody = await gwRes.text();
     const status = gwRes.ok ? "sent" : "failed";
 
-    await (supabaseAdmin as any).from("email_send_log").insert({
+    await supabaseAdmin.from("email_send_log").insert({
       message_id: `admin-reenvio-confirm-${data.userId}-${Date.now()}`,
       template_name: "admin_reenvio_confirmacao",
       recipient_email: targetEmail,
