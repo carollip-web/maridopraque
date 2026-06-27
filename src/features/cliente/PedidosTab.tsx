@@ -35,18 +35,10 @@ import { SlotPicker } from "@/components/SlotPicker";
 import { Chat } from "@/components/Chat";
 import { NivelBadge } from "@/components/NivelBadge";
 import { AvaliacaoForm } from "@/components/AvaliacaoForm";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Tab, SUPPORT_MAILTO } from "./constants";
 import { gerarPdfOrcamento } from "./pedidos.helpers";
 import { usePedidosCliente, usePedidosRealtime } from "./usePedidosCliente";
+import { DisputaDialog } from "./DisputaDialog";
 
 interface PedidosTabProps {
   setActiveTab: (tab: Tab) => void;
@@ -1337,42 +1329,17 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           </div>
         )}
 
-        <Dialog open={disputaOpen} onOpenChange={(o) => { setDisputaOpen(o); if (!o) setDisputaMotivo(""); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Abrir disputa</DialogTitle>
-              <DialogDescription>
-                Conte o que aconteceu para que nossa equipe analise o caso.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <label className="text-sm font-bold">Descreva o problema</label>
-              <Textarea
-                value={disputaMotivo}
-                onChange={(e) => setDisputaMotivo(e.target.value)}
-                placeholder="Ex.: o serviço não foi executado conforme combinado..."
-                rows={5}
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDisputaOpen(false)}
-                disabled={disputaLoading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => handleAbrirDisputa(sp.id)}
-                disabled={disputaLoading || !disputaMotivo.trim()}
-              >
-                {disputaLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Abrir disputa
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DisputaDialog
+          open={disputaOpen}
+          onOpenChange={(o) => {
+            setDisputaOpen(o);
+            if (!o) setDisputaMotivo("");
+          }}
+          motivo={disputaMotivo}
+          onMotivoChange={setDisputaMotivo}
+          loading={disputaLoading}
+          onConfirm={() => handleAbrirDisputa(sp.id)}
+        />
       </div>
     );
   }
