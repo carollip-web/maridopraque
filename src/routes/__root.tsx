@@ -100,9 +100,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { initErrorTracking } from "@/lib/error-tracking";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 
@@ -116,6 +119,10 @@ const queryClient = new QueryClient({
 });
 
 function RootComponent() {
+  useEffect(() => {
+    initErrorTracking();
+  }, []);
+
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Header global aparece em todas as rotas. Footer fica oculto nos painéis privados
   // para evitar poluição visual (admin, cliente, profissional, materiais-admin, servicos-admin).
@@ -129,14 +136,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-        {!isAppShell && <Footer />}
-        <Toaster richColors position="top-right" />
-      </div>
+      <ErrorBoundary>
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1">
+            <Outlet />
+          </main>
+          {!isAppShell && <Footer />}
+          <Toaster richColors position="top-right" />
+        </div>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }
