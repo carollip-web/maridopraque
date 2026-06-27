@@ -14,6 +14,7 @@ export interface Orcamento {
     | "enviado"
     | "aprovado"
     | "recusado"
+    | "aguardando_pagamento"
     | "pago"
     | "concluido"
     | "cancelado"

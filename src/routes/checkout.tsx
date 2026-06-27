@@ -162,7 +162,10 @@ function Checkout() {
   // 1) Carrega config (publicKey, valor) via edge function
   useEffect(() => {
     if (!orcamento || !orcamentoId || paid) return;
-    if (orcamento.status !== "aprovado") return;
+    // Flip pós-serviço: o cliente paga só depois que o profissional conclui o
+    // serviço (status "aguardando_pagamento"). "aprovado" segue aceito por
+    // compatibilidade com pedidos antigos / pagamento adiantado.
+    if (orcamento.status !== "aguardando_pagamento" && orcamento.status !== "aprovado") return;
     if (brickConfig) return;
 
     let cancelled = false;
@@ -355,6 +358,21 @@ function Checkout() {
     );
   }
 
+  if (!paid && (orcamento.status === "pago" || orcamento.status === "concluido")) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-32 text-center">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500 mb-4" />
+        <h1 className="text-xl font-bold">Pagamento já realizado</h1>
+        <p className="mt-2 text-muted-foreground text-sm">
+          Este pedido já está pago. Você pode acompanhar tudo na sua área de cliente.
+        </p>
+        <Button asChild className="mt-6 rounded-full" variant="outline">
+          <Link to="/cliente">Ir para Meus Pedidos</Link>
+        </Button>
+      </div>
+    );
+  }
+
   const valorServico = Number(orcamento?.valor_servico || 0);
   const materiais = orcamento?.orcamento_materiais || [];
   const valorMateriaisCalculado = materiais.reduce(
@@ -503,7 +521,7 @@ function Checkout() {
               </li>
               <li className="flex gap-3 text-muted-foreground">
                 <div className="h-1.5 w-1.5 rounded-full bg-brand mt-2 shrink-0" />
-                Valor fica retido na plataforma até a conclusão do serviço.
+                Você só paga depois que o profissional conclui o serviço.
               </li>
             </ul>
           </div>

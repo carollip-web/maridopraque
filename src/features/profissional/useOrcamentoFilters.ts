@@ -154,7 +154,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
             (o as unknown as Record<string, unknown>).apoio_profissional_id === userId &&
             !["concluido", "recusado", "cancelado"].includes(o.status);
           return (
-            (["aprovado", "pago"].includes(o.status) &&
+            (["aprovado", "aguardando_pagamento", "pago"].includes(o.status) &&
               o.profissional_id === userId) ||
             isApoioAceito
           );

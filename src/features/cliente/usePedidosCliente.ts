@@ -140,13 +140,15 @@ export function usePedidosCliente(userId: string | undefined) {
                 : o.status === "fixo_auto"
                   ? "Aprovação Automática"
                   : o.status === "aprovado"
-                    ? "Aguardando Pagamento"
-                    : o.status === "pago"
-                      ? "Agendado"
-                      : o.status === "concluido"
-                        ? "Concluído"
-                        : o.status === "disputa_resolvida"
-                          ? "Disputa Resolvida"
+                    ? "Agendado"
+                    : o.status === "aguardando_pagamento"
+                      ? "Aguardando Pagamento"
+                      : o.status === "pago"
+                        ? "Pago"
+                        : o.status === "concluido"
+                          ? "Concluído"
+                          : o.status === "disputa_resolvida"
+                            ? "Disputa Resolvida"
                           : o.status;
 
         const lastPagamento = pagamentosMap[o.id] || null;

@@ -11,8 +11,10 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { isAgendaCompativel } from "@/lib/agenda";
 import { supabase } from "@/integrations/supabase/client";
+import { marcarServicoConcluido } from "@/lib/orcamentos.functions";
 import { toast } from "sonner";
 import { SLABadge } from "@/components/SLABadge";
 import { PhotoUploader } from "@/components/PhotoUploader";
@@ -99,6 +101,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   );
   const [obs, setObs] = useState(minhaProposta?.observacoes ?? o.observacoes_profissional ?? "");
   const [saving, setSaving] = useState(false);
+  const marcarConcluidoFn = useServerFn(marcarServicoConcluido);
   const [picked, setPicked] = useState<Record<string, number>>(() => {
     if (propostaMateriais && propostaMateriais.length > 0) {
       const init: Record<string, number> = {};
@@ -141,37 +144,52 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     }
   };
 
-  const isAguardandoPagamento = o.status === "aprovado";
+  // Fluxo pós-serviço: "aprovado" = agendado (serviço a realizar);
+  // "aguardando_pagamento" = serviço concluído, aguardando o cliente pagar.
+  const isAgendado = o.status === "aprovado";
+  const isAguardandoPagamento = o.status === "aguardando_pagamento";
   const isPagamentoConfirmado = o.status === "pago";
   const isServicoConcluido = o.status === "concluido";
   const isEmDisputa = o.status === "em_disputa";
   const isDisputaResolvida = o.status === "disputa_resolvida";
 
+  // O profissional executa o serviço ANTES do pagamento, então precisa do
+  // endereço completo e do chat já a partir do agendamento.
+  const servicoLiberado =
+    isAgendado ||
+    isAguardandoPagamento ||
+    isPagamentoConfirmado ||
+    isServicoConcluido;
+
   const meta = STATUS_META[o.status];
 
-  const statusLabelOverride = isAguardandoPagamento
-    ? "Aguardando pagamento"
-    : isPagamentoConfirmado
-      ? "Pagamento confirmado"
-      : isServicoConcluido
-        ? "Finalizado (Aguardando liberação)"
-        : isEmDisputa
-          ? "Em disputa"
-          : isDisputaResolvida
-            ? "Disputa resolvida"
-            : (meta?.label ?? o.status);
+  const statusLabelOverride = isAgendado
+    ? "Agendado"
+    : isAguardandoPagamento
+      ? "Aguardando pagamento do cliente"
+      : isPagamentoConfirmado
+        ? "Pagamento confirmado"
+        : isServicoConcluido
+          ? "Finalizado (Aguardando liberação)"
+          : isEmDisputa
+            ? "Em disputa"
+            : isDisputaResolvida
+              ? "Disputa resolvida"
+              : (meta?.label ?? o.status);
 
-  const statusClassOverride = isAguardandoPagamento
-    ? "bg-amber-100 text-amber-700"
-    : isPagamentoConfirmado
-      ? "bg-blue-100 text-blue-700"
-      : isServicoConcluido
-        ? "bg-green-100 text-green-700"
-        : isEmDisputa
-          ? "bg-red-100 text-red-700"
-          : isDisputaResolvida
-            ? "bg-slate-200 text-slate-600"
-            : (meta?.className ?? "bg-slate-100 text-slate-600");
+  const statusClassOverride = isAgendado
+    ? "bg-indigo-100 text-indigo-700"
+    : isAguardandoPagamento
+      ? "bg-amber-100 text-amber-700"
+      : isPagamentoConfirmado
+        ? "bg-blue-100 text-blue-700"
+        : isServicoConcluido
+          ? "bg-green-100 text-green-700"
+          : isEmDisputa
+            ? "bg-red-100 text-red-700"
+            : isDisputaResolvida
+              ? "bg-slate-200 text-slate-600"
+              : (meta?.className ?? "bg-slate-100 text-slate-600");
   const formatCurrency = (value: number) =>
     value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const unitMin = range?.preco_min != null ? Number(range.preco_min) : null;
@@ -334,7 +352,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     }
     setSaving(true);
     try {
-      // 1. Salvar as fotos primeiro
+      // 1. Salvar as fotos do serviço concluído
       const { error: photoErr } = await supabase
         .from("orcamentos")
         .update({ fotos_concluido: fotosConcluido })
@@ -342,28 +360,21 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
 
       if (photoErr) throw photoErr;
 
-      // 2. Chamar mp-capturar-pagamento com ator: 'profissional'
+      // 2. Marcar o serviço como concluído → cliente recebe a cobrança
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Sessão expirada. Por favor, faça login novamente.");
 
-      const { data, error } = await supabase.functions.invoke("mp-capturar-pagamento", {
-        body: { orcamento_id: o.id, ator: "profissional" },
+      const res = await marcarConcluidoFn({
+        data: { orcamentoId: o.id },
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (error || !data?.ok) {
-        if (data?.message?.includes("parcial")) {
-          // It's expected to be partial since the client hasn't confirmed yet
-          toast.success("Aguardando confirmação do cliente para liberar o débito e o repasse");
-        } else {
-          throw new Error(data?.message || "Erro ao registrar confirmação do serviço.");
-        }
-      } else {
-        // Se por algum motivo capturar de vez (ex: cliente confirmou antes)
-        toast.success("Aguardando confirmação do cliente para liberar o débito e o repasse");
+      if (!res?.ok) {
+        throw new Error(res?.error || "Erro ao marcar o serviço como concluído.");
       }
 
+      toast.success("Serviço marcado como concluído! O cliente foi avisado para efetuar o pagamento.");
       refresh?.();
     } catch (e: any) {
       toast.error("Falha ao marcar como concluído", { description: e.message });
@@ -384,10 +395,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
   const isHighlighted =
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("orcamentoId") === o.id;
-
-  const reserva = minhaAgenda?.bloqueiosAgenda?.find((b: any) => b.orcamento_id === o.id);
-  const isReservaTemporaria = reserva?.status === "temporario";
-  const isReservaConfirmada = reserva?.status === "confirmado";
 
   const agendaLabel = o.data_preferida
     ? `${new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${periodoLabel}`
@@ -472,7 +479,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
             </span>
           )}
         </div>
-        {!(isPagamentoConfirmado || isServicoConcluido) && (() => {
+        {!servicoLiberado && (() => {
           const end = (o as unknown as Record<string, any>).endereco_snapshot || clienteEndereco;
           if (!end || (!end.bairro && !end.logradouro)) return null;
           return (
@@ -482,7 +489,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 {end.logradouro}
                 {end.bairro && (end.logradouro ? ` · ${end.bairro}` : end.bairro)}
                 <span className="ml-1 italic text-[10px] opacity-70">
-                  (endereço completo após o pagamento)
+                  (endereço completo após o agendamento)
                 </span>
               </span>
             </div>
@@ -563,31 +570,29 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         )}
 
+        {isAgendado && (
+          <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
+              <Calendar className="h-4 w-4" />
+              Serviço agendado
+            </div>
+            <p className="text-indigo-700 text-[11px] leading-relaxed">
+              A cliente aceitou sua proposta para {agendaLabel}. Realize o atendimento e, ao
+              terminar, marque o serviço como concluído para que a cliente efetue o pagamento.
+            </p>
+          </div>
+        )}
+
         {isAguardandoPagamento && (
           <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-2">
             <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
               <Clock className="h-4 w-4" />
-              {isReservaTemporaria ? "Reserva temporária ativa" : "Reserva pendente"}
+              Aguardando pagamento do cliente
             </div>
             <p className="text-amber-700 text-[11px] leading-relaxed">
-              {isReservaTemporaria
-                ? `Este horário (${agendaLabel}) está bloqueado na sua agenda por 2h aguardando o pagamento.`
-                : "A cliente aceitou sua proposta. Assim que o pagamento for confirmado, este serviço entra na sua agenda."}
+              Você marcou este serviço como concluído. Assim que a cliente efetuar o pagamento, o
+              repasse será liberado.
             </p>
-            {isReservaTemporaria && reserva.expires_at && (
-              <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">
-                Expira às{" "}
-                {new Date(reserva.expires_at).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-            )}
-            {!isReservaTemporaria && o.data_preferida && (
-              <p className="text-[10px] text-amber-600 font-bold italic mt-1">
-                Não foi possível reservar automaticamente. Combine o horário pelo chat.
-              </p>
-            )}
           </div>
         )}
 
@@ -616,7 +621,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
           </div>
         )}
 
-        {(isPagamentoConfirmado || isServicoConcluido) && (
+        {servicoLiberado && (
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2 mt-4">
             <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
               <MapPin className="h-4 w-4" />
@@ -804,7 +809,7 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                 {showDetails ? "Ocultar Detalhes" : "Ver Detalhes"}
               </Button>
 
-              {o.status === "pago" && (
+              {isAgendado && (
                 <div className="w-full space-y-4">
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold uppercase text-muted-foreground">
@@ -825,8 +830,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
                     {saving ? "Processando..." : "Marcar como concluído"}
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-2">
-                    Para o repasse ser liberado, o cliente precisa confirmar a conclusão do serviço
-                    no app dele.
+                    Ao marcar como concluído, a cliente será avisada para efetuar o pagamento. O
+                    repasse é liberado assim que o pagamento for confirmado.
                   </p>
                 </div>
               )}
@@ -918,8 +923,8 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
         )}
       </div>
 
-      {/* Chat Section for Paid or Completed Orders */}
-      {!disableChat && (isPagamentoConfirmado || isServicoConcluido) && !editing && (
+      {/* Chat liberado a partir do agendamento (serviço executado antes do pagamento) */}
+      {!disableChat && servicoLiberado && !editing && (
         <div className="pt-4 border-t border-slate-100">
           <Chat
             orcamentoId={o.id}

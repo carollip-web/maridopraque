@@ -71,13 +71,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
   const [jaAvaliou, setJaAvaliou] = useState(false);
   const [disputaLoading, setDisputaLoading] = useState(false);
 
-  // Brick State
-  const [brickConfig, setBrickConfig] = useState<{ publicKey: string; amount: number; payerEmail: string } | null>(null);
-  const [brickError, setBrickError] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const brickControllerRef = React.useRef<any>(null);
-  const brickMountedRef = React.useRef(false);
-
   const handleAbrirDisputa = async (orcamentoId: string) => {
     const motivo = disputaMotivo.trim();
     if (!motivo) {
@@ -182,7 +175,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
       return;
     }
 
-    setApprovalStep("processing");
     try {
       if (selectedProposta) {
         if (!selectedProposta?.id) {
@@ -232,153 +224,23 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
   };
 
-  const initBrick = async () => {
-    if (!selectedPedido) return;
-    setBrickError(null);
+  // Flip pós-serviço: aceitar a proposta NÃO cobra mais. Só aceita (move o
+  // pedido para "aprovado" e confirma a agenda). O pagamento acontece depois,
+  // quando o profissional concluir o serviço (status aguardando_pagamento) e o
+  // cliente pagar pelo /checkout.
+  const confirmarAceite = async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) return;
-
-      // Buscar chave pública do sistema
-      const { data, error } = await supabase.functions.invoke("mp-get-public-key", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (error || !data?.publicKey) {
-        setBrickError("Não foi possível carregar o formulário de pagamento.");
-        return;
-      }
-
-      // Calcula o valor a exibir no Brick (deve bater com mp-autorizar-pagamento)
-      const { data: materiaisData } = await supabase
-        .from("orcamento_materiais")
-        .select("preco_unitario, quantidade")
-        .eq("orcamento_id", selectedPedido.id);
-      const valorMateriais = (materiaisData || []).reduce(
-        (acc, m: any) => acc + Number(m.preco_unitario || 0) * Number(m.quantidade || 0),
-        0,
-      );
-      const valorServico = Number(selectedProposta?.valor_servico || selectedPedido.price.replace("R$ ", "").replace(",", "."));
-      const baseValue = valorServico + valorMateriais;
-      const requiresApoio = selectedPedido.tipo_atendimento === "homem_com_apoio_feminino";
-      const totalAmount = requiresApoio ? Math.round(baseValue * 1.3 * 100) / 100 : Math.round(baseValue * 100) / 100;
-
-      setBrickConfig({
-        publicKey: data.publicKey,
-        amount: totalAmount,
-        payerEmail: user?.email || "",
-      });
-      setApprovalStep("processing");
-    } catch (e: any) {
-      setBrickError("Falha ao inicializar pagamento.");
+      await handleApprove();
+      setApprovalStep("success");
+      setTimeout(() => {
+        setApprovalStep(null);
+        queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+        queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
+      }, 1500);
+    } catch {
+      // handleApprove já trata o erro (toast) e mantém o passo de confirmação.
     }
   };
-
-  useEffect(() => {
-    if (approvalStep !== "processing" || !brickConfig || brickMountedRef.current) return;
-
-    let cancelled = false;
-
-    async function ensureSdk() {
-      if ((window as any).MercadoPago) return (window as any).MercadoPago;
-      await new Promise<void>((resolve, reject) => {
-        const existing = document.querySelector('script[data-mp-sdk="v2"]');
-        if (existing) {
-          existing.addEventListener("load", () => resolve());
-          existing.addEventListener("error", () => reject(new Error("Falha ao carregar SDK MP")));
-          return;
-        }
-        const s = document.createElement("script");
-        s.src = "https://sdk.mercadopago.com/js/v2";
-        s.async = true;
-        s.dataset.mpSdk = "v2";
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("Falha ao carregar SDK MP"));
-        document.head.appendChild(s);
-      });
-      return (window as any).MercadoPago;
-    }
-
-    (async () => {
-      try {
-        const MP = await ensureSdk();
-        if (cancelled) return;
-        const mp = new MP(brickConfig.publicKey, { locale: "pt-BR" });
-        const bricksBuilder = mp.bricks();
-        brickMountedRef.current = true;
-        brickControllerRef.current = await bricksBuilder.create(
-          "payment",
-          "payment-brick-container",
-          {
-            initialization: {
-              amount: brickConfig.amount,
-              payer: { email: brickConfig.payerEmail },
-            },
-            customization: {
-              paymentMethods: { creditCard: "all", debitCard: "all", maxInstallments: 1 },
-              visual: { style: { theme: "default" } },
-            },
-            callbacks: {
-              onReady: () => {},
-              onError: (err: any) => {
-                setBrickError("Erro no formulário.");
-              },
-              onSubmit: async ({ formData }: any) => {
-                try {
-                  setIsProcessingPayment(true);
-                  const { data: sessionData } = await supabase.auth.getSession();
-                  const token = sessionData.session?.access_token;
-                  if (!token) throw new Error("Sessão expirada");
-
-                  // 1) Aceita a proposta PRIMEIRO (move orcamento -> aprovado).
-                  //    Se falhar, não cobra o cartão e o usuário vê o erro.
-                  await handleApprove();
-
-                  // 2) Autoriza o cartão (reserva). Só depois da proposta aceita.
-                  const { data, error } = await supabase.functions.invoke("mp-autorizar-pagamento", {
-                    body: { orcamento_id: selectedPedido?.id, card_token: formData.token },
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-
-                  if (error || !data?.ok) {
-                    throw new Error(data?.message || "Falha na autorização do cartão.");
-                  }
-
-                  setApprovalStep("success");
-                  toast.success("Proposta aceita e cartão autorizado!");
-                  // Fecha o modal e atualiza a lista automaticamente
-                  setTimeout(() => {
-                    setApprovalStep(null);
-                    queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user?.id] });
-                    queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user?.id] });
-                  }, 1500);
-                } catch (e: any) {
-                  toast.error(e?.message || "Falha ao processar autorização");
-                } finally {
-                  setIsProcessingPayment(false);
-                }
-              },
-            },
-          }
-        );
-      } catch (e) {
-        if (!cancelled) {
-          setBrickError("Falha ao iniciar o formulário.");
-          brickMountedRef.current = false;
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      try {
-        brickControllerRef.current?.unmount?.();
-      } catch {}
-      brickControllerRef.current = null;
-      brickMountedRef.current = false;
-    };
-  }, [approvalStep, brickConfig, pedidoId]);
 
   const handleCapture = async (orcamentoId: string) => {
     setIsCapturing(orcamentoId);
@@ -478,7 +340,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     
     let matchesFilter = true;
     if (activeFilter === "Ativos") {
-      matchesFilter = ["Em Análise", "Aguardando sua aprovação", "Aguardando Pagamento", "Agendado", "Aprovação Automática", "enviado"].includes(p.status) || ["customizado_pendente", "aprovado", "pago", "fixo_auto", "enviado"].includes(p.rawStatus);
+      matchesFilter = ["Em Análise", "Aguardando sua aprovação", "Aguardando Pagamento", "Agendado", "Aprovação Automática", "enviado"].includes(p.status) || ["customizado_pendente", "aprovado", "aguardando_pagamento", "pago", "fixo_auto", "enviado"].includes(p.rawStatus);
     } else if (activeFilter === "Concluídos") {
       matchesFilter = ["Concluído", "Disputa Resolvida"].includes(p.status) || ["concluido", "disputa_resolvida"].includes(p.rawStatus);
     } else if (activeFilter === "Cancelados") {
@@ -493,8 +355,10 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
     const primeiraProposta = sp.propostas?.[0] ?? null;
     const temProposta = !!primeiraProposta;
     const aguardandoAprovacao = sp.status === "Aguardando sua aprovação";
-    const aguardandoPagamento = sp.status === "Aguardando Pagamento" || sp.rawStatus === "aprovado";
-    const pagoOuAgendado = sp.status === "Agendado" || sp.rawStatus === "pago";
+    // Fluxo pós-serviço: o pagamento só aparece quando o profissional concluiu
+    // (status aguardando_pagamento). "aprovado" agora é só "agendado/em serviço".
+    const aguardandoPagamento = sp.rawStatus === "aguardando_pagamento";
+    const pagoOuAgendado = sp.rawStatus === "aprovado" || sp.rawStatus === "pago";
     const concluido = sp.rawStatus === "concluido";
 
     const statusLabel = aguardandoAprovacao
@@ -1256,47 +1120,10 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       Cancelar
                     </Button>
                     <Button
-                      onClick={initBrick}
+                      onClick={confirmarAceite}
                       className="flex-1 bg-brand text-white rounded-full h-13 font-bold shadow-lg hover:scale-[1.02] transition-transform"
                     >
                       Aceitar proposta
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {approvalStep === "processing" && (
-                <div className="p-8 md:p-10">
-                  <h3 className="text-2xl font-bold mb-4 text-center">Reserva do Cartão</h3>
-                  <p className="text-muted-foreground text-sm text-center mb-6">
-                    Seu cartão será reservado agora, mas o débito só acontece após você confirmar a conclusão do serviço.
-                  </p>
-                  
-                  {brickError && (
-                    <div className="p-4 mb-4 text-sm text-red-600 bg-red-50 rounded-lg text-center font-medium">
-                      {brickError}
-                    </div>
-                  )}
-
-                  {!brickConfig && !brickError && (
-                    <div className="flex flex-col items-center justify-center py-10 gap-3 text-muted-foreground">
-                      <Loader2 className="h-8 w-8 animate-spin text-brand" />
-                      <p className="text-sm font-bold">Carregando ambiente seguro...</p>
-                    </div>
-                  )}
-
-                  <div className="min-h-[200px]" id="payment-brick-container" />
-
-                  {isProcessingPayment && (
-                    <div className="flex items-center justify-center gap-2 mt-4 text-brand font-bold text-sm">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processando autorização...
-                    </div>
-                  )}
-
-                  <div className="mt-6 text-center">
-                    <Button variant="ghost" onClick={() => setApprovalStep(null)} disabled={isProcessingPayment} className="rounded-full">
-                      Cancelar
                     </Button>
                   </div>
                 </div>
@@ -1523,7 +1350,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
                       Ver Proposta
                     </Button>
                   )}
-                  {p.rawStatus === "aprovado" && (
+                  {p.rawStatus === "aguardando_pagamento" && (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();

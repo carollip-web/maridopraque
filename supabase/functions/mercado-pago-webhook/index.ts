@@ -444,12 +444,15 @@ serve(async (req) => {
 
       // 6. Criar Notificações
       console.log(`[Webhook ${requestId}] Criando notificações de pagamento confirmado...`);
+      const pagamentoPosServico = statusAposPagamento === "concluido";
       if (pagamento && pagamento.cliente_id) {
         // Para o Cliente
         await supabase.from("notificacoes").insert({
           user_id: pagamento.cliente_id,
           titulo: "Pagamento Aprovado",
-          mensagem: `Seu pagamento via Mercado Pago foi confirmado! O serviço já consta na agenda do profissional.`,
+          mensagem: pagamentoPosServico
+            ? `Seu pagamento via Mercado Pago foi confirmado! O serviço está concluído.`
+            : `Seu pagamento via Mercado Pago foi confirmado! O serviço já consta na agenda do profissional.`,
           orcamento_id: orcamentoId,
           link: `/cliente?tab=pedidos&pedidoId=${orcamentoId}`,
           lida: false,
@@ -461,7 +464,9 @@ serve(async (req) => {
         await supabase.from("notificacoes").insert({
           user_id: updatedOrc.profissional_id,
           titulo: "Pagamento Confirmado!",
-          mensagem: `O cliente realizou o pagamento via Mercado Pago e o serviço foi agendado definitivamente na sua agenda.`,
+          mensagem: pagamentoPosServico
+            ? `O cliente pagou o serviço concluído via Mercado Pago. O repasse será liberado em breve.`
+            : `O cliente realizou o pagamento via Mercado Pago e o serviço foi agendado definitivamente na sua agenda.`,
           orcamento_id: orcamentoId,
           link: `/profissional?tab=servicos&orcamentoId=${orcamentoId}`,
           lida: false,
