@@ -107,6 +107,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { initErrorTracking } from "@/lib/error-tracking";
 import { registrarServiceWorker } from "@/lib/push";
+import { initNative } from "@/lib/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 
@@ -124,6 +125,8 @@ function RootComponent() {
     initErrorTracking();
     // Registra o service worker de push (seguro: não intercepta fetch/cache).
     registrarServiceWorker();
+    // Inicializa o shell nativo (no-op no navegador/PWA).
+    initNative();
   }, []);
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
