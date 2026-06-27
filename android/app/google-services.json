@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "714529642218",
+    "project_id": "marido-pra-que",
+    "storage_bucket": "marido-pra-que.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:714529642218:android:fe958baa606a8996636993",
+        "android_client_info": {
+          "package_name": "com.maridopraque.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBa45rCq5r7J0YxYjlqI1mkSPRQIUx8VAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

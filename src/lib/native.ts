@@ -65,6 +65,44 @@ export async function initNative(): Promise<void> {
   } catch (e) {
     console.warn("[native] App plugin indisponível", e);
   }
+
+  // Registro automático de push nativo quando o usuário está logado.
+  await setupNativePushAutoRegister();
+}
+
+/**
+ * Mantém o token de push do dispositivo registrado: ao abrir já logado e a cada
+ * login, garante a permissão e salva o token. Só roda no app nativo.
+ */
+async function setupNativePushAutoRegister(): Promise<void> {
+  if (!isNative()) return;
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+
+    // Toque na notificação → abre a tela do link (deep link interno).
+    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      const link = action.notification?.data?.link;
+      if (link && typeof link === "string" && link !== "/") {
+        window.location.href = link;
+      }
+    });
+
+    const registrarSeLogado = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user?.id) await registrarPushNativo(data.user.id);
+    };
+
+    // Tenta na abertura (caso já esteja logado) e a cada novo login.
+    await registrarSeLogado();
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user?.id) {
+        registrarPushNativo(session.user.id);
+      }
+    });
+  } catch (e) {
+    console.warn("[native] auto-registro de push falhou", e);
+  }
 }
 
 /**
