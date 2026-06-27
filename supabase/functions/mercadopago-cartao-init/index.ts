@@ -1,6 +1,7 @@
 // Returns the seller's MP public_key + checkout amount for Payment Brick render.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { calcularValores } from "../_shared/fees.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,19 +34,25 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const orcamentoId: string | undefined = body?.orcamentoId;
-    if (!orcamentoId) return json({ error: "BAD_REQUEST", message: "orcamentoId obrigatório." }, 400);
+    if (!orcamentoId)
+      return json({ error: "BAD_REQUEST", message: "orcamentoId obrigatório." }, 400);
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: orcamento } = await admin
       .from("orcamentos")
-      .select("id, cliente_id, profissional_id, status, valor, valor_servico, tipo_atendimento, service_name")
+      .select(
+        "id, cliente_id, profissional_id, status, valor, valor_servico, tipo_atendimento, service_name",
+      )
       .eq("id", orcamentoId)
       .maybeSingle();
     if (!orcamento) return json({ error: "NOT_FOUND" }, 404);
     if (orcamento.cliente_id !== user.id) return json({ error: "FORBIDDEN" }, 403);
     if (orcamento.status !== "aprovado")
-      return json({ error: "INVALID_STATUS", message: `Pedido em "${orcamento.status}" não está liberado.` }, 400);
+      return json(
+        { error: "INVALID_STATUS", message: `Pedido em "${orcamento.status}" não está liberado.` },
+        400,
+      );
 
     const { data: materiais } = await admin
       .from("orcamento_materiais")
@@ -60,8 +67,7 @@ serve(async (req) => {
     if (!(valorBase > 0)) return json({ error: "INVALID_VALUE" }, 400);
 
     const requiresApoio = orcamento.tipo_atendimento === "homem_com_apoio_feminino";
-    const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
-    const valorTotal = Math.round((valorBase + valorApoio) * 100) / 100;
+    const { valorTotal } = calcularValores(valorBase, requiresApoio);
 
     const { data: perfil } = await admin
       .from("profissional_perfil")
@@ -76,7 +82,13 @@ serve(async (req) => {
       );
     }
     if (perfil.mp_expires_at && new Date(perfil.mp_expires_at) < new Date()) {
-      return json({ error: "MP_TOKEN_EXPIRED", message: "Token do profissional expirou. Peça para reconectar." }, 400);
+      return json(
+        {
+          error: "MP_TOKEN_EXPIRED",
+          message: "Token do profissional expirou. Peça para reconectar.",
+        },
+        400,
+      );
     }
 
     return json({

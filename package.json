@@ -13,7 +13,8 @@
     "test:unit": "playwright test --config=playwright.unit.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test auth.spec.ts",
-    "test:e2e:fluxo": "playwright test fluxo-completo.spec.ts"
+    "test:e2e:fluxo": "playwright test fluxo-completo.spec.ts",
+    "test:e2e:checkout": "playwright test checkout.spec.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

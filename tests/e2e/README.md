@@ -32,11 +32,12 @@ bunx playwright test --ui
 
 ## Scripts disponíveis
 
-| Comando                  | O que faz             |
-| ------------------------ | --------------------- |
-| `bun run test:e2e`       | Roda toda a suite     |
-| `bun run test:e2e:auth`  | Só os testes de login |
-| `bun run test:e2e:fluxo` | Só o fluxo completo   |
+| Comando                     | O que faz               |
+| --------------------------- | ----------------------- |
+| `bun run test:e2e`          | Roda toda a suite       |
+| `bun run test:e2e:auth`     | Só os testes de login   |
+| `bun run test:e2e:fluxo`    | Só o fluxo completo     |
+| `bun run test:e2e:checkout` | Só o fluxo de pagamento |
 
 ## Estrutura
 
@@ -44,8 +45,12 @@ bunx playwright test --ui
 tests/e2e/
 ├── helpers/auth.ts        # login(), logout(), ACCOUNTS
 ├── auth.spec.ts           # login dos 3 perfis + redirect
-└── fluxo-completo.spec.ts # cliente → profissional → admin
+├── fluxo-completo.spec.ts # cliente → profissional → admin
+└── checkout.spec.ts       # guard de login + montagem do Payment Brick
 ```
+
+> Há também testes unitários (lógica pura, sem browser) em `tests/unit/` —
+> rode com `bun run test:unit`.
 
 ## Resetar dados
 
