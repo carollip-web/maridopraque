@@ -389,7 +389,6 @@ function ProfissionalArea() {
             userName={user?.user_metadata?.nome || "Profissional"}
             mediaAvaliacoes={data.mediaAvaliacoes}
             ativo={data.ativo}
-            handleToggleAtivo={data.handleToggleAtivo}
           />
           <ProfissionalSidebar
             activeTab={tab as ProfissionalTab}
@@ -408,7 +407,6 @@ function ProfissionalArea() {
               userName={user?.user_metadata?.nome || "Profissional"}
               mediaAvaliacoes={data.mediaAvaliacoes}
               ativo={data.ativo}
-              handleToggleAtivo={data.handleToggleAtivo}
             />
             <ProfissionalSidebar
               activeTab={tab as ProfissionalTab}

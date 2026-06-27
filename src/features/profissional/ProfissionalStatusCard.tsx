@@ -1,19 +1,16 @@
 import React from "react";
 import { Wrench, Star } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 
 interface ProfissionalStatusCardProps {
   userName: string;
   mediaAvaliacoes: string;
   ativo: boolean;
-  handleToggleAtivo: (checked: boolean) => void;
 }
 
 export function ProfissionalStatusCard({
   userName,
   mediaAvaliacoes,
   ativo,
-  handleToggleAtivo,
 }: ProfissionalStatusCardProps) {
   return (
     <div className="bg-white rounded-3xl border border-border p-6 shadow-sm flex flex-col items-center text-center">
@@ -28,17 +25,19 @@ export function ProfissionalStatusCard({
         </div>
       </div>
 
-      <div className="w-full pt-4 border-t border-border flex items-center justify-between">
+      {/* Status agora é só leitura: ativar/desativar é controlado pelo admin. */}
+      <div className="w-full pt-4 border-t border-border flex flex-col items-center gap-2">
         <span
-          className={`text-[10px] font-bold uppercase tracking-widest ${ativo ? "text-emerald-600" : "text-slate-400"}`}
+          className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${ativo ? "text-emerald-600" : "text-slate-400"}`}
         >
+          <span className={`h-2 w-2 rounded-full ${ativo ? "bg-emerald-500" : "bg-slate-300"}`} />
           {ativo ? "Online" : "Offline"}
         </span>
-        <Switch
-          checked={ativo}
-          onCheckedChange={handleToggleAtivo}
-          className="data-[state=checked]:bg-emerald-500"
-        />
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          {ativo
+            ? "Seu perfil está ativo e recebendo pedidos."
+            : "Seu perfil está inativo. Para ativar, fale com o suporte."}
+        </p>
       </div>
     </div>
   );
