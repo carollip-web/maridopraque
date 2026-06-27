@@ -287,15 +287,19 @@ serve(async (req) => {
 
       const { data: existingOrc } = await supabase
         .from("orcamentos")
-        .select("tipo_atendimento")
+        .select("tipo_atendimento, status")
         .eq("id", orcamentoId)
         .maybeSingle();
       const requiresApoio = existingOrc?.tipo_atendimento === "homem_com_apoio_feminino";
+      // No fluxo pós-serviço o pedido já vem como "aguardando_pagamento" (serviço
+      // feito): ao confirmar o pagamento ele vai direto para "concluido".
+      const statusAposPagamento =
+        existingOrc?.status === "aguardando_pagamento" ? "concluido" : "pago";
 
       const { data: updatedOrc, error: orcError } = await supabase
         .from("orcamentos")
         .update({
-          status: "pago",
+          status: statusAposPagamento,
           data_pagamento: new Date().toISOString(),
           ...(requiresApoio
             ? {

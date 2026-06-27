@@ -816,3 +816,50 @@ export const concluirPedido = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Profissional marca o serviço como concluído → pedido vai para
+// aguardando_pagamento (o cliente então paga via checkout). Notifica o cliente
+// (o que dispara e-mail/push pelo fluxo de notificações).
+export const marcarServicoConcluido = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => cancelarSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: orc, error: e0 } = await supabase
+      .from("orcamentos")
+      .select("id, cliente_id, profissional_id, status, service_name")
+      .eq("id", data.orcamentoId)
+      .single();
+
+    if (e0 || !orc) return { ok: false, error: "Pedido não encontrado." };
+    if (orc.profissional_id !== userId) {
+      return { ok: false, error: "Apenas o profissional do pedido pode marcar como concluído." };
+    }
+    if (orc.status !== "aprovado") {
+      return {
+        ok: false,
+        error: 'Só é possível concluir pedidos no status "aprovado".',
+      };
+    }
+
+    const { error: eu } = await supabase
+      .from("orcamentos")
+      .update({ status: "aguardando_pagamento" })
+      .eq("id", data.orcamentoId);
+    if (eu) return { ok: false, error: eu.message };
+
+    // Notifica o cliente para efetuar o pagamento (dispara e-mail/push).
+    if (orc.cliente_id) {
+      await supabase.from("notificacoes").insert({
+        user_id: orc.cliente_id,
+        titulo: "Serviço concluído — efetue o pagamento",
+        mensagem: `O profissional concluiu "${orc.service_name ?? "o serviço"}". Finalize o pagamento para liberar o repasse.`,
+        orcamento_id: orc.id,
+        link: `/cliente?tab=pedidos&pedidoId=${orc.id}`,
+        lida: false,
+      });
+    }
+
+    return { ok: true };
+  });
+

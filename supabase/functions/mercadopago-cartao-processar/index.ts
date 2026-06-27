@@ -71,11 +71,14 @@ serve(async (req) => {
       .maybeSingle();
     if (!orcamento) return json({ error: "NOT_FOUND" }, 404);
     if (orcamento.cliente_id !== user.id) return json({ error: "FORBIDDEN" }, 403);
-    if (orcamento.status !== "aprovado")
+    if (orcamento.status !== "aprovado" && orcamento.status !== "aguardando_pagamento")
       return json(
         { error: "INVALID_STATUS", message: `Pedido em "${orcamento.status}" não está liberado.` },
         400,
       );
+    // No fluxo pós-serviço o pedido já vem como "aguardando_pagamento": ao pagar,
+    // ele vai direto para "concluido" (serviço já feito). Senão, "pago".
+    const statusAposPagamento = orcamento.status === "aguardando_pagamento" ? "concluido" : "pago";
 
     const { data: materiais } = await admin
       .from("orcamento_materiais")
@@ -212,7 +215,7 @@ serve(async (req) => {
       const { error: orcErr } = await admin
         .from("orcamentos")
         .update({
-          status: "pago",
+          status: statusAposPagamento,
           data_pagamento: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         } as any)
