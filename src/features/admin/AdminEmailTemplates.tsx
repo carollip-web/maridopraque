@@ -47,22 +47,40 @@ function buildHtmlFromSimple(s: SimpleData): string {
   const assinatura = escapeHtml(s.assinatura).replace(/\n/g, "<br/>");
   const cta =
     s.cta_texto && s.cta_url
-      ? `<p style="margin:24px 0 8px"><a href="${escapeHtml(s.cta_url)}" style="display:inline-block;background:#FF6B35;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600">${escapeHtml(s.cta_texto)}</a></p>`
+      ? `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:8px 0 4px"><tr><td style="border-radius:10px;background:#FF6B35;box-shadow:0 6px 16px -6px rgba(255,107,53,.55)">
+          <a href="${escapeHtml(s.cta_url)}" style="display:inline-block;padding:13px 26px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;letter-spacing:.2px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">${escapeHtml(s.cta_texto)} →</a>
+        </td></tr></table>`
       : "";
   return `${marker}
-<!doctype html><html><body style="margin:0;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:32px 12px"><tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.06)">
-      <tr><td style="background:#FF6B35;padding:18px 24px;color:#fff;font-weight:700;font-size:16px">Marido pra Quê?</td></tr>
-      <tr><td style="padding:28px 24px">
-        <h1 style="margin:0 0 14px;font-size:20px;line-height:1.3">${titulo}</h1>
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.55;color:#334155">${intro}</p>
-        <div style="font-size:15px;line-height:1.6;color:#334155">${mensagem}</div>
-        ${cta}
-      </td></tr>
-      <tr><td style="padding:18px 24px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b">${assinatura} · contato@maridopraque.com</td></tr>
-    </table>
-  </td></tr></table>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${titulo}</title></head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f5f7;padding:40px 16px">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%">
+        <tr><td style="padding:0 4px 16px;font-size:13px;color:#64748b;letter-spacing:.3px">
+          <span style="display:inline-block;width:22px;height:22px;background:#FF6B35;border-radius:6px;vertical-align:middle;margin-right:8px;line-height:22px;color:#fff;text-align:center;font-weight:700;font-size:12px">M</span>
+          <strong style="color:#0f172a">Marido pra Quê?</strong> · serviços para a sua casa
+        </td></tr>
+        <tr><td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 32px -16px rgba(15,23,42,.12);border:1px solid #eef0f3">
+          <div style="height:4px;background:linear-gradient(90deg,#FF6B35 0%,#ff944d 60%,#ffb37a 100%)"></div>
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="padding:36px 36px 28px">
+            <h1 style="margin:0 0 18px;font-size:24px;line-height:1.25;font-weight:700;color:#0f172a;letter-spacing:-.2px">${titulo}</h1>
+            <p style="margin:0 0 14px;font-size:15.5px;line-height:1.6;color:#334155">${intro}</p>
+            <div style="font-size:15.5px;line-height:1.65;color:#475569;margin-bottom:24px">${mensagem}</div>
+            ${cta}
+          </td></tr></table>
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td style="padding:20px 36px;border-top:1px solid #eef0f3;background:#fafbfc">
+            <p style="margin:0;font-size:12.5px;line-height:1.55;color:#64748b">${assinatura}<br/>
+              <a href="mailto:contato@maridopraque.com" style="color:#FF6B35;text-decoration:none;font-weight:500">contato@maridopraque.com</a>
+            </p>
+          </td></tr></table>
+        </td></tr>
+        <tr><td style="padding:18px 8px 0;text-align:center;font-size:11.5px;line-height:1.6;color:#94a3b8">
+          © ${new Date().getFullYear()} Marido pra Quê? · maridopraque.com
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
 </body></html>`;
 }
 
