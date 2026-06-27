@@ -248,7 +248,6 @@ function Checkout() {
               visual: { style: { theme: "default" } },
             },
             callbacks: {
-              onReady: () => console.info("[brick] ready"),
               onError: (err: { message?: string } | null) => {
                 console.error("[brick] error", err);
                 toast.error(err?.message || "Erro no formulário de pagamento.");

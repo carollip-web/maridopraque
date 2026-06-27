@@ -106,7 +106,6 @@ export const iniciarPagamentoOrcamento = createServerFn({ method: "POST" })
     let preferenceId = "";
     const gateway = "mercado_pago";
 
-    console.info(`[Mercado Pago] Gerando preferência para Orçamento ${orc.id}...`);
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",
       headers: {

@@ -386,7 +386,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           filter: `cliente_id=eq.${user.id}`,
         },
         async () => {
-          console.info("[PedidosTab] Realtime Update - orcamentos", { userId: user.id });
           queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
           await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
         },
@@ -399,7 +398,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           table: "propostas",
         },
         async () => {
-          console.info("[PedidosTab] Realtime Update - propostas");
           queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
           await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
         },
@@ -439,12 +437,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
           return;
         }
 
-        console.info("[PedidosTab] Aceitando proposta", {
-          propostaId: selectedProposta.id,
-          propostaOrcamentoId: selectedProposta.orcamento_id,
-          selectedPedidoId: selectedPedido.id,
-        });
-
         const aceiteRes = await aceitarPropostaFn({
           data: {
             propostaId: selectedProposta.id,
@@ -455,7 +447,6 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
             Authorization: `Bearer ${session.access_token}`,
           },
         });
-        console.info("[PedidosTab] resultado aceitarProposta", aceiteRes);
         const reservaStatus = (aceiteRes as { agendaReserva?: string } | undefined)?.agendaReserva;
         if (
           reservaStatus === "sem_data" ||

@@ -393,18 +393,6 @@ export function OrcamentoCard(props: OrcamentoCardProps) {
     ? `${new Date(o.data_preferida + "T00:00:00").toLocaleDateString("pt-BR")} · ${periodoLabel}`
     : "A combinar";
 
-  if (mode === "info" && showDetails) {
-    console.info("[OrcamentoCard] detalhes recebidos", {
-      id: o.id,
-      tipo_atendimento: o.tipo_atendimento,
-      data_preferida: o.data_preferida,
-      periodo_preferido: o.periodo_preferido,
-      horario_preferido: o.horario_preferido,
-      reserva,
-      minhaAgenda: !!minhaAgenda,
-    });
-  }
-
   const isVideo = (url: string) => /\.(mp4|mov|webm|m4v)$/i.test(url.split("?")[0] || "");
 
   return (

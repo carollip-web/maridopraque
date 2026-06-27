@@ -74,7 +74,6 @@ export const cancelarPedidoComSplit = createServerFn({ method: "POST" })
         body: JSON.stringify({ orcamentoId: data.orcamentoId }),
       });
       const refundJson = (await res.json().catch(() => ({}))) as Json;
-      console.info("[cancelarPedidoComSplit] estorno result", res.status, refundJson);
       return { ok: true as const, regra: rpcData, estorno: refundJson };
     } catch (e: unknown) {
       const msg = errorMessage(e);

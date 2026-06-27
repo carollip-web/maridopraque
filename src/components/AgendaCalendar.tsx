@@ -221,7 +221,6 @@ export function AgendaCalendar() {
           filter: `profissional_id=eq.${user.id}`,
         },
         () => {
-          console.info("[AgendaCalendar] Atualização em tempo real recebida. Recarregando...");
           loadAgenda();
         },
       )

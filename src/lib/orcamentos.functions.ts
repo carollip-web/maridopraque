@@ -64,7 +64,6 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
   .inputValidator((input) => solicitarSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    console.info("[solicitarOrcamento] Creating for userId:", userId);
     const { data: row, error } = await supabase
       .from("orcamentos")
       .insert({
@@ -84,7 +83,6 @@ export const solicitarOrcamento = createServerFn({ method: "POST" })
       console.error("[solicitarOrcamento] error:", error);
       throw new Error(error.message);
     }
-    console.info("[solicitarOrcamento] Created row:", row);
 
     if (data.materiais && data.materiais.length > 0) {
       const ids = data.materiais.map((m) => m.materialId);
@@ -131,7 +129,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const observacoes = data.observacoes?.trim() || null;
-    console.info("[enviarOrcamento] entry", { orcamentoId: data.orcamentoId, userId });
 
     // 0. Buscar orçamento com fallback para schema cache
     let orc: OrcamentoParaEnvio | null = null;
@@ -175,14 +172,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     } else {
       orc = orcCompleto;
     }
-
-    // 1. Log orcamento carregado
-    console.info("[enviarOrcamento] orçamento carregado", {
-      orcamentoId: data.orcamentoId,
-      status: orc?.status,
-      serviceId: orc?.service_id,
-      userId,
-    });
 
     if (!orc) {
       throw new Error("Pedido não encontrado.");
@@ -282,12 +271,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       ofereceApoioFeminino: perfilProfissional?.oferece_apoio_feminino ?? false,
     });
 
-    console.info("[enviarOrcamento] validação compatibilidade", {
-      orcamentoId: orc.id,
-      tipo: orc.tipo_atendimento,
-      compat,
-    });
-
     if (!compat.compatible && compat.blockProposal) {
       throw new Error(
         compat.reason || "Este pedido exige um tipo de atendimento incompatível com seu perfil.",
@@ -324,12 +307,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     }
 
     // 3. Update budget status to 'enviado' using RPC
-
-    console.info("[enviarOrcamento] chamando RPC marcar_orcamento_enviado", {
-      orcamentoId: data.orcamentoId,
-      statusAtual: orc.status,
-    });
-
     const rpcMarcarRes = (await supabase.rpc("marcar_orcamento_enviado", {
       _orcamento_id: data.orcamentoId,
     })) as unknown as {
@@ -436,11 +413,6 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
       }
     }
 
-    console.info("[enviarOrcamento] Success", {
-      orcamentoId: data.orcamentoId,
-      status: updatedOrc.status,
-    });
-
     // 4. Create Notification for the client
     if (orc.cliente_id) {
       const { error: notifError } = await supabase.from("notificacoes").insert({
@@ -525,12 +497,6 @@ export const aceitarProposta = createServerFn({ method: "POST" })
   .inputValidator((input) => aceitarPropostaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-
-    console.info("[aceitarProposta] start", {
-      propostaId: data.propostaId,
-      orcamentoIdRecebido: data.orcamentoId,
-      userId,
-    });
 
     const { data: resultRows, error } = await supabase.rpc("aceitar_proposta_cliente", {
       _proposta_id: data.propostaId,
@@ -676,8 +642,6 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         return { ok: false, error: "Pedidos já pagos ou concluídos não podem ser removidos." };
       }
 
-      console.info(`[cancelarPedido] Iniciando faxina para o pedido ${data.orcamentoId}...`);
-
       // 3. Sequential deletion with explicit error tracking
       const simpleTables = [
         { name: "Mensagens", table: "mensagens" },
@@ -694,8 +658,6 @@ export const cancelarPedido = createServerFn({ method: "POST" })
           console.warn(`[cancelarPedido] Aviso: Falha ao limpar ${t.name}:`, error.message);
           // We don't throw here to try to delete as much as possible,
           // but the final delete will fail if there's a hard FK.
-        } else {
-          console.info(`[cancelarPedido] Tabela ${t.name} limpa.`);
         }
       }
 
@@ -708,7 +670,6 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         const propIds = props.map((p: { id: string }) => p.id);
         await admin.from("proposta_materiais").delete().in("proposta_id", propIds);
         await admin.from("propostas").delete().in("id", propIds);
-        console.info(`[cancelarPedido] Propostas (${props.length}) limpas.`);
       }
 
       // 5. Final attempt to delete the main record
@@ -722,7 +683,6 @@ export const cancelarPedido = createServerFn({ method: "POST" })
         };
       }
 
-      console.info(`[cancelarPedido] Sucesso: Pedido ${data.orcamentoId} totalmente removido.`);
       return { ok: true };
     } catch (err: unknown) {
       console.error("[cancelarPedido] Falha catastrófica:", err);
@@ -751,8 +711,6 @@ export const excluirPedidoAdmin = createServerFn({ method: "POST" })
         };
       }
       const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-      console.info(`[excluirPedidoAdmin] Admin ${userId} limpando pedido ${data.orcamentoId}...`);
 
       // Reuse deep cleanup logic
       const tables = [
