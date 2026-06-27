@@ -104,6 +104,7 @@ function ProfissionalArea() {
     propostasEnviadasLocal: data.propostasEnviadasLocal,
     profGenero: data.profGenero,
     profApoioFeminino: data.profApoioFeminino,
+    profAtivo: data.ativo,
   });
 
   // Auth guard: redirect to login if not authenticated

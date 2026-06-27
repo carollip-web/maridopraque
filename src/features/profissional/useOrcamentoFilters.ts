@@ -47,6 +47,7 @@ interface UseOrcamentoFiltersArgs {
   propostasEnviadasLocal: Set<string>;
   profGenero: string | null;
   profApoioFeminino: boolean;
+  profAtivo: boolean;
 }
 
 /**
@@ -66,6 +67,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
     propostasEnviadasLocal,
     profGenero,
     profApoioFeminino,
+    profAtivo,
   } = args;
 
   const distanciaCliente = useCallback(
@@ -89,6 +91,8 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
 
       return orcamentos.filter((o) => {
         if (type === "oportunidades") {
+          // Profissional offline (inativo) não recebe pedidos no radar.
+          if (!profAtivo) return false;
           const isApoioFemininoTarget =
             profApoioFeminino &&
             (o as unknown as Record<string, unknown>).tipo_atendimento === "homem_com_apoio_feminino" &&
@@ -184,6 +188,7 @@ export function useOrcamentoFilters(args: UseOrcamentoFiltersArgs) {
       propostasEnviadasLocal,
       profGenero,
       profApoioFeminino,
+      profAtivo,
       distanciaCliente,
     ],
   );

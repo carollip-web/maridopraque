@@ -34,6 +34,7 @@ interface PerfilProfissionalParaEnvio {
   genero: string | null;
   oferece_apoio_feminino: boolean | null;
   mp_user_id: string | null;
+  ativo?: boolean | null;
 }
 
 /** Resultado mínimo lido da RPC `marcar_orcamento_enviado` (Returns Json no DB). */
@@ -236,7 +237,7 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     let perfilProfissional: PerfilProfissionalParaEnvio | null = null;
     const { data: perfCompleto, error: perfilError } = await supabase
       .from("profissional_perfil")
-      .select("genero, oferece_apoio_feminino, mp_user_id")
+      .select("genero, oferece_apoio_feminino, mp_user_id, ativo")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -281,6 +282,11 @@ export const enviarOrcamento = createServerFn({ method: "POST" })
     if (!perfilProfissional) {
       console.error("[enviarOrcamento] perfil do profissional não encontrado", { userId });
       throw new Error("Perfil de profissional não encontrado. Complete seu cadastro antes de enviar orçamentos.");
+    }
+    // Profissional inativo não pode enviar proposta (nem aparecer pra clientes).
+    if (perfilProfissional.ativo === false) {
+      console.warn("[enviarOrcamento] bloqueado: profissional inativo", { userId });
+      throw new Error("Sua conta está inativa no momento e não pode enviar orçamentos.");
     }
     if (!perfilProfissional.mp_user_id) {
       console.warn("[enviarOrcamento] bloqueado: profissional sem Mercado Pago conectado", { userId });

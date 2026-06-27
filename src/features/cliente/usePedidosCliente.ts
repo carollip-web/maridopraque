@@ -60,6 +60,7 @@ export function usePedidosCliente(userId: string | undefined) {
           media?: string;
           totalAvaliacoes?: number;
           concluidos?: number;
+          ativo?: boolean;
         }
       > = {};
 
@@ -81,7 +82,7 @@ export function usePedidosCliente(userId: string | undefined) {
           // fetch slugs
           const { data: perfilData } = await supabase
             .from("profissional_perfil")
-            .select("user_id, slug")
+            .select("user_id, slug, ativo")
             .in("user_id", profIds);
 
           // fetch ratings
@@ -114,6 +115,7 @@ export function usePedidosCliente(userId: string | undefined) {
               media,
               totalAvaliacoes: avs.length,
               concluidos: concluidosCount,
+              ativo: perf?.ativo ?? undefined,
             };
           });
         }
@@ -122,6 +124,11 @@ export function usePedidosCliente(userId: string | undefined) {
       return list.map((o) => {
         const propsForOrc = propostas
           .filter((p) => p.orcamento_id === o.id)
+          // Esconde propostas PENDENTES de profissional inativo (não pode ser
+          // aceito). Propostas já aceitas/históricas continuam visíveis.
+          .filter(
+            (p) => !(p.status === "pendente" && profsMap[p.profissional_id]?.ativo === false),
+          )
           .map((p) => ({
             ...p,
             profNome: profsMap[p.profissional_id]?.nome || "Profissional",
