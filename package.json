@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "test:unit": "playwright test --config=playwright.unit.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test auth.spec.ts",
     "test:e2e:fluxo": "playwright test fluxo-completo.spec.ts"

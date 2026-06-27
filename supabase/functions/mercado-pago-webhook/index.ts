@@ -1,16 +1,18 @@
 // redeploy: 2026-05-29
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getMpAccessToken } from "../_shared/mp-credentials.ts";
+import { MARKETPLACE_FEE, round2, valorBaseDeTotal } from "../_shared/fees.ts";
 
-const MP_ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const MP_WEBHOOK_SECRET = Deno.env.get("MERCADO_PAGO_WEBHOOK_SECRET");
-const MARKETPLACE_FEE_PERCENT = 0.15;
 
 async function verificarAssinaturaMP(req: Request, requestId: string): Promise<boolean> {
   if (!MP_WEBHOOK_SECRET) {
-    console.error(`[Webhook ${requestId}] MERCADO_PAGO_WEBHOOK_SECRET não configurada — rejeitando requisição. Configure o secret no painel MP Developers e nas Edge Function Secrets para liberar o webhook.`);
+    console.error(
+      `[Webhook ${requestId}] MERCADO_PAGO_WEBHOOK_SECRET não configurada — rejeitando requisição. Configure o secret no painel MP Developers e nas Edge Function Secrets para liberar o webhook.`,
+    );
     return false;
   }
   const xSignature = req.headers.get("x-signature");
@@ -32,7 +34,9 @@ async function verificarAssinaturaMP(req: Request, requestId: string): Promise<b
     ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(manifest));
-  const computed = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const computed = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
   return computed === v1;
 }
 
@@ -109,15 +113,17 @@ serve(async (req) => {
       });
     }
 
-    if (!MP_ACCESS_TOKEN) {
-      throw new Error("MERCADO_PAGO_ACCESS_TOKEN não configurado na Edge Function.");
-    }
+    // Token do marketplace conforme MP_AMBIENTE ("teste" | "producao"),
+    // alinhado com as demais edge functions via getMpAccessToken().
+    const { token: MP_ACCESS_TOKEN } = getMpAccessToken();
 
     // Inicializar cliente Supabase com Service Role para bypass RLS (antes do MP p/ fallback)
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
     // 1. Consultar o Mercado Pago para validar o pagamento (Segurança: não confiar apenas no body)
-    console.log(`[Webhook ${requestId}] Consultando pagamento ${resourceId} no Mercado Pago (token marketplace)...`);
+    console.log(
+      `[Webhook ${requestId}] Consultando pagamento ${resourceId} no Mercado Pago (token marketplace)...`,
+    );
     let mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
       headers: {
         Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
@@ -126,7 +132,9 @@ serve(async (req) => {
 
     // Fallback: split usa token do seller (profissional); tente buscar token dele via orcamentoId no query param
     if (!mpRes.ok && (mpRes.status === 401 || mpRes.status === 404)) {
-      console.warn(`[Webhook ${requestId}] MP retornou ${mpRes.status} com token marketplace. Tentando fallback com token do profissional...`);
+      console.warn(
+        `[Webhook ${requestId}] MP retornou ${mpRes.status} com token marketplace. Tentando fallback com token do profissional...`,
+      );
       const orcamentoIdQp = searchParams.get("orcamentoId");
       if (orcamentoIdQp) {
         const { data: orc } = await supabase
@@ -141,29 +149,41 @@ serve(async (req) => {
             .eq("user_id", orc.profissional_id)
             .maybeSingle();
           if (perfil?.mp_access_token) {
-            console.log(`[Webhook ${requestId}] Refazendo consulta MP com token do profissional ${orc.profissional_id}...`);
+            console.log(
+              `[Webhook ${requestId}] Refazendo consulta MP com token do profissional ${orc.profissional_id}...`,
+            );
             mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${resourceId}`, {
               headers: { Authorization: `Bearer ${perfil.mp_access_token}` },
             });
             if (!mpRes.ok) {
               const errorBody = await mpRes.text();
-              throw new Error(`Erro ao buscar pagamento no MP (token=profissional ${orc.profissional_id}): ${mpRes.status} - ${errorBody}`);
+              throw new Error(
+                `Erro ao buscar pagamento no MP (token=profissional ${orc.profissional_id}): ${mpRes.status} - ${errorBody}`,
+              );
             }
           } else {
             const errorBody = await mpRes.text();
-            throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; profissional sem mp_access_token): ${mpRes.status} - ${errorBody}`);
+            throw new Error(
+              `Erro ao buscar pagamento no MP (token=marketplace; profissional sem mp_access_token): ${mpRes.status} - ${errorBody}`,
+            );
           }
         } else {
           const errorBody = await mpRes.text();
-          throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; orcamento ${orcamentoIdQp} sem profissional): ${mpRes.status} - ${errorBody}`);
+          throw new Error(
+            `Erro ao buscar pagamento no MP (token=marketplace; orcamento ${orcamentoIdQp} sem profissional): ${mpRes.status} - ${errorBody}`,
+          );
         }
       } else {
         const errorBody = await mpRes.text();
-        throw new Error(`Erro ao buscar pagamento no MP (token=marketplace; sem orcamentoId no query): ${mpRes.status} - ${errorBody}`);
+        throw new Error(
+          `Erro ao buscar pagamento no MP (token=marketplace; sem orcamentoId no query): ${mpRes.status} - ${errorBody}`,
+        );
       }
     } else if (!mpRes.ok) {
       const errorBody = await mpRes.text();
-      throw new Error(`Erro ao buscar pagamento no MP (token=marketplace): ${mpRes.status} - ${errorBody}`);
+      throw new Error(
+        `Erro ao buscar pagamento no MP (token=marketplace): ${mpRes.status} - ${errorBody}`,
+      );
     }
 
     const mpPayment = await mpRes.json();
@@ -178,7 +198,6 @@ serve(async (req) => {
         status: 200,
       });
     }
-
 
     // 3. Mapear status MP para nosso sistema
     let finalStatus = "pending";
@@ -199,7 +218,10 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (byGatewayId) { targetPagamento = byGatewayId; break; }
+      if (byGatewayId) {
+        targetPagamento = byGatewayId;
+        break;
+      }
 
       const { data: latest } = await supabase
         .from("pagamentos")
@@ -208,7 +230,10 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (latest) { targetPagamento = latest; break; }
+      if (latest) {
+        targetPagamento = latest;
+        break;
+      }
       if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
     }
     const currentMetadata = (targetPagamento?.metadata as Record<string, unknown>) || {};
@@ -259,7 +284,7 @@ serve(async (req) => {
     // 5. Se aprovado, marcar orçamento como PAGO e confirmar reserva de agenda
     if (mpStatus === "approved") {
       console.log(`[Webhook ${requestId}] Marcando Orçamento ${orcamentoId} como PAGO...`);
-      
+
       const { data: existingOrc } = await supabase
         .from("orcamentos")
         .select("tipo_atendimento")
@@ -272,21 +297,30 @@ serve(async (req) => {
         .update({
           status: "pago",
           data_pagamento: new Date().toISOString(),
-          ...(requiresApoio ? { 
-            status_apoio: "buscando",
-            valor_apoio_feminino: currentMetadata?.valor_apoio_feminino || null
-          } : {})
+          ...(requiresApoio
+            ? {
+                status_apoio: "buscando",
+                valor_apoio_feminino: currentMetadata?.valor_apoio_feminino || null,
+              }
+            : {}),
         })
         .eq("id", orcamentoId)
-        .select("id, profissional_id, cliente_id, data_preferida, periodo_preferido, horario_preferido, created_at")
+        .select(
+          "id, profissional_id, cliente_id, data_preferida, periodo_preferido, horario_preferido, created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (orcError) throw orcError;
       if (!updatedOrc) {
-        console.warn(`[Webhook ${requestId}] Nenhum orçamento encontrado para id=${orcamentoId} ao atualizar como pago.`);
-        return new Response(JSON.stringify({ received: true, skipped: "orcamento_not_found" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        console.warn(
+          `[Webhook ${requestId}] Nenhum orçamento encontrado para id=${orcamentoId} ao atualizar como pago.`,
+        );
+        return new Response(JSON.stringify({ received: true, skipped: "orcamento_not_found" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       }
       console.log(`[Webhook ${requestId}] Orçamento ${orcamentoId} atualizado com sucesso.`);
 
@@ -313,11 +347,12 @@ serve(async (req) => {
         return Math.round(amount * 0.0498 * 100) / 100; // à vista padrão
       };
 
-      const valorTotal = Math.round(Number(mpPayment.transaction_amount || (pagamento as any)?.valor_total || 0) * 100) / 100;
+      const valorTotal = round2(
+        Number(mpPayment.transaction_amount || (pagamento as any)?.valor_total || 0),
+      );
 
-      // base = total sem o surcharge de apoio (apoio é sempre 30% sobre a base → fator 1.30)
-      const apoioFactor = requiresApoio ? 1.30 : 1.00;
-      const valorBase = Math.round((valorTotal / apoioFactor) * 100) / 100;
+      // base = total sem o surcharge de apoio (apoio é sempre 30% sobre a base)
+      const valorBase = valorBaseDeTotal(valorTotal, requiresApoio);
 
       // Taxa REAL do MP (mercadopago_fee). Se não vier no payload, estima e marca p/ reconciliar.
       const feeReal = Array.isArray(mpPayment.fee_details)
@@ -326,31 +361,31 @@ serve(async (req) => {
             .reduce((acc: number, f: any) => acc + (Number(f.amount) || 0), 0)
         : 0;
       const gatewayConfirmado = feeReal > 0;
-      const taxaGatewayTotal = gatewayConfirmado
-        ? Math.round(feeReal * 100) / 100
-        : calcularTaxaMP(mpPayment); // estimativa por método
+      const taxaGatewayTotal = gatewayConfirmado ? round2(feeReal) : calcularTaxaMP(mpPayment); // estimativa por método
 
       // Prestador arca SÓ com a parte dele do gateway (proporcional à base)
-      const taxaGatewayPrestador = valorTotal > 0
-        ? Math.round((taxaGatewayTotal * valorBase / valorTotal) * 100) / 100
-        : 0;
+      const taxaGatewayPrestador =
+        valorTotal > 0 ? round2((taxaGatewayTotal * valorBase) / valorTotal) : 0;
 
-      const taxaPlataforma = Math.round((valorBase * MARKETPLACE_FEE_PERCENT) * 100) / 100; // comissão (15% da base)
-      const valorProfissional = Math.round((valorBase * (1 - MARKETPLACE_FEE_PERCENT)) * 100) / 100;
+      const taxaPlataforma = round2(valorBase * MARKETPLACE_FEE); // comissão (15% da base)
+      const valorProfissional = round2(valorBase * (1 - MARKETPLACE_FEE));
 
-      const { error: splitErr } = await supabase.from("pagamento_splits").upsert({
-        orcamento_id: updatedOrc.id,
-        pagamento_id: (pagamento as any)?.id,
-        profissional_id: updatedOrc.profissional_id,
-        cliente_id: updatedOrc.cliente_id,
-        valor_total: valorTotal,
-        taxa_gateway: taxaGatewayPrestador,
-        taxa_plataforma: taxaPlataforma,
-        valor_profissional: valorProfissional,
-        taxa_gateway_estimada: !gatewayConfirmado,
-        status: "aguardando_conclusao",
-        disponivel_em: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      }, { onConflict: "pagamento_id" });
+      const { error: splitErr } = await supabase.from("pagamento_splits").upsert(
+        {
+          orcamento_id: updatedOrc.id,
+          pagamento_id: (pagamento as any)?.id,
+          profissional_id: updatedOrc.profissional_id,
+          cliente_id: updatedOrc.cliente_id,
+          valor_total: valorTotal,
+          taxa_gateway: taxaGatewayPrestador,
+          taxa_plataforma: taxaPlataforma,
+          valor_profissional: valorProfissional,
+          taxa_gateway_estimada: !gatewayConfirmado,
+          status: "aguardando_conclusao",
+          disponivel_em: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        { onConflict: "pagamento_id" },
+      );
 
       if (splitErr) {
         console.error(`[Webhook ${requestId}] Erro ao criar split:`, splitErr);

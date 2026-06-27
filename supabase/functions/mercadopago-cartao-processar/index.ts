@@ -1,6 +1,7 @@
 // Checkout Transparente (Payment Brick): cria pagamento no /v1/payments com split via application_fee.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { calcularValores, MARKETPLACE_FEE } from "../_shared/fees.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,9 +21,12 @@ function calcularIntervaloReserva(
   horario?: string | null,
 ) {
   const data = String(dataPreferida).slice(0, 10);
-  if (periodo === "manha") return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
-  if (periodo === "tarde") return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
-  if (periodo === "noite") return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
+  if (periodo === "manha")
+    return { inicio: `${data}T08:00:00-03:00`, fim: `${data}T12:00:00-03:00` };
+  if (periodo === "tarde")
+    return { inicio: `${data}T13:00:00-03:00`, fim: `${data}T18:00:00-03:00` };
+  if (periodo === "noite")
+    return { inicio: `${data}T18:00:00-03:00`, fim: `${data}T21:00:00-03:00` };
   if (periodo === "horario_especifico" && horario) {
     const hora = String(horario).slice(0, 5);
     const inicioDate = new Date(`${data}T${hora}:00-03:00`);
@@ -38,7 +42,6 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const MARKETPLACE_FEE_PERCENT = 15;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ error: "UNAUTHORIZED" }, 401);
@@ -61,13 +64,18 @@ serve(async (req) => {
 
     const { data: orcamento } = await admin
       .from("orcamentos")
-      .select("id, cliente_id, profissional_id, status, valor, valor_servico, service_name, tipo_atendimento")
+      .select(
+        "id, cliente_id, profissional_id, status, valor, valor_servico, service_name, tipo_atendimento",
+      )
       .eq("id", orcamentoId)
       .maybeSingle();
     if (!orcamento) return json({ error: "NOT_FOUND" }, 404);
     if (orcamento.cliente_id !== user.id) return json({ error: "FORBIDDEN" }, 403);
     if (orcamento.status !== "aprovado")
-      return json({ error: "INVALID_STATUS", message: `Pedido em "${orcamento.status}" não está liberado.` }, 400);
+      return json(
+        { error: "INVALID_STATUS", message: `Pedido em "${orcamento.status}" não está liberado.` },
+        400,
+      );
 
     const { data: materiais } = await admin
       .from("orcamento_materiais")
@@ -81,10 +89,7 @@ serve(async (req) => {
     if (!(valorBase > 0)) return json({ error: "INVALID_VALUE" }, 400);
 
     const requiresApoio = orcamento.tipo_atendimento === "homem_com_apoio_feminino";
-    const valorApoio = requiresApoio ? Math.round(valorBase * 0.3 * 100) / 100 : 0;
-    const valorTotal = Math.round((valorBase + valorApoio) * 100) / 100;
-    const marketplaceFeeBase = Math.round(valorBase * (MARKETPLACE_FEE_PERCENT / 100) * 100) / 100;
-    const applicationFee = Math.round((marketplaceFeeBase + valorApoio) * 100) / 100;
+    const { valorApoio, valorTotal, applicationFee } = calcularValores(valorBase, requiresApoio);
 
     const { data: perfil } = await admin
       .from("profissional_perfil")
@@ -119,7 +124,7 @@ serve(async (req) => {
         metadata: {
           checkout_type: "transparent_brick",
           split_type: requiresApoio ? "marketplace_with_apoio" : "marketplace_1_1",
-          marketplace_fee_percent: MARKETPLACE_FEE_PERCENT,
+          marketplace_fee_percent: MARKETPLACE_FEE * 100,
           application_fee_amount: applicationFee,
           mp_seller_user_id: perfil.mp_user_id,
           valor_apoio_feminino: valorApoio,
@@ -167,11 +172,18 @@ serve(async (req) => {
 
     if (!mpRes.ok) {
       console.error("[mercadopago-cartao-processar] MP error", { status: mpRes.status, mpBody });
-      await admin.from("pagamentos").update({ status: "failed", metadata: { ...((pagamento as any).metadata || {}), mp_error: mpBody } } as any).eq("id", pagamento.id);
+      await admin
+        .from("pagamentos")
+        .update({
+          status: "failed",
+          metadata: { ...((pagamento as any).metadata || {}), mp_error: mpBody },
+        } as any)
+        .eq("id", pagamento.id);
       return json(
         {
           error: "MP_API_ERROR",
-          message: mpBody?.message || mpBody?.cause?.[0]?.description || "Erro na API do Mercado Pago.",
+          message:
+            mpBody?.message || mpBody?.cause?.[0]?.description || "Erro na API do Mercado Pago.",
           status: mpRes.status,
           mpBody,
         },
@@ -190,13 +202,20 @@ serve(async (req) => {
     };
     if (localStatus === "paid") updatePayload.paid_at = new Date().toISOString();
 
-    await admin.from("pagamentos").update(updatePayload as any).eq("id", pagamento.id);
+    await admin
+      .from("pagamentos")
+      .update(updatePayload as any)
+      .eq("id", pagamento.id);
 
     // Atualiza o orçamento quando aprovado (a Checkout Pro fazia isso via webhook)
     if (localStatus === "paid") {
       const { error: orcErr } = await admin
         .from("orcamentos")
-        .update({ status: "pago", data_pagamento: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
+        .update({
+          status: "pago",
+          data_pagamento: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as any)
         .eq("id", orcamento.id);
       if (orcErr) console.error("[mercadopago-cartao-processar] erro update orcamento", orcErr);
 
@@ -238,7 +257,6 @@ serve(async (req) => {
         console.error("[mercadopago-cartao-processar] erro ao reservar agenda", eAgenda);
       }
     }
-
 
     return json({
       ok: true,

@@ -449,7 +449,20 @@ function Checkout() {
                     <Loader2 className="h-4 w-4 animate-spin" /> Preparando formulário seguro...
                   </div>
                 )}
-                <div id="payment-brick-container" />
+                <div className="relative">
+                  <div
+                    id="payment-brick-container"
+                    className={isProcessing ? "pointer-events-none opacity-60" : undefined}
+                  />
+                  {/* Bloqueia novos cliques no botão do Brick enquanto a primeira
+                      tentativa está em andamento (evita cobrança dupla por duplo-clique). */}
+                  {isProcessing && (
+                    <div
+                      className="absolute inset-0 z-10 cursor-not-allowed"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
                 {isProcessing && (
                   <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" /> Processando pagamento...
