@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogNameKey, formatCurrency } from "./pedidos.helpers";
 
@@ -203,4 +204,63 @@ export function usePedidosCliente(userId: string | undefined) {
     },
     enabled: !!userId,
   });
+}
+
+// Mantém a lista de pedidos do cliente em tempo real: revalida a query quando
+// muda um orçamento/proposta do cliente e dispara onAvaliacaoInsert quando uma
+// avaliação dele é inserida. A inscrição é refeita só quando o userId muda.
+export function usePedidosRealtime(userId: string | undefined, onAvaliacaoInsert: () => void) {
+  const queryClient = useQueryClient();
+  // Guarda o callback num ref para não reinscrever o canal a cada render.
+  const onAvaliacaoRef = useRef(onAvaliacaoInsert);
+  onAvaliacaoRef.current = onAvaliacaoInsert;
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel("cliente-pedidos-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orcamentos",
+          filter: `cliente_id=eq.${userId}`,
+        },
+        async () => {
+          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", userId] });
+          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", userId] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "propostas",
+        },
+        async () => {
+          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", userId] });
+          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", userId] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "avaliacoes",
+          filter: `cliente_id=eq.${userId}`,
+        },
+        () => {
+          onAvaliacaoRef.current();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
 }

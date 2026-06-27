@@ -46,7 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tab, SUPPORT_MAILTO } from "./constants";
 import { gerarPdfOrcamento } from "./pedidos.helpers";
-import { usePedidosCliente } from "./usePedidosCliente";
+import { usePedidosCliente, usePedidosRealtime } from "./usePedidosCliente";
 
 interface PedidosTabProps {
   setActiveTab: (tab: Tab) => void;
@@ -180,54 +180,7 @@ export function PedidosTab({ setActiveTab }: PedidosTabProps) {
 
   const filters = ["Todos", "Ativos", "Concluídos", "Cancelados"];
 
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel("cliente-pedidos-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orcamentos",
-          filter: `cliente_id=eq.${user.id}`,
-        },
-        async () => {
-          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
-          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "propostas",
-        },
-        async () => {
-          queryClient.invalidateQueries({ queryKey: ["cliente", "pedidos", user.id] });
-          await queryClient.refetchQueries({ queryKey: ["cliente", "pedidos", user.id] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "avaliacoes",
-          filter: `cliente_id=eq.${user.id}`,
-        },
-        () => {
-          setJaAvaliou(true);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, queryClient]);
+  usePedidosRealtime(user?.id, () => setJaAvaliou(true));
 
   const handleApprove = async () => {
     if (!selectedPedido) return;
