@@ -84,6 +84,24 @@ export const Route = createFileRoute("/api/public/hooks/send-notification-email"
             .maybeSingle();
 
           if (!notif) return new Response(JSON.stringify({ error: "NOT_FOUND" }), { status: 404 });
+
+          // Dispara push (best-effort, independente do e-mail). Roda mesmo que o
+          // usuário não tenha e-mail ou que o envio de e-mail seja pulado abaixo.
+          void fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SERVICE_KEY}`,
+              apikey: SERVICE_KEY,
+            },
+            body: JSON.stringify({
+              user_id: notif.user_id,
+              title: notif.titulo,
+              body: notif.mensagem,
+              link: notif.link,
+            }),
+          }).catch(() => {});
+
           if (notif.email_enviado) {
             return new Response(JSON.stringify({ ok: true, skipped: "already_sent" }), {
               status: 200,

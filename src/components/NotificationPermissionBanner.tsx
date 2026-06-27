@@ -1,27 +1,39 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useAuth } from "@/hooks/useAuth";
+import { ativarPush } from "@/lib/push";
 import { Button } from "@/components/ui/button";
 
 const DISMISS_KEY = "notif-prompt-dismissed";
 
 export function NotificationPermissionBanner() {
   const { requestBrowserPermission, browserPermission } = useNotifications();
+  const { user } = useAuth();
   const [show, setShow] = useState(false);
   const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
+    // Quem já concedeu antes: garante a subscription de push persistida.
+    if (browserPermission === "granted" && user?.id) {
+      ativarPush(user.id).catch(() => {});
+      return;
+    }
     if (browserPermission !== "default") return;
     if (localStorage.getItem(DISMISS_KEY)) return;
     setShow(true);
-  }, [browserPermission]);
+  }, [browserPermission, user?.id]);
 
   if (!show) return null;
 
   const handleEnable = async () => {
     setAsking(true);
     const result = await requestBrowserPermission();
+    // Se concedeu, assina o push (registra SW + PushManager + salva no banco).
+    if (result === "granted" && user?.id) {
+      await ativarPush(user.id).catch(() => {});
+    }
     setAsking(false);
     if (result !== "default") setShow(false);
   };

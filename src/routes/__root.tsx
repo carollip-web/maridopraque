@@ -106,6 +106,7 @@ import { Footer } from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { initErrorTracking } from "@/lib/error-tracking";
+import { registrarServiceWorker } from "@/lib/push";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
 
@@ -121,6 +122,8 @@ const queryClient = new QueryClient({
 function RootComponent() {
   useEffect(() => {
     initErrorTracking();
+    // Registra o service worker de push (seguro: não intercepta fetch/cache).
+    registrarServiceWorker();
   }, []);
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
