@@ -554,15 +554,11 @@ function AdminValidacao() {
       .update({ status: "aprovado" })
       .eq("user_id", selected.user_id);
 
-    // Notificar o profissional que foi aprovado
-    await supabase.from("notificacoes").insert({
-      user_id: selected.user_id,
-      titulo: "🎉 Cadastro aprovado!",
-      mensagem:
-        "Seu cadastro foi aprovado. Agora você pode receber pedidos e conectar sua conta Mercado Pago para receber pagamentos.",
-      link: "/profissional",
-      lida: false,
-    });
+    // A notificação de aprovação (e o e-mail correspondente) é disparada
+    // automaticamente pelo trigger tr_notify_profissional_approval ao mudar
+    // aprovacao_status para 'aprovado'. Não inserir manualmente para evitar
+    // duplicidade de e-mails.
+
 
     await logAdminAction(supabase, {
       acao: "profissional_aprovado",
