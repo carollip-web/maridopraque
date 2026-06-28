@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { AdminApoioFemininoRepasses } from "@/features/admin/AdminApoioFemininoRepasses";
+import { AdminCobrancas } from "@/features/admin/AdminCobrancas";
 
 // Taxa estimada do Mercado Pago para crédito à vista
 const TAXA_MP_CREDITO = 0.0549;
@@ -315,6 +316,9 @@ export function AdminFinanceiro() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Serviços concluídos aguardando pagamento (cobrança pós-serviço) */}
+      <AdminCobrancas />
+
       {/* HEADER + FILTRO DE PERÍODO */}
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>

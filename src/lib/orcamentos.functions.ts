@@ -850,7 +850,15 @@ export const marcarServicoConcluido = createServerFn({ method: "POST" })
 
     const { error: eu } = await supabase
       .from("orcamentos")
-      .update({ status: "aguardando_pagamento" })
+      .update({
+        status: "aguardando_pagamento",
+        // Marca o início da espera de pagamento e zera o controle de cobrança
+        // (usado pelo job automático de lembretes).
+        aguardando_pagamento_desde: new Date().toISOString(),
+        cobranca_lembretes_count: 0,
+        cobranca_ultimo_lembrete_em: null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- colunas novas ainda não geradas nos tipos
+      } as any)
       .eq("id", data.orcamentoId);
     if (eu) return { ok: false, error: eu.message };
 
