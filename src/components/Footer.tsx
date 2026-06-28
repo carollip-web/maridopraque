@@ -1,7 +1,9 @@
 import { Wrench, MessageCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-const CONTATO_EMAIL = "mailto:contato@maridopraque.com?subject=Contato%20via%20site";
+const WHATSAPP_URL =
+  "https://wa.me/5521988772434?text=" +
+  encodeURIComponent("Olá! Vim pelo site da Marido pra Quê? e gostaria de mais informações.");
 
 export function Footer() {
   return (
@@ -51,7 +53,7 @@ export function Footer() {
 
       {/* Floating Contact */}
       <a
-        href={CONTATO_EMAIL}
+        href={WHATSAPP_URL}
         target="_blank"
         rel="noreferrer"
         aria-label="Falar no WhatsApp"

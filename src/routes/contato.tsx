@@ -22,6 +22,13 @@ export const Route = createFileRoute("/contato")({
 });
 
 const CONTATO_EMAIL = "mailto:contato@maridopraque.com?subject=Contato%20via%20site";
+const SUPORTE_EMAIL = "mailto:suporte@maridopraque.com?subject=Suporte";
+const TELEFONE_DISPLAY = "(21) 98877-2434";
+const WHATSAPP_URL =
+  "https://wa.me/5521988772434?text=" +
+  encodeURIComponent("Olá! Vim pelo site da Marido pra Quê? e gostaria de mais informações.");
+const INSTAGRAM_URL = "https://www.instagram.com/marido.pra.que/";
+const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61590961933928";
 
 function Contato() {
   return (
@@ -54,9 +61,12 @@ function Contato() {
                 Mandar mensagem agora
               </a>
             </Button>
-            <div className="mt-4 text-center">
-              <a href={CONTATO_EMAIL} className="text-sm font-medium hover:underline text-brand-foreground/90">
+            <div className="mt-4 text-center space-y-1">
+              <a href={CONTATO_EMAIL} className="block text-sm font-medium hover:underline text-brand-foreground/90">
                 contato@maridopraque.com
+              </a>
+              <a href={SUPORTE_EMAIL} className="block text-xs font-medium hover:underline text-brand-foreground/70">
+                Suporte: suporte@maridopraque.com
               </a>
             </div>
             <p className="mt-6 text-[11px] font-medium leading-relaxed text-brand-foreground/70 text-center italic">
@@ -67,13 +77,17 @@ function Contato() {
           </div>
 
           <div className="grid gap-4">
-            {/* TODO: Descomentar quando houver número de telefone real
-            <div className="rounded-3xl border border-border p-8">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-3xl border border-border p-8 transition hover:border-brand hover:shadow-sm"
+            >
               <Phone className="h-6 w-6 text-brand mb-4" />
-              <h3 className="font-bold">Telefone</h3>
-              <p className="mt-1 text-sm text-muted-foreground">(21) 99999-9999</p>
-            </div>
-            */}
+              <h3 className="font-bold">Telefone / WhatsApp</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{TELEFONE_DISPLAY}</p>
+              <p className="mt-1 text-xs font-medium text-brand">Toque para falar no WhatsApp →</p>
+            </a>
           </div>
         </div>
 
@@ -116,9 +130,25 @@ function Contato() {
               <p className="mt-1 text-muted-foreground leading-relaxed">
                 Siga-nos para ver fotos de nossos serviços e dicas de manutenção residencial.
               </p>
-              <div className="mt-4">
-                {/* TODO: Adicionar links reais quando os perfis @maridopraque estiverem ativos no Instagram e Facebook */}
-                <p className="text-sm font-medium text-brand">Em breve nas redes sociais. Fique de olho!</p>
+              <div className="mt-4 flex gap-3">
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Instagram da Marido pra Quê?"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a
+                  href={FACEBOOK_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Facebook da Marido pra Quê?"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-foreground transition hover:bg-brand hover:text-brand-foreground"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
               </div>
             </div>
           </div>
