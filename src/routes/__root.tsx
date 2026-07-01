@@ -49,14 +49,14 @@ export const Route = createRootRoute({
       { name: "author", content: "Marido pra Quê?" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Marido pra Quê?" },
-      { property: "og:title", content: "Marido pra Quê? — Reparos e Montagens" },
+      { property: "og:title", content: "Marido pra Quê? — Reparos, Montagem e Regularização" },
       {
         property: "og:description",
         content:
           "Profissionais verificados, orçamento online e opção com apoio feminino durante a visita.",
       },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Marido pra Quê? — Reparos e Montagens" },
+      { name: "twitter:title", content: "Marido pra Quê? — Reparos, Montagem e Regularização" },
       {
         name: "twitter:description",
         content:
@@ -67,6 +67,11 @@ export const Route = createRootRoute({
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Marido pra Quê" },
+      { name: "description", content: "- Marido Pra Quê? connects users with skilled professionals for home repairs and furniture assembly, offering flexible payment and professional selection." },
+      { property: "og:description", content: "- Marido Pra Quê? connects users with skilled professionals for home repairs and furniture assembly, offering flexible payment and professional selection." },
+      { name: "twitter:description", content: "- Marido Pra Quê? connects users with skilled professionals for home repairs and furniture assembly, offering flexible payment and professional selection." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/34dc360a-a8f0-4de5-99a0-d36c26da7922/id-preview-3bccc5e8--ec1fc676-bf03-4dd3-84db-f84467056948.lovable.app-1782655712348.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/34dc360a-a8f0-4de5-99a0-d36c26da7922/id-preview-3bccc5e8--ec1fc676-bf03-4dd3-84db-f84467056948.lovable.app-1782655712348.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
